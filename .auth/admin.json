@@ -1,0 +1,47 @@
+{
+  "cookies": [
+    {
+      "name": "XSRF-TOKEN",
+      "value": "eyJpdiI6InRQdnZXMVB4UExGL2cyK1MzN3Nsb2c9PSIsInZhbHVlIjoiZ3NKRmpkZGRkMHgvanE0Q21OUnB6Y1FEUkE2d05BM1JDd0FkeXdFejVQNzJWa3h3aDVPYkg5a1A0RGRqdmpTSnVJa2VvTy9XWjBmRGtZeEU1ZGVFbGgwM3p2OElzRGFlalN3Q3ZYRi9yU1l5Q0tVcTczUk5oelRZYmhLNFlqRzciLCJtYWMiOiJmOGQ4MGQyMGQxZjcxMzUwZGYwMjc5ZDFkMmMzNDBhNzg0OGI5OGQ0YTgzZGQwMzQ5NTE3ZmFjNzBiNWM5ZjQwIiwidGFnIjoiIn0%3D",
+      "domain": "127.0.0.1",
+      "path": "/",
+      "expires": 1782675159.764195,
+      "httpOnly": false,
+      "secure": false,
+      "sameSite": "Lax"
+    },
+    {
+      "name": "x2-bms-session",
+      "value": "eyJpdiI6IlNPWThXQnM3NnFndkQ2c1lwRmdjdVE9PSIsInZhbHVlIjoid0N3bkM1SkJibGtxUFlPYUNLcm1FNlZuVGZkUysyalF4UGtXVzFWQ2h5SDMzVExRd09UNkRmRTRsTE1FUWVNWFdnc1lsMzVyL2U3NW94T01JNmtLL3VETWNubitsSCtpTmdpdy84K0QwSXk5RVZOdU1qaThiS2NSRFhJRzlXRFMiLCJtYWMiOiI3MDhlYjM1MWJlOWRjNWE4MGMxNDY1MTI0YzNiYWQ1OTdiZDM0NTM3ZjNjY2VkMzI5YzUyMDE2ODUyMThmYmZiIiwidGFnIjoiIn0%3D",
+      "domain": "127.0.0.1",
+      "path": "/",
+      "expires": 1782675159.76433,
+      "httpOnly": true,
+      "secure": false,
+      "sameSite": "Lax"
+    }
+  ],
+  "origins": [
+    {
+      "origin": "http://127.0.0.1:8000",
+      "localStorage": [
+        {
+          "name": "theme",
+          "value": "system"
+        },
+        {
+          "name": "isOpenDesktop",
+          "value": "true"
+        },
+        {
+          "name": "isOpen",
+          "value": "true"
+        },
+        {
+          "name": "collapsedGroups",
+          "value": "[]"
+        }
+      ]
+    }
+  ]
+}
