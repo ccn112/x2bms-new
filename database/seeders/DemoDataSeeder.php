@@ -151,6 +151,18 @@ class DemoDataSeeder extends Seeder
         }
         $admin->assignRole($roles['super_admin']);
 
+        // X2AI access permissions (WEB-UX-09 governance — mode is permission-driven,
+        // not a user toggle). super_admin bypasses via Gate::before; others are granted
+        // explicitly here. ai.use = use copilot; ai.data_lookup = Mode 2 DB lookup.
+        $aiUse = \Spatie\Permission\Models\Permission::findOrCreate('ai.use', 'web');
+        $aiDataLookup = \Spatie\Permission\Models\Permission::findOrCreate('ai.data_lookup', 'web');
+        foreach ($roles as $role) {
+            $role->givePermissionTo($aiUse);
+        }
+        foreach (['company_admin', 'hq_finance', 'operations_director', 'building_manager', 'accountant', 'customer_service'] as $r) {
+            $roles[$r]->givePermissionTo($aiDataLookup);
+        }
+
         // Demo login is a platform operator (sees every project). The scope row makes
         // the 3-tier model explicit/auditable rather than relying only on the flag.
         \App\Models\UserRoleScope::create([

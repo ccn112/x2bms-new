@@ -84,11 +84,6 @@ class AdminPanelProvider extends PanelProvider
                 PanelsRenderHook::USER_MENU_BEFORE,
                 fn (): string => Blade::render('@include("filament.hooks.header-cluster")'),
             )
-            // Sidebar: signed-in user card pinned to the bottom (WEB-UX-00).
-            ->renderHook(
-                PanelsRenderHook::SIDEBAR_FOOTER,
-                fn (): string => Blade::render('@include("filament.hooks.sidebar-footer")'),
-            )
             // X2AI floating chat — the single shared AI surface, fixed bottom-right
             // on every /admin screen (UI_IMPLEMENTATION_RULES: X2AI floating button).
             ->renderHook(

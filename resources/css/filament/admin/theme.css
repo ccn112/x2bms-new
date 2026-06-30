@@ -120,10 +120,18 @@ h1, h2, h3, h4,
     @apply bg-x2-red text-white;
 }
 
-/* Sidebar footer (user card area) */
-.fi-sidebar-footer {
-    @apply bg-x2-navy border-t;
-    border-color: color-mix(in srgb, white 8%, transparent);
+/* Hide the sidebar scrollbar (keep it scrollable). */
+.fi-sidebar,
+.fi-sidebar-nav {
+    scrollbar-width: none;        /* Firefox */
+    -ms-overflow-style: none;     /* legacy Edge/IE */
+}
+
+.fi-sidebar::-webkit-scrollbar,
+.fi-sidebar-nav::-webkit-scrollbar {
+    width: 0;
+    height: 0;
+    display: none;                /* Chromium / Safari */
 }
 
 /* Collapse toggle inside the navy rail */
@@ -173,13 +181,11 @@ h1, h2, h3, h4,
         width: var(--collapsed-sidebar-width);
     }
 
-    .fi-main-sidebar.fi-sidebar:not(.fi-sidebar-open) .x2-brand-text,
-    .fi-main-sidebar.fi-sidebar:not(.fi-sidebar-open) .x2-user-text {
+    .fi-main-sidebar.fi-sidebar:not(.fi-sidebar-open) .x2-brand-text {
         display: none;
     }
 
-    .fi-main-sidebar.fi-sidebar:not(.fi-sidebar-open) .x2-brand,
-    .fi-main-sidebar.fi-sidebar:not(.fi-sidebar-open) .x2-user {
+    .fi-main-sidebar.fi-sidebar:not(.fi-sidebar-open) .x2-brand {
         justify-content: center;
         padding-inline: 0;
     }

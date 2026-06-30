@@ -20,6 +20,18 @@ use Illuminate\Support\Facades\Log;
  */
 class X2aiClient
 {
+    /** Telemetry from the most recent ask() call — read by X2aiChat to write ai_usage_logs. */
+    public int $lastInputTokens = 0;
+
+    public int $lastOutputTokens = 0;
+
+    public int $lastLatencyMs = 0;
+
+    public ?string $lastModel = null;
+
+    /** success | failed */
+    public string $lastStatus = 'success';
+
     /**
      * @param  array<int, mixed>  $messages  Conversation history; each item's `content`
      *                                        may be a string or an array of content blocks.
@@ -29,7 +41,17 @@ class X2aiClient
     {
         $cfg = config('services.x2ai');
 
+        // Reset telemetry for this call.
+        $this->lastInputTokens = 0;
+        $this->lastOutputTokens = 0;
+        $this->lastLatencyMs = 0;
+        $this->lastModel = $cfg['model'] ?? null;
+        $this->lastStatus = 'success';
+        $startedAt = microtime(true);
+
         if (empty($cfg['key'])) {
+            $this->lastStatus = 'failed';
+
             return 'X2AI chưa được cấu hình API key. Vui lòng đặt X2AI_API_KEY trong .env.';
         }
 
@@ -49,7 +71,14 @@ class X2aiClient
                         'tools' => $tools ?: null,
                     ]));
 
+                // Token usage is billed per call → accumulate across the tool-use loop.
+                $usage = $response->json('usage', []);
+                $this->lastInputTokens += (int) ($usage['input_tokens'] ?? 0);
+                $this->lastOutputTokens += (int) ($usage['output_tokens'] ?? 0);
+
                 if ($response->failed()) {
+                    $this->lastStatus = 'failed';
+                    $this->lastLatencyMs = (int) ((microtime(true) - $startedAt) * 1000);
                     Log::warning('X2AI request failed', ['status' => $response->status(), 'body' => $response->json()]);
 
                     return 'Xin lỗi, X2AI tạm thời không phản hồi được ('.$response->status().'). Vui lòng thử lại.';
@@ -78,12 +107,17 @@ class X2aiClient
                 }
 
                 $text = collect($content)->where('type', 'text')->pluck('text')->implode("\n");
+                $this->lastLatencyMs = (int) ((microtime(true) - $startedAt) * 1000);
 
                 return $text !== '' ? $text : 'X2AI không trả về nội dung.';
             }
 
+            $this->lastLatencyMs = (int) ((microtime(true) - $startedAt) * 1000);
+
             return 'X2AI cần quá nhiều bước tra cứu — vui lòng hỏi cụ thể hơn.';
         } catch (\Throwable $e) {
+            $this->lastStatus = 'failed';
+            $this->lastLatencyMs = (int) ((microtime(true) - $startedAt) * 1000);
             Log::error('X2AI exception', ['message' => $e->getMessage()]);
 
             return 'Xin lỗi, đã có lỗi khi gọi X2AI. Vui lòng thử lại sau.';
