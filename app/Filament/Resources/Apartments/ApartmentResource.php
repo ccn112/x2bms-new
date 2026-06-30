@@ -18,7 +18,13 @@ class ApartmentResource extends Resource
 {
     protected static ?string $model = Apartment::class;
 
-    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
+    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedHomeModern;
+
+    protected static string|\UnitEnum|null $navigationGroup = 'Cư dân & Căn hộ';
+
+    protected static ?string $navigationLabel = 'Căn hộ';
+
+    protected static ?int $navigationSort = 2;
 
     public static function form(Schema $schema): Schema
     {

@@ -1,23 +1,53 @@
 <?php
 
-use App\Livewire\ApartmentDirectory;
-use App\Livewire\ApartmentProfile;
-use App\Livewire\OperationalDashboard;
-use App\Livewire\ResidentApprovalQueue;
-use App\Livewire\ResidentDirectory;
-use App\Livewire\VehiclesAndCards;
+use App\Models\AuditLog;
+use App\Models\Project;
+use App\Support\Context\CurrentContext;
 use Illuminate\Support\Facades\Route;
 
-Route::get('/', fn () => redirect('/dashboard'));
+// Designed UI lives on the themed Filament panel at /admin; stock CRUD at /fila.
+Route::get('/', fn () => redirect('/admin'));
 
 Route::middleware(['auth'])->group(function () {
-    // WEB-01-01 — Bảng điều khiển vận hành.
-    Route::get('/dashboard', OperationalDashboard::class)->name('dashboard');
+    // WEB-UX-01 — switch the active project context, then return to the page.
+    Route::get('/context/project/{project}', function (Project $project) {
+        app(CurrentContext::class)->setProject($project->id);
 
-    // WEB-02 — Cư dân & Căn hộ.
-    Route::get('/residents', ResidentDirectory::class)->name('residents');                       // WEB-02-01
-    Route::get('/apartments', ApartmentDirectory::class)->name('apartments');                     // WEB-02-02 (list)
-    Route::get('/apartments/{apartment}/profile', ApartmentProfile::class)->name('apartments.profile'); // WEB-02-02 (detail)
-    Route::get('/vehicles-cards', VehiclesAndCards::class)->name('vehicles-cards');               // WEB-02-03
-    Route::get('/resident-approvals', ResidentApprovalQueue::class)->name('resident-approvals');  // WEB-02-04
+        $user = auth()->user();
+        AuditLog::create([
+            'tenant_id' => $user->tenant_id,
+            'building_id' => $user->building_id,
+            'user_id' => $user->id,
+            'actor_name' => $user->name,
+            'action' => 'context.switch_project',
+            'description' => 'Chuyển ngữ cảnh sang dự án: '.$project->name,
+        ]);
+
+        return back();
+    })->name('context.project');
+
+    // WEB-UX-03 — switch the active workspace (BQL / HQ / SuperAdmin), then return.
+    Route::get('/context/workspace/{key}', function (string $key) {
+        $ctx = app(CurrentContext::class);
+        $ctx->setWorkspace($key);
+
+        $user = auth()->user();
+        AuditLog::create([
+            'tenant_id' => $user->tenant_id,
+            'building_id' => $user->building_id,
+            'user_id' => $user->id,
+            'actor_name' => $user->name,
+            'action' => 'context.switch_workspace',
+            'description' => 'Chuyển workspace sang: '.($ctx->workspaceLabel()),
+        ]);
+
+        return back();
+    })->whereIn('key', ['bql', 'hq', 'superadmin'])->name('context.workspace');
 });
+
+// Legacy standalone routes (pre-Filament-unification) now resolve inside /admin.
+Route::redirect('/dashboard', '/admin/dashboard');
+Route::redirect('/residents', '/admin/residents');
+Route::redirect('/apartments', '/admin/apartments');
+Route::redirect('/vehicles-cards', '/admin/vehicles-cards');
+Route::redirect('/resident-approvals', '/admin/resident-approvals');

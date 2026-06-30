@@ -35,4 +35,22 @@ return [
         ],
     ],
 
+    // X2AI Copilot — Anthropic Messages API. Set X2AI_API_KEY (or ANTHROPIC_API_KEY) in .env.
+    // Model defaults to a cheaper chat-tier model; override with X2AI_MODEL
+    // (e.g. claude-opus-4-8 for the most capable, claude-sonnet-4-6 mid-tier).
+    'x2ai' => [
+        'key' => env('X2AI_API_KEY', env('ANTHROPIC_API_KEY')),
+        'model' => env('X2AI_MODEL', 'claude-haiku-4-5'),
+        'base_url' => env('X2AI_BASE_URL', 'https://api.anthropic.com/v1/messages'),
+        'version' => '2023-06-01',
+        'max_tokens' => (int) env('X2AI_MAX_TOKENS', 1024),
+
+        // Mode 2 — database lookup. Set these when the data API is ready; until
+        // then the lookup tool reports "not configured" instead of failing.
+        'data_api' => [
+            'url' => env('X2AI_DATA_API_URL'),
+            'token' => env('X2AI_DATA_API_TOKEN'),
+        ],
+    ],
+
 ];

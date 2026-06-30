@@ -12,6 +12,10 @@ class Building extends Model
 
     protected $guarded = [];
 
+    protected $casts = [
+        'handover_date' => 'date',
+    ];
+
     public function tenant(): BelongsTo
     {
         return $this->belongsTo(Tenant::class);
@@ -20,5 +24,10 @@ class Building extends Model
     public function project(): BelongsTo
     {
         return $this->belongsTo(Project::class);
+    }
+
+    public function block(): BelongsTo
+    {
+        return $this->belongsTo(Block::class);
     }
 }

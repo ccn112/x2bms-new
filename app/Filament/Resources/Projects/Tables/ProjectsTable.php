@@ -14,20 +14,22 @@ class ProjectsTable
     {
         return $table
             ->columns([
-                TextColumn::make('tenant.name')
-                    ->searchable(),
-                TextColumn::make('code')
-                    ->searchable(),
-                TextColumn::make('name')
-                    ->searchable(),
-                TextColumn::make('created_at')
-                    ->dateTime()
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
-                TextColumn::make('updated_at')
-                    ->dateTime()
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
+                TextColumn::make('code')->label('Mã')->searchable(),
+                TextColumn::make('name')->label('Dự án')->searchable(),
+                TextColumn::make('tenant.name')->label('Đơn vị QL')->toggleable(),
+                TextColumn::make('type')
+                    ->label('Loại')
+                    ->badge()
+                    ->formatStateUsing(fn (?string $state) => match ($state) {
+                        'apartment' => 'Chung cư', 'urban_area' => 'Khu đô thị', 'complex' => 'Phức hợp', 'office' => 'Văn phòng', default => $state,
+                    }),
+                TextColumn::make('building_count')->label('Số tòa')->numeric()->sortable(),
+                TextColumn::make('apartment_count')->label('Số căn')->numeric()->sortable(),
+                TextColumn::make('investor')->label('Chủ đầu tư')->toggleable(),
+                TextColumn::make('status')
+                    ->label('Trạng thái')
+                    ->badge()
+                    ->color(fn (?string $state) => $state === 'active' ? 'success' : 'gray'),
             ])
             ->filters([
                 //

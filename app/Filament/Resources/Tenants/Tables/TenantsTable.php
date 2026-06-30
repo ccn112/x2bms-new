@@ -14,15 +14,21 @@ class TenantsTable
     {
         return $table
             ->columns([
-                TextColumn::make('code')
-                    ->searchable(),
-                TextColumn::make('name')
-                    ->searchable(),
+                TextColumn::make('code')->label('Mã')->searchable(),
+                TextColumn::make('name')->label('Tên đơn vị')->searchable(),
+                TextColumn::make('tax_code')->label('MST')->toggleable(),
+                TextColumn::make('phone')->label('Điện thoại')->toggleable(),
+                TextColumn::make('plan')
+                    ->label('Gói')
+                    ->badge()
+                    ->formatStateUsing(fn (?string $state) => match ($state) {
+                        'trial' => 'Dùng thử', 'standard' => 'Tiêu chuẩn', 'enterprise' => 'Doanh nghiệp', default => $state,
+                    }),
+                TextColumn::make('status')
+                    ->label('Trạng thái')
+                    ->badge()
+                    ->color(fn (?string $state) => $state === 'active' ? 'success' : 'gray'),
                 TextColumn::make('created_at')
-                    ->dateTime()
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
-                TextColumn::make('updated_at')
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),

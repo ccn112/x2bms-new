@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Models\Concerns\BelongsToTenant;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Apartment extends Model
 {
@@ -14,6 +15,7 @@ class Apartment extends Model
 
     protected $casts = [
         'area_sqm' => 'decimal:2',
+        'handover_date' => 'date',
     ];
 
     public function floor(): BelongsTo
@@ -24,5 +26,10 @@ class Apartment extends Model
     public function building(): BelongsTo
     {
         return $this->belongsTo(Building::class);
+    }
+
+    public function statusHistories(): HasMany
+    {
+        return $this->hasMany(ApartmentStatusHistory::class);
     }
 }

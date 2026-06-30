@@ -1,0 +1,186 @@
+@import '../../../../vendor/filament/filament/resources/css/theme.css';
+
+@source '../../../../app/Filament';
+@source '../../../../resources/views/filament';
+@source '../../../../resources/views/components/x2';
+
+/* X2-BMS brand palette (mirrors resources/css/app.css so x2-* utilities work inside the panel). */
+@theme {
+    --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif;
+    --font-title: 'Manrope', 'Inter', ui-sans-serif, sans-serif;
+
+    --color-x2-navy: #0b1b3f;
+    --color-x2-navy-700: #122a5c;
+    --color-x2-navy-600: #1b3a78;
+    --color-x2-primary: #2563eb;
+    --color-x2-primary-600: #1d4ed8;
+    --color-x2-gold: #c8a24c;        /* champagne gold — active nav */
+    --color-x2-gold-600: #b08a35;
+    --color-x2-canvas: #f4f6fb;
+    --color-x2-green: #16a34a;
+    --color-x2-teal: #0d9488;
+    --color-x2-amber: #f59e0b;
+    --color-x2-red: #ef4444;
+    --color-x2-blue: #3b82f6;
+    --color-x2-slate: #64748b;
+}
+
+/* Alpine cloak — hide dropdown panels until Alpine initialises. */
+[x-cloak] {
+    display: none !important;
+}
+
+/* =========================================================================
+   Typography — Inter for body, Manrope for titles & menu (WEB-UX).
+   ========================================================================= */
+html.fi,
+.fi-body {
+    font-family: 'Inter', ui-sans-serif, system-ui, sans-serif;
+}
+
+.fi-sidebar-item-label,
+.fi-sidebar-group-label,
+.fi-header-heading,
+.fi-breadcrumbs,
+h1, h2, h3, h4,
+.font-title {
+    font-family: 'Manrope', 'Inter', ui-sans-serif, sans-serif;
+}
+
+/* =========================================================================
+   Navy sidebar — reproduce the approved WEB-UX-00 shell on Filament's chrome.
+   ========================================================================= */
+.fi-sidebar,
+.fi-sidebar-header,
+.fi-sidebar-nav {
+    @apply bg-x2-navy;
+    border-color: color-mix(in srgb, white 8%, transparent);
+}
+
+.fi-sidebar-header {
+    @apply border-b-0;
+}
+
+/* Brand lives in the sidebar (via SIDEBAR_START hook) — hide Filament's
+   default logo in the white topbar so it isn't duplicated/invisible. */
+.fi-topbar .fi-logo {
+    @apply hidden;
+}
+
+/* Group labels (CƯ DÂN & CĂN HỘ, TÀI CHÍNH, ...) */
+.fi-sidebar-group-label {
+    @apply text-[10px] font-semibold uppercase tracking-wider;
+    color: color-mix(in srgb, white 55%, transparent);
+}
+
+/* Nav items — default state. Filament defaults the LABEL span to gray-700
+   (dark on navy), so we must recolor the label itself, not just the button. */
+.fi-sidebar-item-btn {
+    @apply rounded-lg text-sm;
+}
+
+.fi-sidebar-item-btn .fi-sidebar-item-label {
+    color: #cbd5e1; /* slate-300 */
+    @apply font-medium;
+}
+
+.fi-sidebar-item-btn .fi-icon {
+    color: #94a3b8; /* slate-400 */
+}
+
+.fi-sidebar-item-btn:hover,
+.fi-sidebar-item-btn:focus-visible {
+    background-color: color-mix(in srgb, white 7%, transparent);
+}
+
+.fi-sidebar-item-btn:hover .fi-sidebar-item-label,
+.fi-sidebar-item-btn:hover .fi-icon,
+.fi-sidebar-item-btn:focus-visible .fi-sidebar-item-label {
+    @apply text-white;
+}
+
+/* Active item — champagne gold pill */
+.fi-sidebar-item.fi-active > .fi-sidebar-item-btn,
+.fi-sidebar-item-btn.fi-active {
+    @apply bg-x2-gold shadow-sm;
+}
+
+.fi-sidebar-item.fi-active > .fi-sidebar-item-btn .fi-sidebar-item-label,
+.fi-sidebar-item-btn.fi-active .fi-sidebar-item-label {
+    @apply font-semibold text-white;
+}
+
+.fi-sidebar-item.fi-active > .fi-sidebar-item-btn .fi-icon,
+.fi-sidebar-item-btn.fi-active .fi-icon {
+    @apply text-white;
+}
+
+/* Item badge (red count) */
+.fi-sidebar-item-badge-ctn .fi-badge {
+    @apply bg-x2-red text-white;
+}
+
+/* Sidebar footer (user card area) */
+.fi-sidebar-footer {
+    @apply bg-x2-navy border-t;
+    border-color: color-mix(in srgb, white 8%, transparent);
+}
+
+/* Collapse toggle inside the navy rail */
+.fi-sidebar-close-collapse-sidebar-btn,
+.fi-sidebar-open-collapse-sidebar-btn {
+    color: color-mix(in srgb, white 70%, transparent);
+}
+
+/* =========================================================================
+   Content canvas — soft gray like the handoff.
+   ========================================================================= */
+.fi-main-ctn {
+    @apply bg-x2-canvas;
+}
+
+/* =========================================================================
+   Full-height sidebar with the header docked to its right (WEB-UX mockup).
+   Filament's default docks a full-width topbar ABOVE the sidebar; here the
+   navy rail spans the whole viewport height and the white header starts after
+   it. Desktop (lg) only — mobile keeps the native off-canvas drawer.
+   ========================================================================= */
+@media (min-width: 1024px) {
+    .fi-body-has-topbar .fi-main-sidebar.fi-sidebar {
+        position: fixed;
+        inset-block-start: 0;
+        inset-inline-start: 0;
+        height: 100dvh;
+        z-index: 40; /* above the sticky topbar (z-30) */
+    }
+
+    /* Offset the whole shell (header + content) by the live sidebar width. */
+    .fi-body-has-navigation:has(.fi-main-sidebar.fi-sidebar-open) {
+        padding-inline-start: var(--sidebar-width);
+    }
+
+    .fi-body-has-navigation:has(.fi-main-sidebar:not(.fi-sidebar-open)) {
+        padding-inline-start: var(--collapsed-sidebar-width);
+    }
+
+    /* Collapse toggle lives in our header (hamburger) — hide Filament's native one. */
+    .fi-topbar-collapse-sidebar-btn-ctn {
+        display: none;
+    }
+
+    /* Collapsed icon rail: shrink width, center contents, hide custom text. */
+    .fi-main-sidebar.fi-sidebar:not(.fi-sidebar-open) {
+        width: var(--collapsed-sidebar-width);
+    }
+
+    .fi-main-sidebar.fi-sidebar:not(.fi-sidebar-open) .x2-brand-text,
+    .fi-main-sidebar.fi-sidebar:not(.fi-sidebar-open) .x2-user-text {
+        display: none;
+    }
+
+    .fi-main-sidebar.fi-sidebar:not(.fi-sidebar-open) .x2-brand,
+    .fi-main-sidebar.fi-sidebar:not(.fi-sidebar-open) .x2-user {
+        justify-content: center;
+        padding-inline: 0;
+    }
+}

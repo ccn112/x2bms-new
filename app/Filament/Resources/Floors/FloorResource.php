@@ -18,7 +18,13 @@ class FloorResource extends Resource
 {
     protected static ?string $model = Floor::class;
 
-    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
+    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedSquares2x2;
+
+    protected static string|\UnitEnum|null $navigationGroup = 'Cơ cấu & Tổ chức';
+
+    protected static ?string $navigationLabel = 'Tầng';
+
+    protected static ?int $navigationSort = 4;
 
     public static function form(Schema $schema): Schema
     {

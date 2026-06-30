@@ -18,7 +18,13 @@ class BuildingResource extends Resource
 {
     protected static ?string $model = Building::class;
 
-    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
+    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedBuildingOffice;
+
+    protected static string|\UnitEnum|null $navigationGroup = 'Cơ cấu & Tổ chức';
+
+    protected static ?string $navigationLabel = 'Tòa nhà';
+
+    protected static ?int $navigationSort = 3;
 
     public static function form(Schema $schema): Schema
     {

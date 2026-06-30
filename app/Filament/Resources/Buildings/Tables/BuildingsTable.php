@@ -14,25 +14,21 @@ class BuildingsTable
     {
         return $table
             ->columns([
-                TextColumn::make('tenant.name')
-                    ->searchable(),
-                TextColumn::make('project.name')
-                    ->searchable(),
-                TextColumn::make('code')
-                    ->searchable(),
-                TextColumn::make('name')
-                    ->searchable(),
-                TextColumn::make('apartment_count')
-                    ->numeric()
-                    ->sortable(),
-                TextColumn::make('created_at')
-                    ->dateTime()
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
-                TextColumn::make('updated_at')
-                    ->dateTime()
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
+                TextColumn::make('code')->label('Mã')->searchable(),
+                TextColumn::make('name')->label('Tòa')->searchable(),
+                TextColumn::make('project.name')->label('Dự án')->sortable(),
+                TextColumn::make('type')
+                    ->label('Loại')
+                    ->badge()
+                    ->formatStateUsing(fn (?string $state) => match ($state) {
+                        'residential' => 'Căn hộ', 'office' => 'Văn phòng', 'mixed' => 'Hỗn hợp', default => $state,
+                    }),
+                TextColumn::make('floor_count')->label('Số tầng')->numeric()->sortable(),
+                TextColumn::make('apartment_count')->label('Số căn')->numeric()->sortable(),
+                TextColumn::make('status')
+                    ->label('Trạng thái')
+                    ->badge()
+                    ->color(fn (?string $state) => $state === 'active' ? 'success' : 'gray'),
             ])
             ->filters([
                 //

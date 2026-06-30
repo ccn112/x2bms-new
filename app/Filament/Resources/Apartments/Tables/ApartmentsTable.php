@@ -14,23 +14,20 @@ class ApartmentsTable
     {
         return $table
             ->columns([
-                TextColumn::make('tenant.name')
-                    ->searchable(),
-                TextColumn::make('building_id')
-                    ->numeric()
-                    ->sortable(),
-                TextColumn::make('code')
-                    ->searchable(),
+                TextColumn::make('code')->label('Mã căn')->searchable(),
+                TextColumn::make('building.name')->label('Tòa')->sortable(),
+                TextColumn::make('floor.name')->label('Tầng')->toggleable(),
+                TextColumn::make('type')->label('Loại căn')->toggleable(),
+                TextColumn::make('area_sqm')->label('DT (m²)')->numeric()->sortable(),
                 TextColumn::make('status')
-                    ->searchable(),
-                TextColumn::make('created_at')
-                    ->dateTime()
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
-                TextColumn::make('updated_at')
-                    ->dateTime()
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
+                    ->label('Trạng thái')
+                    ->badge()
+                    ->formatStateUsing(fn (?string $state) => match ($state) {
+                        'occupied' => 'Đang ở', 'vacant' => 'Trống', 'handover' => 'Chờ bàn giao', 'locked' => 'Tạm khóa', default => $state,
+                    })
+                    ->color(fn (?string $state) => match ($state) {
+                        'occupied' => 'success', 'vacant' => 'gray', 'handover' => 'warning', 'locked' => 'danger', default => 'gray',
+                    }),
             ])
             ->filters([
                 //
