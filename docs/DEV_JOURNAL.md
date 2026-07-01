@@ -689,3 +689,9 @@ Cần hard-refresh trình duyệt sau build.
 **Lưu ý auth API:** hiện xác thực qua `auth()->user()` (phiên Filament / actingAs trong test). Chưa gắn token Sanctum — nếu cần gọi API stateless từ ngoài, thêm Sanctum sau (localized: đổi middleware group).
 
 **=> BATCH 07 HOÀN TẤT (Round 1 DB + Round 2 9 UI + Round 3 API/tests).** Còn tùy chọn: browser-click modal submit; Sanctum token; proration khi upgrade (hiện đổi MRR, chưa cộng chênh lệch vào hóa đơn kỳ tới).
+
+---
+
+## 2026-07-01 — Lưu context: handoff SuperAdmin + Batch 07
+
+Tạo `docs/SESSION_HANDOFF_20260701_SUPERADMIN_BILLING.md` — snapshot đầy đủ phiên (SuperAdmin WEB-UX-22 12 màn + Batch 07 SaaS Billing 3 rounds): kiến trúc bổ sung (PlatformScreen/WritesBillingAudit/nav groups/FeatureGate reconcile), bảng đối chiếu 21 màn↔page↔slug, cách chạy/verify, 8 bẫy Filament, việc còn lại. Kiểm chứng lại: migrate:fresh --seed sạch, platform+billing render 200, Batch07 API 10/10 test PASS.
