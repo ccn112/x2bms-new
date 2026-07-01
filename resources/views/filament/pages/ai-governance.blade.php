@@ -50,9 +50,19 @@
                         <x-x2.status-badge :label="$polLabel[$p->status] ?? $p->status" :tone="$polTone[$p->status] ?? 'slate'" />
                     </div>
                     <p class="mt-1 text-xs text-slate-500">{{ $p->description }}</p>
-                    <div class="mt-3 flex items-center gap-2">
-                        <span class="rounded-md bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-slate-600">{{ $catLabel[$p->category] ?? $p->category }}</span>
-                        <x-x2.status-badge :label="'Rủi ro: '.($riskLabel[$p->risk_level] ?? $p->risk_level)" :tone="$riskTone[$p->risk_level] ?? 'slate'" />
+                    <div class="mt-3 flex items-center justify-between gap-2">
+                        <div class="flex items-center gap-2">
+                            <span class="rounded-md bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-slate-600">{{ $catLabel[$p->category] ?? $p->category }}</span>
+                            <x-x2.status-badge :label="'Rủi ro: '.($riskLabel[$p->risk_level] ?? $p->risk_level)" :tone="$riskTone[$p->risk_level] ?? 'slate'" />
+                        </div>
+                        <button type="button" wire:click="togglePolicy({{ $p->id }})" wire:loading.attr="disabled"
+                                @class([
+                                    'shrink-0 rounded-lg px-2.5 py-1 text-xs font-semibold transition',
+                                    'bg-x2-red/10 text-x2-red hover:bg-x2-red/20' => $p->status === 'active',
+                                    'bg-x2-green/10 text-x2-green hover:bg-x2-green/20' => $p->status !== 'active',
+                                ])>
+                            {{ $p->status === 'active' ? 'Tắt' : 'Bật' }}
+                        </button>
                     </div>
                 </div>
             @endforeach
@@ -103,6 +113,7 @@
                             <th class="px-4 py-3">Màn hình</th>
                             <th class="px-4 py-3 text-right">Lượt dùng</th>
                             <th class="px-4 py-3">Trạng thái</th>
+                            <th class="px-4 py-3 text-right"></th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-slate-100">
@@ -113,6 +124,12 @@
                                 <td class="px-4 py-3 text-slate-500">{{ \App\Filament\Pages\AiCenter::SURFACE_LABELS[$pr->surface] ?? ($pr->surface ?? 'Toàn hệ thống') }}</td>
                                 <td class="px-4 py-3 text-right tabular-nums text-slate-600">{{ number_format($pr->usage_count) }}</td>
                                 <td class="px-4 py-3"><x-x2.status-badge :label="$pr->status === 'active' ? 'Đang dùng' : 'Tắt'" :tone="$pr->status === 'active' ? 'green' : 'slate'" /></td>
+                                <td class="px-4 py-3 text-right">
+                                    <button type="button" wire:click="togglePrompt({{ $pr->id }})" wire:loading.attr="disabled"
+                                            class="rounded-lg px-2.5 py-1 text-xs font-semibold text-slate-600 transition hover:bg-slate-100">
+                                        {{ $pr->status === 'active' ? 'Tắt' : 'Bật' }}
+                                    </button>
+                                </td>
                             </tr>
                         @endforeach
                     </tbody>

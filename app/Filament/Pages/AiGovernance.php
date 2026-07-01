@@ -3,11 +3,17 @@
 namespace App\Filament\Pages;
 
 use App\Filament\Concerns\ProvidesAiContext;
+use App\Filament\Concerns\WritesAudit;
 use App\Models\AiPolicy;
 use App\Models\AiPromptTemplate;
 use App\Models\AiUsageLog;
 use App\Models\KnowledgeArticle;
 use BackedEnum;
+use Filament\Actions\Action;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Textarea;
+use Filament\Notifications\Notification;
 use Filament\Pages\Page;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Concerns\InteractsWithTable;
@@ -24,6 +30,11 @@ class AiGovernance extends Page implements HasTable
 {
     use InteractsWithTable;
     use ProvidesAiContext;
+    use WritesAudit;
+
+    public const POLICY_CATEGORY = [
+        'data' => 'Dữ liệu', 'access' => 'Truy cập', 'risk' => 'Rủi ro', 'content' => 'Nội dung',
+    ];
 
     protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-shield-check';
 
@@ -78,8 +89,56 @@ class AiGovernance extends Page implements HasTable
                     'count' => $r->c,
                     'last' => \Carbon\Carbon::parse($r->last_at)->diffForHumans(),
                 ]),
-            'kbCount' => KnowledgeArticle::where('status', 'published')->count(),
+            'kbCount' => KnowledgeArticle::visibleTo(auth()->user())->where('status', 'published')->count(),
         ];
+    }
+
+    /** Header action: add an AI policy. */
+    protected function getHeaderActions(): array
+    {
+        return [
+            Action::make('createPolicy')
+                ->label('Thêm chính sách')->icon('heroicon-m-plus')->color('primary')
+                ->modalHeading('Thêm chính sách AI')
+                ->schema([
+                    TextInput::make('name')->label('Tên chính sách')->required()->maxLength(160),
+                    Textarea::make('description')->label('Mô tả')->rows(2)->maxLength(255),
+                    Select::make('category')->label('Nhóm')->options(self::POLICY_CATEGORY)->default('data')->required(),
+                    Select::make('risk_level')->label('Mức rủi ro')
+                        ->options(['low' => 'Thấp', 'medium' => 'Trung bình', 'high' => 'Cao'])->default('medium')->required(),
+                    Select::make('status')->label('Trạng thái')
+                        ->options(['active' => 'Đang áp dụng', 'inactive' => 'Tắt'])->default('active')->required(),
+                ])
+                ->action(function (array $data): void {
+                    $p = AiPolicy::create($data);
+                    $this->audit('ai.policy.create', 'Thêm chính sách AI: '.$p->name, AiPolicy::class, $p->id);
+                    Notification::make()->title('Đã thêm chính sách')->success()->send();
+                }),
+        ];
+    }
+
+    /** Bật/tắt một chính sách (wire:click từ tab Chính sách). */
+    public function togglePolicy(int $id): void
+    {
+        $policy = AiPolicy::find($id);
+        if (! $policy) {
+            return;
+        }
+        $policy->update(['status' => $policy->status === 'active' ? 'inactive' : 'active']);
+        $this->audit('ai.policy.toggle', ($policy->status === 'active' ? 'Bật' : 'Tắt').' chính sách: '.$policy->name, AiPolicy::class, $policy->id);
+        Notification::make()->title(($policy->status === 'active' ? 'Đã bật' : 'Đã tắt').' chính sách')->success()->send();
+    }
+
+    /** Bật/tắt một prompt (wire:click từ tab Prompt & phân loại). */
+    public function togglePrompt(int $id): void
+    {
+        $prompt = AiPromptTemplate::find($id);
+        if (! $prompt) {
+            return;
+        }
+        $prompt->update(['status' => $prompt->status === 'active' ? 'inactive' : 'active']);
+        $this->audit('ai.prompt.toggle', ($prompt->status === 'active' ? 'Bật' : 'Tắt').' prompt: '.$prompt->name, AiPromptTemplate::class, $prompt->id);
+        Notification::make()->title('Đã cập nhật prompt')->success()->send();
     }
 
     public function table(Table $table): Table

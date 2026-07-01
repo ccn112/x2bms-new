@@ -86,8 +86,8 @@ class AiCenter extends Page
             'surfaceMax' => max(1, $bySurface->max('count') ?? 1),
             'workflows' => AiWorkflow::orderByDesc('runs_count')->limit(5)->get(),
             'pendingApproval' => $pendingApproval,
-            'kbCount' => KnowledgeArticle::where('status', 'published')->count(),
-            'kbViews' => KnowledgeArticle::sum('views'),
+            'kbCount' => KnowledgeArticle::visibleTo(auth()->user())->where('status', 'published')->count(),
+            'kbViews' => KnowledgeArticle::visibleTo(auth()->user())->sum('views'),
             'quickPrompts' => AiPromptTemplate::where('status', 'active')->orderByDesc('usage_count')->limit(6)->get(),
             'recent' => AiUsageLog::with('user')->latest()->limit(6)->get(),
         ];

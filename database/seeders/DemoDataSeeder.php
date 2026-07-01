@@ -584,6 +584,782 @@ class DemoDataSeeder extends Seeder
         $this->seedCrossCompanyResident($tenant, $apartments[10]);
         $this->seedApprovalQueueRuns($tenant, $project, $admin);
         $this->seedAiEngine($tenant, $project, $building, $admin);
+        $this->seedTier2($tenant, $project, $building, $admin);
+        $this->seedTier2Patch($tenant, $project, $building, $admin);
+        $this->seedTier3Ops($tenant, $project, $building, $admin);
+        $this->seedTier3Finance($tenant, $project, $admin);
+        $this->seedTier3Security($tenant, $project, $building, $admin);
+        $this->seedTier4Saas($tenant);
+        $this->seedTier4AdminOps($tenant, $admin);
+        $this->seedTier4AssetsContractors($tenant, $project, $building, $admin);
+        $this->seedTier4FormBuilder($tenant, $project, $admin);
+        $this->seedTier5Community($tenant, $project, $building);
+        $this->seedTier5Ecosystem($tenant, $project, $building);
+        $this->seedEntityGapClose($tenant, $admin);
+    }
+
+    /** B7 — đóng nốt gap: activity_logs + Tier 6 (ai_requests, ai_approvals, automation_steps, knowledge_chunks). */
+    private function seedEntityGapClose(Tenant $tenant, User $admin): void
+    {
+        for ($i = 0; $i < 5; $i++) {
+            \App\Models\ActivityLog::create([
+                'tenant_id' => $tenant->id, 'user_id' => $admin->id, 'log_name' => 'default',
+                'description' => ['Đăng nhập hệ thống', 'Duyệt bảng kê', 'Cập nhật cư dân', 'Tạo workflow', 'Xuất báo cáo'][$i],
+                'created_at' => Carbon::parse('2026-07-01 08:00')->addHours($i), 'updated_at' => Carbon::parse('2026-07-01 08:00')->addHours($i),
+            ]);
+        }
+
+        $logs = \App\Models\AiUsageLog::where('tenant_id', $tenant->id)->orderBy('id')->take(6)->get();
+        foreach ($logs as $i => $log) {
+            \App\Models\AiRequest::create([
+                'tenant_id' => $tenant->id, 'user_id' => $log->user_id, 'mode' => $log->mode, 'model' => $log->model,
+                'prompt' => $log->prompt_excerpt, 'status' => $log->status, 'tokens_in' => $log->tokens_in,
+                'tokens_out' => $log->tokens_out, 'latency_ms' => $log->latency_ms,
+            ]);
+        }
+        // Hàng chờ duyệt AI từ các log pending_approval.
+        $pending = \App\Models\AiUsageLog::where('tenant_id', $tenant->id)->where('status', 'pending_approval')->take(3)->get();
+        foreach ($pending as $p) {
+            \App\Models\AiApproval::create([
+                'tenant_id' => $tenant->id, 'ai_usage_log_id' => $p->id, 'action' => $p->action,
+                'risk_level' => 'high', 'status' => 'pending', 'requested_by_id' => $p->user_id,
+            ]);
+        }
+
+        // Bảng hoá steps cho workflow.
+        foreach (\App\Models\AiWorkflow::where('tenant_id', $tenant->id)->take(3)->get() as $wf) {
+            foreach ($wf->steps ?? [] as $s => $step) {
+                \App\Models\AutomationStep::create([
+                    'ai_workflow_id' => $wf->id, 'step_no' => $s + 1, 'type' => $step['type'] ?? 'action',
+                    'label' => $step['label'] ?? 'Bước', 'config' => $step,
+                ]);
+            }
+        }
+
+        // Chunk KB cho vài bài published.
+        foreach (\App\Models\KnowledgeArticle::where('status', 'published')->whereNotNull('content_text')->take(4)->get() as $art) {
+            $text = (string) $art->content_text;
+            \App\Models\KnowledgeChunk::create([
+                'knowledge_article_id' => $art->id, 'chunk_index' => 0,
+                'content' => mb_substr($text, 0, 500), 'tokens' => (int) ceil(mb_strlen($text) / 4),
+            ]);
+        }
+    }
+
+    /** Tier 5 / B6 — marketplace + dịch vụ + loyalty + BĐS + nhà thông minh. */
+    private function seedTier5Ecosystem(Tenant $tenant, Project $project, Building $building): void
+    {
+        $residents = \App\Models\Resident::where('tenant_id', $tenant->id)->orderBy('id')->take(6)->get();
+        $apts = Apartment::where('building_id', $building->id)->orderBy('id')->take(4)->get();
+        $r = fn ($i) => $residents[$i % max(1, $residents->count())] ?? null;
+
+        // Marketplace.
+        $products = [];
+        foreach ([['Tủ lạnh Samsung 2 cửa', 4_500_000, 'used'], ['Xe đạp trẻ em', 800_000, 'used'], ['Bộ bàn ăn gỗ', 3_200_000, 'used']] as $i => [$name, $price, $cond]) {
+            $products[] = \App\Models\MarketplaceProduct::create([
+                'tenant_id' => $tenant->id, 'project_id' => $project->id, 'seller_resident_id' => $r($i)?->id,
+                'name' => $name, 'description' => $name, 'price' => $price, 'category' => 'household', 'condition' => $cond, 'status' => 'active',
+            ]);
+        }
+        $order = \App\Models\MarketplaceOrder::create([
+            'tenant_id' => $tenant->id, 'buyer_resident_id' => $r(3)?->id, 'seller_resident_id' => $products[0]->seller_resident_id,
+            'code' => 'MO-0001', 'total' => 4_500_000, 'status' => 'completed', 'ordered_at' => Carbon::parse('2026-06-25'),
+        ]);
+        \App\Models\OrderItem::create(['marketplace_order_id' => $order->id, 'marketplace_product_id' => $products[0]->id, 'quantity' => 1, 'price' => 4_500_000, 'amount' => 4_500_000]);
+
+        // Dịch vụ.
+        foreach ([['Giặt là 5 sao', 'laundry', 4.7], ['Bếp nhà An', 'food', 4.5], ['Sửa điện nước 24h', 'repair', 4.3]] as $i => [$name, $cat, $rating]) {
+            $sp = \App\Models\ServiceProvider::create(['tenant_id' => $tenant->id, 'name' => $name, 'category' => $cat, 'phone' => '090000000'.$i, 'rating' => $rating, 'status' => 'active']);
+            \App\Models\ServiceOrder::create([
+                'tenant_id' => $tenant->id, 'service_provider_id' => $sp->id, 'resident_id' => $r($i)?->id,
+                'code' => 'SO-'.str_pad((string) ($i + 1), 4, '0', STR_PAD_LEFT), 'description' => 'Đặt '.$name,
+                'amount' => 100_000 * ($i + 1), 'status' => ['completed', 'confirmed', 'pending'][$i], 'scheduled_at' => Carbon::parse('2026-07-03')->addDays($i),
+            ]);
+        }
+
+        // Loyalty + voucher.
+        foreach ($residents as $i => $res) {
+            $acc = \App\Models\LoyaltyAccount::create([
+                'tenant_id' => $tenant->id, 'resident_id' => $res->id, 'points_balance' => 500 + $i * 120,
+                'tier' => ['silver', 'gold', 'platinum'][$i % 3], 'status' => 'active',
+            ]);
+            \App\Models\LoyaltyTransaction::create(['loyalty_account_id' => $acc->id, 'type' => 'earn', 'points' => 100, 'description' => 'Thanh toán phí đúng hạn', 'transacted_at' => Carbon::parse('2026-06-10')->addDays($i)]);
+        }
+        foreach ([['GIAM10', 'Giảm 10% dịch vụ', 'discount', 10, 200], ['QUA-CAFE', 'Voucher cafe', 'gift', 50_000, 500]] as [$code, $name, $type, $val, $cost]) {
+            \App\Models\Voucher::create(['tenant_id' => $tenant->id, 'code' => $code, 'name' => $name, 'type' => $type, 'value' => $val, 'points_cost' => $cost, 'quantity' => 100, 'valid_from' => Carbon::parse('2026-07-01'), 'valid_to' => Carbon::parse('2026-12-31'), 'status' => 'active']);
+        }
+
+        // Bất động sản.
+        foreach ([['sale', 'Bán căn 2PN view sông', 3_800_000_000, 68, 2, 'active'], ['rent', 'Cho thuê 1PN full nội thất', 12_000_000, 45, 1, 'active']] as $i => [$type, $title, $price, $area, $bed, $status]) {
+            $listing = \App\Models\RealEstateListing::create([
+                'tenant_id' => $tenant->id, 'project_id' => $project->id, 'apartment_id' => $apts[$i]->id ?? null,
+                'owner_resident_id' => $r($i)?->id, 'code' => 'RE-'.str_pad((string) ($i + 1), 4, '0', STR_PAD_LEFT),
+                'type' => $type, 'title' => $title, 'price' => $price, 'area' => $area, 'bedrooms' => $bed, 'status' => $status,
+                'published_at' => Carbon::parse('2026-06-20')->addDays($i),
+            ]);
+            \App\Models\ListingInquiry::create(['real_estate_listing_id' => $listing->id, 'resident_id' => $r($i + 1)?->id, 'name' => 'Khách quan tâm', 'phone' => '0911222333', 'message' => 'Xin xem nhà cuối tuần', 'status' => 'new']);
+        }
+
+        // Nhà thông minh.
+        foreach ($residents->take(3) as $i => $res) {
+            $acc = \App\Models\SmartHomeAccount::create([
+                'tenant_id' => $tenant->id, 'resident_id' => $res->id, 'apartment_id' => $apts[$i % max(1, $apts->count())]->id ?? null,
+                'provider' => ['lumi', 'tuya', 'fpt'][$i % 3], 'status' => 'active', 'linked_at' => Carbon::parse('2026-05-01')->addDays($i),
+            ]);
+            foreach ([['Đèn phòng khách', 'light', 'Phòng khách', 'on'], ['Khóa cửa chính', 'lock', 'Cửa chính', 'online'], ['Điều hòa phòng ngủ', 'ac', 'Phòng ngủ', 'off']] as $d => [$name, $type, $room, $st]) {
+                $dev = \App\Models\SmartDevice::create(['smart_home_account_id' => $acc->id, 'name' => $name, 'type' => $type, 'room' => $room, 'status' => $st]);
+                if ($d === 0) {
+                    \App\Models\SensorEvent::create(['tenant_id' => $tenant->id, 'smart_device_id' => $dev->id, 'type' => 'motion', 'value' => 'detected', 'event_at' => Carbon::parse('2026-07-01 19:00')->addMinutes($i * 5)]);
+                }
+            }
+            \App\Models\SmartScene::create(['smart_home_account_id' => $acc->id, 'name' => 'Về nhà', 'description' => 'Bật đèn + điều hòa', 'is_active' => true]);
+            \App\Models\EnergyReading::create(['tenant_id' => $tenant->id, 'apartment_id' => $acc->apartment_id, 'smart_home_account_id' => $acc->id, 'period' => '2026-06', 'kwh' => 220 + $i * 30, 'cost' => (220 + $i * 30) * 2500, 'reading_date' => Carbon::parse('2026-06-30')]);
+        }
+    }
+
+    /** Tier 5 / B5 — bàn giao/bảo hành + cộng đồng/sự kiện/bình chọn. */
+    private function seedTier5Community(Tenant $tenant, Project $project, Building $building): void
+    {
+        $apts = Apartment::where('building_id', $building->id)->orderBy('id')->take(6)->get();
+        $residents = \App\Models\Resident::where('tenant_id', $tenant->id)->orderBy('id')->take(6)->get();
+
+        // Bàn giao.
+        $batch = \App\Models\HandoverBatch::create([
+            'tenant_id' => $tenant->id, 'project_id' => $project->id, 'building_id' => $building->id,
+            'code' => 'HB-2026-01', 'name' => 'Đợt bàn giao Tòa A - Block 1', 'scheduled_date' => Carbon::parse('2022-06-20'),
+            'total_units' => $apts->count(), 'status' => 'completed',
+        ]);
+        foreach ($apts as $i => $apt) {
+            $unit = \App\Models\HandoverUnit::create([
+                'handover_batch_id' => $batch->id, 'apartment_id' => $apt->id,
+                'resident_id' => $residents[$i % max(1, $residents->count())]->id ?? null,
+                'status' => $i % 4 === 0 ? 'pending_defects' : 'handed_over', 'handed_over_at' => Carbon::parse('2022-07-01'),
+            ]);
+            $cl = \App\Models\HandoverChecklist::create(['handover_unit_id' => $unit->id, 'name' => 'Nghiệm thu căn hộ', 'status' => $i % 4 === 0 ? 'failed' : 'passed']);
+            foreach (['Tường/trần', 'Điện nước', 'Cửa & khóa'] as $s => $label) {
+                \App\Models\HandoverPunchItem::create([
+                    'handover_checklist_id' => $cl->id, 'label' => $label, 'is_ok' => ! ($i % 4 === 0 && $s === 0),
+                    'severity' => $s === 0 ? 'major' : 'minor', 'note' => $i % 4 === 0 && $s === 0 ? 'Nứt nhẹ trần bếp' : null,
+                ]);
+            }
+        }
+        // Bảo hành.
+        foreach ([['Thấm trần nhà tắm', 'waterproof', 'in_progress'], ['Ổ cắm không hoạt động', 'electrical', 'resolved']] as $i => [$title, $cat, $status]) {
+            \App\Models\WarrantyRequest::create([
+                'tenant_id' => $tenant->id, 'project_id' => $project->id, 'apartment_id' => $apts[$i]->id ?? null,
+                'resident_id' => $residents[$i]->id ?? null, 'code' => 'BH-'.str_pad((string) ($i + 1), 4, '0', STR_PAD_LEFT),
+                'title' => $title, 'description' => $title.'.', 'category' => $cat, 'status' => $status,
+                'reported_at' => Carbon::parse('2026-06-15')->addDays($i), 'resolved_at' => $status === 'resolved' ? Carbon::parse('2026-06-20') : null,
+            ]);
+        }
+
+        // Cộng đồng.
+        $group = \App\Models\CommunityGroup::create([
+            'tenant_id' => $tenant->id, 'project_id' => $project->id, 'name' => 'Cư dân Sunshine Garden',
+            'description' => 'Nhóm trao đổi chung', 'member_count' => 320, 'status' => 'active',
+        ]);
+        foreach (['Tìm người đi chung xe đi làm', 'Thanh lý tủ lạnh còn mới', 'Góp ý khu vui chơi trẻ em'] as $i => $title) {
+            \App\Models\CommunityPost::create([
+                'tenant_id' => $tenant->id, 'project_id' => $project->id, 'community_group_id' => $group->id,
+                'author_resident_id' => $residents[$i % max(1, $residents->count())]->id ?? null,
+                'title' => $title, 'body' => $title.'...', 'like_count' => 5 + $i * 3, 'comment_count' => $i * 2, 'status' => 'published',
+            ]);
+        }
+
+        // Sự kiện.
+        $event = \App\Models\Event::create([
+            'tenant_id' => $tenant->id, 'project_id' => $project->id, 'title' => 'Tết Trung Thu 2026',
+            'description' => 'Đêm hội trăng rằm cho các bé', 'location' => 'Sảnh chính', 'capacity' => 200, 'registered_count' => 0,
+            'starts_at' => Carbon::parse('2026-09-15 18:00'), 'ends_at' => Carbon::parse('2026-09-15 21:00'), 'status' => 'upcoming',
+        ]);
+        $reg = 0;
+        foreach ($residents as $i => $res) {
+            $reg += 1 + $i;
+            \App\Models\EventRegistration::create([
+                'event_id' => $event->id, 'resident_id' => $res->id, 'guests' => $i, 'status' => 'registered',
+            ]);
+        }
+        $event->update(['registered_count' => $reg]);
+
+        // Bình chọn.
+        $poll = \App\Models\Poll::create([
+            'tenant_id' => $tenant->id, 'project_id' => $project->id, 'question' => 'Chọn màu sơn mới cho sảnh',
+            'type' => 'single', 'status' => 'open', 'closes_at' => Carbon::parse('2026-07-31'),
+        ]);
+        $options = [];
+        foreach (['Trắng kem', 'Xám nhạt', 'Xanh pastel'] as $s => $label) {
+            $options[] = \App\Models\PollOption::create(['poll_id' => $poll->id, 'label' => $label, 'sort' => $s]);
+        }
+        $voteCount = 0;
+        foreach ($residents as $i => $res) {
+            $opt = $options[$i % count($options)];
+            \App\Models\PollVote::create(['poll_id' => $poll->id, 'poll_option_id' => $opt->id, 'resident_id' => $res->id]);
+            $opt->increment('vote_count');
+            $voteCount++;
+        }
+        $poll->update(['vote_count' => $voteCount]);
+    }
+
+    /** Tier 4 / B4 — Form Builder (biểu mẫu động + lượt nộp). */
+    private function seedTier4FormBuilder(Tenant $tenant, Project $project, User $admin): void
+    {
+        $residents = \App\Models\Resident::where('tenant_id', $tenant->id)->orderBy('id')->take(3)->get();
+        $formDefs = [
+            ['Đăng ký chuyển đồ', 'operations', [['Họ tên', 'text', true], ['Ngày chuyển', 'date', true], ['Thang máy', 'select', true]]],
+            ['Đăng ký sửa chữa nội thất', 'operations', [['Nội dung', 'textarea', true], ['Đơn vị thi công', 'text', false], ['Thời gian', 'date', true]]],
+        ];
+        foreach ($formDefs as $fi => [$name, $cat, $fields]) {
+            $form = \App\Models\DynamicForm::create([
+                'tenant_id' => $tenant->id, 'project_id' => $project->id, 'code' => 'FORM-'.($fi + 1),
+                'name' => $name, 'description' => $name, 'category' => $cat, 'status' => 'published',
+                'current_version' => 1, 'created_by_id' => $admin->id,
+            ]);
+            \App\Models\FormVersion::create([
+                'dynamic_form_id' => $form->id, 'version' => 1, 'schema' => ['fields' => count($fields)],
+                'status' => 'published', 'published_at' => Carbon::parse('2026-06-01'),
+            ]);
+            $section = \App\Models\FormSection::create(['dynamic_form_id' => $form->id, 'title' => 'Thông tin', 'sort' => 0]);
+            foreach ($fields as $s => [$label, $type, $required]) {
+                \App\Models\FormField::create([
+                    'dynamic_form_id' => $form->id, 'form_section_id' => $section->id,
+                    'key' => 'field_'.($s + 1), 'label' => $label, 'type' => $type,
+                    'options' => $type === 'select' ? ['A', 'B', 'C'] : null, 'required' => $required, 'sort' => $s,
+                ]);
+            }
+            \App\Models\FormWorkflow::create([
+                'dynamic_form_id' => $form->id, 'name' => 'Duyệt bởi BQL',
+                'steps' => [['role' => 'building_manager', 'action' => 'approve']], 'status' => 'active',
+            ]);
+
+            // Lượt nộp.
+            $fieldModels = \App\Models\FormField::where('dynamic_form_id', $form->id)->get();
+            foreach (['submitted', 'approved'] as $si => $status) {
+                $res = $residents[$si % max(1, $residents->count())] ?? null;
+                $sub = \App\Models\FormSubmission::create([
+                    'tenant_id' => $tenant->id, 'dynamic_form_id' => $form->id, 'resident_id' => $res?->id,
+                    'status' => $status, 'data' => ['field_1' => 'Giá trị mẫu'], 'submitted_at' => Carbon::parse('2026-06-20')->addDays($si),
+                ]);
+                foreach ($fieldModels as $fm) {
+                    \App\Models\FormSubmissionValue::create([
+                        'form_submission_id' => $sub->id, 'form_field_id' => $fm->id,
+                        'field_key' => $fm->key, 'value' => 'Giá trị '.$fm->label,
+                    ]);
+                }
+            }
+        }
+    }
+
+    /** Tier 4 / B3 — nhà thầu + hợp đồng + tài sản + đồng hồ + IoT. */
+    private function seedTier4AssetsContractors(Tenant $tenant, Project $project, Building $building, User $admin): void
+    {
+        $team = \App\Models\Team::where('tenant_id', $tenant->id)->first();
+
+        foreach ([['Cty Thang máy Thiên Nam', 'elevator', 4.6], ['Cty Vệ sinh Sạch Xanh', 'cleaning', 4.2]] as $ci => [$name, $svc, $rating]) {
+            $contractor = \App\Models\Contractor::create([
+                'tenant_id' => $tenant->id, 'code' => 'NT-'.($ci + 1), 'name' => $name, 'tax_code' => '03123'.$ci,
+                'phone' => '028 3822 00'.$ci, 'service_type' => $svc, 'rating' => $rating, 'status' => 'active',
+            ]);
+            $contract = \App\Models\Contract::create([
+                'tenant_id' => $tenant->id, 'project_id' => $project->id, 'contractor_id' => $contractor->id,
+                'code' => 'HD-2026-'.str_pad((string) ($ci + 1), 3, '0', STR_PAD_LEFT), 'title' => 'Hợp đồng '.$svc.' 2026',
+                'type' => 'maintenance', 'value' => 240_000_000 * ($ci + 1),
+                'start_date' => Carbon::parse('2026-01-01'), 'end_date' => Carbon::parse('2026-12-31'), 'status' => 'active',
+            ]);
+            $pkg = \App\Models\ContractPackage::create([
+                'contract_id' => $contract->id, 'name' => 'Bảo trì định kỳ quý', 'value' => 60_000_000 * ($ci + 1), 'status' => 'active',
+            ]);
+            \App\Models\ContractAcceptance::create([
+                'contract_id' => $contract->id, 'contract_package_id' => $pkg->id, 'code' => 'NT-'.($ci + 1).'-Q1',
+                'title' => 'Nghiệm thu Q1', 'amount' => 60_000_000 * ($ci + 1), 'status' => 'accepted',
+                'accepted_by_id' => $admin->id, 'accepted_at' => Carbon::parse('2026-04-01'),
+            ]);
+            \App\Models\ContractorKpi::create([
+                'contractor_id' => $contractor->id, 'period' => '2026-06', 'score' => $rating * 20,
+                'on_time_rate' => 95 - $ci * 5, 'quality_score' => 90 - $ci * 3, 'note' => 'Đạt yêu cầu',
+            ]);
+            \App\Models\ContractorSettlement::create([
+                'contractor_id' => $contractor->id, 'contract_id' => $contract->id, 'period' => '2026-Q1',
+                'amount' => 60_000_000 * ($ci + 1), 'status' => 'paid', 'settled_at' => Carbon::parse('2026-04-10'),
+            ]);
+        }
+
+        $cats = [];
+        foreach (['Thang máy', 'Điện', 'PCCC', 'HVAC'] as $cn) {
+            $cats[] = \App\Models\AssetCategory::create(['tenant_id' => $tenant->id, 'code' => strtoupper(substr($cn, 0, 3)), 'name' => $cn]);
+        }
+        for ($i = 0; $i < 6; $i++) {
+            \App\Models\Asset::create([
+                'tenant_id' => $tenant->id, 'project_id' => $project->id, 'building_id' => $building->id,
+                'asset_category_id' => $cats[$i % count($cats)]->id, 'code' => 'TS-'.str_pad((string) ($i + 1), 4, '0', STR_PAD_LEFT),
+                'name' => ['Thang máy #1', 'Thang máy #2', 'Máy phát điện', 'Bơm PCCC', 'Chiller HVAC', 'Tủ điện tổng'][$i],
+                'serial_no' => 'SN'.(1000 + $i), 'location' => 'Tầng kỹ thuật', 'purchase_date' => Carbon::parse('2022-05-01'),
+                'value' => 500_000_000 + $i * 50_000_000, 'warranty_until' => Carbon::parse('2027-05-01'),
+                'status' => $i === 4 ? 'maintenance' : 'active',
+            ]);
+        }
+        $assets = \App\Models\Asset::where('tenant_id', $tenant->id)->take(2)->get();
+        foreach ($assets as $i => $asset) {
+            \App\Models\MaintenancePlan::create([
+                'tenant_id' => $tenant->id, 'project_id' => $project->id, 'asset_id' => $asset->id, 'team_id' => $team?->id,
+                'name' => 'Bảo trì '.$asset->name, 'frequency' => ['monthly', 'quarterly'][$i], 'status' => 'active',
+                'next_due_at' => Carbon::parse('2026-08-01')->addDays($i * 15),
+            ]);
+        }
+
+        for ($i = 0; $i < 4; $i++) {
+            $meter = \App\Models\Meter::create([
+                'tenant_id' => $tenant->id, 'project_id' => $project->id, 'building_id' => $building->id,
+                'code' => 'MT-'.str_pad((string) ($i + 1), 4, '0', STR_PAD_LEFT),
+                'type' => ['electric', 'water', 'electric', 'water'][$i], 'unit' => $i % 2 === 0 ? 'kWh' : 'm³',
+                'last_reading' => 1000 + $i * 100, 'status' => 'active', 'installed_at' => Carbon::parse('2022-06-01'),
+            ]);
+            \App\Models\MeterReading::create([
+                'meter_id' => $meter->id, 'period' => '2026-06', 'previous_reading' => 900 + $i * 100,
+                'current_reading' => 1000 + $i * 100, 'consumption' => 100, 'reading_date' => Carbon::parse('2026-06-30'),
+                'recorded_by_id' => $admin->id,
+            ]);
+        }
+
+        foreach ([['Cảm biến khói tầng 5', 'sensor', 'lora'], ['Gateway IoT trung tâm', 'gateway', 'mqtt'], ['Van nước tự động', 'actuator', 'modbus'], ['Cảm biến nhiệt HVAC', 'sensor', 'zigbee']] as $i => [$name, $type, $proto]) {
+            \App\Models\IotDevice::create([
+                'tenant_id' => $tenant->id, 'project_id' => $project->id, 'building_id' => $building->id,
+                'code' => 'IOT-'.str_pad((string) ($i + 1), 4, '0', STR_PAD_LEFT), 'name' => $name, 'type' => $type,
+                'protocol' => $proto, 'status' => $i === 3 ? 'offline' : 'online', 'last_seen_at' => Carbon::parse('2026-07-01 12:00'),
+            ]);
+        }
+    }
+
+    /** Tier 4 / B2 — admin ops (ticket, data-fix, import/export, integration, gateway). */
+    private function seedTier4AdminOps(Tenant $tenant, User $admin): void
+    {
+        $tickets = [
+            ['Không xuất được bảng kê PDF', 'technical', 'open'],
+            ['Sai số dư công nợ căn A-1203', 'billing', 'pending'],
+            ['Yêu cầu thêm tài khoản kế toán', 'account', 'resolved'],
+        ];
+        foreach ($tickets as $i => [$subject, $cat, $status]) {
+            $t = \App\Models\SupportTicket::create([
+                'tenant_id' => $tenant->id, 'code' => 'TK-'.str_pad((string) ($i + 1), 4, '0', STR_PAD_LEFT),
+                'subject' => $subject, 'description' => $subject.'.', 'category' => $cat,
+                'priority' => 'normal', 'status' => $status, 'requester_id' => $admin->id,
+                'assignee_id' => $status !== 'open' ? $admin->id : null,
+                'resolved_at' => $status === 'resolved' ? Carbon::parse('2026-06-29 15:00') : null,
+            ]);
+            \App\Models\SupportTicketComment::create([
+                'support_ticket_id' => $t->id, 'user_id' => $admin->id,
+                'body' => 'Đã tiếp nhận và đang kiểm tra.', 'is_internal' => false,
+            ]);
+        }
+
+        foreach ([['residents', 'Cập nhật CCCD sai định dạng', 'pending'], ['statements', 'Điều chỉnh phí trùng', 'applied']] as $i => [$entity, $reason, $status]) {
+            \App\Models\DataFixRequest::create([
+                'tenant_id' => $tenant->id, 'code' => 'DFX-'.str_pad((string) ($i + 1), 4, '0', STR_PAD_LEFT),
+                'entity' => $entity, 'target_id' => $i + 1, 'reason' => $reason,
+                'requested_change' => ['field' => 'value', 'from' => 'x', 'to' => 'y'], 'status' => $status,
+                'requested_by_id' => $admin->id, 'approved_by_id' => $status === 'applied' ? $admin->id : null,
+                'applied_at' => $status === 'applied' ? Carbon::parse('2026-06-30 09:00') : null,
+            ]);
+        }
+
+        foreach ([['residents', 240, 236, 4], ['apartments', 160, 160, 0]] as $i => [$type, $tot, $ok, $err]) {
+            \App\Models\ImportJob::create([
+                'tenant_id' => $tenant->id, 'type' => $type, 'file_path' => 'imports/'.$type.'.xlsx',
+                'status' => 'done', 'total_rows' => $tot, 'success_rows' => $ok, 'error_rows' => $err,
+                'created_by_id' => $admin->id, 'finished_at' => Carbon::parse('2026-06-20 10:00')->addDays($i),
+            ]);
+        }
+        foreach ([['statements', 'xlsx'], ['debts', 'pdf']] as $i => [$type, $fmt]) {
+            \App\Models\ExportJob::create([
+                'tenant_id' => $tenant->id, 'type' => $type, 'format' => $fmt, 'status' => 'done',
+                'file_path' => 'exports/'.$type.'.'.$fmt, 'created_by_id' => $admin->id,
+                'finished_at' => Carbon::parse('2026-07-01 08:00')->addHours($i),
+            ]);
+        }
+
+        foreach ([['payment', 'VNPay', 'connected'], ['sms', 'eSMS', 'connected'], ['zalo', 'Zalo OA', 'error']] as [$prov, $name, $st]) {
+            \App\Models\IntegrationConnection::create([
+                'tenant_id' => $tenant->id, 'provider' => $prov, 'name' => $name, 'status' => $st,
+                'last_sync_at' => Carbon::parse('2026-07-01 06:00'),
+            ]);
+        }
+        foreach ([['vnpay', 'production', true], ['momo', 'sandbox', false]] as [$gw, $env, $active]) {
+            \App\Models\PaymentGatewayConfig::create([
+                'tenant_id' => $tenant->id, 'gateway' => $gw, 'merchant_id' => strtoupper($gw).'-MID-001',
+                'environment' => $env, 'is_active' => $active,
+            ]);
+        }
+    }
+
+    /** Tier 4 / B1 — SaaS billing (gói, thuê bao, hóa đơn, module, usage). */
+    private function seedTier4Saas(Tenant $tenant): void
+    {
+        $planDefs = [
+            ['STARTER', 'Starter', 2_000_000, 20_000_000, 1, 200],
+            ['PRO', 'Professional', 6_000_000, 60_000_000, 5, 2000],
+            ['ENT', 'Enterprise', 15_000_000, 150_000_000, null, null],
+        ];
+        $plans = [];
+        foreach ($planDefs as [$code, $name, $mo, $yr, $maxP, $maxU]) {
+            $plan = \App\Models\SaasPlan::create([
+                'code' => $code, 'name' => $name, 'description' => 'Gói '.$name,
+                'price_monthly' => $mo, 'price_yearly' => $yr, 'max_projects' => $maxP, 'max_units' => $maxU, 'status' => 'active',
+            ]);
+            foreach ([['projects', 'Số dự án', $maxP ?? 'Không giới hạn'], ['ai', 'Trợ lý X2AI', $code === 'STARTER' ? 'Cơ bản' : 'Đầy đủ'], ['support', 'Hỗ trợ', $code === 'ENT' ? '24/7' : 'Giờ hành chính']] as [$k, $n, $v]) {
+                \App\Models\PlanFeature::create(['saas_plan_id' => $plan->id, 'key' => $k, 'name' => $n, 'value' => (string) $v]);
+            }
+            $plans[$code] = $plan;
+        }
+
+        $sub = \App\Models\Subscription::create([
+            'tenant_id' => $tenant->id, 'saas_plan_id' => $plans['ENT']->id, 'status' => 'active',
+            'billing_cycle' => 'monthly', 'seats' => 25, 'price' => 15_000_000,
+            'started_at' => Carbon::parse('2026-01-01'), 'current_period_start' => Carbon::parse('2026-07-01'),
+            'current_period_end' => Carbon::parse('2026-07-31'),
+        ]);
+        foreach ([['2026-05', 'paid'], ['2026-06', 'issued']] as $i => [$per, $status]) {
+            $inv = \App\Models\SubscriptionInvoice::create([
+                'tenant_id' => $tenant->id, 'subscription_id' => $sub->id, 'code' => 'SINV-'.str_replace('-', '', $per),
+                'period_start' => Carbon::parse($per.'-01'), 'period_end' => Carbon::parse($per.'-01')->endOfMonth(),
+                'amount' => 15_000_000, 'tax' => 1_500_000, 'total' => 16_500_000, 'status' => $status,
+                'issued_at' => Carbon::parse($per.'-01'), 'due_date' => Carbon::parse($per.'-10'),
+                'paid_at' => $status === 'paid' ? Carbon::parse($per.'-05') : null,
+            ]);
+            \App\Models\SubscriptionInvoiceLine::create([
+                'subscription_invoice_id' => $inv->id, 'description' => 'Thuê bao Enterprise tháng '.$per,
+                'quantity' => 1, 'unit_price' => 15_000_000, 'amount' => 15_000_000,
+            ]);
+        }
+
+        foreach ([['finance', 'Tài chính', true], ['feedback', 'Phản ánh', true], ['operations', 'Vận hành', true], ['ai', 'X2AI', true], ['marketplace', 'Marketplace', false]] as [$k, $n, $on]) {
+            \App\Models\TenantModule::create(['tenant_id' => $tenant->id, 'module_key' => $k, 'name' => $n, 'enabled' => $on]);
+        }
+        foreach ([['units', 160], ['ai_calls', 1248], ['storage_gb', 42], ['sms', 860]] as [$metric, $qty]) {
+            \App\Models\UsageMetering::create([
+                'tenant_id' => $tenant->id, 'subscription_id' => $sub->id, 'metric' => $metric, 'period' => '2026-07',
+                'quantity' => $qty, 'recorded_at' => Carbon::parse('2026-07-01 12:00'),
+            ]);
+        }
+    }
+
+    /** Tier 3 / A4 — an ninh & thiết bị (tuần tra, sự cố, SOS, access device, camera, alert action). */
+    private function seedTier3Security(Tenant $tenant, Project $project, Building $building, User $admin): void
+    {
+        $staff = User::where('tenant_id', $tenant->id)->where('account_type', 'staff')->orderBy('id')->get();
+        $guard = $staff->first() ?? $admin;
+        $residents = \App\Models\Resident::where('tenant_id', $tenant->id)->orderBy('id')->take(4)->get();
+        $apts = Apartment::where('building_id', $building->id)->orderBy('id')->take(4)->get();
+
+        // Tuần tra.
+        foreach ([['PT-A', 'Tuyến A - Tầng hầm & sảnh'], ['PT-B', 'Tuyến B - Hành lang & mái']] as $ri => [$code, $name]) {
+            $route = \App\Models\PatrolRoute::create([
+                'tenant_id' => $tenant->id, 'project_id' => $project->id, 'building_id' => $building->id,
+                'code' => $code, 'name' => $name, 'expected_minutes' => 30, 'status' => 'active',
+            ]);
+            for ($c = 1; $c <= 4; $c++) {
+                \App\Models\PatrolCheckpoint::create([
+                    'patrol_route_id' => $route->id, 'code' => $code.'-C'.$c, 'name' => 'Chốt '.$c,
+                    'location' => 'Vị trí '.$c, 'qr_code' => 'QRCP-'.$code.'-'.$c, 'sort' => $c,
+                ]);
+            }
+            \App\Models\PatrolSession::create([
+                'patrol_route_id' => $route->id, 'guard_id' => $guard->id,
+                'status' => $ri === 0 ? 'completed' : 'in_progress', 'checkpoints_scanned' => $ri === 0 ? 4 : 2,
+                'started_at' => Carbon::parse('2026-07-01 22:00'), 'finished_at' => $ri === 0 ? Carbon::parse('2026-07-01 22:35') : null,
+            ]);
+        }
+
+        // Sự cố an ninh.
+        $incidents = [
+            ['theft', 'high', 'Mất xe máy tầng hầm B2', 'investigating'],
+            ['trespass', 'medium', 'Người lạ vào khu kỹ thuật', 'resolved'],
+            ['vandalism', 'low', 'Hư hỏng bảng tin sảnh', 'closed'],
+        ];
+        foreach ($incidents as $i => [$type, $sev, $title, $status]) {
+            \App\Models\SecurityIncident::create([
+                'tenant_id' => $tenant->id, 'project_id' => $project->id, 'building_id' => $building->id,
+                'code' => 'SI-'.str_pad((string) ($i + 1), 4, '0', STR_PAD_LEFT), 'type' => $type, 'severity' => $sev,
+                'title' => $title, 'description' => $title.'.', 'location' => 'Tòa A', 'status' => $status,
+                'reported_by_id' => $guard->id, 'occurred_at' => Carbon::parse('2026-06-28 20:00')->addDays($i),
+                'resolved_at' => in_array($status, ['resolved', 'closed'], true) ? Carbon::parse('2026-06-29 10:00')->addDays($i) : null,
+            ]);
+        }
+
+        // SOS.
+        $sos = [['app', 'resolved'], ['panic_button', 'responding'], ['intercom', 'false_alarm']];
+        foreach ($sos as $i => [$src, $status]) {
+            \App\Models\SosAlert::create([
+                'tenant_id' => $tenant->id, 'project_id' => $project->id, 'building_id' => $building->id,
+                'apartment_id' => $apts[$i % max(1, $apts->count())]->id ?? null,
+                'resident_id' => $residents[$i % max(1, $residents->count())]->id ?? null,
+                'source' => $src, 'status' => $status, 'location' => 'Căn hộ',
+                'triggered_at' => Carbon::parse('2026-07-01 21:00')->addMinutes($i * 20),
+                'acknowledged_by_id' => $status !== 'triggered' ? $guard->id : null,
+                'resolved_at' => in_array($status, ['resolved', 'false_alarm'], true) ? Carbon::parse('2026-07-01 21:30')->addMinutes($i * 20) : null,
+            ]);
+        }
+
+        // Thiết bị & camera.
+        foreach ([['ACD-01', 'Đầu đọc thẻ sảnh', 'card_reader'], ['ACD-02', 'Barrier hầm xe', 'barrier'], ['ACD-03', 'Cửa từ tầng KT', 'door'], ['ACD-04', 'Face gate thang máy', 'face']] as $i => [$code, $name, $type]) {
+            \App\Models\AccessDevice::create([
+                'tenant_id' => $tenant->id, 'project_id' => $project->id, 'building_id' => $building->id,
+                'code' => $code, 'name' => $name, 'type' => $type, 'location' => 'Tòa A',
+                'ip_address' => '10.0.1.'.(10 + $i), 'status' => $i === 3 ? 'maintenance' : 'online',
+                'last_sync_at' => Carbon::parse('2026-07-01 12:00'),
+            ]);
+        }
+        for ($i = 1; $i <= 5; $i++) {
+            \App\Models\Camera::create([
+                'tenant_id' => $tenant->id, 'project_id' => $project->id, 'building_id' => $building->id,
+                'code' => 'CAM-'.str_pad((string) $i, 2, '0', STR_PAD_LEFT), 'name' => 'Camera '.$i,
+                'location' => ['Sảnh', 'Hầm B1', 'Hầm B2', 'Thang máy', 'Mái'][$i - 1], 'type' => ['dome', 'bullet', 'ptz'][$i % 3],
+                'stream_url' => 'rtsp://10.0.2.'.$i.'/stream', 'status' => $i === 5 ? 'offline' : 'online',
+                'last_seen_at' => Carbon::parse('2026-07-01 12:00'),
+            ]);
+        }
+
+        // Hành động trên cảnh báo IOC có sẵn.
+        $alerts = \App\Models\IocAlert::where('tenant_id', $tenant->id)->orderBy('id')->take(4)->get();
+        foreach ($alerts as $i => $al) {
+            \App\Models\AlertAction::create([
+                'ioc_alert_id' => $al->id, 'action' => 'acknowledge', 'user_id' => $guard->id,
+                'note' => 'Đã ghi nhận', 'acted_at' => Carbon::parse('2026-07-01 08:00')->addMinutes($i * 10),
+            ]);
+        }
+    }
+
+    /** Tier 3 / A3 — phê duyệt + tài chính vận hành (quỹ, đề nghị chi, phiếu thu/chi). */
+    private function seedTier3Finance(Tenant $tenant, Project $project, User $admin): void
+    {
+        // Quỹ.
+        $funds = [];
+        foreach ([['QUY-VH', 'Quỹ vận hành', 'operating', 800_000_000], ['QUY-BT', 'Quỹ bảo trì', 'maintenance', 2_500_000_000]] as [$code, $name, $type, $open]) {
+            $funds[] = \App\Models\Fund::create([
+                'tenant_id' => $tenant->id, 'project_id' => $project->id, 'code' => $code, 'name' => $name,
+                'type' => $type, 'opening_balance' => $open, 'current_balance' => $open, 'status' => 'active',
+            ]);
+        }
+        $opFund = $funds[0];
+
+        // Đề nghị chi + phiếu chi + giao dịch quỹ.
+        $prDefs = [
+            ['Thanh toán điện tháng 6', 'EVN HCMC', 42_000_000, 'utility', 'paid'],
+            ['Bảo trì thang máy Q3', 'Cty Thang máy Thiên Nam', 18_000_000, 'maintenance', 'approved'],
+            ['Mua vật tư vệ sinh', 'NCC Sạch Xanh', 6_500_000, 'supply', 'pending'],
+            ['Lương bảo vệ tháng 6', 'Đội bảo vệ', 96_000_000, 'salary', 'draft'],
+        ];
+        $balance = (float) $opFund->current_balance;
+        foreach ($prDefs as $i => [$title, $payee, $amount, $cat, $status]) {
+            $pr = \App\Models\PaymentRequest::create([
+                'tenant_id' => $tenant->id, 'project_id' => $project->id, 'fund_id' => $opFund->id,
+                'code' => 'PR-'.str_pad((string) ($i + 1), 4, '0', STR_PAD_LEFT), 'title' => $title, 'payee' => $payee,
+                'amount' => $amount, 'category' => $cat, 'status' => $status,
+                'due_date' => Carbon::parse('2026-07-10')->addDays($i), 'requested_by_id' => $admin->id,
+                'paid_at' => $status === 'paid' ? Carbon::parse('2026-07-02 10:00') : null,
+            ]);
+            if ($status === 'paid') {
+                $balance -= $amount;
+                $cv = \App\Models\CashVoucher::create([
+                    'tenant_id' => $tenant->id, 'project_id' => $project->id, 'fund_id' => $opFund->id,
+                    'payment_request_id' => $pr->id, 'code' => 'PC-'.str_pad((string) ($i + 1), 4, '0', STR_PAD_LEFT),
+                    'type' => 'payment', 'amount' => $amount, 'party' => $payee, 'description' => $title,
+                    'voucher_date' => Carbon::parse('2026-07-02'), 'status' => 'posted', 'created_by_id' => $admin->id,
+                ]);
+                \App\Models\FundTransaction::create([
+                    'fund_id' => $opFund->id, 'cash_voucher_id' => $cv->id, 'type' => 'out', 'amount' => $amount,
+                    'balance_after' => $balance, 'description' => $title, 'transaction_date' => Carbon::parse('2026-07-02'),
+                    'created_by_id' => $admin->id,
+                ]);
+            }
+        }
+        // Một phiếu thu (nộp phí tiền mặt).
+        $balance += 15_000_000;
+        $rcv = \App\Models\CashVoucher::create([
+            'tenant_id' => $tenant->id, 'project_id' => $project->id, 'fund_id' => $opFund->id,
+            'code' => 'PT-0001', 'type' => 'receipt', 'amount' => 15_000_000, 'party' => 'Cư dân nộp phí',
+            'description' => 'Thu phí quản lý tiền mặt', 'voucher_date' => Carbon::parse('2026-07-01'),
+            'status' => 'posted', 'created_by_id' => $admin->id,
+        ]);
+        \App\Models\FundTransaction::create([
+            'fund_id' => $opFund->id, 'cash_voucher_id' => $rcv->id, 'type' => 'in', 'amount' => 15_000_000,
+            'balance_after' => $balance, 'description' => 'Thu phí tiền mặt', 'transaction_date' => Carbon::parse('2026-07-01'),
+            'created_by_id' => $admin->id,
+        ]);
+        $opFund->update(['current_balance' => $balance]);
+
+        // Yêu cầu phê duyệt + các bước.
+        $arDefs = [
+            ['Duyệt chi bảo trì thang máy', 'expense', 18_000_000, 'pending', 2],
+            ['Duyệt mua vật tư vệ sinh', 'purchase', 6_500_000, 'approved', 3],
+            ['Duyệt bảng kê phí Q3', 'statement', 248_650_000, 'pending', 1],
+        ];
+        foreach ($arDefs as $i => [$title, $type, $amount, $status, $curStep]) {
+            $ar = \App\Models\ApprovalRequest::create([
+                'tenant_id' => $tenant->id, 'project_id' => $project->id,
+                'code' => 'AR-'.str_pad((string) ($i + 1), 4, '0', STR_PAD_LEFT), 'type' => $type, 'title' => $title,
+                'amount' => $amount, 'status' => $status, 'current_step' => $curStep, 'requested_by_id' => $admin->id,
+                'decided_at' => $status === 'approved' ? Carbon::parse('2026-07-02 15:00') : null,
+            ]);
+            foreach (['Kế toán trưởng', 'Trưởng BQL', 'Giám đốc'] as $s => $role) {
+                \App\Models\ApprovalStep::create([
+                    'approval_request_id' => $ar->id, 'step_no' => $s + 1, 'approver_id' => $admin->id, 'role' => $role,
+                    'status' => ($s + 1) < $curStep || $status === 'approved' ? 'approved' : 'pending',
+                    'decided_at' => (($s + 1) < $curStep || $status === 'approved') ? Carbon::parse('2026-07-02 14:00')->addMinutes($s * 30) : null,
+                ]);
+            }
+        }
+    }
+
+    /** Tier 3 / A2 — work order con + SLA config + ca trực. */
+    private function seedTier3Ops(Tenant $tenant, Project $project, Building $building, User $admin): void
+    {
+        $staff = User::where('tenant_id', $tenant->id)->where('account_type', 'staff')->orderBy('id')->get();
+        $handler = $staff->first() ?? $admin;
+        $team = \App\Models\Team::where('tenant_id', $tenant->id)->first();
+
+        // Làm giàu work orders có sẵn + thêm con.
+        $wos = WorkOrder::where('tenant_id', $tenant->id)->orderBy('id')->take(8)->get();
+        foreach ($wos as $i => $wo) {
+            $done = $i % 3 === 0;
+            $assignee = $staff[$i % max(1, $staff->count())] ?? $handler;
+            $wo->update([
+                'project_id' => $project->id, 'assigned_to_id' => $assignee->id, 'team_id' => $team?->id,
+                'created_by_id' => $admin->id,
+                'description' => 'Nội dung công việc: '.$wo->title,
+                'category' => ['electrical', 'plumbing', 'cleaning', 'security'][$i % 4],
+                'scheduled_at' => Carbon::parse('2026-07-01 08:00')->addHours($i),
+                'started_at' => $done ? Carbon::parse('2026-07-01 09:00')->addHours($i) : null,
+                'completed_at' => $done ? Carbon::parse('2026-07-01 11:00')->addHours($i) : null,
+                'cost' => $done ? 150000 * ($i + 1) : 0,
+            ]);
+            \App\Models\WorkOrderAssignment::create([
+                'work_order_id' => $wo->id, 'assigned_to_id' => $assignee->id, 'assigned_by_id' => $admin->id,
+                'team_id' => $team?->id, 'role' => 'primary', 'status' => $done ? 'done' : 'assigned',
+                'assigned_at' => Carbon::parse('2026-07-01 08:30')->addHours($i),
+            ]);
+            $cl = \App\Models\WorkOrderChecklist::create(['work_order_id' => $wo->id, 'name' => 'Quy trình xử lý']);
+            foreach (['Kiểm tra hiện trạng', 'Thực hiện sửa chữa', 'Vệ sinh & bàn giao'] as $s => $label) {
+                \App\Models\WorkOrderChecklistItem::create([
+                    'work_order_checklist_id' => $cl->id, 'work_order_id' => $wo->id, 'label' => $label,
+                    'is_done' => $done, 'done_by_id' => $done ? $assignee->id : null,
+                    'done_at' => $done ? Carbon::parse('2026-07-01 10:00')->addHours($i) : null, 'sort' => $s,
+                ]);
+            }
+            if ($done) {
+                \App\Models\WorkOrderAttachment::create([
+                    'work_order_id' => $wo->id, 'path' => 'work-orders/wo-'.$wo->id.'-after.jpg',
+                    'name' => 'after.jpg', 'mime' => 'image/jpeg', 'size' => 320000, 'type' => 'after',
+                    'uploaded_by_id' => $assignee->id,
+                ]);
+                \App\Models\WorkOrderSignature::create([
+                    'work_order_id' => $wo->id, 'signer_name' => $assignee->name, 'signer_role' => 'technician',
+                    'signature_path' => 'signatures/wo-'.$wo->id.'.png', 'signed_at' => $wo->completed_at,
+                ]);
+            }
+        }
+
+        // SLA policies.
+        $slas = [
+            ['SLA phản ánh khẩn', 'feedback_request', 'urgent', 15, 240],
+            ['SLA phản ánh thường', 'feedback_request', 'normal', 60, 1440],
+            ['SLA công việc khẩn', 'work_order', 'urgent', 30, 480],
+            ['SLA công việc thường', 'work_order', 'normal', 120, 2880],
+        ];
+        foreach ($slas as [$name, $applies, $priority, $resp, $resolve]) {
+            \App\Models\SlaPolicy::create([
+                'tenant_id' => $tenant->id, 'project_id' => $project->id, 'name' => $name,
+                'applies_to' => $applies, 'priority' => $priority, 'response_minutes' => $resp,
+                'resolve_minutes' => $resolve, 'business_hours_only' => $priority === 'normal', 'status' => 'active',
+            ]);
+        }
+
+        // Ca trực + phân ca 3 ngày.
+        $dept = Department::where('tenant_id', $tenant->id)->where('code', 'AN')->first();
+        $shiftDefs = [['Ca sáng', '06:00', '14:00'], ['Ca chiều', '14:00', '22:00'], ['Ca đêm', '22:00', '06:00']];
+        foreach ($shiftDefs as $si => [$name, $start, $end]) {
+            $shift = \App\Models\Shift::create([
+                'tenant_id' => $tenant->id, 'project_id' => $project->id, 'building_id' => $building->id,
+                'department_id' => $dept?->id, 'name' => $name, 'start_time' => $start, 'end_time' => $end, 'status' => 'active',
+            ]);
+            for ($d = 0; $d < 3; $d++) {
+                $u = $staff[($si + $d) % max(1, $staff->count())] ?? $handler;
+                \App\Models\DutyRoster::create([
+                    'shift_id' => $shift->id, 'user_id' => $u->id,
+                    'duty_date' => Carbon::parse('2026-07-01')->addDays($d),
+                    'status' => $d === 0 ? 'present' : 'scheduled',
+                ]);
+            }
+        }
+    }
+
+    /** Tier 2 vá nốt — emergency_alerts, qr_payment_tokens, service_evaluations, access_logs, intercom_events. */
+    private function seedTier2Patch(Tenant $tenant, Project $project, Building $building, User $admin): void
+    {
+        $apts = Apartment::where('building_id', $building->id)->orderBy('id')->take(10)->get();
+        $residents = \App\Models\Resident::where('tenant_id', $tenant->id)->orderBy('id')->take(10)->get();
+
+        \App\Models\EmergencyAlert::create([
+            'tenant_id' => $tenant->id, 'project_id' => $project->id, 'building_id' => $building->id,
+            'code' => 'EMG-001', 'type' => 'fire', 'title' => 'Cảnh báo cháy tầng hầm B1',
+            'message' => 'Phát hiện khói tầng hầm B1. Vui lòng di chuyển theo lối thoát hiểm.',
+            'severity' => 'critical', 'status' => 'resolved',
+            'starts_at' => Carbon::parse('2026-06-20 14:00'), 'ends_at' => Carbon::parse('2026-06-20 14:40'),
+            'resolved_at' => Carbon::parse('2026-06-20 14:40'), 'created_by_id' => $admin->id,
+        ]);
+        \App\Models\EmergencyAlert::create([
+            'tenant_id' => $tenant->id, 'project_id' => $project->id, 'building_id' => $building->id,
+            'code' => 'EMG-002', 'type' => 'health', 'title' => 'Phun khử khuẩn định kỳ',
+            'message' => 'Khu vực sảnh sẽ phun khử khuẩn 20:00 hôm nay.',
+            'severity' => 'info', 'status' => 'active', 'starts_at' => Carbon::parse('2026-07-01 20:00'),
+            'created_by_id' => $admin->id,
+        ]);
+
+        // QR thanh toán cho vài bảng kê.
+        $statements = \App\Models\Statement::where('tenant_id', $tenant->id)->orderBy('id')->take(5)->get();
+        foreach ($statements as $i => $st) {
+            \App\Models\QrPaymentToken::create([
+                'tenant_id' => $tenant->id, 'statement_id' => $st->id,
+                'code' => 'QRP-'.strtoupper(substr(md5('qrp'.$st->id), 0, 12)),
+                'amount' => $st->total_amount ?? $st->total ?? 500000, 'provider' => ['vietqr', 'momo', 'vnpay'][$i % 3],
+                'status' => $i === 0 ? 'used' : 'active',
+                'expires_at' => Carbon::parse('2026-07-15 23:59'), 'paid_at' => $i === 0 ? Carbon::parse('2026-07-02 10:00') : null,
+            ]);
+        }
+
+        // Đánh giá dịch vụ cho vài phản ánh đã đóng.
+        $resolved = FeedbackRequest::where('tenant_id', $tenant->id)
+            ->whereIn('status', ['resolved', 'closed'])->orderBy('id')->take(5)->get();
+        foreach ($resolved as $i => $req) {
+            \App\Models\ServiceEvaluation::create([
+                'tenant_id' => $tenant->id, 'feedback_request_id' => $req->id,
+                'resident_id' => $residents[$i % max(1, $residents->count())]->id ?? null,
+                'rating' => 5 - ($i % 3), 'criteria' => ['thoi_gian' => 5 - ($i % 2), 'thai_do' => 5, 'ket_qua' => 4],
+                'comment' => 'Xử lý nhanh, cảm ơn BQL.', 'evaluated_at' => Carbon::parse('2026-06-25')->addDays($i),
+            ]);
+        }
+
+        // Nhật ký ra/vào + intercom.
+        for ($i = 0; $i < 12; $i++) {
+            $apt = $apts[$i % max(1, $apts->count())] ?? null;
+            $res = $residents[$i % max(1, $residents->count())] ?? null;
+            \App\Models\AccessLog::create([
+                'tenant_id' => $tenant->id, 'project_id' => $project->id, 'building_id' => $building->id,
+                'apartment_id' => $apt?->id, 'resident_id' => $res?->id,
+                'device_name' => 'Cổng chính', 'gate' => 'GATE-01',
+                'direction' => $i % 2 === 0 ? 'in' : 'out', 'method' => ['card', 'qr', 'face'][$i % 3],
+                'status' => 'granted', 'event_at' => Carbon::parse('2026-07-01 07:00')->addMinutes($i * 37),
+            ]);
+        }
+        for ($i = 0; $i < 5; $i++) {
+            $apt = $apts[$i % max(1, $apts->count())] ?? null;
+            $res = $residents[$i % max(1, $residents->count())] ?? null;
+            \App\Models\IntercomEvent::create([
+                'tenant_id' => $tenant->id, 'building_id' => $building->id,
+                'apartment_id' => $apt?->id, 'resident_id' => $res?->id,
+                'from_device' => 'lobby_gate', 'direction' => 'incoming',
+                'status' => ['answered', 'missed', 'rejected'][$i % 3], 'duration_seconds' => $i * 15,
+                'event_at' => Carbon::parse('2026-07-01 09:00')->addHours($i),
+            ]);
+        }
     }
 
     /**
@@ -757,18 +1533,76 @@ class DemoDataSeeder extends Seeder
             foreach ($articlesByCat[$name] ?? [] as $title) {
                 $idx++;
                 $status = $idx % 9 === 0 ? 'draft' : 'published';
+                // Đa số là tài liệu DỰ ÁN (Sunshine); mỗi bài thứ 5 là tài liệu CÔNG TY
+                // chia sẻ xuống mọi dự án (để BQL nhìn thấy tài liệu công ty).
+                $isCompany = $idx % 5 === 0;
+                $body = '<p>Nội dung hướng dẫn cho "'.$title.'". Áp dụng cho cư dân và ban quản lý dự án.</p>';
                 \App\Models\KnowledgeArticle::create([
                     'tenant_id' => $tenant->id,
+                    'owner_level' => $isCompany ? 'tenant' : 'project',
+                    'project_id' => $isCompany ? null : $project->id,
+                    'share_mode' => $isCompany ? 'descendants' : 'private',
                     'knowledge_category_id' => $cat->id,
                     'title' => $title, 'slug' => \Illuminate\Support\Str::slug($title),
                     'excerpt' => $title.' — hướng dẫn chi tiết cho cư dân và BQL.',
-                    'body' => '<p>Nội dung hướng dẫn cho "'.$title.'".</p>',
+                    'body' => $body,
+                    'content_text' => app(\App\Support\Knowledge\DocumentTextExtractor::class)->htmlToText($body),
                     'status' => $status,
                     'views' => 120 + ($idx * 137 % 4200),
                     'helpful_count' => 30 + ($idx * 17 % 280),
                     'not_helpful_count' => $idx * 3 % 24,
                     'author_id' => $admin->id,
                     'published_at' => $status === 'published' ? Carbon::parse('2026-05-01')->addDays($idx * 3) : null,
+                ]);
+            }
+        }
+
+        // --- Tài liệu PLATFORM (superadmin) — dùng chung, chia sẻ xuống ---------
+        $platformDocs = [
+            ['Chính sách bảo vệ dữ liệu cá nhân (toàn hệ thống)', 'Nguyên tắc xử lý dữ liệu cư dân áp dụng cho mọi công ty & dự án trên X2-BMS.', 'descendants'],
+            ['Hướng dẫn sử dụng X2-BMS cho BQL', 'Cẩm nang thao tác nghiệp vụ trên hệ thống dành cho ban quản lý.', 'descendants'],
+            ['Quy chuẩn vận hành mẫu (chỉ chia sẻ có chọn lọc)', 'Bộ quy chuẩn vận hành mẫu, chia sẻ theo từng công ty được duyệt.', 'custom'],
+        ];
+        foreach ($platformDocs as $i => [$title, $excerpt, $shareMode]) {
+            $body = '<p>'.$excerpt.'</p><p>Tài liệu do đội ngũ nền tảng X2-BMS biên soạn.</p>';
+            $doc = \App\Models\KnowledgeArticle::create([
+                'tenant_id' => null,
+                'owner_level' => 'platform',
+                'project_id' => null,
+                'share_mode' => $shareMode,
+                'knowledge_category_id' => null,
+                'title' => $title, 'slug' => \Illuminate\Support\Str::slug($title),
+                'excerpt' => $excerpt,
+                'body' => $body,
+                'content_text' => app(\App\Support\Knowledge\DocumentTextExtractor::class)->htmlToText($body),
+                'status' => 'published',
+                'views' => 800 + $i * 250,
+                'helpful_count' => 120 + $i * 30,
+                'not_helpful_count' => $i * 4,
+                'author_id' => $admin->id,
+                'published_at' => Carbon::parse('2026-04-15')->addDays($i * 5),
+            ]);
+            // Bản "custom" chỉ chia sẻ cho tenant demo (công ty 1).
+            if ($shareMode === 'custom') {
+                \App\Models\KnowledgeArticleShare::create([
+                    'knowledge_article_id' => $doc->id, 'scope_type' => 'tenant', 'scope_id' => $tenant->id,
+                ]);
+            }
+        }
+
+        // --- Tài liệu DỰ ÁN KHÁC (cùng công ty) — minh hoạ cô lập giữa các BQL ----
+        $otherProject = Project::where('tenant_id', $tenant->id)->where('id', '!=', $project->id)->first();
+        if ($otherProject) {
+            foreach (['Nội quy dự án '.$otherProject->name, 'Quy trình bàn giao '.$otherProject->name] as $j => $title) {
+                $body = '<p>Tài liệu riêng của dự án '.$otherProject->name.', không chia sẻ ra ngoài.</p>';
+                \App\Models\KnowledgeArticle::create([
+                    'tenant_id' => $tenant->id, 'owner_level' => 'project', 'project_id' => $otherProject->id,
+                    'share_mode' => 'private', 'knowledge_category_id' => null,
+                    'title' => $title, 'slug' => \Illuminate\Support\Str::slug($title),
+                    'excerpt' => $title.'.', 'body' => $body,
+                    'content_text' => app(\App\Support\Knowledge\DocumentTextExtractor::class)->htmlToText($body),
+                    'status' => 'published', 'views' => 200 + $j * 40, 'helpful_count' => 20, 'not_helpful_count' => 1,
+                    'author_id' => $admin->id, 'published_at' => Carbon::parse('2026-05-10')->addDays($j),
                 ]);
             }
         }
@@ -1378,6 +2212,218 @@ class DemoDataSeeder extends Seeder
                 'email' => 'applicantb'.($i + 1).'@x2bms.vn',
                 'requested_role' => $reqRole, 'match_score' => $score, 'document_count' => $docs,
                 'status' => 'pending', 'submitted_at' => now()->subDays($i + 1), 'note' => null,
+            ]);
+        }
+    }
+
+    /**
+     * Tier 2 — Resident Experience MVP: Notification (3 lớp) + Amenity/Booking +
+     * Feedback children + Visitor + Package. Dữ liệu demo tôn trọng phân quyền 3 lớp
+     * (platform/tenant/project).
+     */
+    private function seedTier2(Tenant $tenant, Project $project, Building $building, User $admin): void
+    {
+        $apts = Apartment::where('building_id', $building->id)->orderBy('id')->take(8)->get();
+        $residents = \App\Models\Resident::where('tenant_id', $tenant->id)->orderBy('id')->take(8)->get();
+        $staff = User::where('tenant_id', $tenant->id)->where('account_type', 'staff')->orderBy('id')->take(3)->get();
+        $handler = $staff->first() ?? $admin;
+
+        // ============ NOTIFICATIONS (3 lớp) ============
+        // Platform — toàn hệ thống (superadmin), gửi mọi đối tượng.
+        $plat = \App\Models\Notification::create([
+            'tenant_id' => null, 'owner_level' => 'platform', 'code' => 'NTF-PLAT-001',
+            'type' => 'system', 'title' => 'Nâng cấp hệ thống X2-BMS cuối tuần',
+            'summary' => 'Bảo trì 22:00–23:00 Thứ 7. Một số tính năng tạm gián đoạn.',
+            'body' => '<p>Hệ thống sẽ bảo trì định kỳ. Vui lòng lưu công việc trước 22:00.</p>',
+            'priority' => 'high', 'status' => 'published', 'is_pinned' => true,
+            'published_at' => Carbon::parse('2026-06-28 09:00'), 'created_by_id' => $admin->id, 'published_by_id' => $admin->id,
+        ]);
+        \App\Models\NotificationAudience::create(['notification_id' => $plat->id, 'scope_type' => 'all']);
+        foreach (['app', 'email'] as $ch) {
+            \App\Models\NotificationChannel::create(['notification_id' => $plat->id, 'channel' => $ch]);
+        }
+
+        // Tenant — công ty vận hành, gửi xuống dự án.
+        $ten = \App\Models\Notification::create([
+            'tenant_id' => $tenant->id, 'owner_level' => 'tenant', 'project_id' => $project->id, 'code' => 'NTF-CO-001',
+            'type' => 'billing', 'title' => 'Lịch thu phí quý 3/2026',
+            'summary' => 'Thông báo kỳ thu phí và hạn thanh toán tới cư dân toàn dự án.',
+            'body' => '<p>Kỳ phí Q3 phát hành 01/07, hạn 10/07. Vui lòng thanh toán đúng hạn.</p>',
+            'priority' => 'normal', 'status' => 'published', 'published_at' => Carbon::parse('2026-06-30 08:00'),
+            'created_by_id' => $admin->id, 'published_by_id' => $admin->id,
+        ]);
+        \App\Models\NotificationAudience::create(['notification_id' => $ten->id, 'scope_type' => 'project', 'scope_id' => $project->id]);
+        \App\Models\NotificationChannel::create(['notification_id' => $ten->id, 'channel' => 'app']);
+
+        // Project — BQL, gửi trong tòa. (published / scheduled / draft)
+        $projNotifs = [
+            ['NTF-BQL-001', 'maintenance', 'Tạm ngưng cấp nước tầng 5–8', 'published', 'high', Carbon::parse('2026-06-29 07:00')],
+            ['NTF-BQL-002', 'emergency', 'Diễn tập PCCC toàn tòa', 'scheduled', 'urgent', Carbon::parse('2026-07-05 09:00')],
+            ['NTF-BQL-003', 'community', 'Hội chợ cộng đồng cuối tháng', 'draft', 'low', null],
+        ];
+        $published = null;
+        foreach ($projNotifs as [$code, $type, $title, $status, $priority, $pubAt]) {
+            $n = \App\Models\Notification::create([
+                'tenant_id' => $tenant->id, 'owner_level' => 'project', 'project_id' => $project->id, 'building_id' => $building->id,
+                'code' => $code, 'type' => $type, 'title' => $title,
+                'summary' => $title.'.', 'body' => '<p>'.$title.'. Vui lòng theo dõi hướng dẫn của BQL.</p>',
+                'priority' => $priority, 'status' => $status,
+                'publish_at' => $status === 'scheduled' ? $pubAt : null,
+                'published_at' => $status === 'published' ? $pubAt : null,
+                'created_by_id' => $handler->id, 'published_by_id' => $status === 'published' ? $handler->id : null,
+            ]);
+            \App\Models\NotificationAudience::create(['notification_id' => $n->id, 'scope_type' => 'building', 'scope_id' => $building->id]);
+            \App\Models\NotificationChannel::create(['notification_id' => $n->id, 'channel' => 'app']);
+            if ($status === 'published') {
+                $published = $n;
+            }
+        }
+        // Đọc + nhật ký gửi cho 1 thông báo đã phát hành (per resident).
+        if ($published) {
+            $recipients = 0;
+            foreach ($residents as $i => $res) {
+                $recipients++;
+                \App\Models\NotificationDeliveryLog::create([
+                    'notification_id' => $published->id, 'resident_id' => $res->id, 'channel' => 'app',
+                    'status' => 'sent', 'sent_at' => Carbon::parse('2026-06-29 07:05'),
+                ]);
+                if ($i % 2 === 0) {
+                    \App\Models\NotificationRead::create([
+                        'notification_id' => $published->id, 'resident_id' => $res->id,
+                        'read_at' => Carbon::parse('2026-06-29 08:00')->addMinutes($i * 3),
+                    ]);
+                }
+            }
+            $published->update(['recipient_count' => $recipients, 'read_count' => (int) ceil($recipients / 2)]);
+        }
+
+        // ============ AMENITIES + BOOKINGS ============
+        $amenityDefs = [
+            ['GYM', 'Phòng Gym', 'gym', 30, '05:00', '22:00', 0, false],
+            ['POOL', 'Hồ bơi', 'pool', 40, '06:00', '21:00', 50000, false],
+            ['BBQ', 'Khu BBQ sân thượng', 'bbq', 12, '09:00', '22:00', 200000, true],
+            ['HALL', 'Phòng sinh hoạt cộng đồng', 'function_room', 60, '08:00', '22:00', 300000, true],
+        ];
+        $amenities = [];
+        foreach ($amenityDefs as [$code, $name, $type, $cap, $open, $close, $price, $needApprove]) {
+            $a = \App\Models\Amenity::create([
+                'tenant_id' => $tenant->id, 'project_id' => $project->id, 'building_id' => $building->id,
+                'code' => $code, 'name' => $name, 'type' => $type, 'capacity' => $cap,
+                'open_time' => $open, 'close_time' => $close, 'price' => $price,
+                'requires_approval' => $needApprove, 'status' => 'active',
+                'description' => $name.' phục vụ cư dân nội khu.',
+            ]);
+            foreach ([['08:00', '10:00'], ['18:00', '20:00']] as [$s, $e]) {
+                \App\Models\AmenitySlot::create(['amenity_id' => $a->id, 'start_time' => $s, 'end_time' => $e, 'capacity' => (int) ($cap / 2)]);
+            }
+            $amenities[] = $a;
+        }
+        $statuses = ['confirmed', 'pending', 'completed', 'cancelled', 'rejected', 'confirmed'];
+        foreach ($statuses as $i => $st) {
+            $a = $amenities[$i % count($amenities)];
+            $res = $residents[$i % max(1, $residents->count())] ?? null;
+            $apt = $apts[$i % max(1, $apts->count())] ?? null;
+            $date = Carbon::parse('2026-07-02')->addDays($i);
+            $bk = \App\Models\AmenityBooking::create([
+                'tenant_id' => $tenant->id, 'building_id' => $building->id, 'amenity_id' => $a->id,
+                'apartment_id' => $apt?->id, 'resident_id' => $res?->id, 'code' => 'BK-'.str_pad((string) ($i + 1), 4, '0', STR_PAD_LEFT),
+                'booking_date' => $date, 'start_time' => '18:00', 'end_time' => '20:00', 'party_size' => 2 + $i,
+                'status' => $st, 'price' => $a->price,
+                'approved_by_id' => in_array($st, ['confirmed', 'completed'], true) ? $handler->id : null,
+                'approved_at' => in_array($st, ['confirmed', 'completed'], true) ? $date->copy()->subDay() : null,
+            ]);
+            if (in_array($st, ['confirmed', 'completed'], true)) {
+                \App\Models\BookingQrPass::create([
+                    'amenity_booking_id' => $bk->id, 'code' => 'QR-BK-'.strtoupper(substr(md5($bk->id.'booking'), 0, 10)),
+                    'valid_from' => $date->copy()->setTime(17, 30), 'valid_to' => $date->copy()->setTime(20, 30),
+                    'status' => $st === 'completed' ? 'used' : 'active',
+                ]);
+            }
+        }
+
+        // ============ FEEDBACK children (làm giàu vài phản ánh có sẵn) ============
+        $reqs = FeedbackRequest::where('tenant_id', $tenant->id)->orderBy('id')->take(6)->get();
+        foreach ($reqs as $i => $req) {
+            $res = $residents[$i % max(1, $residents->count())] ?? null;
+            $apt = $apts[$i % max(1, $apts->count())] ?? null;
+            $req->update([
+                'project_id' => $project->id, 'resident_id' => $res?->id, 'apartment_id' => $apt?->id,
+                'code' => 'FB-'.str_pad((string) ($req->id), 5, '0', STR_PAD_LEFT),
+                'description' => 'Chi tiết phản ánh: '.$req->title.'. Mong BQL xử lý sớm.',
+                'channel' => ['app', 'web', 'hotline'][$i % 3],
+                'assigned_to_id' => $handler->id, 'sla_due_at' => Carbon::parse('2026-07-01')->addDays(2),
+            ]);
+            \App\Models\FeedbackComment::create([
+                'feedback_request_id' => $req->id, 'resident_id' => $res?->id, 'author_name' => $res?->full_name ?? 'Cư dân',
+                'body' => 'Sự việc xảy ra từ hôm qua, mong được hỗ trợ.', 'is_internal' => false,
+            ]);
+            \App\Models\FeedbackComment::create([
+                'feedback_request_id' => $req->id, 'user_id' => $handler->id, 'author_name' => $handler->name,
+                'body' => 'Đã tiếp nhận, phân công kỹ thuật kiểm tra.', 'is_internal' => true,
+            ]);
+            \App\Models\FeedbackAssignment::create([
+                'feedback_request_id' => $req->id, 'assigned_to_id' => $handler->id, 'assigned_by_id' => $admin->id,
+                'status' => 'assigned', 'note' => 'Ưu tiên trong ngày', 'assigned_at' => Carbon::parse('2026-07-01 09:00'),
+            ]);
+            \App\Models\FeedbackStatusHistory::create([
+                'feedback_request_id' => $req->id, 'from_status' => 'new', 'to_status' => 'assigned',
+                'changed_by_id' => $admin->id, 'note' => 'Tự động phân công', 'changed_at' => Carbon::parse('2026-07-01 09:00'),
+            ]);
+            if ($i % 2 === 0) {
+                \App\Models\FeedbackAttachment::create([
+                    'feedback_request_id' => $req->id, 'path' => 'feedback/demo-'.$req->id.'.jpg',
+                    'name' => 'hien-truong-'.$req->id.'.jpg', 'mime' => 'image/jpeg', 'size' => 240000,
+                    'uploaded_by_id' => $res?->user_id,
+                ]);
+            }
+        }
+
+        // ============ VISITORS ============
+        $visitorDefs = [
+            ['Trần Văn Khách', '0909111222', 'approved', 'Thăm người thân'],
+            ['Lê Thị Giao Hàng', '0912333444', 'checked_in', 'Giao hàng'],
+            ['Phạm Đối Tác', '0987654321', 'pending', 'Họp'],
+            ['Nguyễn Sửa Chữa', '0900112233', 'checked_out', 'Sửa điều hòa'],
+        ];
+        foreach ($visitorDefs as $i => [$name, $phone, $st, $purpose]) {
+            $res = $residents[$i % max(1, $residents->count())] ?? null;
+            $apt = $apts[$i % max(1, $apts->count())] ?? null;
+            $reg = \App\Models\VisitorRegistration::create([
+                'tenant_id' => $tenant->id, 'project_id' => $project->id, 'building_id' => $building->id,
+                'apartment_id' => $apt?->id, 'resident_id' => $res?->id, 'host_user_id' => null,
+                'code' => 'VS-'.str_pad((string) ($i + 1), 4, '0', STR_PAD_LEFT),
+                'visitor_name' => $name, 'visitor_phone' => $phone, 'purpose' => $purpose, 'num_guests' => 1,
+                'expected_at' => Carbon::parse('2026-07-02 10:00')->addHours($i),
+                'status' => $st, 'approved_by_id' => in_array($st, ['approved', 'checked_in', 'checked_out'], true) ? $handler->id : null,
+            ]);
+            if (in_array($st, ['approved', 'checked_in', 'checked_out'], true)) {
+                \App\Models\VisitorPass::create([
+                    'visitor_registration_id' => $reg->id, 'code' => 'QR-VS-'.strtoupper(substr(md5($reg->id.'visitor'), 0, 10)),
+                    'valid_from' => $reg->expected_at, 'valid_to' => $reg->expected_at->copy()->addHours(6),
+                    'status' => $st === 'checked_out' ? 'used' : 'active',
+                    'checked_in_at' => in_array($st, ['checked_in', 'checked_out'], true) ? $reg->expected_at : null,
+                    'checked_out_at' => $st === 'checked_out' ? $reg->expected_at->copy()->addHours(2) : null,
+                    'gate' => 'Cổng chính',
+                ]);
+            }
+        }
+
+        // ============ PACKAGE DELIVERIES ============
+        $carriers = ['GHTK', 'GHN', 'VNPost', 'Shopee Express', 'J&T'];
+        $pkgStatus = ['received', 'notified', 'picked_up', 'received', 'notified'];
+        foreach ($pkgStatus as $i => $st) {
+            $apt = $apts[$i % max(1, $apts->count())] ?? null;
+            $res = $residents[$i % max(1, $residents->count())] ?? null;
+            \App\Models\PackageDelivery::create([
+                'tenant_id' => $tenant->id, 'project_id' => $project->id, 'building_id' => $building->id,
+                'apartment_id' => $apt?->id, 'resident_id' => $res?->id,
+                'tracking_no' => 'TRK'.str_pad((string) (1000 + $i), 6, '0', STR_PAD_LEFT),
+                'carrier' => $carriers[$i % count($carriers)], 'sender' => 'Shop online',
+                'description' => 'Kiện hàng '.($i + 1), 'size' => ['small', 'medium', 'large'][$i % 3],
+                'locker_no' => 'L'.str_pad((string) ($i + 1), 2, '0', STR_PAD_LEFT), 'status' => $st,
+                'received_at' => Carbon::parse('2026-06-30 14:00')->addHours($i), 'received_by_id' => $handler->id,
+                'picked_up_at' => $st === 'picked_up' ? Carbon::parse('2026-06-30 19:00')->addHours($i) : null,
+                'picked_up_by' => $st === 'picked_up' ? ($res?->full_name ?? 'Cư dân') : null,
             ]);
         }
     }

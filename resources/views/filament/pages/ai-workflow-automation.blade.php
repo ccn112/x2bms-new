@@ -11,6 +11,9 @@
 @endphp
 
 <x-filament-panels::page>
+    {{-- Registers the per-workflow edit modal (mounted via mountAction from each canvas). --}}
+    <div class="hidden">{{ $this->editWorkflowAction }}</div>
+
     <x-x2.action-bar
         title="Thiết kế Workflow Automation"
         subtitle="Tạo & theo dõi các luồng tự động hoá có AI: kích hoạt → xử lý → điều kiện → hành động." />
@@ -48,7 +51,19 @@
                     {{-- Canvas --}}
                     <x-x2.section-card :title="$wf->name" :subtitle="$wf->description">
                         <x-slot:action>
-                            <x-x2.status-badge :label="$wfLabel[$wf->status] ?? $wf->status" :tone="$wfTone[$wf->status] ?? 'slate'" />
+                            <div class="flex items-center gap-2">
+                                <button type="button" wire:click="mountAction('editWorkflow', { id: {{ $wf->id }} })"
+                                        class="rounded-lg border border-slate-200 px-2.5 py-1 text-xs font-semibold text-slate-600 transition hover:bg-slate-50">Sửa</button>
+                                <button type="button" wire:click="runWorkflow({{ $wf->id }})" wire:loading.attr="disabled"
+                                        class="rounded-lg bg-x2-blue/10 px-2.5 py-1 text-xs font-semibold text-x2-blue transition hover:bg-x2-blue/20">Chạy thử</button>
+                                <button type="button" wire:click="toggleWorkflow({{ $wf->id }})" wire:loading.attr="disabled"
+                                        @class([
+                                            'rounded-lg px-2.5 py-1 text-xs font-semibold transition',
+                                            'bg-x2-amber/10 text-x2-amber hover:bg-x2-amber/20' => $wf->status === 'active',
+                                            'bg-x2-green/10 text-x2-green hover:bg-x2-green/20' => $wf->status !== 'active',
+                                        ])>{{ $wf->status === 'active' ? 'Tạm dừng' : 'Kích hoạt' }}</button>
+                                <x-x2.status-badge :label="$wfLabel[$wf->status] ?? $wf->status" :tone="$wfTone[$wf->status] ?? 'slate'" />
+                            </div>
                         </x-slot:action>
                         <div class="flex flex-wrap items-stretch gap-2 overflow-x-auto py-2">
                             @foreach ($wf->steps ?? [] as $i => $step)

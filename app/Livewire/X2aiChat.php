@@ -269,7 +269,11 @@ class X2aiChat extends Component
         }
         $apiMessages[] = ['role' => 'user', 'content' => $blocks];
 
-        $tools = $this->mode === 'data' ? [X2aiClient::dataLookupTool()] : [];
+        // KB search luôn bật (kết quả tự lọc theo quyền xem của user); Mode 2 thêm lookup_data.
+        $tools = [X2aiClient::knowledgeSearchTool()];
+        if ($this->mode === 'data') {
+            $tools[] = X2aiClient::dataLookupTool();
+        }
         $client = app(X2aiClient::class);
         $reply = $client->ask($apiMessages, $this->systemPrompt(), $tools);
 
@@ -428,6 +432,8 @@ class X2aiChat extends Component
             $lines[] = 'Hãy trả lời bám sát nội dung màn hình trên khi câu hỏi liên quan tới những gì người dùng đang xem.';
         }
 
+        $lines[] = 'Dùng công cụ search_knowledge để tra cứu tài liệu nội bộ (quy trình, hướng dẫn, chính sách, nội quy) '
+            .'trong Cơ sở tri thức — kết quả đã tự giới hạn theo quyền xem của người dùng, hãy trả lời có trích dẫn tên tài liệu.';
         if ($this->mode === 'data') {
             $lines[] = 'Bạn được phép dùng công cụ lookup_data để tra cứu dữ liệu thật khi cần số liệu/bản ghi cụ thể.';
         }

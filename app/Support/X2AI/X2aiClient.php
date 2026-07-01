@@ -142,10 +142,29 @@ class X2aiClient
         ];
     }
 
+    /** Tool KB — đọc tài liệu nội bộ (Cơ sở tri thức) trong phạm vi quyền của user. */
+    public static function knowledgeSearchTool(): array
+    {
+        return [
+            'name' => 'search_knowledge',
+            'description' => 'Tìm & đọc tài liệu trong Cơ sở tri thức nội bộ (KB) của X2-BMS: quy trình, '
+                .'hướng dẫn, chính sách, nội quy... Kết quả CHỈ gồm tài liệu người dùng được phép xem. '
+                .'Dùng khi câu hỏi liên quan tới hướng dẫn/quy định/chính sách/nội quy nội bộ.',
+            'input_schema' => [
+                'type' => 'object',
+                'properties' => [
+                    'query' => ['type' => 'string', 'description' => 'Từ khóa/chủ đề cần tra trong cơ sở tri thức.'],
+                ],
+                'required' => ['query'],
+            ],
+        ];
+    }
+
     private function runTool(string $name, array $input): string
     {
         return match ($name) {
             'lookup_data' => app(X2aiDataConnector::class)->query($input),
+            'search_knowledge' => app(X2aiKnowledgeConnector::class)->search($input),
             default => 'Công cụ không hỗ trợ: '.$name,
         };
     }
