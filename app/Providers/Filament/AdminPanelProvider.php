@@ -54,9 +54,12 @@ class AdminPanelProvider extends PanelProvider
             ])
             ->navigationGroups([
                 NavigationGroup::make('Cư dân & Căn hộ'),
+                NavigationGroup::make('Vận hành'),
                 NavigationGroup::make('Cơ cấu & Tổ chức'),
                 NavigationGroup::make('Tài chính – Phí'),
                 NavigationGroup::make('X2 AI Engine')->icon('heroicon-o-sparkles'),
+                NavigationGroup::make('Nền tảng (SuperAdmin)')->icon('heroicon-o-building-library'),
+                NavigationGroup::make('SaaS Billing')->icon('heroicon-o-banknotes'),
                 NavigationGroup::make('Hệ thống'),
             ])
             // /admin shows only the designed custom pages. Raw CRUD resources live

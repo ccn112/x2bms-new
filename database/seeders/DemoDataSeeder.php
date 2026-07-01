@@ -596,6 +596,332 @@ class DemoDataSeeder extends Seeder
         $this->seedTier5Community($tenant, $project, $building);
         $this->seedTier5Ecosystem($tenant, $project, $building);
         $this->seedEntityGapClose($tenant, $admin);
+        $this->seedPlatformContent($tenant, $project, $admin);
+        $this->seedGlobalAccounts($tenant, $project, $building, $admin);
+        $this->seedSharedPartners($tenant, $project);
+        $this->seedDocumentTemplates($tenant, $admin);
+        $this->seedKbAiGovernance($tenant, $project, $admin);
+    }
+
+    /** Addendum / P6 — KB governance + AI guardrail + retrieval log + mở rộng prompt. */
+    private function seedKbAiGovernance(Tenant $tenant, Project $project, User $admin): void
+    {
+        $docs = [
+            ['KBD-001', 'Nội quy chung cư nền tảng', 'resident_rule', 'platform', 'public'],
+            ['KBD-002', 'SOP vận hành tòa nhà', 'sop', 'platform', 'internal'],
+            ['KBD-003', 'Chính sách bảo mật dữ liệu', 'policy', 'platform', 'confidential'],
+            ['KBD-004', 'Hướng dẫn PCCC', 'guide', 'tenant', 'internal'],
+        ];
+        foreach ($docs as $i => [$code, $title, $type, $scope, $sens]) {
+            $doc = \App\Models\KnowledgeDocument::create([
+                'code' => $code, 'title' => $title, 'description' => $title, 'document_type' => $type,
+                'owner_scope' => $scope, 'owner_id' => $scope === 'tenant' ? $tenant->id : null,
+                'content_markdown' => "# {$title}\n\nNội dung tài liệu.", 'status' => 'active',
+                'ai_index_status' => $i < 3 ? 'indexed' : 'queued', 'ai_indexed_at' => $i < 3 ? Carbon::parse('2026-06-20') : null,
+                'sensitivity' => $sens, 'effective_from' => Carbon::parse('2026-01-01'),
+            ]);
+            \App\Models\KnowledgeScope::create([
+                'knowledge_document_id' => $doc->id, 'scope_type' => $scope,
+                'scope_id' => $scope === 'tenant' ? $tenant->id : null,
+                'permission' => $sens === 'public' ? 'ai_read' : ($sens === 'confidential' ? 'read' : 'ai_read'), 'status' => 'active',
+            ]);
+        }
+
+        $guards = [
+            ['GR-PII', 'Ẩn dữ liệu cá nhân', 'privacy', 'high', 'block'],
+            ['GR-FIN', 'Chặn tiết lộ số liệu tài chính nhạy cảm', 'finance', 'high', 'require_human_approval'],
+            ['GR-HALLU', 'Chống bịa đặt', 'hallucination', 'medium', 'warn'],
+            ['GR-ESC', 'Leo thang khi rủi ro cao', 'escalation', 'critical', 'require_human_approval'],
+        ];
+        foreach ($guards as [$code, $name, $type, $sev, $action]) {
+            \App\Models\AiGuardrailPolicy::create([
+                'code' => $code, 'name' => $name, 'description' => $name, 'policy_type' => $type,
+                'rule_json' => ['match' => $type], 'severity' => $sev, 'action' => $action, 'is_active' => true,
+            ]);
+        }
+
+        // Retrieval logs demo.
+        $docIds = \App\Models\KnowledgeDocument::pluck('id')->all();
+        for ($i = 0; $i < 4; $i++) {
+            \App\Models\AiRetrievalLog::create([
+                'user_id' => $admin->id, 'tenant_id' => $tenant->id, 'project_id' => $project->id,
+                'question' => ['Nội quy giữ xe?', 'Quy trình PCCC?', 'Chính sách phí?', 'Giờ mở hồ bơi?'][$i],
+                'answer_summary' => 'Trả lời dựa trên KB nền tảng.',
+                'retrieved_document_ids_json' => array_slice($docIds, 0, 2),
+                'blocked_document_ids_json' => $i === 2 ? array_slice($docIds, 2, 1) : [],
+                'permission_snapshot_json' => ['role' => 'super_admin'], 'model' => 'claude-haiku-4-5',
+                'token_input' => 800 + $i * 100, 'token_output' => 300 + $i * 50, 'latency_ms' => 1200 + $i * 200,
+            ]);
+        }
+
+        // Mở rộng vài prompt template theo addendum (use_case/system_prompt).
+        foreach (\App\Models\AiPromptTemplate::where('tenant_id', $tenant->id)->take(3)->get() as $i => $pt) {
+            $pt->update([
+                'code' => 'PT-'.str_pad((string) ($i + 1), 3, '0', STR_PAD_LEFT),
+                'use_case' => ['resident_qa', 'bql_copilot', 'support_agent'][$i] ?? 'resident_qa',
+                'system_prompt' => 'Bạn là trợ lý X2AI. Trả lời ngắn gọn, chính xác, tiếng Việt.',
+                'user_prompt_template' => 'Người dùng hỏi: {{question}}',
+                'variables_json' => ['question'], 'owner_scope' => 'platform',
+            ]);
+        }
+    }
+
+    /** Addendum / P5 — thư viện mẫu tài liệu + share + clone. */
+    private function seedDocumentTemplates(Tenant $tenant, User $admin): void
+    {
+        $cats = [];
+        foreach ([['SOP', 'Quy trình SOP'], ['POLICY', 'Chính sách'], ['CONTRACT', 'Hợp đồng mẫu'], ['FORM', 'Biểu mẫu']] as [$code, $name]) {
+            $cats[$code] = \App\Models\DocumentTemplateCategory::create(['code' => $code, 'name' => $name]);
+        }
+        $tplDefs = [
+            ['TPL-SOP-01', 'SOP tiếp nhận phản ánh', 'sop', 'SOP'],
+            ['TPL-POL-01', 'Chính sách phí quản lý mẫu', 'policy', 'POLICY'],
+            ['TPL-CTR-01', 'Hợp đồng dịch vụ vệ sinh mẫu', 'contract', 'CONTRACT'],
+            ['TPL-FRM-01', 'Biểu mẫu đăng ký chuyển đồ', 'form', 'FORM'],
+        ];
+        $templates = [];
+        foreach ($tplDefs as $i => [$code, $title, $type, $catCode]) {
+            $templates[] = \App\Models\DocumentTemplate::create([
+                'code' => $code, 'category_id' => $cats[$catCode]->id, 'title' => $title, 'description' => $title,
+                'template_type' => $type, 'owner_scope' => 'platform', 'version' => 1, 'status' => 'active',
+                'body_markdown' => "# {$title}\n\nNội dung mẫu áp dụng toàn nền tảng.", 'ai_readable' => true,
+                'effective_from' => Carbon::parse('2026-01-01'), 'created_by' => $admin->id, 'approved_by' => $admin->id,
+            ]);
+        }
+        // Chia sẻ mẫu platform → tenant (clone_allowed) + 1 clone.
+        \App\Models\DocumentTemplateShare::create([
+            'template_id' => $templates[0]->id, 'from_scope' => 'platform', 'to_scope' => 'tenant', 'to_owner_id' => $tenant->id,
+            'share_mode' => 'clone_allowed', 'can_ai_read' => true, 'effective_from' => Carbon::parse('2026-06-01'), 'status' => 'active',
+        ]);
+        $clone = \App\Models\DocumentTemplate::create([
+            'code' => 'TPL-SOP-01-T'.$tenant->id, 'category_id' => $cats['SOP']->id, 'title' => 'SOP tiếp nhận phản ánh (bản công ty)',
+            'template_type' => 'sop', 'owner_scope' => 'tenant', 'owner_id' => $tenant->id, 'version' => 1, 'status' => 'active',
+            'body_markdown' => "# SOP tiếp nhận phản ánh\n\nĐiều chỉnh theo công ty.", 'ai_readable' => true, 'created_by' => $admin->id,
+        ]);
+        \App\Models\DocumentTemplateClone::create([
+            'source_template_id' => $templates[0]->id, 'cloned_template_id' => $clone->id, 'cloned_by' => $admin->id,
+            'cloned_at' => Carbon::parse('2026-06-15'), 'clone_reason' => 'Tùy biến cho công ty',
+        ]);
+    }
+
+    /** Addendum / P4 — thư viện đối tác dùng chung + gán cho tenant. */
+    private function seedSharedPartners(Tenant $tenant, Project $project): void
+    {
+        $cats = [];
+        foreach ([
+            ['CT-ELV', 'Thang máy', 'contractor'], ['CT-PCCC', 'PCCC', 'contractor'],
+            ['CT-MEP', 'Cơ điện MEP', 'contractor'], ['CT-SEC', 'An ninh', 'contractor'],
+            ['SP-MEP', 'Vật tư M&E', 'supplier'], ['SP-EQP', 'Thiết bị', 'supplier'],
+            ['SV-CLEAN', 'Vệ sinh', 'service_provider'],
+        ] as [$code, $name, $type]) {
+            $cats[$code] = \App\Models\SharedPartnerCategory::create(['code' => $code, 'name' => $name, 'partner_type' => $type]);
+        }
+        $partnerDefs = [
+            // [code, name, partner_type, category_code, verification_status, rating]
+            ['NT-TN', 'Thang máy Thiên Nam', 'contractor', 'CT-ELV', 'preferred', 4.7],
+            ['NT-OTIS', 'Thang máy OTIS VN', 'contractor', 'CT-ELV', 'verified', 4.5],
+            ['NT-PCCC1', 'PCCC Trường Sơn', 'contractor', 'CT-PCCC', 'verified', 4.2],
+            ['NT-PCCC2', 'PCCC An Toàn Việt', 'contractor', 'CT-PCCC', 'unverified', 0.0],
+            ['NT-MEP1', 'Cơ điện REE M&E', 'contractor', 'CT-MEP', 'preferred', 4.8],
+            ['NT-SEC1', 'An ninh Long Hải', 'contractor', 'CT-SEC', 'verified', 4.1],
+            ['NT-SEC2', 'Bảo vệ Thắng Lợi', 'contractor', 'CT-SEC', 'blacklisted', 2.3],
+            ['NCC-SG', 'Vật tư Sài Gòn M&E', 'supplier', 'SP-MEP', 'verified', 4.3],
+            ['NCC-HP', 'Vật tư Hải Phát', 'supplier', 'SP-MEP', 'preferred', 4.6],
+            ['NCC-EQ1', 'Thiết bị Schneider VN', 'supplier', 'SP-EQP', 'verified', 4.4],
+            ['NCC-EQ2', 'Thiết bị ABB Việt Nam', 'supplier', 'SP-EQP', 'unverified', 0.0],
+            ['DV-SX', 'Vệ sinh Sạch Xanh', 'service_provider', 'SV-CLEAN', 'verified', 4.5],
+        ];
+        $partners = [];
+        foreach ($partnerDefs as $i => [$code, $name, $type, $catKey, $vstatus, $rating]) {
+            $p = \App\Models\SharedPartner::create([
+                'code' => $code, 'name' => $name, 'partner_type' => $type, 'category_id' => $cats[$catKey]->id,
+                'tax_code' => '03123'.$i, 'contact_name' => 'Phòng KD', 'phone' => '028 3822 00'.$i,
+                'service_area' => 'TP.HCM', 'verification_status' => $vstatus, 'rating_avg' => $rating, 'kpi_score' => $rating * 20,
+                'description' => $name, 'is_active' => true,
+            ]);
+            \App\Models\SharedPartnerCertification::create([
+                'partner_id' => $p->id, 'name' => 'Chứng nhận năng lực', 'certificate_no' => 'CC-'.$code,
+                'issued_by' => 'Sở Xây dựng', 'issued_at' => Carbon::parse('2024-01-01'), 'expired_at' => Carbon::parse('2027-01-01'),
+            ]);
+            if ($type === 'supplier') {
+                foreach ([['MEP-001', 'Cáp điện CV', 'm', 25000], ['MEP-002', 'Ống PPR', 'm', 45000]] as [$sku, $pn, $unit, $price]) {
+                    \App\Models\SharedPartnerProduct::create(['partner_id' => $p->id, 'sku' => $sku, 'name' => $pn, 'unit' => $unit, 'reference_price' => $price, 'warranty_months' => 12]);
+                }
+            }
+            $partners[] = $p;
+        }
+
+        $asgTypes = ['contracted_vendor', 'approved_vendor', 'favorite'];
+        foreach ($partners as $i => $p) {
+            // Không gán đối tác bị cấm (AC-14).
+            if ($p->verification_status === 'blacklisted') {
+                continue;
+            }
+            \App\Models\TenantPartnerAssignment::create([
+                'tenant_id' => $tenant->id, 'project_id' => $project->id, 'partner_id' => $p->id,
+                'assignment_type' => $asgTypes[$i % count($asgTypes)],
+                'contract_no' => $i === 0 ? 'HD-2026-001' : null, 'start_date' => Carbon::parse('2026-01-01'),
+                'end_date' => Carbon::parse('2026-12-31'),
+            ]);
+        }
+    }
+
+    /** Addendum / P3 — tài khoản gốc + yêu cầu/liên kết gắn cư dân. */
+    private function seedGlobalAccounts(Tenant $tenant, Project $project, Building $building, User $admin): void
+    {
+        // Vài căn hộ trong dự án để gắn (nhiều tòa nếu có).
+        $apts = Apartment::whereIn('building_id', Building::where('project_id', $project->id)->pluck('id'))
+            ->orderBy('id')->limit(10)->get()->values();
+        $aptAt = fn (int $i) => $apts->get($i % max($apts->count(), 1));
+
+        // Registry đa dạng: verified/chờ xác thực, nhiều account_type, 1 bị khoá,
+        // 1 cặp nghi trùng (cùng duplicate_group_id + SĐT gần giống), risk score cao.
+        $accounts = [
+            // [name, phone, email, identity_status, account_type, account_status, risk, dupGroup]
+            ['Nguyễn Văn An', '0901234567', 'nguyenvanan@gmail.com', 'verified', 'resident', 'active', 0, null],
+            ['Trần Thị Bình', '0912345678', 'binhtt@gmail.com', 'phone_verified', 'public_user', 'active', 20, null],
+            ['Lê Quản Trị', '0987000111', 'admin.le@x2bms.vn', 'verified', 'platform_admin', 'active', 0, null],
+            ['Phạm Thị Cúc', '0903000222', 'cucpham@gmail.com', 'verified', 'resident', 'active', 0, null],
+            ['Hoàng Văn Dũng', '0903000223', 'dunghoang@gmail.com', 'email_verified', 'public_user', 'active', 65, 'DUP-01'],
+            ['Hoàng V. Dũng', '0903000223', 'dung.hoang88@gmail.com', 'unverified', 'public_user', 'active', 70, 'DUP-01'],
+            ['Đỗ Thị Em', '0916111333', 'do.em@gmail.com', 'phone_verified', 'public_user', 'active', 15, null],
+            ['Vũ Minh Phúc', '0918222444', 'phucvm@gmail.com', 'verified', 'contractor', 'active', 0, null],
+            ['Bùi Thị Giang', '0919333555', 'giangbui@gmail.com', 'unverified', 'public_user', 'suspended', 85, null],
+            ['Ngô Văn Hải', '0921444666', 'haingo@gmail.com', 'verified', 'resident', 'active', 0, null],
+            ['Đặng Thị Hoa', '0922555777', 'hoadang@gmail.com', 'phone_verified', 'public_user', 'active', 10, null],
+            ['Lý Văn Khoa', '0923666888', 'khoaly@gmail.com', 'email_verified', 'vendor', 'active', 0, null],
+        ];
+        $created = [];
+        foreach ($accounts as $i => [$name, $phone, $email, $idStatus, $type, $accStatus, $risk, $dup]) {
+            $created[] = \App\Models\GlobalUserAccount::create([
+                'uuid' => \Illuminate\Support\Str::uuid(), 'phone' => $phone, 'email' => $email, 'full_name' => $name,
+                'identity_status' => $idStatus, 'account_status' => $accStatus, 'account_type' => $type,
+                'first_registered_at' => Carbon::parse('2026-01-05')->addDays($i * 4),
+                'last_login_at' => Carbon::parse('2026-06-30')->subDays($i),
+                'risk_score' => $risk, 'duplicate_group_id' => $dup,
+            ]);
+        }
+
+        // Hàng đợi duyệt gắn căn: phủ đủ 5 trạng thái + 1 account gắn NHIỀU căn (AC-07).
+        $ev = ['evidence' => ['so_hong.pdf', 'cccd_front.jpg']];
+        $reqApproved = \App\Models\ResidentBindingRequest::create([
+            'code' => 'BIND-0001', 'user_account_id' => $created[0]->id, 'tenant_id' => $tenant->id,
+            'project_id' => $project->id, 'building_id' => $aptAt(0)?->building_id, 'apartment_id' => $aptAt(0)?->id,
+            'requested_role' => 'owner', 'status' => 'approved', 'requested_at' => Carbon::parse('2026-06-20'),
+            'reviewed_by' => $admin->id, 'reviewed_at' => Carbon::parse('2026-06-21'), 'review_note' => 'Hợp lệ',
+            'evidence_files_json' => $ev,
+        ]);
+        \App\Models\ResidentUnitBinding::create([
+            'user_account_id' => $created[0]->id, 'tenant_id' => $tenant->id, 'project_id' => $project->id,
+            'building_id' => $aptAt(0)?->building_id, 'apartment_id' => $aptAt(0)?->id, 'role' => 'owner', 'status' => 'active',
+            'starts_at' => Carbon::parse('2026-06-21'), 'approved_request_id' => $reqApproved->id,
+        ]);
+        // Cùng account (An) sở hữu thêm 1 căn nữa — minh hoạ 1 tài khoản nhiều căn.
+        $reqApproved2 = \App\Models\ResidentBindingRequest::create([
+            'code' => 'BIND-0002', 'user_account_id' => $created[0]->id, 'tenant_id' => $tenant->id,
+            'project_id' => $project->id, 'building_id' => $aptAt(5)?->building_id, 'apartment_id' => $aptAt(5)?->id,
+            'requested_role' => 'owner', 'status' => 'approved', 'requested_at' => Carbon::parse('2026-06-25'),
+            'reviewed_by' => $admin->id, 'reviewed_at' => Carbon::parse('2026-06-26'), 'evidence_files_json' => $ev,
+        ]);
+        \App\Models\ResidentUnitBinding::create([
+            'user_account_id' => $created[0]->id, 'tenant_id' => $tenant->id, 'project_id' => $project->id,
+            'building_id' => $aptAt(5)?->building_id, 'apartment_id' => $aptAt(5)?->id, 'role' => 'owner', 'status' => 'active',
+            'starts_at' => Carbon::parse('2026-06-26'), 'approved_request_id' => $reqApproved2->id,
+        ]);
+
+        // Các yêu cầu còn treo: pending × nhiều, need_more_info, rejected, cancelled.
+        $pending = [
+            [$created[1], 1, 'tenant', '2026-07-01'],
+            [$created[3], 2, 'owner', '2026-06-29'],
+            [$created[6], 3, 'family_member', '2026-06-30'],
+            [$created[9], 4, 'owner', '2026-07-01'],
+            [$created[10], 6, 'tenant', '2026-06-28'],
+        ];
+        $n = 3;
+        foreach ($pending as [$acc, $ai, $role, $date]) {
+            \App\Models\ResidentBindingRequest::create([
+                'code' => 'BIND-'.str_pad((string) $n++, 4, '0', STR_PAD_LEFT), 'user_account_id' => $acc->id,
+                'tenant_id' => $tenant->id, 'project_id' => $project->id, 'building_id' => $aptAt($ai)?->building_id,
+                'apartment_id' => $aptAt($ai)?->id, 'requested_role' => $role, 'status' => 'pending',
+                'requested_at' => Carbon::parse($date), 'evidence_files_json' => $ev,
+            ]);
+        }
+        \App\Models\ResidentBindingRequest::create([
+            'code' => 'BIND-'.str_pad((string) $n++, 4, '0', STR_PAD_LEFT), 'user_account_id' => $created[4]->id,
+            'tenant_id' => $tenant->id, 'project_id' => $project->id, 'building_id' => $aptAt(7)?->building_id,
+            'apartment_id' => $aptAt(7)?->id, 'requested_role' => 'owner', 'status' => 'need_more_info',
+            'requested_at' => Carbon::parse('2026-06-27'), 'reviewed_by' => $admin->id, 'reviewed_at' => Carbon::parse('2026-06-28'),
+            'review_note' => 'Cần bổ sung sổ hồng bản công chứng', 'evidence_files_json' => ['evidence' => ['cccd_front.jpg']],
+        ]);
+        \App\Models\ResidentBindingRequest::create([
+            'code' => 'BIND-'.str_pad((string) $n++, 4, '0', STR_PAD_LEFT), 'user_account_id' => $created[8]->id,
+            'tenant_id' => $tenant->id, 'project_id' => $project->id, 'building_id' => $aptAt(8)?->building_id,
+            'apartment_id' => $aptAt(8)?->id, 'requested_role' => 'tenant', 'status' => 'rejected',
+            'requested_at' => Carbon::parse('2026-06-22'), 'reviewed_by' => $admin->id, 'reviewed_at' => Carbon::parse('2026-06-23'),
+            'review_note' => 'Giấy tờ không khớp chủ hộ', 'evidence_files_json' => $ev,
+        ]);
+        \App\Models\ResidentBindingRequest::create([
+            'code' => 'BIND-'.str_pad((string) $n++, 4, '0', STR_PAD_LEFT), 'user_account_id' => $created[7]->id,
+            'tenant_id' => $tenant->id, 'project_id' => $project->id, 'building_id' => $aptAt(9)?->building_id,
+            'apartment_id' => $aptAt(9)?->id, 'requested_role' => 'guest', 'status' => 'cancelled',
+            'requested_at' => Carbon::parse('2026-06-24'),
+        ]);
+    }
+
+    /** Addendum / P2 — platform content + thư viện dự án public. */
+    private function seedPlatformContent(Tenant $tenant, Project $project, User $admin): void
+    {
+        $cats = [];
+        foreach ([['NEWS', 'Tin tức', 'news'], ['BANNER', 'Banner', 'banner'], ['GUIDE', 'Hướng dẫn', 'guide'], ['POLICY', 'Chính sách', 'policy']] as [$code, $name, $type]) {
+            $cats[$type] = \App\Models\PlatformContentCategory::create(['code' => $code, 'name' => $name, 'type' => $type]);
+        }
+        $contents = [
+            ['Ra mắt X2-BMS 2.0', 'news', 'published', 'platform'],
+            ['Ưu đãi nâng cấp gói Thông minh', 'banner', 'published', 'public'],
+            ['Hướng dẫn kích hoạt tài khoản cư dân', 'guide', 'published', 'public'],
+            ['Chính sách bảo mật dữ liệu nền tảng', 'policy', 'published', 'platform'],
+            ['Bản tin vận hành tháng 7 (nháp)', 'news', 'draft', 'platform'],
+        ];
+        foreach ($contents as $i => [$title, $type, $status, $scope]) {
+            \App\Models\PlatformContent::create([
+                'category_id' => $cats[$type]->id ?? null, 'title' => $title, 'slug' => \Illuminate\Support\Str::slug($title),
+                'summary' => $title, 'body' => '<p>'.$title.'</p>', 'content_type' => $type === 'banner' ? 'banner' : 'news',
+                'publish_scope' => $scope, 'status' => $status, 'created_by' => $admin->id,
+                'approved_by' => $status === 'published' ? $admin->id : null,
+                'published_at' => $status === 'published' ? Carbon::parse('2026-06-25')->addDays($i) : null,
+            ]);
+        }
+
+        $pp = \App\Models\PublicProject::create([
+            'code' => 'PP-SSG', 'name' => 'Sunshine Garden', 'developer_name' => 'Sunshine Group',
+            'address' => 'P. An Phú, TP. Thủ Đức', 'province' => 'TP. Hồ Chí Minh', 'project_type' => 'urban_area',
+            'status' => 'operating', 'blocks' => 2, 'apartments' => 160,
+            'amenities_json' => ['gym', 'pool', 'bbq', 'kids'], 'description' => 'Khu căn hộ cao cấp ven sông.', 'is_public' => true,
+        ]);
+        foreach ([['image', 'Ảnh tổng thể'], ['floor_plan', 'Mặt bằng điển hình'], ['brochure', 'Brochure dự án']] as $i => [$mt, $t]) {
+            \App\Models\ProjectMedia::create(['public_project_id' => $pp->id, 'media_type' => $mt, 'title' => $t, 'file_url' => 'public-projects/ssg-'.$mt.'.jpg', 'sort_order' => $i]);
+        }
+        \App\Models\TenantProjectLink::create([
+            'tenant_id' => $tenant->id, 'project_id' => $project->id, 'public_project_id' => $pp->id,
+            'linked_by' => $admin->id, 'linked_at' => Carbon::parse('2026-06-01'),
+        ]);
+
+        // Thêm dự án public khác để thư viện phong phú.
+        $more = [
+            ['PP-RVR', 'Riverside Residence', 'Nam Long Group', 'Q.7', 'apartment', 'operating', 3, 240, ['pool', 'gym', 'mall']],
+            ['PP-GRN', 'Green Valley', 'Phú Mỹ Hưng', 'Q.7', 'apartment', 'handover', 4, 320, ['park', 'school', 'pool']],
+            ['PP-SKY', 'Sky Central', 'Masterise Homes', 'TP. Thủ Đức', 'mixed', 'selling', 2, 180, ['sky_bar', 'gym']],
+            ['PP-LOTUS', 'Lotus Lake', 'Ecopark', 'Hưng Yên', 'villa', 'planning', 6, 90, ['lake', 'golf']],
+        ];
+        foreach ($more as $j => [$code, $name, $dev, $prov, $ptype, $status, $blocks, $apts, $amen]) {
+            $x = \App\Models\PublicProject::create([
+                'code' => $code, 'name' => $name, 'developer_name' => $dev, 'province' => $prov,
+                'project_type' => $ptype, 'status' => $status, 'blocks' => $blocks, 'apartments' => $apts,
+                'amenities_json' => $amen, 'description' => $name.' — dự án trong thư viện nền tảng.',
+                'is_public' => $status !== 'planning',
+            ]);
+            \App\Models\ProjectMedia::create(['public_project_id' => $x->id, 'media_type' => 'image', 'title' => 'Phối cảnh', 'file_url' => 'public-projects/'.strtolower($code).'.jpg', 'sort_order' => 0]);
+        }
     }
 
     /** B7 — đóng nốt gap: activity_logs + Tier 6 (ai_requests, ai_approvals, automation_steps, knowledge_chunks). */
@@ -993,51 +1319,268 @@ class DemoDataSeeder extends Seeder
     /** Tier 4 / B1 — SaaS billing (gói, thuê bao, hóa đơn, module, usage). */
     private function seedTier4Saas(Tenant $tenant): void
     {
-        $planDefs = [
-            ['STARTER', 'Starter', 2_000_000, 20_000_000, 1, 200],
-            ['PRO', 'Professional', 6_000_000, 60_000_000, 5, 2000],
-            ['ENT', 'Enterprise', 15_000_000, 150_000_000, null, null],
+        // --- Modules (M01..M12) + features ---
+        $moduleDefs = [
+            ['M01', 'Core SaaS & Tenant', ['tenant_core', 'subscription']],
+            ['M02', 'Global IAM & Account', ['global_account', 'resident_binding', 'rbac']],
+            ['M03', 'Master Data & Building', ['master_data']],
+            ['M04', 'Content & Project CMS', ['platform_content', 'public_project']],
+            ['M05', 'Resident Engagement', ['notification', 'feedback', 'forms']],
+            ['M06', 'Finance & Fee', ['fee_setup', 'billing', 'payment']],
+            ['M07', 'Facility & Work Order', ['work_order', 'maintenance', 'sla']],
+            ['M08', 'Asset / IOC / Security', ['asset', 'security', 'patrol']],
+            ['M09', 'Reports / Dashboard', ['dashboard', 'report_library']],
+            ['M10', 'Shared Contractor / Supplier', ['contractor_library', 'supplier_library']],
+            ['M11', 'Document Template / KB', ['document_template', 'kb_inheritance']],
+            ['M12', 'AI / Automation / Governance', ['x2ai', 'rag', 'prompt_guardrail', 'ai_audit']],
         ];
-        $plans = [];
-        foreach ($planDefs as [$code, $name, $mo, $yr, $maxP, $maxU]) {
-            $plan = \App\Models\SaasPlan::create([
-                'code' => $code, 'name' => $name, 'description' => 'Gói '.$name,
-                'price_monthly' => $mo, 'price_yearly' => $yr, 'max_projects' => $maxP, 'max_units' => $maxU, 'status' => 'active',
-            ]);
-            foreach ([['projects', 'Số dự án', $maxP ?? 'Không giới hạn'], ['ai', 'Trợ lý X2AI', $code === 'STARTER' ? 'Cơ bản' : 'Đầy đủ'], ['support', 'Hỗ trợ', $code === 'ENT' ? '24/7' : 'Giờ hành chính']] as [$k, $n, $v]) {
-                \App\Models\PlanFeature::create(['saas_plan_id' => $plan->id, 'key' => $k, 'name' => $n, 'value' => (string) $v]);
+        $featureByCode = [];
+        foreach ($moduleDefs as [$mcode, $mname, $fcodes]) {
+            $module = \App\Models\Module::create(['code' => $mcode, 'name' => $mname]);
+            foreach ($fcodes as $fc) {
+                $featureByCode[$fc] = \App\Models\Feature::create(['module_id' => $module->id, 'code' => $fc, 'name' => ucwords(str_replace('_', ' ', $fc))]);
             }
-            $plans[$code] = $plan;
         }
 
-        $sub = \App\Models\Subscription::create([
-            'tenant_id' => $tenant->id, 'saas_plan_id' => $plans['ENT']->id, 'status' => 'active',
-            'billing_cycle' => 'monthly', 'seats' => 25, 'price' => 15_000_000,
-            'started_at' => Carbon::parse('2026-01-01'), 'current_period_start' => Carbon::parse('2026-07-01'),
-            'current_period_end' => Carbon::parse('2026-07-31'),
+        // --- Plans (popular|full|intelligent) + plan_features ---
+        $planDefs = [
+            ['popular', 'Phổ biến', 2_000_000, 20_000_000],
+            ['full', 'Đầy đủ', 6_000_000, 60_000_000],
+            ['intelligent', 'Thông minh', 15_000_000, 150_000_000],
+        ];
+        // feature phổ biến / thêm ở full / thêm ở intelligent
+        $popular = ['tenant_core', 'subscription', 'global_account', 'resident_binding', 'rbac', 'master_data', 'platform_content', 'notification', 'feedback', 'forms', 'fee_setup', 'billing', 'payment', 'work_order', 'maintenance', 'sla', 'asset', 'security', 'patrol', 'dashboard', 'document_template'];
+        $fullExtra = ['public_project', 'contractor_library', 'supplier_library', 'report_library'];
+        $intelExtra = ['kb_inheritance', 'x2ai', 'rag', 'prompt_guardrail', 'ai_audit'];
+        $planByCode = [];
+        foreach ($planDefs as [$code, $name, $mo, $yr]) {
+            $plan = \App\Models\Plan::create(['code' => $code, 'name' => $name, 'description' => 'Gói '.$name, 'monthly_base_price' => $mo, 'yearly_base_price' => $yr]);
+            $set = $popular;
+            if ($code !== 'popular') {
+                $set = array_merge($set, $fullExtra);
+            }
+            if ($code === 'intelligent') {
+                $set = array_merge($set, $intelExtra);
+            }
+            foreach ($set as $fc) {
+                if (isset($featureByCode[$fc])) {
+                    \App\Models\PlanFeature::create(['plan_id' => $plan->id, 'feature_id' => $featureByCode[$fc]->id, 'enabled' => true]);
+                }
+            }
+            $planByCode[$code] = $plan;
+        }
+
+        // --- Tenant demo: thuê bao gói Thông minh + entitlements (feature gate) ---
+        \App\Models\TenantSubscription::create([
+            'tenant_id' => $tenant->id, 'plan_id' => $planByCode['intelligent']->id, 'status' => 'active',
+            'billing_cycle' => 'monthly', 'start_date' => Carbon::parse('2026-01-01'), 'end_date' => Carbon::parse('2026-12-31'),
+            'auto_renew' => true, 'mrr' => 15_000_000, 'arr' => 180_000_000, 'currency' => 'VND',
         ]);
-        foreach ([['2026-05', 'paid'], ['2026-06', 'issued']] as $i => [$per, $status]) {
-            $inv = \App\Models\SubscriptionInvoice::create([
-                'tenant_id' => $tenant->id, 'subscription_id' => $sub->id, 'code' => 'SINV-'.str_replace('-', '', $per),
-                'period_start' => Carbon::parse($per.'-01'), 'period_end' => Carbon::parse($per.'-01')->endOfMonth(),
-                'amount' => 15_000_000, 'tax' => 1_500_000, 'total' => 16_500_000, 'status' => $status,
-                'issued_at' => Carbon::parse($per.'-01'), 'due_date' => Carbon::parse($per.'-10'),
-                'paid_at' => $status === 'paid' ? Carbon::parse($per.'-05') : null,
+        foreach (\App\Models\PlanFeature::where('plan_id', $planByCode['intelligent']->id)->pluck('feature_id') as $fid) {
+            \App\Models\TenantEntitlement::create(['tenant_id' => $tenant->id, 'feature_id' => $fid, 'enabled' => true, 'source' => 'plan', 'starts_at' => Carbon::parse('2026-07-01')]);
+        }
+        // 1 override: tắt marketplace-like module minh hoạ (M10) cho tenant demo.
+        \App\Models\TenantModuleOverride::create([
+            'tenant_id' => $tenant->id, 'module_id' => \App\Models\Module::where('code', 'M10')->value('id'),
+            'enabled' => false, 'reason' => 'Chưa dùng thư viện đối tác dùng chung',
+        ]);
+
+        // Batch 07 — dữ liệu billing SaaS đầy đủ (6 tenant, contract, addon, usage, invoice, wallet, adjustment).
+        $this->seedBatch07Billing($planByCode);
+    }
+
+    /** Batch 07 — SaaS billing/metering/revenue demo (theo BATCH_07_SEED_DATA_CATALOG). */
+    private function seedBatch07Billing(array $planByCode): void
+    {
+        // Bảng giá theo chu kỳ.
+        foreach ($planByCode as $plan) {
+            foreach ([['monthly', 1, 0], ['quarterly', 3, 5], ['yearly', 12, 15]] as [$cycle, $mult, $disc]) {
+                \App\Models\PlanPrice::create([
+                    'plan_id' => $plan->id, 'billing_cycle' => $cycle, 'currency' => 'VND',
+                    'price' => $plan->monthly_base_price * $mult, 'discount_percent' => $disc,
+                ]);
+            }
+        }
+
+        // Định nghĩa meter.
+        $meters = [
+            ['buildings', 'Số tòa', 'tòa'], ['apartments', 'Căn hộ', 'căn'], ['storage_gb', 'Lưu trữ', 'GB'],
+            ['sms_count', 'SMS', 'tin'], ['zalo_zns_count', 'Zalo ZNS', 'tin'], ['email_count', 'Email', 'email'],
+            ['api_calls', 'API calls', 'lượt'], ['ai_tokens', 'AI tokens', 'token'],
+        ];
+        foreach ($meters as [$code, $name, $unit]) {
+            \App\Models\UsageMeter::create(['code' => $code, 'name' => $name, 'unit' => $unit, 'is_billable' => true]);
+        }
+
+        // 6 tenant billing (tạo tenant nếu chưa có theo code).
+        $tenantDefs = [
+            ['TEN-0001', 'Sunshine Group', 'intelligent', 'active', 245_000_000, 'HDTB-2026-0001', 'monthly', '2026-01-01', '2026-12-31', true],
+            ['TEN-0002', 'An Phú Management', 'full', 'active', 186_000_000, 'HDTB-2026-0002', 'monthly', '2026-01-01', '2026-06-08', true],
+            ['TEN-0003', 'Maple Residence Services', 'full', 'active', 124_000_000, 'HDTB-2026-0003', 'quarterly', '2026-03-15', '2026-06-14', true],
+            ['TEN-0004', 'Green Home PM', 'popular', 'trial', 0, 'TRIAL-2026-0004', 'monthly', '2026-05-10', '2026-06-09', false],
+            ['TEN-0005', 'Central Lake', 'full', 'pending_renewal', 36_000_000, 'HDTB-2026-0005', 'yearly', '2025-06-01', '2026-05-31', true],
+            ['TEN-0006', 'Nova Operations', 'popular', 'suspended', 7_000_000, 'HDTB-2026-0006', 'monthly', '2026-02-01', '2026-04-30', false],
+        ];
+        $subByCode = [];
+        $tenantByCode = [];
+        foreach ($tenantDefs as [$code, $name, $planCode, $status, $mrr, $contractNo, $cycle, $start, $end, $auto]) {
+            $t = \App\Models\Tenant::firstOrCreate(['code' => $code], ['name' => $name, 'status' => $status === 'suspended' ? 'suspended' : 'active']);
+            $tenantByCode[$code] = $t;
+            $contractStatus = ['pending_renewal' => 'near_expiry', 'suspended' => 'expired', 'trial' => 'draft'][$status] ?? 'active';
+            $contract = \App\Models\SubscriptionContract::create([
+                'tenant_id' => $t->id, 'contract_no' => $contractNo, 'contract_type' => $status === 'trial' ? 'trial' : 'standard',
+                'status' => $contractStatus, 'start_date' => $start, 'end_date' => $end, 'annual_value' => $mrr * 12,
+                'payment_terms' => 'Net 15', 'sla_code' => 'SLA-STD',
             ]);
-            \App\Models\SubscriptionInvoiceLine::create([
-                'subscription_invoice_id' => $inv->id, 'description' => 'Thuê bao Enterprise tháng '.$per,
-                'quantity' => 1, 'unit_price' => 15_000_000, 'amount' => 15_000_000,
+            $sub = \App\Models\TenantSubscription::create([
+                'tenant_id' => $t->id, 'plan_id' => $planByCode[$planCode]->id, 'status' => $status,
+                'billing_cycle' => $cycle, 'start_date' => $start, 'end_date' => $end, 'auto_renew' => $auto,
+                'mrr' => $mrr, 'arr' => $mrr * 12, 'currency' => 'VND', 'contract_id' => $contract->id,
+            ]);
+            $subByCode[$code] = $sub;
+            \App\Models\SubscriptionItem::create([
+                'subscription_id' => $sub->id, 'item_type' => 'plan', 'name' => 'Gói '.$planByCode[$planCode]->name,
+                'quantity' => 1, 'unit_price' => $mrr, 'amount' => $mrr,
             ]);
         }
 
-        foreach ([['finance', 'Tài chính', true], ['feedback', 'Phản ánh', true], ['operations', 'Vận hành', true], ['ai', 'X2AI', true], ['marketplace', 'Marketplace', false]] as [$k, $n, $on]) {
-            \App\Models\TenantModule::create(['tenant_id' => $tenant->id, 'module_key' => $k, 'name' => $n, 'enabled' => $on]);
-        }
-        foreach ([['units', 160], ['ai_calls', 1248], ['storage_gb', 42], ['sms', 860]] as [$metric, $qty]) {
-            \App\Models\UsageMetering::create([
-                'tenant_id' => $tenant->id, 'subscription_id' => $sub->id, 'metric' => $metric, 'period' => '2026-07',
-                'quantity' => $qty, 'recorded_at' => Carbon::parse('2026-07-01 12:00'),
+        // Renewal pipeline cho tenant sắp hết hạn.
+        \App\Models\SubscriptionRenewal::create([
+            'subscription_id' => $subByCode['TEN-0005']->id, 'contract_id' => $subByCode['TEN-0005']->contract_id,
+            'stage' => 'negotiation', 'target_date' => '2026-05-31', 'proposed_value' => 432_000_000, 'note' => 'Đàm phán gia hạn năm 2',
+        ]);
+
+        // Add-ons.
+        $addonDefs = [
+            ['TEN-0001', 'ADD-AI-500K', 'AI Token Pack', 20_000_000, 'ai_token'],
+            ['TEN-0001', 'ADD-SUPPORT-24-7', 'Premium Support 24/7', 10_000_000, null],
+            ['TEN-0002', 'ADD-SMS-50K', 'SMS Pack', 5_000_000, 'sms'],
+            ['TEN-0003', 'ADD-STORAGE-1TB', 'Storage 1TB', 2_500_000, 'storage'],
+        ];
+        foreach ($addonDefs as [$tc, $ac, $an, $price, $wt]) {
+            \App\Models\SubscriptionAddon::create([
+                'subscription_id' => $subByCode[$tc]->id, 'addon_code' => $ac, 'name' => $an,
+                'quantity' => 1, 'unit_price' => $price, 'mrr' => $price, 'wallet_type' => $wt, 'status' => 'active', 'start_date' => '2026-05-01',
             ]);
+        }
+
+        // Kỳ usage đã khóa + records.
+        $period = \App\Models\UsagePeriod::create([
+            'code' => 'USAGE-2026-05', 'period_start' => '2026-05-01', 'period_end' => '2026-05-31',
+            'status' => 'locked', 'locked_at' => Carbon::parse('2026-06-01 07:30'), 'locked_by' => 'Nguyễn Minh Anh',
+        ]);
+        $usageDefs = [
+            ['TEN-0001', ['buildings' => [12, 20], 'apartments' => [3280, 30000], 'storage_gb' => [1256, 1000], 'sms_count' => [18420, 50000], 'ai_tokens' => [3200000, 20000000]], 28_600_000],
+            ['TEN-0002', ['buildings' => [7, 5], 'apartments' => [2010, 5000], 'storage_gb' => [164, 200], 'sms_count' => [9870, 10000], 'ai_tokens' => [1500000, 0]], 16_200_000],
+            ['TEN-0003', ['buildings' => [5, 5], 'apartments' => [1450, 5000], 'storage_gb' => [108, 200], 'sms_count' => [6120, 10000]], 9_800_000],
+        ];
+        foreach ($usageDefs as [$tc, $meters2, $overageTotal]) {
+            foreach ($meters2 as $mt => [$val, $limit]) {
+                $over = max(0, $val - $limit);
+                \App\Models\UsageRecord::create([
+                    'usage_period_id' => $period->id, 'tenant_id' => $tenantByCode[$tc]->id, 'meter_type' => $mt,
+                    'usage_value' => $val, 'included_limit' => $limit, 'overage_value' => $over,
+                    'overage_amount' => $over > 0 ? round($overageTotal / max(1, count(array_filter($meters2, fn ($m) => $m[0] > $m[1])))) : 0,
+                    'source' => 'collected', 'status' => 'locked',
+                ]);
+            }
+        }
+
+        // Quota alerts.
+        $qaDefs = [
+            ['QA-2026-0001', 'TEN-0001', 'ai_tokens', 28_600_000, 20_000_000, 43, 96_000_000, 'Nâng lên gói Thông minh Plus hoặc mua AI Token Pack'],
+            ['QA-2026-0002', 'TEN-0002', 'storage_gb', 18_000, 15_000, 20, 60_000_000, 'Tăng quota storage'],
+            ['QA-2026-0003', 'TEN-0003', 'sms_count', 12_800, 10_000, 28, 12_800_000, 'Mua thêm SMS Pack'],
+        ];
+        foreach ($qaDefs as [$code, $tc, $mt, $usage, $limit, $pct, $fee, $rec]) {
+            \App\Models\QuotaAlert::create([
+                'code' => $code, 'tenant_id' => $tenantByCode[$tc]->id, 'usage_period_id' => $period->id,
+                'meter_type' => $mt, 'usage_value' => $usage, 'included_limit' => $limit, 'over_percent' => $pct,
+                'estimated_fee' => $fee, 'recommendation' => $rec, 'status' => 'open',
+            ]);
+        }
+
+        // Invoices + lines + payments.
+        $invDefs = [
+            ['INV-2026-05-118', 'TEN-0001', '2026-05', 'partially_paid', '2026-06-15', 286_400_000, 245_000_000, [
+                ['subscription', 'Gói Enterprise', 220_000_000], ['addon', 'AI Insight', 25_000_000],
+                ['usage_overage', 'Overage lưu trữ 1.25 TB', 150_000_000], ['discount', 'Chiết khấu hợp đồng 10%', -39_500_000],
+                ['tax', 'VAT 10%', 26_550_000],
+            ]],
+            ['INV-2026-05-119', 'TEN-0002', '2026-05', 'issued', '2026-06-15', 395_400_000, 0, [
+                ['subscription', 'Gói Business Plus', 186_000_000], ['usage_overage', 'Overage SMS', 16_200_000], ['tax', 'VAT 10%', 20_220_000],
+            ]],
+        ];
+        foreach ($invDefs as [$no, $tc, $per, $status, $due, $total, $paid, $lines]) {
+            $sub = 0;
+            $disc = 0;
+            $tax = 0;
+            foreach ($lines as [$lt, $desc, $amt]) {
+                if ($lt === 'discount') {
+                    $disc += abs($amt);
+                } elseif ($lt === 'tax') {
+                    $tax += abs($amt);
+                } else {
+                    $sub += $amt;
+                }
+            }
+            $inv = \App\Models\BillingInvoice::create([
+                'invoice_no' => $no, 'tenant_id' => $tenantByCode[$tc]->id, 'subscription_id' => $subByCode[$tc]->id,
+                'period' => $per, 'status' => $status, 'issue_date' => '2026-06-01', 'due_date' => $due,
+                'subtotal' => $sub, 'discount_total' => $disc, 'tax_total' => $tax, 'total_amount' => $total,
+                'paid_amount' => $paid, 'remaining_amount' => $total - $paid, 'currency' => 'VND',
+            ]);
+            foreach ($lines as [$lt, $desc, $amt]) {
+                \App\Models\BillingInvoiceLine::create([
+                    'invoice_id' => $inv->id, 'line_type' => $lt, 'description' => $desc,
+                    'quantity' => 1, 'unit_price' => $amt, 'amount' => $amt, 'tax_rate' => $lt === 'tax' ? 10 : 0,
+                ]);
+            }
+            if ($paid > 0) {
+                \App\Models\BillingPayment::create([
+                    'invoice_id' => $inv->id, 'tenant_id' => $tenantByCode[$tc]->id, 'payment_method' => 'bank_transfer',
+                    'amount' => $paid, 'paid_at' => Carbon::parse('2026-06-10'), 'transaction_ref' => 'FT'.$inv->id.'2026', 'status' => 'confirmed',
+                ]);
+            }
+        }
+
+        // Pass-through wallets + 1 giao dịch mẫu.
+        $walletDefs = [
+            ['TEN-0001', 'sms', 216_800_000, 2_400_000, true, 5_000_000],
+            ['TEN-0002', 'zalo', 67_400_000, 1_200_000, true, 2_000_000],
+            ['TEN-0003', 'email', 31_800_000, 850_000, false, 0],
+            ['TEN-0004', 'ai_token', 82_300_000, 3_600_000, true, 10_000_000],
+        ];
+        foreach ($walletDefs as [$tc, $wt, $bal, $target, $auto, $topupAmt]) {
+            $w = \App\Models\PassThroughWallet::create([
+                'tenant_id' => $tenantByCode[$tc]->id, 'wallet_type' => $wt, 'balance' => $bal, 'currency' => 'VND',
+                'monthly_target' => $target, 'low_balance_threshold' => $target * 2, 'auto_topup_enabled' => $auto,
+                'auto_topup_amount' => $topupAmt, 'status' => 'active',
+            ]);
+            \App\Models\PassThroughTransaction::create([
+                'wallet_id' => $w->id, 'tenant_id' => $tenantByCode[$tc]->id, 'transaction_type' => 'top_up',
+                'amount' => $target, 'balance_after' => $bal, 'description' => 'Nạp đầu kỳ', 'status' => 'confirmed',
+            ]);
+        }
+
+        // Adjustments + credit note.
+        $adjDefs = [
+            ['ADJ-2026-000145', 'TEN-0001', 'INV-2026-05-118', 'overcharge_sms', 4_250_000, 'pending_approval'],
+            ['ADJ-2026-000144', 'TEN-0002', 'INV-2026-05-119', 'duplicate_overage', -2_150_000, 'pending_approval'],
+            ['ADJ-2026-000143', 'TEN-0003', null, 'courtesy_discount', -5_000_000, 'approved'],
+        ];
+        foreach ($adjDefs as [$cid, $tc, $invNo, $type, $amt, $status]) {
+            $inv = $invNo ? \App\Models\BillingInvoice::where('invoice_no', $invNo)->first() : null;
+            $adj = \App\Models\BillingAdjustment::create([
+                'case_id' => $cid, 'tenant_id' => $tenantByCode[$tc]->id, 'invoice_id' => $inv?->id,
+                'adjustment_type' => $type, 'amount' => $amt, 'reason' => 'Điều chỉnh billing', 'status' => $status,
+            ]);
+            if ($status === 'approved') {
+                \App\Models\CreditNote::create([
+                    'credit_note_no' => 'CN-'.$cid, 'tenant_id' => $tenantByCode[$tc]->id, 'invoice_id' => $inv?->id,
+                    'adjustment_id' => $adj->id, 'amount' => abs($amt), 'reason' => 'Ghi có từ điều chỉnh', 'status' => 'issued', 'issued_at' => now(),
+                ]);
+            }
         }
     }
 
