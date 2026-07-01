@@ -2,6 +2,8 @@
 
 namespace App\Filament\Resources\FeeTypes;
 
+use App\Filament\Concerns\SoftDeletableResource;
+
 use App\Filament\Resources\FeeTypes\Pages\CreateFeeType;
 use App\Filament\Resources\FeeTypes\Pages\EditFeeType;
 use App\Filament\Resources\FeeTypes\Pages\ListFeeTypes;
@@ -16,6 +18,8 @@ use Filament\Tables\Table;
 
 class FeeTypeResource extends Resource
 {
+    use SoftDeletableResource;
+
     protected static ?string $model = FeeType::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;

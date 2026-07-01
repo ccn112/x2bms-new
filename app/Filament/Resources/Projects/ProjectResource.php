@@ -2,6 +2,8 @@
 
 namespace App\Filament\Resources\Projects;
 
+use App\Filament\Concerns\SoftDeletableResource;
+
 use App\Filament\Resources\Projects\Pages\CreateProject;
 use App\Filament\Resources\Projects\Pages\EditProject;
 use App\Filament\Resources\Projects\Pages\ListProjects;
@@ -16,6 +18,8 @@ use Filament\Tables\Table;
 
 class ProjectResource extends Resource
 {
+    use SoftDeletableResource;
+
     protected static ?string $model = Project::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleGroup;

@@ -2,6 +2,8 @@
 
 namespace App\Filament\Resources\Shifts;
 
+use App\Filament\Concerns\SoftDeletableResource;
+
 use App\Filament\Resources\Shifts\Pages\CreateShift;
 use App\Filament\Resources\Shifts\Pages\EditShift;
 use App\Filament\Resources\Shifts\Pages\ListShifts;
@@ -16,6 +18,8 @@ use Filament\Tables\Table;
 
 class ShiftResource extends Resource
 {
+    use SoftDeletableResource;
+
     protected static ?string $model = Shift::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;

@@ -2,6 +2,8 @@
 
 namespace App\Filament\Resources\SmartDevices;
 
+use App\Filament\Concerns\SoftDeletableResource;
+
 use App\Filament\Resources\SmartDevices\Pages\CreateSmartDevice;
 use App\Filament\Resources\SmartDevices\Pages\EditSmartDevice;
 use App\Filament\Resources\SmartDevices\Pages\ListSmartDevices;
@@ -16,6 +18,8 @@ use Filament\Tables\Table;
 
 class SmartDeviceResource extends Resource
 {
+    use SoftDeletableResource;
+
     protected static ?string $model = SmartDevice::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;

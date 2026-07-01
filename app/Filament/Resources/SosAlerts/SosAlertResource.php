@@ -2,6 +2,8 @@
 
 namespace App\Filament\Resources\SosAlerts;
 
+use App\Filament\Concerns\SoftDeletableResource;
+
 use App\Filament\Resources\SosAlerts\Pages\CreateSosAlert;
 use App\Filament\Resources\SosAlerts\Pages\EditSosAlert;
 use App\Filament\Resources\SosAlerts\Pages\ListSosAlerts;
@@ -16,6 +18,8 @@ use Filament\Tables\Table;
 
 class SosAlertResource extends Resource
 {
+    use SoftDeletableResource;
+
     protected static ?string $model = SosAlert::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;

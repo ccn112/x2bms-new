@@ -2,12 +2,15 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\SoftDeletes;
+
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 /** Batch 07 — Cảnh báo vượt hạn mức (open→assigned→resolved/converted). */
 class QuotaAlert extends Model
 {
+    use SoftDeletes;
     protected $guarded = [];
 
     protected $casts = ['resolved_at' => 'datetime'];

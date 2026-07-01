@@ -2,6 +2,8 @@
 
 namespace App\Filament\Resources\TenantSubscriptions;
 
+use App\Filament\Concerns\SoftDeletableResource;
+
 use App\Filament\Resources\TenantSubscriptions\Pages\CreateTenantSubscription;
 use App\Filament\Resources\TenantSubscriptions\Pages\EditTenantSubscription;
 use App\Filament\Resources\TenantSubscriptions\Pages\ListTenantSubscriptions;
@@ -16,6 +18,8 @@ use Filament\Tables\Table;
 
 class TenantSubscriptionResource extends Resource
 {
+    use SoftDeletableResource;
+
     protected static ?string $model = TenantSubscription::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;

@@ -2,6 +2,8 @@
 
 namespace App\Filament\Resources\PatrolRoutes;
 
+use App\Filament\Concerns\SoftDeletableResource;
+
 use App\Filament\Resources\PatrolRoutes\Pages\CreatePatrolRoute;
 use App\Filament\Resources\PatrolRoutes\Pages\EditPatrolRoute;
 use App\Filament\Resources\PatrolRoutes\Pages\ListPatrolRoutes;
@@ -16,6 +18,8 @@ use Filament\Tables\Table;
 
 class PatrolRouteResource extends Resource
 {
+    use SoftDeletableResource;
+
     protected static ?string $model = PatrolRoute::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;

@@ -2,6 +2,8 @@
 
 namespace App\Filament\Resources\MarketplaceProducts;
 
+use App\Filament\Concerns\SoftDeletableResource;
+
 use App\Filament\Resources\MarketplaceProducts\Pages\CreateMarketplaceProduct;
 use App\Filament\Resources\MarketplaceProducts\Pages\EditMarketplaceProduct;
 use App\Filament\Resources\MarketplaceProducts\Pages\ListMarketplaceProducts;
@@ -16,6 +18,8 @@ use Filament\Tables\Table;
 
 class MarketplaceProductResource extends Resource
 {
+    use SoftDeletableResource;
+
     protected static ?string $model = MarketplaceProduct::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;

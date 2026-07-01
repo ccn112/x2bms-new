@@ -2,6 +2,8 @@
 
 namespace App\Filament\Resources\MaintenancePlans;
 
+use App\Filament\Concerns\SoftDeletableResource;
+
 use App\Filament\Resources\MaintenancePlans\Pages\CreateMaintenancePlan;
 use App\Filament\Resources\MaintenancePlans\Pages\EditMaintenancePlan;
 use App\Filament\Resources\MaintenancePlans\Pages\ListMaintenancePlans;
@@ -16,6 +18,8 @@ use Filament\Tables\Table;
 
 class MaintenancePlanResource extends Resource
 {
+    use SoftDeletableResource;
+
     protected static ?string $model = MaintenancePlan::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;

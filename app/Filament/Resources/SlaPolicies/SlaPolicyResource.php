@@ -2,6 +2,8 @@
 
 namespace App\Filament\Resources\SlaPolicies;
 
+use App\Filament\Concerns\SoftDeletableResource;
+
 use App\Filament\Resources\SlaPolicies\Pages\CreateSlaPolicy;
 use App\Filament\Resources\SlaPolicies\Pages\EditSlaPolicy;
 use App\Filament\Resources\SlaPolicies\Pages\ListSlaPolicies;
@@ -16,6 +18,8 @@ use Filament\Tables\Table;
 
 class SlaPolicyResource extends Resource
 {
+    use SoftDeletableResource;
+
     protected static ?string $model = SlaPolicy::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;

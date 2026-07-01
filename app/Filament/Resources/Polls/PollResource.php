@@ -2,6 +2,8 @@
 
 namespace App\Filament\Resources\Polls;
 
+use App\Filament\Concerns\SoftDeletableResource;
+
 use App\Filament\Resources\Polls\Pages\CreatePoll;
 use App\Filament\Resources\Polls\Pages\EditPoll;
 use App\Filament\Resources\Polls\Pages\ListPolls;
@@ -16,6 +18,8 @@ use Filament\Tables\Table;
 
 class PollResource extends Resource
 {
+    use SoftDeletableResource;
+
     protected static ?string $model = Poll::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;

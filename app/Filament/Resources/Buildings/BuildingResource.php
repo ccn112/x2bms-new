@@ -2,6 +2,8 @@
 
 namespace App\Filament\Resources\Buildings;
 
+use App\Filament\Concerns\SoftDeletableResource;
+
 use App\Filament\Resources\Buildings\Pages\CreateBuilding;
 use App\Filament\Resources\Buildings\Pages\EditBuilding;
 use App\Filament\Resources\Buildings\Pages\ListBuildings;
@@ -16,6 +18,8 @@ use Filament\Tables\Table;
 
 class BuildingResource extends Resource
 {
+    use SoftDeletableResource;
+
     protected static ?string $model = Building::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedBuildingOffice;

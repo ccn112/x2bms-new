@@ -2,6 +2,8 @@
 
 namespace App\Filament\Resources\ServiceProviders;
 
+use App\Filament\Concerns\SoftDeletableResource;
+
 use App\Filament\Resources\ServiceProviders\Pages\CreateServiceProvider;
 use App\Filament\Resources\ServiceProviders\Pages\EditServiceProvider;
 use App\Filament\Resources\ServiceProviders\Pages\ListServiceProviders;
@@ -16,6 +18,8 @@ use Filament\Tables\Table;
 
 class ServiceProviderResource extends Resource
 {
+    use SoftDeletableResource;
+
     protected static ?string $model = ServiceProvider::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;

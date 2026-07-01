@@ -2,6 +2,8 @@
 
 namespace App\Filament\Resources\DutyRosters;
 
+use App\Filament\Concerns\SoftDeletableResource;
+
 use App\Filament\Resources\DutyRosters\Pages\CreateDutyRoster;
 use App\Filament\Resources\DutyRosters\Pages\EditDutyRoster;
 use App\Filament\Resources\DutyRosters\Pages\ListDutyRosters;
@@ -16,6 +18,8 @@ use Filament\Tables\Table;
 
 class DutyRosterResource extends Resource
 {
+    use SoftDeletableResource;
+
     protected static ?string $model = DutyRoster::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;

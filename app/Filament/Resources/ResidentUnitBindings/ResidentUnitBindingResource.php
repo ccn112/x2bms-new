@@ -2,6 +2,8 @@
 
 namespace App\Filament\Resources\ResidentUnitBindings;
 
+use App\Filament\Concerns\SoftDeletableResource;
+
 use App\Filament\Resources\ResidentUnitBindings\Pages\CreateResidentUnitBinding;
 use App\Filament\Resources\ResidentUnitBindings\Pages\EditResidentUnitBinding;
 use App\Filament\Resources\ResidentUnitBindings\Pages\ListResidentUnitBindings;
@@ -16,6 +18,8 @@ use Filament\Tables\Table;
 
 class ResidentUnitBindingResource extends Resource
 {
+    use SoftDeletableResource;
+
     protected static ?string $model = ResidentUnitBinding::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;

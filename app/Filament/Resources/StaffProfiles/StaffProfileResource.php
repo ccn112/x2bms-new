@@ -2,6 +2,8 @@
 
 namespace App\Filament\Resources\StaffProfiles;
 
+use App\Filament\Concerns\SoftDeletableResource;
+
 use App\Filament\Resources\StaffProfiles\Pages\CreateStaffProfile;
 use App\Filament\Resources\StaffProfiles\Pages\EditStaffProfile;
 use App\Filament\Resources\StaffProfiles\Pages\ListStaffProfiles;
@@ -16,6 +18,8 @@ use Filament\Tables\Table;
 
 class StaffProfileResource extends Resource
 {
+    use SoftDeletableResource;
+
     protected static ?string $model = StaffProfile::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedIdentification;

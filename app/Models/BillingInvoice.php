@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\SoftDeletes;
+
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -9,6 +11,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 /** Batch 07 — Hóa đơn SaaS B2B (canonical, thay subscription_invoices cũ). */
 class BillingInvoice extends Model
 {
+    use SoftDeletes;
     protected $guarded = [];
 
     protected $casts = ['metadata_json' => 'array', 'issue_date' => 'date', 'due_date' => 'date'];

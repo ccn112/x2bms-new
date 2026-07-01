@@ -2,12 +2,15 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\SoftDeletes;
+
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 /** Tier 5 — Lỗi/điểm cần khắc phục khi bàn giao (alias handover_defects). */
 class HandoverPunchItem extends Model
 {
+    use SoftDeletes;
     protected $guarded = [];
 
     protected $casts = ['is_ok' => 'boolean'];

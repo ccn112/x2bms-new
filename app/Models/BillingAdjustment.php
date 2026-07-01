@@ -2,12 +2,15 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\SoftDeletes;
+
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 /** Batch 07 — Case điều chỉnh billing (pending_approval→approved→credit_note). */
 class BillingAdjustment extends Model
 {
+    use SoftDeletes;
     protected $guarded = [];
 
     protected $casts = ['metadata_json' => 'array', 'approved_at' => 'datetime'];

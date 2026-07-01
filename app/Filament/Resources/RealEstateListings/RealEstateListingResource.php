@@ -2,6 +2,8 @@
 
 namespace App\Filament\Resources\RealEstateListings;
 
+use App\Filament\Concerns\SoftDeletableResource;
+
 use App\Filament\Resources\RealEstateListings\Pages\CreateRealEstateListing;
 use App\Filament\Resources\RealEstateListings\Pages\EditRealEstateListing;
 use App\Filament\Resources\RealEstateListings\Pages\ListRealEstateListings;
@@ -16,6 +18,8 @@ use Filament\Tables\Table;
 
 class RealEstateListingResource extends Resource
 {
+    use SoftDeletableResource;
+
     protected static ?string $model = RealEstateListing::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;

@@ -2,12 +2,15 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\SoftDeletes;
+
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 /** Batch 07 — Dòng hóa đơn (subscription/addon/usage_overage/pass_through/discount/tax/adjustment). */
 class BillingInvoiceLine extends Model
 {
+    use SoftDeletes;
     protected $guarded = [];
 
     protected $casts = ['metadata_json' => 'array'];

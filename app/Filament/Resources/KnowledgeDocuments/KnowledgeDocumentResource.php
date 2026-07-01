@@ -2,6 +2,8 @@
 
 namespace App\Filament\Resources\KnowledgeDocuments;
 
+use App\Filament\Concerns\SoftDeletableResource;
+
 use App\Filament\Resources\KnowledgeDocuments\Pages\CreateKnowledgeDocument;
 use App\Filament\Resources\KnowledgeDocuments\Pages\EditKnowledgeDocument;
 use App\Filament\Resources\KnowledgeDocuments\Pages\ListKnowledgeDocuments;
@@ -16,6 +18,8 @@ use Filament\Tables\Table;
 
 class KnowledgeDocumentResource extends Resource
 {
+    use SoftDeletableResource;
+
     protected static ?string $model = KnowledgeDocument::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;

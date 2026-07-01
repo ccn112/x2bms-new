@@ -2,6 +2,8 @@
 
 namespace App\Filament\Resources\Modules;
 
+use App\Filament\Concerns\SoftDeletableResource;
+
 use App\Filament\Resources\Modules\Pages\CreateModule;
 use App\Filament\Resources\Modules\Pages\EditModule;
 use App\Filament\Resources\Modules\Pages\ListModules;
@@ -16,6 +18,8 @@ use Filament\Tables\Table;
 
 class ModuleResource extends Resource
 {
+    use SoftDeletableResource;
+
     protected static ?string $model = Module::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;

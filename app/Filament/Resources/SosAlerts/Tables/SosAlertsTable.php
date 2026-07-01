@@ -2,6 +2,16 @@
 
 namespace App\Filament\Resources\SosAlerts\Tables;
 
+use Filament\Actions\ForceDeleteBulkAction;
+
+use Filament\Actions\RestoreBulkAction;
+
+use Filament\Actions\ForceDeleteAction;
+
+use Filament\Actions\RestoreAction;
+
+use Filament\Tables\Filters\TrashedFilter;
+
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
@@ -51,13 +61,18 @@ class SosAlertsTable
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
+                TrashedFilter::make(),
                 //
             ])
             ->recordActions([
+                RestoreAction::make(),
+                ForceDeleteAction::make(),
                 EditAction::make(),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([
+                    RestoreBulkAction::make(),
+                    ForceDeleteBulkAction::make(),
                     DeleteBulkAction::make(),
                 ]),
             ]);

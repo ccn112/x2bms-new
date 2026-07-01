@@ -2,6 +2,8 @@
 
 namespace App\Filament\Resources\BillingAdjustments;
 
+use App\Filament\Concerns\SoftDeletableResource;
+
 use App\Filament\Resources\BillingAdjustments\Pages\CreateBillingAdjustment;
 use App\Filament\Resources\BillingAdjustments\Pages\EditBillingAdjustment;
 use App\Filament\Resources\BillingAdjustments\Pages\ListBillingAdjustments;
@@ -16,6 +18,8 @@ use Filament\Tables\Table;
 
 class BillingAdjustmentResource extends Resource
 {
+    use SoftDeletableResource;
+
     protected static ?string $model = BillingAdjustment::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;

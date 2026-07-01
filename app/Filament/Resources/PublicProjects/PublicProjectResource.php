@@ -2,6 +2,8 @@
 
 namespace App\Filament\Resources\PublicProjects;
 
+use App\Filament\Concerns\SoftDeletableResource;
+
 use App\Filament\Resources\PublicProjects\Pages\CreatePublicProject;
 use App\Filament\Resources\PublicProjects\Pages\EditPublicProject;
 use App\Filament\Resources\PublicProjects\Pages\ListPublicProjects;
@@ -16,6 +18,8 @@ use Filament\Tables\Table;
 
 class PublicProjectResource extends Resource
 {
+    use SoftDeletableResource;
+
     protected static ?string $model = PublicProject::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;

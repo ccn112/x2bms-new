@@ -2,6 +2,8 @@
 
 namespace App\Filament\Resources\Residents;
 
+use App\Filament\Concerns\SoftDeletableResource;
+
 use App\Filament\Resources\Residents\Pages\CreateResident;
 use App\Filament\Resources\Residents\Pages\EditResident;
 use App\Filament\Resources\Residents\Pages\ListResidents;
@@ -16,6 +18,8 @@ use Filament\Tables\Table;
 
 class ResidentResource extends Resource
 {
+    use SoftDeletableResource;
+
     protected static ?string $model = Resident::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedUsers;

@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\SoftDeletes;
+
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -9,6 +11,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 /** Addendum — Mẫu tài liệu (SOP/policy/contract/form/checklist) 3 cấp sở hữu. */
 class DocumentTemplate extends Model
 {
+    use SoftDeletes;
     protected $guarded = [];
 
     protected $casts = ['variables_json' => 'array', 'ai_readable' => 'boolean', 'effective_from' => 'date', 'effective_to' => 'date'];

@@ -2,6 +2,8 @@
 
 namespace App\Filament\Resources\SupportTickets;
 
+use App\Filament\Concerns\SoftDeletableResource;
+
 use App\Filament\Resources\SupportTickets\Pages\CreateSupportTicket;
 use App\Filament\Resources\SupportTickets\Pages\EditSupportTicket;
 use App\Filament\Resources\SupportTickets\Pages\ListSupportTickets;
@@ -13,10 +15,16 @@ use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\SoftDeletingScope;
 
 class SupportTicketResource extends Resource
 {
+    use SoftDeletableResource;
+
     protected static ?string $model = SupportTicket::class;
+
+    protected static string|\UnitEnum|null $navigationGroup = 'Support Center';
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
 
@@ -44,5 +52,13 @@ class SupportTicketResource extends Resource
             'create' => CreateSupportTicket::route('/create'),
             'edit' => EditSupportTicket::route('/{record}/edit'),
         ];
+    }
+
+    public static function getRecordRouteBindingEloquentQuery(): Builder
+    {
+        return parent::getRecordRouteBindingEloquentQuery()
+            ->withoutGlobalScopes([
+                SoftDeletingScope::class,
+            ]);
     }
 }

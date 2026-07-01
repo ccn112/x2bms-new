@@ -601,6 +601,8 @@ class DemoDataSeeder extends Seeder
         $this->seedSharedPartners($tenant, $project);
         $this->seedDocumentTemplates($tenant, $admin);
         $this->seedKbAiGovernance($tenant, $project, $admin);
+        $this->seedBatch08Integration($tenant, $admin);
+        $this->seedBatch10Support($tenant, $admin);
     }
 
     /** Addendum / P6 — KB governance + AI guardrail + retrieval log + mở rộng prompt. */
@@ -1258,35 +1260,8 @@ class DemoDataSeeder extends Seeder
     /** Tier 4 / B2 — admin ops (ticket, data-fix, import/export, integration, gateway). */
     private function seedTier4AdminOps(Tenant $tenant, User $admin): void
     {
-        $tickets = [
-            ['Không xuất được bảng kê PDF', 'technical', 'open'],
-            ['Sai số dư công nợ căn A-1203', 'billing', 'pending'],
-            ['Yêu cầu thêm tài khoản kế toán', 'account', 'resolved'],
-        ];
-        foreach ($tickets as $i => [$subject, $cat, $status]) {
-            $t = \App\Models\SupportTicket::create([
-                'tenant_id' => $tenant->id, 'code' => 'TK-'.str_pad((string) ($i + 1), 4, '0', STR_PAD_LEFT),
-                'subject' => $subject, 'description' => $subject.'.', 'category' => $cat,
-                'priority' => 'normal', 'status' => $status, 'requester_id' => $admin->id,
-                'assignee_id' => $status !== 'open' ? $admin->id : null,
-                'resolved_at' => $status === 'resolved' ? Carbon::parse('2026-06-29 15:00') : null,
-            ]);
-            \App\Models\SupportTicketComment::create([
-                'support_ticket_id' => $t->id, 'user_id' => $admin->id,
-                'body' => 'Đã tiếp nhận và đang kiểm tra.', 'is_internal' => false,
-            ]);
-        }
-
-        foreach ([['residents', 'Cập nhật CCCD sai định dạng', 'pending'], ['statements', 'Điều chỉnh phí trùng', 'applied']] as $i => [$entity, $reason, $status]) {
-            \App\Models\DataFixRequest::create([
-                'tenant_id' => $tenant->id, 'code' => 'DFX-'.str_pad((string) ($i + 1), 4, '0', STR_PAD_LEFT),
-                'entity' => $entity, 'target_id' => $i + 1, 'reason' => $reason,
-                'requested_change' => ['field' => 'value', 'from' => 'x', 'to' => 'y'], 'status' => $status,
-                'requested_by_id' => $admin->id, 'approved_by_id' => $status === 'applied' ? $admin->id : null,
-                'applied_at' => $status === 'applied' ? Carbon::parse('2026-06-30 09:00') : null,
-            ]);
-        }
-
+        // NOTE: support_tickets + data correction are now the platform-level Support
+        // Center (Batch 10) — seeded in seedBatch10Support(), no longer per-tenant here.
         foreach ([['residents', 240, 236, 4], ['apartments', 160, 160, 0]] as $i => [$type, $tot, $ok, $err]) {
             \App\Models\ImportJob::create([
                 'tenant_id' => $tenant->id, 'type' => $type, 'file_path' => 'imports/'.$type.'.xlsx',
@@ -1302,12 +1277,8 @@ class DemoDataSeeder extends Seeder
             ]);
         }
 
-        foreach ([['payment', 'VNPay', 'connected'], ['sms', 'eSMS', 'connected'], ['zalo', 'Zalo OA', 'error']] as [$prov, $name, $st]) {
-            \App\Models\IntegrationConnection::create([
-                'tenant_id' => $tenant->id, 'provider' => $prov, 'name' => $name, 'status' => $st,
-                'last_sync_at' => Carbon::parse('2026-07-01 06:00'),
-            ]);
-        }
+        // NOTE: integration_connections is now the platform-level Integration Center
+        // (Batch 08) — seeded in seedBatch08Integration(), no longer per-tenant here.
         foreach ([['vnpay', 'production', true], ['momo', 'sandbox', false]] as [$gw, $env, $active]) {
             \App\Models\PaymentGatewayConfig::create([
                 'tenant_id' => $tenant->id, 'gateway' => $gw, 'merchant_id' => strtoupper($gw).'-MID-001',
@@ -2969,5 +2940,390 @@ class DemoDataSeeder extends Seeder
                 'picked_up_by' => $st === 'picked_up' ? ($res?->full_name ?? 'Cư dân') : null,
             ]);
         }
+    }
+
+    /** Batch 08 — Integration Center demo (BATCH_08_SEED_DATA_CATALOG): connections,
+     *  credentials, API keys, webhooks, events, retry queue, incidents, security. */
+    private function seedBatch08Integration(Tenant $tenant, User $admin): void
+    {
+        $secret = new \App\Support\Integration\IntegrationSecret();
+
+        // --- categories ---
+        $categoryDefs = [
+            ['communication', 'Truyền thông', 1], ['payment', 'Thanh toán', 2],
+            ['finance', 'Tài chính', 3], ['erp', 'ERP', 4],
+            ['ai', 'AI', 5], ['custom', 'Tuỳ chỉnh', 6], ['iot', 'IoT', 7],
+        ];
+        $catId = [];
+        foreach ($categoryDefs as [$code, $name, $sort]) {
+            $catId[$code] = \App\Models\IntegrationCategory::create([
+                'code' => $code, 'name' => $name, 'is_active' => true, 'sort_order' => $sort,
+            ])->id;
+        }
+
+        // --- connections + credential + checks ---
+        $connections = [
+            ['CONN-ZALO-ZNS', 'Zalo ZNS', 'communication', 'production', 'active', 'v3.2', 99.8, 186, 'valid', 'healthy'],
+            ['CONN-SMS-BRANDNAME', 'SMS Brandname', 'communication', 'production', 'active', 'v1.1', 99.5, 220, 'valid', 'healthy'],
+            ['CONN-EMAIL-SMTP', 'Email SMTP', 'communication', 'production', 'active', 'v1.0', 99.9, 312, 'valid', 'healthy'],
+            ['CONN-FCM-PUSH', 'FCM Push', 'communication', 'production', 'active', 'v1.0', 98.3, 284, 'valid', 'warning'],
+            ['CONN-VNPAY', 'VNPay Payment Gateway', 'payment', 'production', 'active', 'v2.1', 99.4, 420, 'valid', 'healthy'],
+            ['CONN-BANK-STATEMENT', 'Ngân hàng / Sao kê', 'finance', 'production', 'warning', 'v1.3', 96.2, 680, 'valid', 'warning'],
+            ['CONN-EINVOICE', 'Hóa đơn điện tử', 'finance', 'production', 'active', 'v2.0', 99.1, 355, 'valid', 'healthy'],
+            ['CONN-OPENAI', 'OpenAI', 'ai', 'production', 'active', 'v1', 99.9, 942, 'valid', 'healthy'],
+            ['CONN-CLAUDE', 'Claude API', 'ai', 'staging', 'warning', 'v1', 97.1, 1100, 'expiring', 'warning'],
+            ['CONN-ODOO', 'Odoo ERP', 'erp', 'staging', 'disabled', 'v16', 92.1, 1256, 'valid', 'incident'],
+            ['CONN-BRAVO', 'Bravo ERP', 'erp', 'production', 'active', 'v1.0', 99.0, 611, 'valid', 'healthy'],
+            ['CONN-WEBHOOK-GATEWAY', 'Webhook Gateway', 'custom', 'production', 'incident', 'v1.0', 97.8, 198, 'valid', 'warning'],
+        ];
+        foreach ($connections as $i => [$code, $name, $cat, $env, $status, $ver, $rate, $lat, $credStatus, $sla]) {
+            $conn = \App\Models\IntegrationConnection::create([
+                'code' => $code, 'name' => $name, 'category_id' => $catId[$cat] ?? null,
+                'provider_code' => strtolower(str_replace('CONN-', '', $code)),
+                'environment' => $env, 'status' => $status, 'api_version' => $ver,
+                'base_url' => 'https://api.'.strtolower(str_replace(['CONN-', '-'], ['', ''], $code)).'.example',
+                'owner_user_id' => $admin->id, 'timeout_seconds' => 30,
+                'retry_policy' => 'exponential_5_attempts', 'idempotency_enabled' => true,
+                'last_checked_at' => Carbon::parse('2026-07-07 10:00')->subMinutes($i * 3),
+                'success_rate_24h' => $rate, 'avg_latency_ms' => $lat, 'sla_status' => $sla,
+            ]);
+
+            $plain = $secret->generateApiSecret();
+            \App\Models\IntegrationCredential::create([
+                'connection_id' => $conn->id, 'credential_type' => 'api_key',
+                'encrypted_payload' => $secret->encrypt($plain), 'masked_summary' => $secret->mask($plain),
+                'status' => $credStatus,
+                'expires_at' => $credStatus === 'expiring' ? Carbon::parse('2026-07-20') : Carbon::parse('2026-12-31'),
+                'created_by' => $admin->id,
+            ]);
+
+            foreach ([['success', 200], ['success', 200], [$status === 'incident' ? 'failed' : 'success', $status === 'incident' ? 500 : 200]] as $j => [$cs, $http]) {
+                \App\Models\IntegrationConnectionCheck::create([
+                    'connection_id' => $conn->id, 'status' => $cs, 'latency_ms' => $lat + $j * 10,
+                    'http_status' => $http, 'message' => $cs === 'success' ? 'OK' : 'Connection timeout',
+                    'checked_at' => Carbon::parse('2026-07-07 10:00')->subHours($j), 'checked_by' => $admin->id,
+                    'created_at' => Carbon::parse('2026-07-07 10:00')->subHours($j),
+                ]);
+            }
+
+            if ($code === 'CONN-VNPAY') {
+                \App\Models\IntegrationMapping::create([
+                    'connection_id' => $conn->id, 'mapping_type' => 'status',
+                    'source_event' => 'vnpay.payment.success', 'target_event' => 'payment.paid',
+                    'mapping_json' => ['00' => 'paid', '01' => 'pending', '02' => 'failed'],
+                    'version' => 2, 'status' => 'active', 'created_by' => $admin->id, 'updated_by' => $admin->id,
+                ]);
+            }
+        }
+
+        // --- API keys + scopes ---
+        $apiKeys = [
+            ['Mobile Resident App', 'clt_8f3d7a9c', ['resident:read', 'messaging:read'], 'production', 'active', '2026-09-30', 600, true, true],
+            ['Web Admin Portal', 'clt_a7c1e2b4', ['admin:full', 'device:manage'], 'production', 'active', '2026-11-15', 1200, true, true],
+            ['Webhook Relay', 'clt_5b8e3d11', ['events:read', 'webhooks:write'], 'production', 'active', '2026-08-01', 1000, true, false],
+            ['AI Simulator', 'clt_d2f94a66', ['device:read', 'telemetry:write'], 'staging', 'expiring', '2026-07-10', 300, false, false],
+        ];
+        foreach ($apiKeys as $i => [$name, $clientId, $scopes, $env, $status, $exp, $rl, $hmac, $ipReq]) {
+            $plain = $secret->generateApiSecret();
+            $key = \App\Models\IntegrationApiKey::create([
+                'name' => $name, 'client_id' => $clientId, 'secret_hash' => $secret->hash($plain),
+                'environment' => $env, 'status' => $status, 'expires_at' => Carbon::parse($exp),
+                'last_used_at' => Carbon::parse('2026-07-07 10:00')->subMinutes($i * 20 + 12),
+                'owner_user_id' => $admin->id, 'rate_limit_per_minute' => $rl,
+                'require_hmac' => $hmac, 'require_ip_allowlist' => $ipReq,
+                'allowed_ips_json' => $ipReq ? ['203.0.113.10/32', '103.56.12.0/24'] : null,
+                'metadata_json' => ['secret_masked' => $secret->mask($plain)],
+            ]);
+            foreach ($scopes as $sc) {
+                [$res, $lvl] = array_pad(explode(':', $sc), 2, 'read');
+                \App\Models\IntegrationApiKeyScope::create([
+                    'api_key_id' => $key->id, 'scope_code' => $sc,
+                    'scope_name' => ucfirst($res).' '.$lvl, 'permission_level' => $lvl,
+                ]);
+            }
+        }
+
+        // --- webhook event groups ---
+        $groupId = [];
+        foreach (['payment', 'notification', 'work_order', 'billing', 'resident', 'access_control', 'maintenance', 'energy', 'parking', 'logistics', 'feedback', 'system'] as $gc) {
+            $groupId[$gc] = \App\Models\WebhookEventGroup::create([
+                'code' => $gc, 'name' => ucwords(str_replace('_', ' ', $gc)), 'is_active' => true,
+            ])->id;
+        }
+
+        // --- webhook endpoints + deliveries ---
+        $webhooks = [
+            ['WH-PAYMENT-STATUS', '/api/v1/payment-status', 'https://api.partner.com/webhook/payment-status', 'payment', 'HMAC', 'active', 99.8, 'Partner A'],
+            ['WH-PUSH', '/api/v1/push', 'https://push.example.com/webhook', 'notification', 'HMAC', 'active', 99.5, 'NotifyOne'],
+            ['WH-WORK-ORDER', '/api/v1/work-order', 'https://bms.partner.com/callback/work-order', 'work_order', 'HMAC', 'active', 98.7, 'BMS Partner'],
+            ['WH-INVOICE-PAID', '/api/v1/invoice-paid', 'https://billing.partner.com/webhook/invoice-paid', 'billing', 'HMAC', 'warning', 94.1, 'Billing Ltd.'],
+            ['WH-FEEDBACK', '/api/v1/feedback-submitted', 'https://survey.app.com/webhook/feedback', 'feedback', 'none', 'disabled', null, 'Survey App'],
+        ];
+        foreach ($webhooks as $i => [$code, $epName, $url, $grp, $sig, $status, $rate, $owner]) {
+            $wh = \App\Models\WebhookEndpoint::create([
+                'code' => $code, 'endpoint_name' => $epName, 'url' => $url,
+                'event_group_id' => $groupId[$grp] ?? null, 'method' => 'POST',
+                'signature_type' => $sig, 'signing_secret_hash' => $sig === 'HMAC' ? $secret->hash($secret->generateSigningSecret()) : null,
+                'status' => $status, 'success_rate' => $rate, 'retry_policy' => 'exponential_5_attempts',
+                'owner_name' => $owner,
+                'last_delivery_at' => $status === 'disabled' ? null : Carbon::parse('2026-07-06 10:20')->subMinutes($i * 3),
+            ]);
+            if ($status !== 'disabled') {
+                foreach ([['success', 200], ['success', 200], [$status === 'warning' ? 'failed' : 'success', $status === 'warning' ? 500 : 200]] as $j => [$cs, $http]) {
+                    \App\Models\WebhookDeliveryAttempt::create([
+                        'webhook_endpoint_id' => $wh->id, 'event_id' => 'evt_'.strtoupper(\Illuminate\Support\Str::random(20)),
+                        'correlation_id' => 'corr_'.\Illuminate\Support\Str::lower(\Illuminate\Support\Str::random(12)),
+                        'payload_hash' => hash('sha256', $code.$j), 'http_status' => $http,
+                        'duration_ms' => 120 + $j * 40, 'status' => $cs, 'attempt_no' => $j + 1,
+                        'response_body' => $cs === 'success' ? '{"ok":true}' : '{"error":"Internal Server Error"}',
+                        'error_message' => $cs === 'failed' ? 'HTTP 500 Internal Server Error' : null,
+                        'delivered_at' => Carbon::parse('2026-07-06 10:20')->subMinutes($j * 5),
+                        'created_at' => Carbon::parse('2026-07-06 10:20')->subMinutes($j * 5),
+                    ]);
+                }
+            }
+        }
+
+        // --- integration events (monitor) ---
+        $events = [
+            ['evt_01HV8B7ZQW5B4F82YQ6KM3N2KJ', 'VNPay', 'payment.paid', 'success', 142, 0, 'Giao dịch 241028993320 thành công'],
+            ['evt_01HV8Z10NV3RD2X6WQ3R6B9D', 'Webhook Gateway', 'webhook.received', 'failed', 2891, 3, 'HTTP 500 Internal Server Error'],
+            ['evt_01HV8Z1M9L2D', 'Zalo ZNS', 'zns.sent', 'warning', 531, 2, 'Số điện thoại không hợp lệ'],
+        ];
+        $extraSources = ['SMS Brandname', 'Email SMTP', 'FCM Push', 'OpenAI', 'Bravo ERP', 'VNPay', 'Hóa đơn điện tử'];
+        $extraTypes = ['sms.sent', 'email.sent', 'push.sent', 'ai.completion', 'erp.sync', 'payment.refunded', 'einvoice.issued'];
+        foreach ($extraSources as $k => $src) {
+            $events[] = [
+                'evt_'.strtoupper(\Illuminate\Support\Str::random(20)), $src, $extraTypes[$k],
+                $k % 5 === 0 ? 'warning' : 'success', 100 + $k * 37, $k % 5 === 0 ? 1 : 0, 'OK',
+            ];
+        }
+        $failedEventId = null;
+        foreach ($events as $i => [$eid, $src, $type, $status, $dur, $retry, $msg]) {
+            \App\Models\IntegrationEvent::create([
+                'event_id' => $eid, 'correlation_id' => 'corr_'.\Illuminate\Support\Str::lower(\Illuminate\Support\Str::random(12)),
+                'source' => $src, 'event_type' => $type, 'tenant_id' => $tenant->id, 'status' => $status,
+                'duration_ms' => $dur, 'retry_count' => $retry, 'payload_hash' => hash('sha256', $eid),
+                'message' => $msg, 'created_at' => Carbon::parse('2026-07-07 10:00')->subMinutes($i * 7),
+            ]);
+            if ($status === 'failed') {
+                $failedEventId = $eid;
+            }
+        }
+
+        // --- retry queue ---
+        $whGateway = \App\Models\WebhookEndpoint::where('code', 'WH-INVOICE-PAID')->value('id');
+        foreach ([
+            [$failedEventId, 'retrying', 2, 'HTTP 500 Internal Server Error'],
+            ['evt_'.strtoupper(\Illuminate\Support\Str::random(20)), 'pending', 0, null],
+            ['evt_'.strtoupper(\Illuminate\Support\Str::random(20)), 'dead_letter', 5, 'Max attempts exceeded'],
+        ] as $i => [$eid, $status, $attempt, $err]) {
+            \App\Models\IntegrationRetryJob::create([
+                'event_id' => $eid, 'webhook_endpoint_id' => $whGateway, 'source' => 'Webhook Gateway',
+                'reason' => 'delivery_failed', 'status' => $status, 'attempt_no' => $attempt, 'max_attempts' => 5,
+                'next_retry_at' => $status === 'pending' || $status === 'retrying' ? Carbon::parse('2026-07-07 10:30')->addMinutes($i * 5) : null,
+                'last_error' => $err,
+            ]);
+        }
+
+        // --- incidents ---
+        foreach ([
+            ['INC-2026-0007', 'Odoo ERP đồng bộ thất bại', 'high', 'investigating', 'Odoo ERP', '2026-07-07 08:30', null],
+            ['INC-2026-0006', 'Webhook Gateway latency cao', 'medium', 'resolved', 'Webhook Gateway', '2026-07-06 22:10', '2026-07-06 23:40'],
+        ] as [$code, $title, $sev, $status, $src, $start, $end]) {
+            \App\Models\IntegrationIncident::create([
+                'code' => $code, 'title' => $title, 'severity' => $sev, 'status' => $status, 'source' => $src,
+                'started_at' => Carbon::parse($start), 'resolved_at' => $end ? Carbon::parse($end) : null,
+                'owner_user_id' => $admin->id, 'summary' => $title,
+                'root_cause' => $status === 'resolved' ? 'Nhà cung cấp quá tải tạm thời' : null,
+            ]);
+        }
+
+        // --- security policies ---
+        $policies = [
+            ['secret_rotation_policy', ['rotation_days' => 90, 'expiration_notice_days' => 7], true],
+            ['ip_allowlist_management', ['enabled' => true], true],
+            ['hmac_signature_enforcement', ['algorithm' => 'HMAC SHA256', 'signature_header' => 'X-Request-Signature', 'clock_skew_minutes' => 5], true],
+            ['oauth_callback_policy', ['policy' => 'allow_registered_urls_only'], true],
+            ['rate_limiting_defaults', ['default' => 1000, 'window' => '1 minute', 'burst' => 200], true],
+            ['audit_retention_days', ['days' => 180], true],
+            ['webhook_replay_protection', ['enabled' => true, 'nonce_ttl_minutes' => 10], true],
+            ['emergency_disable_switch', ['enabled' => false], true],
+        ];
+        foreach ($policies as [$key, $value, $enabled]) {
+            \App\Models\IntegrationSecurityPolicy::create([
+                'policy_key' => $key, 'policy_value_json' => $value, 'is_enabled' => $enabled, 'updated_by' => $admin->id,
+            ]);
+        }
+
+        // --- IP allowlist + rate limit ---
+        foreach (['203.0.113.10/32', '203.0.113.11/32', '203.0.113.20/32', '103.56.12.0/24'] as $ip) {
+            \App\Models\IntegrationIpAllowlist::create([
+                'scope_type' => 'global', 'ip_or_cidr' => $ip, 'description' => 'Văn phòng HQ', 'created_by' => $admin->id,
+            ]);
+        }
+        \App\Models\IntegrationRateLimit::create([
+            'scope_type' => 'global', 'limit_per_minute' => 1000, 'burst_limit' => 200, 'window_seconds' => 60, 'is_enabled' => true,
+        ]);
+
+        // --- a couple of audit entries so the audit view is not empty ---
+        $vnpay = \App\Models\IntegrationConnection::where('code', 'CONN-VNPAY')->first();
+        \App\Models\IntegrationAuditLog::create([
+            'actor_id' => $admin->id, 'connection_id' => $vnpay?->id, 'entity_type' => 'IntegrationConnection',
+            'entity_id' => $vnpay?->id, 'action' => 'connection.tested', 'after_json' => ['status' => 'active'],
+            'ip_address' => '203.0.113.10', 'created_at' => Carbon::parse('2026-07-07 09:30'),
+        ]);
+    }
+
+    /** Batch 10 — Support Center demo. Con số tái hiện đúng ảnh WEB-UX-30 (dashboard +
+     *  report) qua support_reports snapshot + phân bố ticket có kiểm soát. */
+    private function seedBatch10Support(Tenant $tenant, User $admin): void
+    {
+        $tenant2 = Tenant::where('id', '!=', $tenant->id)->first() ?? $tenant;
+
+        // SLA policies.
+        foreach ([['critical', 15, 240], ['high', 30, 480], ['medium', 60, 960], ['low', 120, 2880]] as [$p, $resp, $reso]) {
+            \App\Models\SupportSlaPolicy::create(['code' => 'SLA-'.strtoupper($p), 'name' => 'SLA '.$p, 'priority' => $p, 'response_minutes' => $resp, 'resolution_minutes' => $reso]);
+        }
+
+        // Teams (member counts đúng catalog).
+        $teamId = [];
+        foreach ([['L1', 'L1 Support', 'L1', 12, 60], ['L2', 'L2 Engineering', 'L2', 8, 120], ['DATA_FIX', 'Data Fix Team', 'L3', 5, 240], ['ACCOUNT', 'Account Manager', 'account', 4, 120]] as [$code, $name, $level, $members, $sla]) {
+            $team = \App\Models\SupportTeam::create(['code' => $code, 'name' => $name, 'level' => $level, 'member_count' => $members, 'sla_target_response_minutes' => $sla]);
+            $teamId[$code] = $team->id;
+            for ($m = 1; $m <= $members; $m++) {
+                \App\Models\SupportTeamMember::create(['support_team_id' => $team->id, 'member_name' => $name.' #'.$m, 'role' => $level, 'is_on_call' => $m === 1, 'open_tickets' => random_int(0, 8)]);
+            }
+        }
+
+        // Tenant support profiles + contacts + entitlements.
+        foreach ([[$tenant, 'VNPAY Headquarters', '24/7 P1', 88.4, 4.6], [$tenant2, 'Sunshine City', 'Business Hours', 91.2, 4.7]] as [$tn, $label, $plan, $health, $csat]) {
+            \App\Models\TenantSupportProfile::create(['tenant_id' => $tn->id, 'support_plan' => $plan, 'tier' => 'Enterprise', 'health_score' => $health, 'csat' => $csat, 'account_manager_id' => $admin->id, 'vip_notes' => 'Khách hàng chiến lược — ưu tiên P1.']);
+            \App\Models\TenantSupportContact::create(['tenant_id' => $tn->id, 'name' => 'Nguyễn Quản Trị', 'email' => 'it@'.strtolower(str_replace(' ', '', $label)).'.vn', 'phone' => '0900000000', 'role' => 'IT Manager', 'is_primary' => true]);
+            foreach (['priority_support' => '24/7', 'dedicated_am' => 'Yes', 'data_fix' => 'Included'] as $c => $v) {
+                \App\Models\SupportEntitlement::create(['tenant_id' => $tn->id, 'code' => $c, 'name' => ucwords(str_replace('_', ' ', $c)), 'value' => $v]);
+            }
+        }
+
+        // --- 4 named tickets (đúng catalog) with timeline ---
+        $named = [
+            ['TKT-2025-0612', 'Lỗi hiển thị biểu đồ năng lượng', 'Reports', 'critical', 'escalated', 'breached', -192, 'Lê Hoàng Nam'],
+            ['TKT-2025-0608', 'Sự cố API Integration với HVAC', 'API Gateway', 'high', 'escalated', 'breached', -25, 'Trần Minh Quân'],
+            ['TKT-2025-0601', 'Webhook /push timeout', 'Webhook', 'high', 'in_progress', 'breached', -15, 'Nguyễn Thu Hà'],
+            ['TKT-2025-0607', 'Sai dữ liệu công tơ điện tầng 12', 'Data Fix', 'medium', 'waiting_customer', 'paused_waiting_customer', 70, 'Võ Thị Mai Linh'],
+        ];
+        foreach ($named as $i => [$no, $subject, $module, $priority, $status, $slaState, $slaMin, $owner]) {
+            $t = \App\Models\SupportTicket::create([
+                'ticket_no' => $no, 'tenant_id' => $i % 2 ? $tenant2->id : $tenant->id, 'subject' => $subject,
+                'description' => '<p>'.$subject.'.</p>', 'module' => $module, 'priority' => $priority, 'status' => $status,
+                'environment' => 'production', 'sla_state' => $slaState, 'sla_due_at' => Carbon::parse('2026-07-07 10:00')->addMinutes($slaMin),
+                'owner_id' => $admin->id, 'team_id' => $teamId['L2'], 'requester_name' => $owner, 'requester_contact' => 'kh@tenant.vn',
+                'first_response_at' => Carbon::parse('2026-07-07 08:30'),
+            ]);
+            \App\Models\SupportTicketMessage::create(['support_ticket_id' => $t->id, 'author_id' => $admin->id, 'author_name' => 'Support', 'type' => 'customer', 'body' => '<p>'.$subject.'</p>']);
+            \App\Models\SupportTicketMessage::create(['support_ticket_id' => $t->id, 'author_id' => $admin->id, 'author_name' => 'Support', 'type' => 'internal', 'body' => '<p>Đã tiếp nhận, đang điều tra.</p>']);
+            \App\Models\SupportTicketStatusLog::create(['support_ticket_id' => $t->id, 'from_status' => 'new', 'to_status' => $status, 'changed_by' => $admin->id, 'created_at' => now()]);
+        }
+
+        // --- filler tickets to reproduce exact priority distribution (Critical 12 / High 46 / Medium 132 / Low 120 = 310) ---
+        // Named đã có: 1 critical, 2 high, 1 medium → còn: 11 crit, 44 high, 131 medium, 120 low = 306.
+        $fillerPlan = ['critical' => 11, 'high' => 44, 'medium' => 131, 'low' => 120];
+        $escalatedRemaining = 26;  // named có 2 → tổng 28
+        $nearBreachRemaining = 37;
+        $seq = 500;
+        $rows = [];
+        foreach ($fillerPlan as $priority => $count) {
+            for ($k = 0; $k < $count; $k++) {
+                $status = 'open';
+                $slaState = 'within_sla';
+                if ($escalatedRemaining > 0 && in_array($priority, ['critical', 'high'], true)) {
+                    $status = 'escalated';
+                    $escalatedRemaining--;
+                } elseif ($nearBreachRemaining > 0) {
+                    $status = 'in_progress';
+                    $slaState = 'near_breach';
+                    $nearBreachRemaining--;
+                } elseif ($k % 3 === 0) {
+                    $status = 'resolved';
+                    $slaState = 'resolved';
+                }
+                $rows[] = [
+                    'ticket_no' => 'TKT-2025-'.($seq++), 'tenant_id' => $tenant->id,
+                    'subject' => 'Yêu cầu hỗ trợ #'.$seq, 'module' => 'General', 'priority' => $priority,
+                    'status' => $status, 'environment' => 'production', 'sla_state' => $slaState,
+                    'owner_id' => $admin->id, 'csat_score' => $status === 'resolved' ? 4.6 : null,
+                    'resolved_at' => $status === 'resolved' ? Carbon::parse('2026-07-06 12:00') : null,
+                    'created_at' => now(), 'updated_at' => now(),
+                ];
+            }
+        }
+        foreach (array_chunk($rows, 100) as $chunk) {
+            \App\Models\SupportTicket::insert($chunk);
+        }
+
+        // Escalation events (2 active — đúng catalog).
+        foreach (['TKT-2025-0612' => 'Chưa xử lý sau 30 phút', 'TKT-2025-0608' => 'Khách hàng phản hồi tiêu cực'] as $no => $reason) {
+            $tk = \App\Models\SupportTicket::where('ticket_no', $no)->first();
+            \App\Models\SupportEscalation::create(['support_ticket_id' => $tk->id, 'from_level' => 'L1', 'to_level' => 'L2', 'reason' => $reason, 'status' => 'active', 'escalated_by' => $admin->id]);
+        }
+
+        // --- Data correction requests (đúng catalog) ---
+        $dcrDefs = [
+            ['DCR-2026-0612', 'Khách hàng', 312, 'critical', 'pending_approval'],
+            ['DCR-2026-0611', 'Hóa đơn', 48, 'high', 'approved'],
+            ['DCR-2026-0610', 'Hợp đồng', 23, 'medium', 'executed'],
+        ];
+        foreach ($dcrDefs as $i => [$code, $type, $records, $risk, $status]) {
+            $dcr = \App\Models\DataCorrectionRequest::create([
+                'code' => $code, 'tenant_id' => $tenant->id, 'data_type' => $type, 'target_entity' => 'residents',
+                'affected_records' => $records, 'risk' => $risk, 'status' => $status,
+                'reason' => '<p>Đối soát và sửa dữ liệu '.$type.' sai lệch.</p>', 'rollback_plan' => '<p>Khôi phục từ snapshot.</p>',
+                'requested_by' => $admin->id, 'approver_id' => $admin->id,
+                'approved_at' => in_array($status, ['approved', 'executed'], true) ? Carbon::parse('2026-07-06 09:00') : null,
+                'execution_window_at' => Carbon::parse('2026-07-08 22:00'),
+            ]);
+            for ($r = 0; $r < min($records, 5); $r++) {
+                \App\Models\DataCorrectionAffectedRecord::create(['data_correction_request_id' => $dcr->id, 'entity' => 'residents', 'record_id' => (string) ($r + 1), 'identifier' => 'REC-'.($r + 1)]);
+            }
+            if (in_array($status, ['approved', 'executed'], true)) {
+                \App\Models\DataFixSnapshot::create(['data_correction_request_id' => $dcr->id, 'snapshot_json' => ['sample' => 'before'], 'record_count' => $records, 'created_by' => $admin->id, 'created_at' => now()]);
+                \App\Models\DataFixDiffItem::create(['data_correction_request_id' => $dcr->id, 'entity' => 'residents', 'record_id' => '1', 'field' => 'id_no', 'before_value' => '0123', 'after_value' => '079xxxxx']);
+                \App\Models\DataFixApproval::create(['data_correction_request_id' => $dcr->id, 'approver_id' => $admin->id, 'decision' => 'approved', 'reason' => 'Đã kiểm chứng', 'approved_at' => Carbon::parse('2026-07-06 09:00')]);
+            }
+            if ($status === 'executed') {
+                \App\Models\DataFixExecution::create(['data_correction_request_id' => $dcr->id, 'executed_by' => $admin->id, 'status' => 'executed', 'affected_count' => $records, 'executed_at' => Carbon::parse('2026-07-06 22:30'), 'log' => 'OK']);
+            }
+        }
+
+        // --- KB categories + articles (rating/views đúng catalog) ---
+        $kbCat = [];
+        foreach (['Onboarding & Tenant Setup', 'Integration', 'Data Correction'] as $i => $cn) {
+            $kbCat[$cn] = \App\Models\SupportKbCategory::create(['code' => 'KBC-'.($i + 1), 'name' => $cn, 'sort_order' => $i + 1])->id;
+        }
+        foreach ([
+            ['KB-SUP-001', 'SOP: Tạo tenant mới và cấu hình gói dịch vụ', 'Onboarding & Tenant Setup', 4.8, 1240],
+            ['KB-SUP-002', 'Runbook: Xử lý lỗi không gửi được email SMTP', 'Integration', 4.7, 952],
+            ['KB-SUP-003', 'SOP: Reset webhook khi nhận lỗi 5xx', 'Integration', 4.6, 812],
+            ['KB-SUP-004', 'Data Fix: Đối soát và sửa dữ liệu billing sai lệch', 'Data Correction', 4.9, 743],
+        ] as [$code, $title, $cat, $rating, $views]) {
+            $art = \App\Models\SupportKbArticle::create([
+                'code' => $code, 'title' => $title, 'category_id' => $kbCat[$cat] ?? null,
+                'body' => '<h2>'.$title.'</h2><p>Nội dung hướng dẫn chi tiết.</p>', 'status' => 'published',
+                'rating' => $rating, 'views' => $views, 'author_id' => $admin->id, 'published_at' => Carbon::parse('2026-06-01'),
+            ]);
+            \App\Models\SupportKbArticleVersion::create(['support_kb_article_id' => $art->id, 'version' => 1, 'body' => $art->body, 'editor_id' => $admin->id, 'created_at' => now()]);
+        }
+
+        // --- Report snapshots (exact numbers) ---
+        \App\Models\SupportReport::create([
+            'code' => 'RPT-2026-06', 'period' => '2026-06', 'type' => 'resolution', 'generated_by' => $admin->id,
+            'metrics_json' => ['tickets_resolved' => 1248, 'mttr' => '14h 36m', 'sla_compliance' => 96.8, 'data_fixes' => 312, 'rollbacks' => 24, 'csat' => 4.7],
+        ]);
+        \App\Models\SupportReport::create([
+            'code' => 'DASH-CURRENT', 'period' => '2026-07', 'type' => 'dashboard_snapshot', 'generated_by' => $admin->id,
+            'metrics_json' => ['sla_compliance' => 88.4, 'breach_rate' => 11.6, 'open_escalations' => 28, 'near_breach' => 37, 'csat' => 4.6, 'data_corrections_open' => 1],
+        ]);
+
+        \App\Models\SupportAuditLog::create(['actor_id' => $admin->id, 'tenant_id' => $tenant->id, 'entity_type' => 'DataCorrectionRequest', 'entity_id' => '1', 'action' => 'data_correction.created', 'ip_address' => '10.0.0.1', 'created_at' => now()]);
     }
 }

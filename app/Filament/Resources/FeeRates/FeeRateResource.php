@@ -2,6 +2,8 @@
 
 namespace App\Filament\Resources\FeeRates;
 
+use App\Filament\Concerns\SoftDeletableResource;
+
 use App\Filament\Resources\FeeRates\Pages\CreateFeeRate;
 use App\Filament\Resources\FeeRates\Pages\EditFeeRate;
 use App\Filament\Resources\FeeRates\Pages\ListFeeRates;
@@ -16,6 +18,8 @@ use Filament\Tables\Table;
 
 class FeeRateResource extends Resource
 {
+    use SoftDeletableResource;
+
     protected static ?string $model = FeeRate::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;

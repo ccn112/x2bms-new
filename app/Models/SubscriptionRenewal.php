@@ -2,12 +2,15 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\SoftDeletes;
+
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 /** Batch 07 — Pipeline gia hạn thuê bao/hợp đồng. */
 class SubscriptionRenewal extends Model
 {
+    use SoftDeletes;
     protected $guarded = [];
 
     protected $casts = ['target_date' => 'date'];

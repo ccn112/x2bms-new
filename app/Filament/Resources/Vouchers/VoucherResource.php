@@ -2,6 +2,8 @@
 
 namespace App\Filament\Resources\Vouchers;
 
+use App\Filament\Concerns\SoftDeletableResource;
+
 use App\Filament\Resources\Vouchers\Pages\CreateVoucher;
 use App\Filament\Resources\Vouchers\Pages\EditVoucher;
 use App\Filament\Resources\Vouchers\Pages\ListVouchers;
@@ -16,6 +18,8 @@ use Filament\Tables\Table;
 
 class VoucherResource extends Resource
 {
+    use SoftDeletableResource;
+
     protected static ?string $model = Voucher::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;

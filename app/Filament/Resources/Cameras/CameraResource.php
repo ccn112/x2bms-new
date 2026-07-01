@@ -2,6 +2,8 @@
 
 namespace App\Filament\Resources\Cameras;
 
+use App\Filament\Concerns\SoftDeletableResource;
+
 use App\Filament\Resources\Cameras\Pages\CreateCamera;
 use App\Filament\Resources\Cameras\Pages\EditCamera;
 use App\Filament\Resources\Cameras\Pages\ListCameras;
@@ -16,6 +18,8 @@ use Filament\Tables\Table;
 
 class CameraResource extends Resource
 {
+    use SoftDeletableResource;
+
     protected static ?string $model = Camera::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;

@@ -2,6 +2,8 @@
 
 namespace App\Filament\Resources\FormSubmissions;
 
+use App\Filament\Concerns\SoftDeletableResource;
+
 use App\Filament\Resources\FormSubmissions\Pages\CreateFormSubmission;
 use App\Filament\Resources\FormSubmissions\Pages\EditFormSubmission;
 use App\Filament\Resources\FormSubmissions\Pages\ListFormSubmissions;
@@ -16,6 +18,8 @@ use Filament\Tables\Table;
 
 class FormSubmissionResource extends Resource
 {
+    use SoftDeletableResource;
+
     protected static ?string $model = FormSubmission::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;

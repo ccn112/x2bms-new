@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\SoftDeletes;
+
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -9,6 +11,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 /** Batch 07 — Thuê bao SaaS của tenant (canonical, thay bảng subscriptions cũ). */
 class TenantSubscription extends Model
 {
+    use SoftDeletes;
     protected $guarded = [];
 
     protected $casts = ['metadata_json' => 'array', 'auto_renew' => 'boolean', 'start_date' => 'date', 'end_date' => 'date'];

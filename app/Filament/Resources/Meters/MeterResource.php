@@ -2,6 +2,8 @@
 
 namespace App\Filament\Resources\Meters;
 
+use App\Filament\Concerns\SoftDeletableResource;
+
 use App\Filament\Resources\Meters\Pages\CreateMeter;
 use App\Filament\Resources\Meters\Pages\EditMeter;
 use App\Filament\Resources\Meters\Pages\ListMeters;
@@ -16,6 +18,8 @@ use Filament\Tables\Table;
 
 class MeterResource extends Resource
 {
+    use SoftDeletableResource;
+
     protected static ?string $model = Meter::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;

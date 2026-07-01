@@ -2,12 +2,15 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\SoftDeletes;
+
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 /** Tier 3 — Tệp/ảnh minh chứng work order (C6). */
 class WorkOrderAttachment extends Model
 {
+    use SoftDeletes;
     protected $guarded = [];
 
     public function workOrder(): BelongsTo

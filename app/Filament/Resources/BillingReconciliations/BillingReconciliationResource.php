@@ -2,6 +2,8 @@
 
 namespace App\Filament\Resources\BillingReconciliations;
 
+use App\Filament\Concerns\SoftDeletableResource;
+
 use App\Filament\Resources\BillingReconciliations\Pages\CreateBillingReconciliation;
 use App\Filament\Resources\BillingReconciliations\Pages\EditBillingReconciliation;
 use App\Filament\Resources\BillingReconciliations\Pages\ListBillingReconciliations;
@@ -16,6 +18,8 @@ use Filament\Tables\Table;
 
 class BillingReconciliationResource extends Resource
 {
+    use SoftDeletableResource;
+
     protected static ?string $model = BillingReconciliation::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;

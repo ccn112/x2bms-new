@@ -2,6 +2,8 @@
 
 namespace App\Filament\Resources\Features;
 
+use App\Filament\Concerns\SoftDeletableResource;
+
 use App\Filament\Resources\Features\Pages\CreateFeature;
 use App\Filament\Resources\Features\Pages\EditFeature;
 use App\Filament\Resources\Features\Pages\ListFeatures;
@@ -16,6 +18,8 @@ use Filament\Tables\Table;
 
 class FeatureResource extends Resource
 {
+    use SoftDeletableResource;
+
     protected static ?string $model = Feature::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;

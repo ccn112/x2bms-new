@@ -2,6 +2,8 @@
 
 namespace App\Filament\Resources\WorkOrders;
 
+use App\Filament\Concerns\SoftDeletableResource;
+
 use App\Filament\Resources\WorkOrders\Pages\CreateWorkOrder;
 use App\Filament\Resources\WorkOrders\Pages\EditWorkOrder;
 use App\Filament\Resources\WorkOrders\Pages\ListWorkOrders;
@@ -16,6 +18,8 @@ use Filament\Tables\Table;
 
 class WorkOrderResource extends Resource
 {
+    use SoftDeletableResource;
+
     protected static ?string $model = WorkOrder::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;

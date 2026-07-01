@@ -2,6 +2,8 @@
 
 namespace App\Filament\Resources\PassThroughWallets;
 
+use App\Filament\Concerns\SoftDeletableResource;
+
 use App\Filament\Resources\PassThroughWallets\Pages\CreatePassThroughWallet;
 use App\Filament\Resources\PassThroughWallets\Pages\EditPassThroughWallet;
 use App\Filament\Resources\PassThroughWallets\Pages\ListPassThroughWallets;
@@ -16,6 +18,8 @@ use Filament\Tables\Table;
 
 class PassThroughWalletResource extends Resource
 {
+    use SoftDeletableResource;
+
     protected static ?string $model = PassThroughWallet::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;

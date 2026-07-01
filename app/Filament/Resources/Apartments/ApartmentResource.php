@@ -2,6 +2,8 @@
 
 namespace App\Filament\Resources\Apartments;
 
+use App\Filament\Concerns\SoftDeletableResource;
+
 use App\Filament\Resources\Apartments\Pages\CreateApartment;
 use App\Filament\Resources\Apartments\Pages\EditApartment;
 use App\Filament\Resources\Apartments\Pages\ListApartments;
@@ -16,6 +18,8 @@ use Filament\Tables\Table;
 
 class ApartmentResource extends Resource
 {
+    use SoftDeletableResource;
+
     protected static ?string $model = Apartment::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedHomeModern;

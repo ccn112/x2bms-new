@@ -2,6 +2,8 @@
 
 namespace App\Filament\Resources\SmartHomeAccounts;
 
+use App\Filament\Concerns\SoftDeletableResource;
+
 use App\Filament\Resources\SmartHomeAccounts\Pages\CreateSmartHomeAccount;
 use App\Filament\Resources\SmartHomeAccounts\Pages\EditSmartHomeAccount;
 use App\Filament\Resources\SmartHomeAccounts\Pages\ListSmartHomeAccounts;
@@ -16,6 +18,8 @@ use Filament\Tables\Table;
 
 class SmartHomeAccountResource extends Resource
 {
+    use SoftDeletableResource;
+
     protected static ?string $model = SmartHomeAccount::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;

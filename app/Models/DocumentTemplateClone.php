@@ -2,12 +2,15 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\SoftDeletes;
+
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 /** Addendum — Bản clone của mẫu tài liệu (tạo owner mới). */
 class DocumentTemplateClone extends Model
 {
+    use SoftDeletes;
     protected $guarded = [];
 
     protected $casts = ['cloned_at' => 'datetime'];

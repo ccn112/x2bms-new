@@ -2,6 +2,8 @@
 
 namespace App\Filament\Resources\Contractors;
 
+use App\Filament\Concerns\SoftDeletableResource;
+
 use App\Filament\Resources\Contractors\Pages\CreateContractor;
 use App\Filament\Resources\Contractors\Pages\EditContractor;
 use App\Filament\Resources\Contractors\Pages\ListContractors;
@@ -16,6 +18,8 @@ use Filament\Tables\Table;
 
 class ContractorResource extends Resource
 {
+    use SoftDeletableResource;
+
     protected static ?string $model = Contractor::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;

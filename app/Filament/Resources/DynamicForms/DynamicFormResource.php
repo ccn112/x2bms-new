@@ -2,6 +2,8 @@
 
 namespace App\Filament\Resources\DynamicForms;
 
+use App\Filament\Concerns\SoftDeletableResource;
+
 use App\Filament\Resources\DynamicForms\Pages\CreateDynamicForm;
 use App\Filament\Resources\DynamicForms\Pages\EditDynamicForm;
 use App\Filament\Resources\DynamicForms\Pages\ListDynamicForms;
@@ -16,6 +18,8 @@ use Filament\Tables\Table;
 
 class DynamicFormResource extends Resource
 {
+    use SoftDeletableResource;
+
     protected static ?string $model = DynamicForm::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;

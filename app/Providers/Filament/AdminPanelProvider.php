@@ -60,6 +60,8 @@ class AdminPanelProvider extends PanelProvider
                 NavigationGroup::make('X2 AI Engine')->icon('heroicon-o-sparkles'),
                 NavigationGroup::make('Nền tảng (SuperAdmin)')->icon('heroicon-o-building-library'),
                 NavigationGroup::make('SaaS Billing')->icon('heroicon-o-banknotes'),
+                NavigationGroup::make('Integration Center')->icon('heroicon-o-bolt'),
+                NavigationGroup::make('Support Center')->icon('heroicon-o-lifebuoy'),
                 NavigationGroup::make('Hệ thống'),
             ])
             // /admin shows only the designed custom pages. Raw CRUD resources live

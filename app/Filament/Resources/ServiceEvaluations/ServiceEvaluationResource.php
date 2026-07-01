@@ -2,6 +2,8 @@
 
 namespace App\Filament\Resources\ServiceEvaluations;
 
+use App\Filament\Concerns\SoftDeletableResource;
+
 use App\Filament\Resources\ServiceEvaluations\Pages\CreateServiceEvaluation;
 use App\Filament\Resources\ServiceEvaluations\Pages\EditServiceEvaluation;
 use App\Filament\Resources\ServiceEvaluations\Pages\ListServiceEvaluations;
@@ -16,6 +18,8 @@ use Filament\Tables\Table;
 
 class ServiceEvaluationResource extends Resource
 {
+    use SoftDeletableResource;
+
     protected static ?string $model = ServiceEvaluation::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;

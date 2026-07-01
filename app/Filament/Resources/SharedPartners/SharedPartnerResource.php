@@ -2,6 +2,8 @@
 
 namespace App\Filament\Resources\SharedPartners;
 
+use App\Filament\Concerns\SoftDeletableResource;
+
 use App\Filament\Resources\SharedPartners\Pages\CreateSharedPartner;
 use App\Filament\Resources\SharedPartners\Pages\EditSharedPartner;
 use App\Filament\Resources\SharedPartners\Pages\ListSharedPartners;
@@ -16,6 +18,8 @@ use Filament\Tables\Table;
 
 class SharedPartnerResource extends Resource
 {
+    use SoftDeletableResource;
+
     protected static ?string $model = SharedPartner::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;

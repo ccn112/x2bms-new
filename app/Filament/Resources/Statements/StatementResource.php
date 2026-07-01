@@ -2,6 +2,8 @@
 
 namespace App\Filament\Resources\Statements;
 
+use App\Filament\Concerns\SoftDeletableResource;
+
 use App\Filament\Resources\Statements\Pages\CreateStatement;
 use App\Filament\Resources\Statements\Pages\EditStatement;
 use App\Filament\Resources\Statements\Pages\ListStatements;
@@ -16,6 +18,8 @@ use Filament\Tables\Table;
 
 class StatementResource extends Resource
 {
+    use SoftDeletableResource;
+
     protected static ?string $model = Statement::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;

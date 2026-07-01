@@ -2,15 +2,50 @@
 
 namespace App\Models;
 
-use App\Models\Concerns\BelongsToTenant;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
-/** Tier 4 — Kết nối tích hợp bên thứ 3 (payment/sms/zalo/accounting...). */
+/**
+ * Batch 08 — kết nối bên ngoài (platform-level Integration Center).
+ * Canonical, thay bảng per-tenant sơ khai cũ. KHÔNG dùng tenant/project scope.
+ */
 class IntegrationConnection extends Model
 {
-    use BelongsToTenant;
+    use SoftDeletes;
 
     protected $guarded = [];
 
-    protected $casts = ['config' => 'array', 'last_sync_at' => 'datetime'];
+    protected $casts = [
+        'metadata_json' => 'array',
+        'idempotency_enabled' => 'boolean',
+        'last_checked_at' => 'datetime',
+        'success_rate_24h' => 'decimal:2',
+    ];
+
+    public function category(): BelongsTo
+    {
+        return $this->belongsTo(IntegrationCategory::class, 'category_id');
+    }
+
+    public function owner(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'owner_user_id');
+    }
+
+    public function credentials(): HasMany
+    {
+        return $this->hasMany(IntegrationCredential::class, 'connection_id');
+    }
+
+    public function checks(): HasMany
+    {
+        return $this->hasMany(IntegrationConnectionCheck::class, 'connection_id');
+    }
+
+    public function mappings(): HasMany
+    {
+        return $this->hasMany(IntegrationMapping::class, 'connection_id');
+    }
 }

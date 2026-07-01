@@ -2,6 +2,8 @@
 
 namespace App\Filament\Resources\AiGuardrailPolicies;
 
+use App\Filament\Concerns\SoftDeletableResource;
+
 use App\Filament\Resources\AiGuardrailPolicies\Pages\CreateAiGuardrailPolicy;
 use App\Filament\Resources\AiGuardrailPolicies\Pages\EditAiGuardrailPolicy;
 use App\Filament\Resources\AiGuardrailPolicies\Pages\ListAiGuardrailPolicies;
@@ -16,6 +18,8 @@ use Filament\Tables\Table;
 
 class AiGuardrailPolicyResource extends Resource
 {
+    use SoftDeletableResource;
+
     protected static ?string $model = AiGuardrailPolicy::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;

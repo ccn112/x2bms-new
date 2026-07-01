@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\SoftDeletes;
+
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Spatie\Permission\Models\Role;
@@ -17,6 +19,7 @@ use Spatie\Permission\Models\Role;
  */
 class UserRoleScope extends Model
 {
+    use SoftDeletes;
     protected $guarded = [];
 
     public const SCOPE_PLATFORM = 'platform';

@@ -2,6 +2,8 @@
 
 namespace App\Filament\Resources\Payments;
 
+use App\Filament\Concerns\SoftDeletableResource;
+
 use App\Filament\Resources\Payments\Pages\CreatePayment;
 use App\Filament\Resources\Payments\Pages\EditPayment;
 use App\Filament\Resources\Payments\Pages\ListPayments;
@@ -16,6 +18,8 @@ use Filament\Tables\Table;
 
 class PaymentResource extends Resource
 {
+    use SoftDeletableResource;
+
     protected static ?string $model = Payment::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;

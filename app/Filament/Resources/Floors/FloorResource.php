@@ -2,6 +2,8 @@
 
 namespace App\Filament\Resources\Floors;
 
+use App\Filament\Concerns\SoftDeletableResource;
+
 use App\Filament\Resources\Floors\Pages\CreateFloor;
 use App\Filament\Resources\Floors\Pages\EditFloor;
 use App\Filament\Resources\Floors\Pages\ListFloors;
@@ -16,6 +18,8 @@ use Filament\Tables\Table;
 
 class FloorResource extends Resource
 {
+    use SoftDeletableResource;
+
     protected static ?string $model = Floor::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedSquares2x2;

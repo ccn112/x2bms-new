@@ -2,12 +2,15 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\SoftDeletes;
+
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 /** Batch 07 — Đối soát thanh toán ↔ hóa đơn ↔ giao dịch ngân hàng. */
 class BillingReconciliation extends Model
 {
+    use SoftDeletes;
     protected $guarded = [];
 
     protected $casts = ['confirmed_at' => 'datetime'];

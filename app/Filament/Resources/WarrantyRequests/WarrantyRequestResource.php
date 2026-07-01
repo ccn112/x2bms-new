@@ -2,6 +2,8 @@
 
 namespace App\Filament\Resources\WarrantyRequests;
 
+use App\Filament\Concerns\SoftDeletableResource;
+
 use App\Filament\Resources\WarrantyRequests\Pages\CreateWarrantyRequest;
 use App\Filament\Resources\WarrantyRequests\Pages\EditWarrantyRequest;
 use App\Filament\Resources\WarrantyRequests\Pages\ListWarrantyRequests;
@@ -16,6 +18,8 @@ use Filament\Tables\Table;
 
 class WarrantyRequestResource extends Resource
 {
+    use SoftDeletableResource;
+
     protected static ?string $model = WarrantyRequest::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;

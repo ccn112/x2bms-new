@@ -2,6 +2,8 @@
 
 namespace App\Filament\Resources\BillingInvoices;
 
+use App\Filament\Concerns\SoftDeletableResource;
+
 use App\Filament\Resources\BillingInvoices\Pages\CreateBillingInvoice;
 use App\Filament\Resources\BillingInvoices\Pages\EditBillingInvoice;
 use App\Filament\Resources\BillingInvoices\Pages\ListBillingInvoices;
@@ -16,6 +18,8 @@ use Filament\Tables\Table;
 
 class BillingInvoiceResource extends Resource
 {
+    use SoftDeletableResource;
+
     protected static ?string $model = BillingInvoice::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;

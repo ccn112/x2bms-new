@@ -2,6 +2,8 @@
 
 namespace App\Filament\Resources\HandoverBatches;
 
+use App\Filament\Concerns\SoftDeletableResource;
+
 use App\Filament\Resources\HandoverBatches\Pages\CreateHandoverBatch;
 use App\Filament\Resources\HandoverBatches\Pages\EditHandoverBatch;
 use App\Filament\Resources\HandoverBatches\Pages\ListHandoverBatches;
@@ -16,6 +18,8 @@ use Filament\Tables\Table;
 
 class HandoverBatchResource extends Resource
 {
+    use SoftDeletableResource;
+
     protected static ?string $model = HandoverBatch::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;

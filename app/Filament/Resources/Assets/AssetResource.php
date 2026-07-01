@@ -2,6 +2,8 @@
 
 namespace App\Filament\Resources\Assets;
 
+use App\Filament\Concerns\SoftDeletableResource;
+
 use App\Filament\Resources\Assets\Pages\CreateAsset;
 use App\Filament\Resources\Assets\Pages\EditAsset;
 use App\Filament\Resources\Assets\Pages\ListAssets;
@@ -16,6 +18,8 @@ use Filament\Tables\Table;
 
 class AssetResource extends Resource
 {
+    use SoftDeletableResource;
+
     protected static ?string $model = Asset::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;

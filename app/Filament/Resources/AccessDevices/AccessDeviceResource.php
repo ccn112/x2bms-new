@@ -2,6 +2,8 @@
 
 namespace App\Filament\Resources\AccessDevices;
 
+use App\Filament\Concerns\SoftDeletableResource;
+
 use App\Filament\Resources\AccessDevices\Pages\CreateAccessDevice;
 use App\Filament\Resources\AccessDevices\Pages\EditAccessDevice;
 use App\Filament\Resources\AccessDevices\Pages\ListAccessDevices;
@@ -16,6 +18,8 @@ use Filament\Tables\Table;
 
 class AccessDeviceResource extends Resource
 {
+    use SoftDeletableResource;
+
     protected static ?string $model = AccessDevice::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;

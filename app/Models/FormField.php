@@ -2,12 +2,15 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\SoftDeletes;
+
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 /** Tier 4 — Trường dữ liệu trong biểu mẫu động. */
 class FormField extends Model
 {
+    use SoftDeletes;
     protected $guarded = [];
 
     protected $casts = ['options' => 'array', 'config' => 'array', 'required' => 'boolean'];

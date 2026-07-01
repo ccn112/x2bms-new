@@ -2,6 +2,8 @@
 
 namespace App\Filament\Resources\SubscriptionContracts;
 
+use App\Filament\Concerns\SoftDeletableResource;
+
 use App\Filament\Resources\SubscriptionContracts\Pages\CreateSubscriptionContract;
 use App\Filament\Resources\SubscriptionContracts\Pages\EditSubscriptionContract;
 use App\Filament\Resources\SubscriptionContracts\Pages\ListSubscriptionContracts;
@@ -16,6 +18,8 @@ use Filament\Tables\Table;
 
 class SubscriptionContractResource extends Resource
 {
+    use SoftDeletableResource;
+
     protected static ?string $model = SubscriptionContract::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;

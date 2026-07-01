@@ -2,6 +2,8 @@
 
 namespace App\Filament\Resources\UsagePeriods;
 
+use App\Filament\Concerns\SoftDeletableResource;
+
 use App\Filament\Resources\UsagePeriods\Pages\CreateUsagePeriod;
 use App\Filament\Resources\UsagePeriods\Pages\EditUsagePeriod;
 use App\Filament\Resources\UsagePeriods\Pages\ListUsagePeriods;
@@ -16,6 +18,8 @@ use Filament\Tables\Table;
 
 class UsagePeriodResource extends Resource
 {
+    use SoftDeletableResource;
+
     protected static ?string $model = UsagePeriod::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;

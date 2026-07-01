@@ -2,6 +2,8 @@
 
 namespace App\Filament\Resources\IotDevices;
 
+use App\Filament\Concerns\SoftDeletableResource;
+
 use App\Filament\Resources\IotDevices\Pages\CreateIotDevice;
 use App\Filament\Resources\IotDevices\Pages\EditIotDevice;
 use App\Filament\Resources\IotDevices\Pages\ListIotDevices;
@@ -16,6 +18,8 @@ use Filament\Tables\Table;
 
 class IotDeviceResource extends Resource
 {
+    use SoftDeletableResource;
+
     protected static ?string $model = IotDevice::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;

@@ -2,6 +2,8 @@
 
 namespace App\Filament\Resources\FormFields;
 
+use App\Filament\Concerns\SoftDeletableResource;
+
 use App\Filament\Resources\FormFields\Pages\CreateFormField;
 use App\Filament\Resources\FormFields\Pages\EditFormField;
 use App\Filament\Resources\FormFields\Pages\ListFormFields;
@@ -16,6 +18,8 @@ use Filament\Tables\Table;
 
 class FormFieldResource extends Resource
 {
+    use SoftDeletableResource;
+
     protected static ?string $model = FormField::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;

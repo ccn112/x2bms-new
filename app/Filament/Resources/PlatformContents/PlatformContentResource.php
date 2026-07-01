@@ -2,6 +2,8 @@
 
 namespace App\Filament\Resources\PlatformContents;
 
+use App\Filament\Concerns\SoftDeletableResource;
+
 use App\Filament\Resources\PlatformContents\Pages\CreatePlatformContent;
 use App\Filament\Resources\PlatformContents\Pages\EditPlatformContent;
 use App\Filament\Resources\PlatformContents\Pages\ListPlatformContents;
@@ -16,6 +18,8 @@ use Filament\Tables\Table;
 
 class PlatformContentResource extends Resource
 {
+    use SoftDeletableResource;
+
     protected static ?string $model = PlatformContent::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;

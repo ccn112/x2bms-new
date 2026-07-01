@@ -8,6 +8,16 @@ use App\Http\Controllers\Platform\Billing\QuotaAlertController;
 use App\Http\Controllers\Platform\Billing\SaasRevenueController;
 use App\Http\Controllers\Platform\Billing\TenantSubscriptionController;
 use App\Http\Controllers\Platform\Billing\UsageMeteringController;
+use App\Http\Controllers\Platform\Integration\IntegrationApiKeyController;
+use App\Http\Controllers\Platform\Integration\IntegrationConnectionController;
+use App\Http\Controllers\Platform\Integration\IntegrationEventController;
+use App\Http\Controllers\Platform\Integration\IntegrationOverviewController;
+use App\Http\Controllers\Platform\Integration\IntegrationRetryQueueController;
+use App\Http\Controllers\Platform\Integration\IntegrationSecurityController;
+use App\Http\Controllers\Platform\Integration\WebhookEndpointController;
+use App\Http\Controllers\Platform\Support\DataCorrectionController;
+use App\Http\Controllers\Platform\Support\SupportCenterController;
+use App\Http\Controllers\Platform\Support\SupportTicketController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -67,4 +77,86 @@ Route::middleware('platform.admin')->prefix('platform/billing')->group(function 
 
     // Audit.
     Route::get('audit-logs', [BillingAuditLogController::class, 'index']);
+});
+
+/*
+ * Batch 08 — Integration Center API (English business routes). SuperAdmin only
+ * (middleware platform.admin). Secrets returned once on create/rotate; every
+ * state-changing action writes integration_audit_logs.
+ */
+Route::middleware('platform.admin')->prefix('platform/integrations')->group(function () {
+    Route::get('overview', [IntegrationOverviewController::class, 'index']);
+    Route::get('audit-logs', [IntegrationOverviewController::class, 'auditLogs']);
+
+    Route::get('connections', [IntegrationConnectionController::class, 'index']);
+    Route::post('connections', [IntegrationConnectionController::class, 'store']);
+    Route::get('connections/{connection}', [IntegrationConnectionController::class, 'show']);
+    Route::post('connections/{connection}/test', [IntegrationConnectionController::class, 'test']);
+    Route::post('connections/{connection}/enable', [IntegrationConnectionController::class, 'enable']);
+    Route::post('connections/{connection}/disable', [IntegrationConnectionController::class, 'disable']);
+    Route::post('connections/{connection}/rotate-secret', [IntegrationConnectionController::class, 'rotateSecret']);
+
+    Route::get('api-keys', [IntegrationApiKeyController::class, 'index']);
+    Route::post('api-keys', [IntegrationApiKeyController::class, 'store']);
+    Route::get('api-keys/{apiKey}', [IntegrationApiKeyController::class, 'show']);
+    Route::post('api-keys/{apiKey}/rotate', [IntegrationApiKeyController::class, 'rotate']);
+    Route::post('api-keys/{apiKey}/revoke', [IntegrationApiKeyController::class, 'revoke']);
+    Route::post('api-keys/{apiKey}/suspend', [IntegrationApiKeyController::class, 'suspend']);
+    Route::post('api-keys/{apiKey}/resume', [IntegrationApiKeyController::class, 'resume']);
+
+    Route::get('webhooks', [WebhookEndpointController::class, 'index']);
+    Route::post('webhooks', [WebhookEndpointController::class, 'store']);
+    Route::get('webhooks/{webhook}', [WebhookEndpointController::class, 'show']);
+    Route::post('webhooks/{webhook}/test', [WebhookEndpointController::class, 'test']);
+    Route::post('webhooks/{webhook}/enable', [WebhookEndpointController::class, 'enable']);
+    Route::post('webhooks/{webhook}/disable', [WebhookEndpointController::class, 'disable']);
+    Route::post('webhooks/{webhook}/rotate-secret', [WebhookEndpointController::class, 'rotateSecret']);
+    Route::get('webhooks/{webhook}/deliveries', [WebhookEndpointController::class, 'deliveries']);
+
+    Route::get('events', [IntegrationEventController::class, 'index']);
+    Route::get('events/{event}', [IntegrationEventController::class, 'show']);
+    Route::post('events/{event}/replay', [IntegrationEventController::class, 'replay']);
+
+    Route::get('retry-queue', [IntegrationRetryQueueController::class, 'index']);
+    Route::post('retry-queue/{job}/retry-now', [IntegrationRetryQueueController::class, 'retryNow']);
+    Route::post('retry-queue/{job}/skip', [IntegrationRetryQueueController::class, 'skip']);
+    Route::post('retry-queue/{job}/dead-letter', [IntegrationRetryQueueController::class, 'deadLetter']);
+
+    Route::get('security-settings', [IntegrationSecurityController::class, 'show']);
+    Route::put('security-settings', [IntegrationSecurityController::class, 'update']);
+    Route::post('security-settings/enforce-hmac', [IntegrationSecurityController::class, 'enforceHmac']);
+    Route::post('security-settings/emergency-disable', [IntegrationSecurityController::class, 'emergencyDisable']);
+});
+
+/*
+ * Batch 10 — Support Center API (English business routes). SuperAdmin only
+ * (platform.admin). Every sensitive action writes support_audit_logs.
+ */
+Route::middleware('platform.admin')->prefix('platform/support')->group(function () {
+    Route::get('dashboard', [SupportCenterController::class, 'dashboard']);
+    Route::get('reports/resolution', [SupportCenterController::class, 'report']);
+    Route::get('audit-logs', [SupportCenterController::class, 'auditLogs']);
+
+    Route::get('tickets', [SupportTicketController::class, 'index']);
+    Route::post('tickets', [SupportTicketController::class, 'store']);
+    Route::get('tickets/{ticket}', [SupportTicketController::class, 'show']);
+    Route::post('tickets/{ticket}/assign', [SupportTicketController::class, 'assign']);
+    Route::post('tickets/{ticket}/escalate', [SupportTicketController::class, 'escalate']);
+    Route::post('tickets/{ticket}/close', [SupportTicketController::class, 'close']);
+    Route::post('tickets/{ticket}/reopen', [SupportTicketController::class, 'reopen']);
+    Route::post('tickets/{ticket}/messages', [SupportTicketController::class, 'addMessage']);
+
+    Route::get('data-correction-requests', [DataCorrectionController::class, 'index']);
+    Route::post('data-correction-requests', [DataCorrectionController::class, 'store']);
+    Route::get('data-correction-requests/{dcr}', [DataCorrectionController::class, 'show']);
+    Route::post('data-correction-requests/{dcr}/approve', [DataCorrectionController::class, 'approve']);
+    Route::post('data-correction-requests/{dcr}/reject', [DataCorrectionController::class, 'reject']);
+    Route::post('data-fix-wizard/{dcr}/create-snapshot', [DataCorrectionController::class, 'snapshot']);
+    Route::post('data-fix-wizard/{dcr}/execute', [DataCorrectionController::class, 'execute']);
+    Route::post('data-fix-wizard/{dcr}/rollback', [DataCorrectionController::class, 'rollback']);
+
+    Route::get('knowledge-base/articles', [SupportCenterController::class, 'kbIndex']);
+    Route::post('knowledge-base/articles', [SupportCenterController::class, 'kbStore']);
+    Route::post('knowledge-base/articles/{article}/publish', [SupportCenterController::class, 'kbPublish']);
+    Route::post('knowledge-base/articles/{article}/archive', [SupportCenterController::class, 'kbArchive']);
 });

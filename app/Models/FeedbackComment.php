@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\SoftDeletes;
+
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -9,6 +11,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 /** Tier 2 — Bình luận/trao đổi trong một phản ánh (is_internal = ghi chú nội bộ BQL). */
 class FeedbackComment extends Model
 {
+    use SoftDeletes;
     protected $guarded = [];
 
     protected $casts = [
