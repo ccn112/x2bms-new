@@ -54,7 +54,7 @@
             {{-- Tự động hoá AI --}}
             <x-x2.section-card title="Tự động hoá AI" subtitle="Các workflow đang hoạt động nhiều nhất">
                 <x-slot:action>
-                    <a href="{{ \App\Filament\Pages\AiWorkflowAutomation::getUrl() }}" class="font-medium text-x2-blue hover:underline">Quản lý →</a>
+                    <a href="{{ \App\Filament\Hq\Pages\AiWorkflowAutomation::getUrl() }}" class="font-medium text-x2-blue hover:underline">Quản lý →</a>
                 </x-slot:action>
                 <div class="divide-y divide-slate-100">
                     @foreach ($workflows as $wf)
@@ -85,7 +85,7 @@
                             </span>
                             <div class="min-w-0">
                                 <div class="truncate text-slate-700">{{ $p->prompt_excerpt }}</div>
-                                <div class="text-xs text-slate-400">{{ \App\Filament\Pages\AiCenter::SURFACE_LABELS[$p->surface] ?? $p->surface }} · {{ $p->created_at?->diffForHumans() }}</div>
+                                <div class="text-xs text-slate-400">{{ \App\Filament\Hq\Pages\AiCenter::SURFACE_LABELS[$p->surface] ?? $p->surface }} · {{ $p->created_at?->diffForHumans() }}</div>
                             </div>
                         </li>
                     @empty
@@ -97,7 +97,7 @@
             {{-- Nguồn tri thức --}}
             <x-x2.section-card title="Nguồn tri thức (Knowledge)">
                 <x-slot:action>
-                    <a href="{{ \App\Filament\Pages\AiKnowledgeBase::getUrl() }}" class="font-medium text-x2-blue hover:underline">Mở KB →</a>
+                    <a href="{{ \App\Filament\Hq\Pages\AiKnowledgeBase::getUrl() }}" class="font-medium text-x2-blue hover:underline">Mở KB →</a>
                 </x-slot:action>
                 <div class="grid grid-cols-2 gap-3">
                     <div class="rounded-lg bg-slate-50 p-3">

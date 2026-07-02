@@ -3,8 +3,6 @@
 @endphp
 
 <x-filament-panels::page>
-    <x-x2.action-bar subtitle="Duyệt & phát hành bảng kê phí theo lô (tòa / kỳ thu)" />
-
     {{-- KPI row --}}
     <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         @foreach ($kpis as $kpi)

@@ -52,6 +52,7 @@ class HqPanelProvider extends PanelProvider
                 NavigationGroup::make('Biểu mẫu & Tri thức'),
                 NavigationGroup::make('Hỗ trợ & Phân quyền'),
                 NavigationGroup::make('Báo cáo'),
+                NavigationGroup::make('X2 AI Engine')->icon('heroicon-o-sparkles'),
             ])
             ->discoverPages(in: app_path('Filament/Hq/Pages'), for: 'App\\Filament\\Hq\\Pages')
             ->discoverWidgets(in: app_path('Filament/Hq/Widgets'), for: 'App\\Filament\\Hq\\Widgets')
@@ -73,10 +74,15 @@ class HqPanelProvider extends PanelProvider
                 PanelsRenderHook::USER_MENU_BEFORE,
                 fn (): string => Blade::render('@include("filament.hq.header-cluster")'),
             )
-            // Shared X2AI floating chat on every HQ screen.
+            // WEB-UX-MOBILE — responsive app shell below lg (shared component).
+            ->renderHook(
+                PanelsRenderHook::BODY_START,
+                fn (): string => Blade::render('<x-x2.mobile-shell />'),
+            )
+            // Shared X2AI floating chat + global search palette on every HQ screen.
             ->renderHook(
                 PanelsRenderHook::BODY_END,
-                fn (): string => Blade::render('<x-x2.ai-fab />'),
+                fn (): string => Blade::render('<x-x2.ai-fab /> @auth @livewire(\'global-search\') @livewire(\'context-switcher\') @endauth'),
             )
             ->middleware([
                 EncryptCookies::class,

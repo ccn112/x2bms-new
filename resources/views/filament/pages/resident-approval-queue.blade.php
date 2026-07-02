@@ -2,8 +2,6 @@
     $roleLabels = ['owner' => 'Chủ sở hữu', 'tenant' => 'Người thuê', 'member' => 'Thành viên'];
 @endphp
 <x-filament-panels::page>
-    <x-x2.action-bar title="Duyệt cư dân" subtitle="Hàng đợi hồ sơ cư dân chờ duyệt & phân quyền tài khoản" />
-
     <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         @foreach ($kpis as $kpi)
             <x-x2.kpi-card :label="$kpi['label']" :value="$kpi['value']" :accent="$kpi['accent']" />
@@ -45,6 +43,7 @@
 
                         {{-- Decisions --}}
                         <div class="flex items-center gap-2">
+                            <a href="{{ url('/admin/residents/approvals/'.$r->id) }}" class="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-x2-primary hover:bg-slate-50">Chi tiết</a>
                             <button type="button" wire:click="needMore({{ $r->id }})" class="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm text-slate-600 hover:bg-slate-50">Bổ sung</button>
                             <button type="button" wire:click="reject({{ $r->id }})" class="rounded-lg border border-x2-red/30 bg-white px-3 py-1.5 text-sm font-medium text-x2-red hover:bg-x2-red/5">Từ chối</button>
                             <button type="button" wire:click="approve({{ $r->id }})" class="rounded-lg bg-x2-green px-3 py-1.5 text-sm font-medium text-white hover:opacity-90">Duyệt</button>

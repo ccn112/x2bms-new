@@ -1,6 +1,6 @@
 @php
     use Illuminate\Support\Facades\Storage;
-    $statusMeta = \App\Filament\Pages\AiKnowledgeBase::STATUS[$record->status] ?? [$record->status, 'gray'];
+    $statusMeta = \App\Filament\Hq\Pages\AiKnowledgeBase::STATUS[$record->status] ?? [$record->status, 'gray'];
     $attachments = collect($record->attachments ?? []);
 @endphp
 

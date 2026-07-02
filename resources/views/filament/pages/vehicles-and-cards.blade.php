@@ -1,5 +1,5 @@
 <x-filament-panels::page>
-    <x-x2.action-bar title="Phương tiện & thẻ" subtitle="Quản lý phương tiện, thẻ ra vào và sinh trắc học">
+    <x-x2.action-bar>
         <a href="{{ url('/fila/vehicles/create') }}" class="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm text-slate-600 hover:bg-slate-50">+ Đăng ký xe</a>
         <a href="{{ url('/fila/access-cards/create') }}" class="rounded-lg bg-x2-primary px-3 py-1.5 text-sm font-medium text-white hover:bg-x2-primary-600">+ Cấp thẻ</a>
     </x-x2.action-bar>

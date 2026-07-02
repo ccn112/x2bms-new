@@ -41,7 +41,12 @@ Route::middleware(['auth'])->group(function () {
             'description' => 'Chuyển workspace sang: '.($ctx->workspaceLabel()),
         ]);
 
-        return back();
+        // Each workspace is its own Filament panel: BQL → /admin, HQ → /hq, SuperAdmin → /sa.
+        return redirect(match ($key) {
+            'hq' => '/hq',
+            'superadmin' => '/sa',
+            default => '/admin',
+        });
     })->whereIn('key', ['bql', 'hq', 'superadmin'])->name('context.workspace');
 
     // HQ Portal — set the multi-project aggregation scope (empty = all projects).
