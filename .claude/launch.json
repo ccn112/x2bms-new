@@ -1,0 +1,12 @@
+{
+  "version": "0.0.1",
+  "autoPort": false,
+  "configurations": [
+    {
+      "name": "x2bms",
+      "runtimeExecutable": "C:\\Users\\ADMIN\\.config\\herd\\bin\\php.bat",
+      "runtimeArgs": ["artisan", "serve", "--host=127.0.0.1", "--port=8010"],
+      "port": 8010
+    }
+  ]
+}

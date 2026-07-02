@@ -3,6 +3,7 @@
 @source '../../../../app/Filament';
 @source '../../../../resources/views/filament';
 @source '../../../../resources/views/components/x2';
+@source '../../../../resources/views/livewire';
 
 /* X2-BMS brand palette (mirrors resources/css/app.css so x2-* utilities work inside the panel). */
 @theme {
@@ -65,6 +66,36 @@ h1, h2, h3, h4,
    default logo in the white topbar so it isn't duplicated/invisible. */
 .fi-topbar .fi-logo {
     @apply hidden;
+}
+
+/* Anchor for the absolutely-centred global search injected at TOPBAR_START
+   (WEB-UX-10). Centres over the content area since the topbar sits inside the
+   sidebar-offset container. */
+.fi-topbar,
+.fi-topbar > nav {
+    position: relative;
+}
+
+/* WEB-UX (owner decision 2026-07-02): page title lives in the topbar; drop the
+   in-content page header + subtitle to reclaim vertical space. The topbar JS also
+   clones the heading and hides the header; this kills any subheading pre-JS. */
+.fi-main .fi-header-subheading {
+    display: none;
+}
+
+/* =========================================================================
+   WEB-UX-MOBILE — below lg the desktop topbar is replaced by <x-x2.mobile-shell>
+   (compact header + context row + drawer/search/sheet). Hide the desktop topbar so
+   the mobile header is the only chrome; the navy sidebar becomes the off-canvas drawer.
+   ========================================================================= */
+@media (max-width: 1023.98px) {
+    .fi-topbar {
+        display: none !important;
+    }
+    /* The FAB stays but sits above the browser bottom toolbar. */
+    .fi-main {
+        padding-top: 0.5rem;
+    }
 }
 
 /* Group labels (CƯ DÂN & CĂN HỘ, TÀI CHÍNH, ...) */

@@ -60,68 +60,17 @@
 @endphp
 
 <div class="flex items-center gap-1.5">
-    {{-- Workspace switcher (WEB-UX-03). Platform → Công ty/HQ → BQL Dự án. --}}
-    <div x-data="{ open: false }" class="relative">
-        <button type="button" x-on:click="open = !open"
-            class="flex h-10 items-center gap-2 rounded-xl bg-x2-navy px-3 text-sm font-medium text-white transition hover:bg-x2-navy-700">
-            <svg class="h-4 w-4 text-x2-gold" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M4 5h6v6H4zM14 5h6v6h-6zM4 15h6v4H4zM14 15h6v4h-6z"/></svg>
-            <span>{{ $workspaceLabel }}</span>
-            <svg class="h-4 w-4 text-white/60" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="m6 9 6 6 6-6"/></svg>
-        </button>
-        <div x-show="open" x-cloak x-transition x-on:click.outside="open = false"
-            class="absolute left-0 z-50 mt-2 w-72 rounded-2xl border border-gray-100 bg-white p-2 shadow-xl dark:border-white/10 dark:bg-gray-900">
-            <div class="px-2 pb-1 pt-1 text-[11px] font-semibold uppercase tracking-wide text-gray-400">Workspace</div>
-            @foreach ($workspaces as $w)
-                @if ($w['allowed'])
-                    <a href="{{ url('/context/workspace/'.$w['key']) }}"
-                        class="flex items-start justify-between rounded-lg px-2.5 py-2 hover:bg-gray-50 dark:hover:bg-white/5 {{ $w['active'] ? 'bg-x2-navy/5' : '' }}">
-                        <span class="min-w-0">
-                            <span class="block text-sm font-medium {{ $w['active'] ? 'text-x2-navy' : 'text-gray-700 dark:text-gray-200' }}">{{ $w['label'] }}</span>
-                            <span class="block text-xs text-gray-400">{{ $w['desc'] }}</span>
-                        </span>
-                        @if ($w['active'])
-                            <svg class="mt-0.5 h-4 w-4 shrink-0 text-x2-navy" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2"><path stroke-linecap="round" stroke-linejoin="round" d="m5 13 4 4L19 7"/></svg>
-                        @endif
-                    </a>
-                @else
-                    <div class="flex items-start justify-between rounded-lg px-2.5 py-2 opacity-60" title="Bạn chưa có quyền vào workspace này">
-                        <span class="min-w-0">
-                            <span class="block text-sm font-medium text-gray-500">{{ $w['label'] }}</span>
-                            <span class="block text-xs text-gray-400">Cần được cấp quyền</span>
-                        </span>
-                        <svg class="mt-0.5 h-4 w-4 shrink-0 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M8 11V7a4 4 0 1 1 8 0v4m-9 0h10a1 1 0 0 1 1 1v7a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1v-7a1 1 0 0 1 1-1Z"/></svg>
-                    </div>
-                @endif
-            @endforeach
-        </div>
-    </div>
-
-    {{-- Project context selector (WEB-UX-01). One management board = one project. --}}
-    <div x-data="{ open: false }" class="relative">
-        <button type="button" x-on:click="open = !open"
-            class="flex h-10 items-center gap-2 rounded-xl border border-gray-200 bg-white px-3 text-sm text-gray-700 transition hover:bg-gray-50 dark:border-white/10 dark:bg-white/5 dark:text-gray-200">
-            <svg class="h-4 w-4 text-x2-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M3 21h18M5 21V7l7-4 7 4v14M9 9h.01M15 9h.01M9 13h.01M15 13h.01"/></svg>
-            <span class="font-medium">{{ $project?->name ?? 'Chọn dự án' }}</span>
-            <svg class="h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="m6 9 6 6 6-6"/></svg>
-        </button>
-        <div x-show="open" x-cloak x-transition x-on:click.outside="open = false"
-            class="absolute right-0 z-50 mt-2 w-72 rounded-2xl border border-gray-100 bg-white p-2 shadow-xl dark:border-white/10 dark:bg-gray-900">
-            <div class="px-2 pb-1 pt-1 text-[11px] font-semibold uppercase tracking-wide text-gray-400">{{ $tenant?->name }}</div>
-            @forelse ($projects as $p)
-                <a href="{{ url('/context/project/'.$p->id) }}" class="flex items-center justify-between rounded-lg px-2.5 py-2 text-sm hover:bg-gray-50 dark:hover:bg-white/5 {{ $p->id === $project?->id ? 'text-x2-primary font-medium' : 'text-gray-700 dark:text-gray-200' }}">
-                    <span class="flex items-center gap-2">
-                        <svg class="h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M3 21h18M5 21V7l7-4 7 4v14"/></svg>
-                        {{ $p->name }}
-                    </span>
-                    @if ($p->id === $project?->id)
-                        <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2"><path stroke-linecap="round" stroke-linejoin="round" d="m5 13 4 4L19 7"/></svg>
-                    @endif
-                </a>
-            @empty
-                <div class="px-2.5 py-3 text-sm text-gray-400">Chưa có dự án</div>
-            @endforelse
-        </div>
-    </div>
+    {{-- Unified context switcher trigger (WEB-UX-03). Opens <livewire:context-switcher>:
+         Công ty → Dự án → Workspace/Vai trò in one modal, permission-gated. --}}
+    <button type="button" x-on:click="$dispatch('open-x2-context')"
+        class="flex h-11 items-center gap-2.5 rounded-xl border border-gray-200 bg-white px-3 text-left transition hover:border-gray-300 dark:border-white/10 dark:bg-white/5">
+        <svg class="h-5 w-5 shrink-0 text-x2-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M3 21h18M5 21V7l7-4 7 4v14M9 9h.01M15 9h.01M9 13h.01M15 13h.01M9 17h6"/></svg>
+        <span class="leading-tight">
+            <span class="block max-w-[150px] truncate text-[10px] font-medium uppercase tracking-wide text-gray-400">{{ $tenant?->name ?? 'Công ty' }}</span>
+            <span class="block max-w-[220px] truncate text-sm font-semibold text-gray-900 dark:text-white">{{ $project?->name ?? 'Chọn dự án' }} · {{ $workspaceLabel }}</span>
+        </span>
+        <svg class="h-4 w-4 shrink-0 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="m6 9 6 6 6-6"/></svg>
+    </button>
 
     {{-- Quick create mega-menu (WEB-UX-00) --}}
     <div x-data="{ open: false }" class="relative">

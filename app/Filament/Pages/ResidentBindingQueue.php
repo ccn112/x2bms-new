@@ -42,7 +42,7 @@ class ResidentBindingQueue extends Page implements HasTable
 
     protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-identification';
 
-    protected static string|\UnitEnum|null $navigationGroup = 'Nền tảng (SuperAdmin)';
+    protected static string|\UnitEnum|null $navigationGroup = 'Cư dân & Căn hộ';
 
     protected static ?string $navigationLabel = 'Duyệt gắn căn hộ';
 
@@ -50,7 +50,7 @@ class ResidentBindingQueue extends Page implements HasTable
 
     protected static ?string $title = 'Hàng đợi duyệt gắn tài khoản ↔ căn hộ';
 
-    protected static ?string $slug = 'platform/binding-queue';
+    protected static ?string $slug = 'residents/binding-queue';
 
     protected string $view = 'filament.pages.resident-binding-queue';
 

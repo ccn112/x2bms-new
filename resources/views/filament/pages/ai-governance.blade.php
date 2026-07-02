@@ -121,7 +121,7 @@
                             <tr class="hover:bg-slate-50/60">
                                 <td class="px-4 py-3 font-medium text-slate-800">{{ $pr->name }}</td>
                                 <td class="px-4 py-3"><span class="rounded-md bg-x2-gold/10 px-2 py-0.5 text-[11px] font-medium text-x2-navy">{{ $pr->classification ?? '—' }}</span></td>
-                                <td class="px-4 py-3 text-slate-500">{{ \App\Filament\Pages\AiCenter::SURFACE_LABELS[$pr->surface] ?? ($pr->surface ?? 'Toàn hệ thống') }}</td>
+                                <td class="px-4 py-3 text-slate-500">{{ \App\Filament\Hq\Pages\AiCenter::SURFACE_LABELS[$pr->surface] ?? ($pr->surface ?? 'Toàn hệ thống') }}</td>
                                 <td class="px-4 py-3 text-right tabular-nums text-slate-600">{{ number_format($pr->usage_count) }}</td>
                                 <td class="px-4 py-3"><x-x2.status-badge :label="$pr->status === 'active' ? 'Đang dùng' : 'Tắt'" :tone="$pr->status === 'active' ? 'green' : 'slate'" /></td>
                                 <td class="px-4 py-3 text-right">

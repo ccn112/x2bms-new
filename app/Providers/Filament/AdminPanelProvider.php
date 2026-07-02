@@ -42,26 +42,24 @@ class AdminPanelProvider extends PanelProvider
                 MenuItem::make()
                     ->label('Hồ sơ của tôi')
                     ->icon('heroicon-o-user-circle')
-                    ->url('#'),
+                    ->url(fn (): string => url('/admin/my-profile')),
                 MenuItem::make()
                     ->label('Bảo mật & 2FA')
                     ->icon('heroicon-o-shield-check')
-                    ->url('#'),
+                    ->url(fn (): string => url('/admin/security')),
                 MenuItem::make()
                     ->label('Phiên đăng nhập')
                     ->icon('heroicon-o-computer-desktop')
-                    ->url('#'),
+                    ->url(fn (): string => url('/admin/sessions')),
             ])
+            // BQL (Ban Quản lý dự án) — chỉ nhóm nghiệp vụ vận hành dự án. Các nhóm
+            // platform (Nền tảng/SaaS Billing/Integration/Support) đã tách sang /sa,
+            // bộ AI tách sang /hq.
             ->navigationGroups([
                 NavigationGroup::make('Cư dân & Căn hộ'),
+                NavigationGroup::make('An ninh & Kiểm soát'),
                 NavigationGroup::make('Vận hành'),
-                NavigationGroup::make('Cơ cấu & Tổ chức'),
                 NavigationGroup::make('Tài chính – Phí'),
-                NavigationGroup::make('X2 AI Engine')->icon('heroicon-o-sparkles'),
-                NavigationGroup::make('Nền tảng (SuperAdmin)')->icon('heroicon-o-building-library'),
-                NavigationGroup::make('SaaS Billing')->icon('heroicon-o-banknotes'),
-                NavigationGroup::make('Integration Center')->icon('heroicon-o-bolt'),
-                NavigationGroup::make('Support Center')->icon('heroicon-o-lifebuoy'),
                 NavigationGroup::make('Hệ thống'),
             ])
             // /admin shows only the designed custom pages. Raw CRUD resources live
@@ -89,11 +87,18 @@ class AdminPanelProvider extends PanelProvider
                 PanelsRenderHook::USER_MENU_BEFORE,
                 fn (): string => Blade::render('@include("filament.hooks.header-cluster")'),
             )
+            // WEB-UX-MOBILE — responsive app shell (compact header + context row + drawer
+            // + search overlay + bottom sheet) injected at the top of the body; visible
+            // only below lg. Desktop keeps the native sidebar + topbar.
+            ->renderHook(
+                PanelsRenderHook::BODY_START,
+                fn (): string => Blade::render('<x-x2.mobile-shell />'),
+            )
             // X2AI floating chat — the single shared AI surface, fixed bottom-right
             // on every /admin screen (UI_IMPLEMENTATION_RULES: X2AI floating button).
             ->renderHook(
                 PanelsRenderHook::BODY_END,
-                fn (): string => Blade::render('<x-x2.ai-fab />'),
+                fn (): string => Blade::render('<x-x2.ai-fab /> @auth @livewire(\'global-search\') @livewire(\'context-switcher\') @endauth'),
             )
             ->middleware([
                 EncryptCookies::class,
