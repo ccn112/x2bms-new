@@ -21,6 +21,8 @@ class Statement extends Model
         'paid_amount' => 'decimal:2',
         'issued_at' => 'datetime',
         'published_at' => 'datetime',
+        'viewed_at' => 'datetime',
+        'due_date' => 'date',
     ];
 
     public function apartment(): BelongsTo
