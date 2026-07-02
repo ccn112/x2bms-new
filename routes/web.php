@@ -43,6 +43,27 @@ Route::middleware(['auth'])->group(function () {
 
         return back();
     })->whereIn('key', ['bql', 'hq', 'superadmin'])->name('context.workspace');
+
+    // HQ Portal — set the multi-project aggregation scope (empty = all projects).
+    Route::post('/context/hq-projects', function (\Illuminate\Http\Request $request) {
+        $ids = array_map('intval', (array) $request->input('project_ids', []));
+        app(CurrentContext::class)->setHqProjects($ids);
+
+        return back();
+    })->name('context.hq_projects');
+
+    // HQ Portal — platform admin switches the company (tenant) they operate as.
+    Route::get('/context/hq-tenant/{tenant}', function (\App\Models\Tenant $tenant) {
+        $user = auth()->user();
+        abort_unless($user->isPlatformAdmin(), 403);
+
+        session([
+            'hq_tenant_id' => $tenant->id,
+            'hq_selected_project_ids' => [], // reset project scope for the new company
+        ]);
+
+        return back();
+    })->name('context.hq_tenant');
 });
 
 // Legacy standalone routes (pre-Filament-unification) now resolve inside /admin.

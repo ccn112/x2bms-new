@@ -603,6 +603,1085 @@ class DemoDataSeeder extends Seeder
         $this->seedKbAiGovernance($tenant, $project, $admin);
         $this->seedBatch08Integration($tenant, $admin);
         $this->seedBatch10Support($tenant, $admin);
+        $this->seedHq01($roles, $admin);
+        $this->seedHq02($admin);
+        $this->seedHq05($admin);
+        $this->seedHq03($admin);
+        $this->seedHq04($roles, $admin);
+    }
+
+    /**
+     * HQ-03 — Biểu mẫu, tài liệu dùng chung & tri thức AI cho Sunshine Group.
+     * Thư viện tài liệu + SOP/checklist + biểu mẫu (dynamic_forms) + gán/kế thừa + KB + nguồn AI.
+     */
+    private function seedHq03(User $admin): void
+    {
+        $now = Carbon::parse('2026-07-02');
+        $tenant = Tenant::where('code', 'T-SSG-HQ')->first();
+        if (! $tenant) {
+            return;
+        }
+        $hqUser = User::where('email', 'hq@sunshinegroup.vn')->first() ?? $admin;
+        $projects = Project::where('tenant_id', $tenant->id)->orderBy('id')->take(8)->get();
+        $snap = fn (string $key, $value, ?array $dim = null, ?string $period = '2026-07') => \App\Models\MetricSnapshot::create([
+            'tenant_id' => $tenant->id, 'metric_key' => $key, 'period' => $period, 'value' => $value, 'dimension' => $dim, 'captured_at' => $now,
+        ]);
+
+        // Folder tree (HQ-03-05).
+        $folders = [
+            ['00', '00. Hệ thống quản trị', 96], ['01', '01. SOP quy trình', 356], ['02', '02. HDSD', 214],
+            ['03', '03. Chính sách', 148], ['04', '04. Hợp đồng mẫu', 216], ['05', '05. Phụ lục', 98], ['06', '06. Biểu mẫu đính kèm', 714],
+        ];
+        $folderModels = [];
+        foreach ($folders as $i => [$code, $name, $count]) {
+            $folderModels[$code] = \App\Models\DocumentLibrary::create(['tenant_id' => $tenant->id, 'code' => $code, 'name' => $name, 'doc_count' => $count, 'sort' => $i]);
+        }
+        foreach ([['Quản trị dự án', 124], ['Tài chính - Kế toán', 86], ['Nhân sự - Hành chính', 64], ['Mua sắm - Hợp đồng', 52], ['IT - Hệ thống', 30]] as $j => [$sub, $c]) {
+            \App\Models\DocumentLibrary::create(['tenant_id' => $tenant->id, 'parent_id' => $folderModels['01']->id, 'name' => $sub, 'doc_count' => $c, 'sort' => $j]);
+        }
+
+        // Documents (representative rows for the table).
+        $docs = [
+            ['SOP-QTDA-01', 'Quy trình khởi tạo dự án', 'sop', 'v2.3', 'synced', 'Toàn công ty', 512],
+            ['SOP-QTDA-02', 'Quy trình lập kế hoạch dự án', 'sop', 'v1.8', 'synced', 'Toàn công ty', 428],
+            ['SOP-MUAS-01', 'Quy trình mua sắm & đấu thầu', 'sop', 'v2.1', 'synced', 'Phòng Mua sắm', 380],
+            ['CHS-NHANSU-03', 'Chính sách lương & thưởng', 'policy', 'v1.5', 'synced', 'Toàn công ty', 210],
+            ['HDSD-ERP-01', 'Hướng dẫn sử dụng ERP', 'guide', 'v3.2', 'synced', 'IT, Kế toán', 640],
+            ['HDM-MAU-01', 'Hợp đồng tư vấn thiết kế', 'contract', 'v1.3', 'synced', 'Phòng Pháp chế', 156],
+            ['PL-HD-02', 'Phụ lục điều khoản thanh toán', 'appendix', 'v1.1', 'synced', 'Toàn công ty', 88],
+            ['BM-QLDA-05', 'Biểu mẫu báo cáo tiến độ', 'form_attachment', 'v2.0', 'synced', 'Quản trị dự án', 42],
+            ['SOP-IT-04', 'Quy trình quản lý tài khoản', 'sop', 'v1.6', 'error', 'IT', 120],
+            ['CHS-ATTT-01', 'Chính sách an toàn thông tin', 'policy', 'v1.2', 'synced', 'Toàn công ty', 98],
+            ['SOP-VH-09', 'Quy trình vận hành tòa nhà', 'sop', 'v2.0', 'pending', 'Toàn công ty', 512],
+            ['CHS-PCCC-02', 'Chính sách PCCC', 'policy', 'v1.4', 'synced', 'An toàn', 176],
+        ];
+        foreach ($docs as $i => [$code, $name, $type, $ver, $sync, $scope, $size]) {
+            \App\Models\Document::create([
+                'tenant_id' => $tenant->id, 'library_id' => $folderModels[$i % 2 ? '01' : '03']->id ?? null,
+                'code' => $code, 'name' => $name, 'type' => $type, 'version' => $ver,
+                'effective_from' => $now->copy()->subMonths($i + 1), 'owner_id' => $hqUser->id, 'scope' => $scope,
+                'ai_sync_status' => $sync, 'size_kb' => $size, 'summary' => 'Tài liệu '.$name.' áp dụng toàn công ty.',
+                'status' => $type === 'policy' && $i % 5 === 0 ? 'pending_approval' : 'active',
+            ]);
+        }
+        $snap('doc_kpi', 1842, ['metric' => 'total_docs']);
+        $snap('doc_kpi', 356, ['metric' => 'active_sop']);
+        $snap('doc_kpi', 18, ['metric' => 'policy_pending']);
+        $snap('doc_kpi', 27, ['metric' => 'expiring']);
+        $snap('doc_kpi', 18.4, ['metric' => 'storage_gb']);
+
+        // SOP + checklist.
+        foreach ([['SOP-QC-01', 'Quy trình nghiệm thu', 'QA/QC'], ['SOP-BT-02', 'Quy trình bảo trì thiết bị', 'Kỹ thuật'], ['SOP-AN-03', 'Quy trình tuần tra an ninh', 'An ninh'], ['SOP-CS-04', 'Quy trình xử lý phản ánh', 'CSKH']] as $i => [$code, $name, $cat]) {
+            \App\Models\SopTemplate::create(['tenant_id' => $tenant->id, 'code' => $code, 'name' => $name, 'category' => $cat, 'version' => 'v'.($i + 1).'.0', 'steps' => ['Bước 1', 'Bước 2', 'Bước 3'], 'status' => 'active', 'owner_id' => $hqUser->id]);
+        }
+        foreach ([['CL-VS-01', 'Checklist vệ sinh hằng ngày', 'Vệ sinh', 12], ['CL-AN-02', 'Checklist an ninh ca trực', 'An ninh', 9], ['CL-KT-03', 'Checklist kiểm tra kỹ thuật', 'Kỹ thuật', 15]] as [$code, $name, $cat, $n]) {
+            $cl = \App\Models\ChecklistTemplate::create(['tenant_id' => $tenant->id, 'code' => $code, 'name' => $name, 'category' => $cat, 'item_count' => $n, 'version' => 'v1.0', 'status' => 'active']);
+            for ($k = 1; $k <= $n; $k++) {
+                \App\Models\ChecklistItem::create(['checklist_template_id' => $cl->id, 'label' => $name.' - mục '.$k, 'sort' => $k, 'is_required' => $k % 3 !== 0]);
+            }
+        }
+
+        // Forms (reuse dynamic_forms).
+        $forms = [
+            ['BM-QA-01', 'Biên bản nghiệm thu công việc', 'QA/QC', 'published', 'v2.3'],
+            ['BM-ATLD-02', 'Biên bản kiểm tra ATLĐ', 'An toàn', 'published', 'v2.1'],
+            ['BM-KT-15', 'Phiếu yêu cầu vật tư', 'Kỹ thuật', 'published', 'v1.8'],
+            ['BM-NV-08', 'Đề nghị thanh toán', 'Tài chính - Kế toán', 'published', 'v1.6'],
+            ['BM-DA-01', 'Đề xuất / Kiến nghị', 'Văn phòng', 'draft', 'v1.5'],
+            ['BM-NS-03', 'Đánh giá nhân sự thử việc', 'Nhân sự', 'draft', 'v1.2'],
+            ['BM-TC-07', 'Phiếu thu nội bộ', 'Tài chính - Kế toán', 'archived', 'v3.0'],
+            ['BM-PM-11', 'Kế hoạch tuần', 'Quản lý dự án', 'published', 'v2.0'],
+            ['BM-QLDA-04', 'Báo cáo tiến độ dự án', 'Quản lý dự án', 'published', 'v3.1'],
+            ['BM-KT-22', 'Biên bản kiểm tra chất lượng', 'QA/QC', 'published', 'v2.0'],
+        ];
+        $formModels = [];
+        foreach ($forms as $i => [$code, $name, $cat, $status, $ver]) {
+            $formModels[] = \App\Models\DynamicForm::create([
+                'tenant_id' => $tenant->id, 'code' => $code, 'name' => $name, 'description' => $name,
+                'category' => $cat, 'status' => $status, 'current_version' => (int) ltrim(explode('.', $ver)[0], 'v'),
+                'created_by_id' => $hqUser->id,
+            ]);
+        }
+        $snap('form_kpi', 218, ['metric' => 'total']);
+        $snap('form_kpi', 156, ['metric' => 'applied']);
+        $snap('form_kpi', 38, ['metric' => 'draft']);
+        $snap('form_kpi', 24, ['metric' => 'expired']);
+
+        // Hub dashboard (HQ-03-01).
+        $snap('hub_kpi', 218, ['metric' => 'forms_applied']);
+        $snap('hub_kpi', 346, ['metric' => 'docs_effective']);
+        $snap('hub_kpi', 1256, ['metric' => 'ai_indexed']);
+        $snap('hub_kpi', 27, ['metric' => 'pending_updates']);
+        foreach ([['Sunshine City S1', 92], ['Sunshine Garden S2', 78], ['Sunshine Riverside S3', 64], ['Sunshine Center S4', 88], ['Sunshine Tower S5', 71], ['Sunshine Sky S6', 55]] as $i => [$p, $rate]) {
+            $snap('apply_rate', $rate, ['project' => $p, 'sort' => $i]);
+        }
+        foreach ([['Đã index', 778, 62], ['Chờ re-index', 226, 18], ['Đang rà soát', 151, 12], ['Lỗi cấu trúc', 101, 8]] as $i => [$label, $count, $pct]) {
+            $snap('ai_kb_status', $count, ['label' => $label, 'pct' => $pct, 'sort' => $i]);
+        }
+
+        // Template assignments + inheritance.
+        foreach ($formModels as $i => $fm) {
+            $proj = $projects[$i % $projects->count()];
+            \App\Models\TemplateAssignment::create([
+                'tenant_id' => $tenant->id, 'assignable_type' => 'form', 'assignable_id' => $fm->id, 'resource_name' => $fm->name,
+                'project_id' => $proj->id, 'mode' => $i % 4 === 0 ? 'override' : 'apply', 'status' => 'active',
+                'assigned_by' => $hqUser->id, 'assigned_at' => $now->copy()->subDays($i),
+            ]);
+        }
+        foreach ([['form', 'tenant', 'project', 'inherit', 1], ['sop', 'tenant', 'project', 'force', 2], ['document', 'platform', 'tenant', 'inherit', 3], ['kb', 'tenant', 'project', 'override', 4]] as $i => [$rt, $from, $to, $mode, $pri]) {
+            \App\Models\ConfigInheritanceRule::create(['tenant_id' => $tenant->id, 'resource_type' => $rt, 'scope_from' => $from, 'scope_to' => $to, 'mode' => $mode, 'priority' => $pri, 'status' => 'active', 'note' => 'Quy tắc kế thừa '.$rt]);
+        }
+
+        // Knowledge base (reuse knowledge_categories/articles) for T-SSG.
+        foreach ([['Vận hành', 'blue'], ['Tài chính', 'amber'], ['Kỹ thuật', 'teal'], ['An ninh', 'red']] as $ci => [$cname, $color]) {
+            $cat = \App\Models\KnowledgeCategory::create(['tenant_id' => $tenant->id, 'name' => $cname, 'slug' => \Illuminate\Support\Str::slug($cname).'-ssg-'.$ci, 'color' => $color, 'description' => 'Kiến thức '.$cname, 'articles_count' => 3]);
+            for ($a = 1; $a <= 3; $a++) {
+                \App\Models\KnowledgeArticle::create([
+                    'tenant_id' => $tenant->id, 'knowledge_category_id' => $cat->id, 'title' => $cname.' — Bài hướng dẫn '.$a,
+                    'slug' => \Illuminate\Support\Str::slug($cname.'-huong-dan-'.$a.'-ssg'), 'excerpt' => 'Tóm tắt bài viết '.$cname.' '.$a,
+                    'body' => 'Nội dung chi tiết hướng dẫn '.$cname.' số '.$a.'.', 'status' => 'published', 'views' => 100 + $a * 20,
+                    'helpful_count' => 10 + $a, 'author_id' => $hqUser->id, 'published_at' => $now->copy()->subDays($a * 3),
+                ]);
+            }
+        }
+
+        // AI knowledge sources (HQ-03-09).
+        $sources = [
+            ['Tài liệu nội bộ', 'SharePoint / OneDrive', 'file', 128.4, 342156],
+            ['Google Drive / Share Drive', 'Google Drive', 'drive', 87.9, 156432],
+            ['Uploaded files', 'Upload thủ công', 'file', 64.1, 82730],
+            ['Biểu mẫu', 'HQ forms & templates', 'form', 18.7, 21842],
+            ['SOP library', 'Quy trình & hướng dẫn', 'sop', 162.3, 311764],
+            ['FAQ & Hỏi đáp', 'Kho Q&A doanh nghiệp', 'faq', 51.2, 48901],
+        ];
+        foreach ($sources as $i => [$name, $provider, $type, $gb, $items]) {
+            $src = \App\Models\AiKnowledgeSource::create([
+                'tenant_id' => $tenant->id, 'name' => $name, 'provider' => $provider, 'type' => $type,
+                'status' => $i === 5 ? 'syncing' : 'synced', 'size_gb' => $gb, 'indexed_items' => $items,
+                'auto_sync' => true, 'last_synced_at' => $now->copy()->subMinutes(5 + $i),
+            ]);
+            \App\Models\AiKnowledgeSyncLog::create(['tenant_id' => $tenant->id, 'source_id' => $src->id, 'event' => 'Đồng bộ tự động', 'items_new' => 100 + $i * 10, 'items_updated' => 50 + $i * 5, 'errors' => 0, 'status' => 'success', 'ran_at' => $now->copy()->subMinutes(5 + $i)]);
+        }
+
+        // AI test (HQ-03-10).
+        $questions = [
+            ['Quy trình khởi tạo dự án gồm những bước nào?', 'Vận hành', 'SOP-QTDA-01'],
+            ['Chính sách bảo mật thông tin quy định gì?', 'An ninh', 'CHS-ATTT-01'],
+            ['Đề nghị thanh toán cần biểu mẫu nào?', 'Tài chính', 'BM-NV-08'],
+            ['Quy trình mua sắm & đấu thầu ra sao?', 'Mua sắm', 'SOP-MUAS-01'],
+            ['Checklist an ninh ca trực gồm mục gì?', 'An ninh', 'CL-AN-02'],
+        ];
+        foreach ($questions as $i => [$q, $cat, $src]) {
+            $qm = \App\Models\AiTestQuestion::create(['tenant_id' => $tenant->id, 'question' => $q, 'category' => $cat, 'expected_source' => $src, 'status' => 'active']);
+            \App\Models\AiTestRun::create([
+                'tenant_id' => $tenant->id, 'question_id' => $qm->id, 'answer' => 'Theo tài liệu '.$src.', quy trình gồm các bước chính...',
+                'cited_sources' => [$src], 'has_citation' => $i !== 4, 'score' => $i === 4 ? 62 : 88 + $i, 'ran_at' => $now->copy()->subHours($i + 1),
+            ]);
+        }
+    }
+
+    /**
+     * HQ-04 — Phân quyền & hỗ trợ tập trung cho Sunshine Group.
+     * IAM (reuse spatie + user_role_scopes) + nhóm quyền + hỗ trợ (reuse support_*).
+     *
+     * @param  array<string, \Spatie\Permission\Models\Role>  $roles
+     */
+    private function seedHq04(array $roles, User $admin): void
+    {
+        $now = Carbon::parse('2026-07-02');
+        $tenant = Tenant::where('code', 'T-SSG-HQ')->first();
+        if (! $tenant) {
+            return;
+        }
+        $hqUser = User::where('email', 'hq@sunshinegroup.vn')->first() ?? $admin;
+        $snap = fn (string $key, $value, ?array $dim = null) => \App\Models\MetricSnapshot::create([
+            'tenant_id' => $tenant->id, 'metric_key' => $key, 'period' => '2026-07', 'value' => $value, 'dimension' => $dim, 'captured_at' => $now,
+        ]);
+
+        // Permission groups (HQ-04-04).
+        $groups = [
+            ['PG-DASH', 'Dashboard & Báo cáo', 'Xem tổng quan hệ thống', 'Dashboard', 8, 6],
+            ['PG-USER', 'Quản lý người dùng', 'Quản lý người dùng hệ thống', 'Người dùng', 12, 3],
+            ['PG-ROLE', 'Quản lý vai trò', 'Quản lý vai trò & quyền', 'Vai trò', 10, 2],
+            ['PG-TICKET', 'Ticket hỗ trợ', 'Quản lý ticket & phản ánh', 'Hỗ trợ', 14, 5],
+            ['PG-KB', 'Cơ sở tri thức', 'Quản lý bài viết & FAQ', 'Tri thức', 9, 4],
+            ['PG-FIN', 'Tài chính & Công nợ', 'Xem/duyệt tài chính', 'Tài chính', 16, 4],
+            ['PG-DOC', 'Tài liệu nội bộ', 'Quản lý tài liệu', 'Tài liệu', 11, 6],
+            ['PG-SYS', 'Cấu hình hệ thống', 'Thiết lập hệ thống', 'Hệ thống', 7, 2],
+        ];
+        foreach ($groups as $g) {
+            [$code, $name, $desc, $module, $permCount, $roleCount] = $g;
+            $pg = \App\Models\PermissionGroup::create(['tenant_id' => $tenant->id, 'code' => $code, 'name' => $name, 'description' => $desc, 'module' => $module, 'permission_count' => $permCount, 'role_count' => $roleCount, 'status' => 'active']);
+            foreach (['xem', 'them', 'sua', 'xoa', 'duyet'] as $act) {
+                \App\Models\PermissionGroupItem::create(['permission_group_id' => $pg->id, 'permission_key' => strtolower($module).'.'.$act, 'module' => $module, 'action' => $act]);
+            }
+        }
+
+        // 2FA + login sessions cho HQ operator.
+        \App\Models\TwoFactorSetting::create(['user_id' => $hqUser->id, 'enabled' => true, 'method' => 'app', 'verified_at' => $now->copy()->subDays(10)]);
+        foreach ([['Chrome / Windows', '113.161.20.5', 'TP. Hồ Chí Minh', true], ['Safari / iPhone', '113.161.20.9', 'TP. Hồ Chí Minh', false], ['Edge / Windows', '42.115.3.14', 'Hà Nội', false]] as $i => [$device, $ip, $loc, $current]) {
+            \App\Models\LoginSession::create(['tenant_id' => $tenant->id, 'user_id' => $hqUser->id, 'ip_address' => $ip, 'device' => $device, 'location' => $loc, 'last_active_at' => $now->copy()->subHours($i * 6), 'is_current' => $current]);
+        }
+
+        // Support tickets cho T-SSG (reuse Batch 10 support_tickets).
+        $slaPolicy = \App\Models\SupportSlaPolicy::first();
+        $ticketDefs = [
+            ['Không đăng nhập được cổng cư dân', 'Người dùng', 'high', 'new', 'Nguyễn Văn A', 'within_sla'],
+            ['Sai số liệu công nợ tháng 06', 'Tài chính', 'critical', 'in_progress', 'Ban Tài chính', 'near_breach'],
+            ['Đề nghị thêm quyền duyệt chi', 'Phân quyền', 'medium', 'waiting_customer', 'Trần B', 'within_sla'],
+            ['Lỗi hiển thị biểu đồ dashboard', 'Hệ thống', 'low', 'resolved', 'Lê C', 'resolved'],
+            ['Yêu cầu khôi phục dữ liệu cư dân', 'Dữ liệu', 'high', 'escalated', 'BQL Sunshine Garden', 'breached'],
+            ['Tài khoản bị khóa nhầm', 'Người dùng', 'medium', 'closed', 'Phạm D', 'resolved'],
+            ['Chậm đồng bộ tri thức AI', 'AI/KB', 'medium', 'open', 'Vũ E', 'within_sla'],
+            ['Xin hướng dẫn cấu hình gói dịch vụ', 'Billing', 'low', 'new', 'Hoàng F', 'within_sla'],
+        ];
+        foreach ($ticketDefs as $i => [$subject, $module, $priority, $status, $requester, $slaState]) {
+            $t = \App\Models\SupportTicket::create([
+                'ticket_no' => 'TCK-SSG-'.sprintf('%04d', $i + 1), 'tenant_id' => $tenant->id, 'subject' => $subject,
+                'description' => 'Nội dung yêu cầu: '.$subject, 'module' => $module, 'category' => $module, 'priority' => $priority,
+                'status' => $status, 'environment' => 'production', 'channel' => 'web', 'sla_policy_id' => $slaPolicy?->id,
+                'sla_state' => $slaState, 'sla_due_at' => $now->copy()->addHours(8 - $i), 'owner_id' => $hqUser->id,
+                'requester_name' => $requester, 'requester_contact' => 'lienhe@sunshinegroup.vn',
+                'csat_score' => in_array($status, ['resolved', 'closed'], true) ? (4 + ($i % 2)) : null,
+                'created_at' => $now->copy()->subDays($i),
+            ]);
+            \App\Models\SupportTicketMessage::create(['support_ticket_id' => $t->id, 'author_id' => $hqUser->id, 'author_name' => $hqUser->name, 'type' => 'customer', 'body' => 'Mô tả chi tiết vấn đề: '.$subject]);
+            \App\Models\SupportTicketMessage::create(['support_ticket_id' => $t->id, 'author_id' => $hqUser->id, 'author_name' => 'Hỗ trợ HQ', 'type' => 'internal', 'body' => 'Đã tiếp nhận và đang xử lý.']);
+        }
+
+        // Support KB (reuse knowledge_articles đã seed ở HQ-03 cho T-SSG) — dùng chung.
+
+        // Dashboard KPIs (HQ-04-01).
+        foreach ([['total_users', 1248], ['roles', 18], ['tickets', 386], ['sla_overdue', 23], ['csat', 4.62]] as [$m, $v]) {
+            $snap('hq04_kpi', $v, ['metric' => $m]);
+        }
+        foreach ([['Đang hoạt động', 1062, 85.3, 'green'], ['Chờ kích hoạt', 96, 7.7, 'amber'], ['Tạm khóa', 60, 4.8, 'red'], ['Ngưng hoạt động', 30, 2.2, 'gray']] as $i => [$label, $count, $pct, $color]) {
+            $snap('user_status', $count, ['label' => $label, 'pct' => $pct, 'color' => $color, 'sort' => $i]);
+        }
+        foreach ([['Mới', 132, 34.2, 'blue'], ['Đang xử lý', 146, 37.8, 'orange'], ['Chờ phản hồi KH', 68, 17.6, 'violet'], ['Chờ xử lý', 24, 6.2, 'amber'], ['Đã giải quyết', 16, 4.2, 'green']] as $i => [$label, $count, $pct, $color]) {
+            $snap('ticket_status', $count, ['label' => $label, 'pct' => $pct, 'color' => $color, 'sort' => $i]);
+        }
+        foreach ([['Cổng cư dân (App/Web)', 210, 54.4], ['Email', 78, 20.2], ['Hotline', 52, 13.5], ['Nhân viên ghi nhận', 46, 11.9]] as $i => [$label, $count, $pct]) {
+            $snap('ticket_source', $count, ['label' => $label, 'pct' => $pct, 'sort' => $i]);
+        }
+        foreach ([['Sunshine Garden', 98], ['Sunshine Riverside', 87], ['Sunshine City', 74], ['Sunshine Palace', 68], ['Sunshine Marina', 59]] as $i => [$label, $count]) {
+            $snap('ticket_by_building', $count, ['label' => $label, 'sort' => $i]);
+        }
+        foreach ([['Quản trị HQ', 2, 11.1], ['Quản lý tòa nhà', 6, 33.3], ['Nhân viên vận hành', 5, 27.8], ['Kỹ thuật viên', 3, 16.7], ['Cư dân', 2, 11.1]] as $i => [$label, $count, $pct]) {
+            $snap('role_usage', $count, ['label' => $label, 'pct' => $pct, 'sort' => $i]);
+        }
+        foreach (['02/06' => 4.38, '03/06' => 4.42, '04/06' => 4.51, '05/06' => 4.57, '06/06' => 4.61, '07/06' => 4.62] as $d => $v) {
+            $snap('csat_trend', $v, ['day' => $d]);
+        }
+        // SLA report (HQ-04-09).
+        foreach ([['response_time', 78], ['resolution_time', 522], ['sla_compliance', 88.4], ['breach_rate', 11.6]] as [$m, $v]) {
+            $snap('sla_kpi', $v, ['metric' => $m]);
+        }
+    }
+
+    /**
+     * HQ-05 — Báo cáo công nợ, tài chính, thu chi đa dự án cho Sunshine Group.
+     * Aggregate qua metric_snapshots (khớp ảnh: aging 1023.38 tỷ, cashflow 28.62 tỷ,
+     * top-debtor 1236 hồ sơ, AI risk 68/100) + chiến dịch nhắc nợ + quỹ/thu chi + báo cáo + ai_insights.
+     */
+    private function seedHq05(User $admin): void
+    {
+        $now = Carbon::parse('2026-07-02');
+        $tenant = Tenant::where('code', 'T-SSG-HQ')->first();
+        if (! $tenant) {
+            return;
+        }
+        $hqUser = User::where('email', 'hq@sunshinegroup.vn')->first() ?? $admin;
+        $B = 1_000_000_000; // tỷ đồng
+
+        $snap = fn (string $key, $value, ?array $dim = null, ?string $period = '2026-06') => \App\Models\MetricSnapshot::create([
+            'tenant_id' => $tenant->id, 'metric_key' => $key, 'period' => $period,
+            'value' => $value, 'dimension' => $dim, 'captured_at' => $now,
+        ]);
+
+        /* ---- Aging buckets (HQ-05-03) ---- */
+        $buckets = [
+            ['current', 'Current (≤ 0 ngày)', 292.45, 28.6], ['d30', '1–30 ngày', 236.78, 23.2],
+            ['d60', '31–60 ngày', 168.32, 16.5], ['d90', '61–90 ngày', 112.54, 11.0], ['over90', 'Trên 90 ngày', 213.91, 20.7],
+        ];
+        foreach ($buckets as $i => [$k, $label, $ty, $pct]) {
+            $snap('aging_bucket', $ty * $B, ['bucket' => $k, 'label' => $label, 'pct' => $pct, 'sort' => $i]);
+        }
+
+        /* ---- Per-project debt/aging (HQ-05-02/03) ---- */
+        $projAging = [
+            ['Sunshine Garden', 92.10, 74.30, 48.60, 32.10, 67.40, 1268, 30.71, 6.3, 21.4],
+            ['Sunshine Riverside', 78.60, 62.70, 38.40, 24.80, 53.90, 1045, 25.26, 2.1, 20.9],
+            ['Sunshine City', 61.30, 50.20, 33.70, 22.30, 41.80, 842, 20.48, -1.4, 20.0],
+            ['Sunshine Palace', 34.20, 28.10, 18.60, 12.90, 27.40, 512, 11.84, -0.6, 22.6],
+            ['Sunshine Center', 26.30, 21.50, 14.10, 8.90, 23.40, 398, 9.20, 0.9, 24.8],
+        ];
+        foreach ($projAging as $r) {
+            [$name, $c, $d30, $d60, $d90, $o90, $units, $share, $trend, $badPct] = $r;
+            $total = $c + $d30 + $d60 + $d90 + $o90;
+            $snap('project_aging', $total * $B, [
+                'project' => $name, 'current' => $c, 'd30' => $d30, 'd60' => $d60, 'd90' => $d90,
+                'over90' => $o90, 'total' => $total, 'units' => $units, 'share' => $share, 'trend' => $trend, 'bad_pct' => $badPct,
+            ]);
+        }
+
+        /* ---- Debt by fee type (HQ-05-06) ---- */
+        foreach ([['Phí quản lý', 512.30], ['Phí gửi xe', 210.50], ['Phí dịch vụ', 180.20], ['Phí nước', 68.40], ['Phí khác', 51.98]] as $i => [$fee, $ty]) {
+            $snap('debt_by_fee', $ty * $B, ['fee_type' => $fee, 'sort' => $i]);
+        }
+
+        /* ---- Collection rate theo kỳ (HQ-05-05) ---- */
+        foreach (['2026-02' => 88.2, '2026-03' => 89.5, '2026-04' => 90.1, '2026-05' => 91.3, '2026-06' => 92.0, '2026-07' => 79.3] as $p => $rate) {
+            $snap('collection_rate', $rate, ['period' => $p], $p);
+        }
+        // Tỷ lệ thu theo dự án (kỳ hiện tại).
+        foreach ([['Sunshine Garden', 78.6], ['Sunshine Riverside', 74.7], ['Sunshine City', 79.5], ['Sunshine Palace', 77.4], ['Sunshine Center', 75.2]] as $i => [$name, $rate]) {
+            $snap('collection_by_project', $rate, ['project' => $name, 'sort' => $i]);
+        }
+
+        /* ---- Finance KPI tổng quan (HQ-05-01) ---- */
+        $snap('finance_kpi', 1023.38 * $B, ['metric' => 'total_debt']);
+        $snap('finance_kpi', 213.91 * $B, ['metric' => 'overdue_90']);
+        $snap('finance_kpi', 79.3, ['metric' => 'collection_rate']);
+        $snap('finance_kpi', 28.62 * $B, ['metric' => 'revenue_month']);
+        $snap('finance_kpi', 22.68 * $B, ['metric' => 'collected_month']);
+        $snap('finance_kpi', 8.25 * $B, ['metric' => 'reserve_fund']);
+
+        /* ---- Cashflow theo dự án (HQ-05-07) ---- */
+        $cashflow = [
+            ['Sunshine Garden', 8.20, 7.95, 4.60, 0.60, 3.00, 2.75, 16.00, 7.60, 8.40, 47.5],
+            ['Sunshine Riverside', 7.35, 7.05, 3.60, 0.55, 3.20, 2.90, 14.00, 6.30, 7.70, 45.0],
+            ['Sunshine City', 5.60, 5.25, 2.70, 0.40, 2.50, 2.15, 11.00, 4.60, 6.40, 41.8],
+            ['Sunshine Center', 3.90, 3.75, 2.20, 0.40, 1.30, 1.15, 8.50, 3.40, 5.10, 40.0],
+            ['Sunshine Tower', 2.85, 2.60, 1.70, 0.30, 0.85, 0.60, 6.00, 2.80, 3.20, 46.7],
+            ['Sunshine Airport', 0.95, 0.88, 0.55, 0.15, 0.25, 0.18, 2.20, 1.30, 0.90, 59.1],
+            ['Sunshine Industrial', 0.77, 0.66, 0.40, 0.12, 0.25, 0.14, 1.80, 1.02, 0.78, 56.7],
+        ];
+        foreach ($cashflow as $i => $r) {
+            [$name, $rev, $act, $opex, $maint, $gross, $net, $budget, $spent, $var, $sdpct] = $r;
+            $snap('project_cashflow', $rev * $B, [
+                'project' => $name, 'revenue' => $rev, 'actual' => $act, 'opex' => $opex, 'maintenance' => $maint,
+                'gross' => $gross, 'netflow' => $net, 'budget' => $budget, 'spent' => $spent, 'variance' => $var, 'sd_pct' => $sdpct, 'sort' => $i,
+            ], '2026-07');
+        }
+        foreach ([['revenue', 28.62], ['expense', 18.74], ['netflow', 9.88], ['budget_used_pct', 46.3], ['receivable', 32.14], ['reserve', 8.25]] as [$m, $v]) {
+            $snap('cashflow_kpi', $m === 'budget_used_pct' ? $v : $v * $B, ['metric' => $m], '2026-07');
+        }
+
+        // Quỹ + thu chi thực + đề nghị chi.
+        $fund = \App\Models\CashFund::create(['tenant_id' => $tenant->id, 'code' => 'QUY-VH', 'name' => 'Quỹ vận hành công ty', 'type' => 'operating', 'balance' => 8_250_000_000]);
+        foreach ([['income', 'Thu phí dịch vụ', 2_800_000_000], ['expense', 'Chi lương nhân sự', 1_200_000_000], ['expense', 'Chi bảo trì', 620_000_000], ['income', 'Thu phí gửi xe', 480_000_000]] as $i => [$type, $cat, $amt]) {
+            \App\Models\CashTransaction::create(['tenant_id' => $tenant->id, 'cash_fund_id' => $fund->id, 'type' => $type, 'category' => $cat, 'amount' => $amt, 'description' => $cat, 'reference_no' => 'CT-'.($i + 1), 'occurred_at' => $now->copy()->subDays($i * 3), 'created_by' => $hqUser->id]);
+        }
+        foreach ([['Đề nghị chi phí bảo trì thang máy T6/2026', 'Bảo trì', 320_000_000, 'pending'], ['Mua vật tư kỹ thuật định kỳ Q2/2026', 'Vật tư', 180_000_000, 'pending'], ['Thanh toán dịch vụ vệ sinh T6/2026', 'Dịch vụ', 95_000_000, 'pending']] as $i => [$desc, $cat, $amt, $st]) {
+            \App\Models\Expense::create(['tenant_id' => $tenant->id, 'code' => 'EXP-2026-'.($i + 1), 'category' => $cat, 'amount' => $amt, 'status' => $st, 'description' => $desc, 'incurred_at' => $now->copy()->subDays($i * 2), 'vendor' => 'Nhà cung cấp '.($i + 1)]);
+        }
+
+        /* ---- Top debtors (HQ-05-04) ---- */
+        $snap('debt_kpi', 1236, ['metric' => 'high_debt_records']);
+        $snap('debt_kpi', 8_246_500_000, ['metric' => 'top50_debt']);
+        $snap('debt_kpi', 268, ['metric' => 'over_90_cases']);
+        $snap('debt_kpi', 156, ['metric' => 'in_progress']);
+        $topDebtors = [
+            ['AR-2025-08621', 'Nguyễn Văn Hùng', 'S3-1205', 'Sunshine Garden', 'Phí quản lý', 14, 48_750_000, 'Lê Hoàng Nam', 'over_90'],
+            ['AR-2025-08509', 'Trần Thị Mai', 'G2-0910', 'Green Diamond', 'Phí quản lý', 12, 36_240_000, 'Phạm Quốc Bảo', 'd60_90'],
+            ['AR-2025-08843', 'Công ty TNHH An Phát', 'S1-TMDV-03', 'Sunshine Garden', 'Phí dịch vụ', 18, 124_800_000, 'Trần Mạnh Quân', 'over_90'],
+            ['AR-2025-08377', 'Lê Thị Thanh Hằng', 'S2-0803', 'Sunshine Garden', 'Phí quản lý', 11, 28_160_000, 'Lê Hoàng Nam', 'd60_90'],
+            ['AR-2025-08912', 'Phạm Quốc Tuấn', 'G1-1512A', 'Green Diamond', 'Phí quản lý', 10, 22_100_000, 'Phạm Quốc Bảo', 'd30_60'],
+            ['AR-2025-08701', 'Đỗ Minh Anh', 'S3-0711', 'Sunshine Garden', 'Phí gửi xe', 9, 18_450_000, 'Trần Mạnh Quân', 'd30_60'],
+            ['AR-2025-08455', 'Nguyễn Thị Lan', 'G2-0606', 'Green Diamond', 'Phí quản lý', 8, 16_800_000, 'Lê Hoàng Nam', 'd30_60'],
+            ['AR-2025-08228', 'Công ty CP VinaTech', 'S1-TMDV-07', 'Sunshine Garden', 'Phí dịch vụ', 13, 75_600_000, 'Trần Mạnh Quân', 'over_90'],
+            ['AR-2025-08315', 'Hoàng Văn Dũng', 'G1-0302', 'Green Diamond', 'Phí quản lý', 7, 13_300_000, 'Phạm Quốc Bảo', 'd30_60'],
+            ['AR-2025-08144', 'Vũ Thị Hương', 'S2-1001', 'Sunshine Garden', 'Phí quản lý', 6, 11_520_000, 'Lê Hoàng Nam', 'd0_30'],
+        ];
+        foreach ($topDebtors as $i => [$code, $name, $apt, $proj, $fee, $months, $amt, $handler, $bucket]) {
+            $snap('top_debtor', $amt, [
+                'code' => $code, 'name' => $name, 'apartment' => $apt, 'project' => $proj, 'fee' => $fee,
+                'months' => $months, 'handler' => $handler, 'bucket' => $bucket, 'sort' => $i,
+            ], null);
+        }
+
+        /* ---- Chiến dịch nhắc nợ (HQ-05-08) ---- */
+        $snap('reminder_kpi', 12, ['metric' => 'running'], null);
+        $snap('reminder_kpi', 128_456, ['metric' => 'sent'], null);
+        $snap('reminder_kpi', 8_736, ['metric' => 'responses'], null);
+        $snap('reminder_kpi', 12_680_000_000, ['metric' => 'committed'], null);
+        $snap('reminder_kpi', 356, ['metric' => 'escalated'], null);
+        $campaigns = [
+            ['Nhắc nợ định kỳ – 7/6', 'Toàn công ty', 'sms', 'running', 12458, 11982, 6.72, 9.82, 3.45],
+            ['Nhắc nợ cuối hạn – 5/6', 'Toàn công ty', 'zalo', 'running', 11236, 10824, 5.91, 7.45, 2.21],
+            ['Thu hồi quá hạn 30+ ngày', 'Cư dân', 'sms', 'paused', 4876, 4876, 4.18, 5.36, 1.28],
+            ['Thu hồi quá hạn 60+ ngày', 'Cư dân', 'email', 'completed', 2843, 2701, 3.32, 3.24, 0.82],
+            ['Nhắc nợ qua App X2', 'Tòa nhà', 'app', 'running', 3126, 3974, 7.81, 2.08, 1.12],
+            ['Nhắc nợ chủ động doanh nghiệp', 'Cư dân', 'call', 'running', 1820, 1650, 9.20, 4.10, 1.86],
+        ];
+        foreach ($campaigns as $i => [$name, $scope, $ch, $st, $target, $sent, $resp, $commitTy, $collectTy]) {
+            $c = \App\Models\DebtReminderCampaign::create([
+                'tenant_id' => $tenant->id, 'code' => 'CAMP-2026-'.sprintf('%03d', $i + 1), 'name' => $name,
+                'scope' => $scope, 'channel' => $ch, 'status' => $st, 'target_count' => $target, 'sent_count' => $sent,
+                'response_rate' => $resp, 'committed_amount' => $commitTy * $B, 'collected_amount' => $collectTy * $B,
+                'owner_id' => $hqUser->id, 'started_at' => $now->copy()->subDays(25 - $i), 'ended_at' => $st === 'completed' ? $now->copy()->subDays(2) : null,
+            ]);
+            foreach (['sent' => 'Gửi nhắc nợ', 'responded' => 'Phản hồi từ khách hàng', 'committed' => 'Cam kết thanh toán'] as $ls => $note) {
+                \App\Models\DebtReminderLog::create(['tenant_id' => $tenant->id, 'campaign_id' => $c->id, 'debtor_ref' => 'KH-'.($i + 1), 'channel' => $ch, 'status' => $ls, 'amount' => $collectTy * $B / 10, 'note' => $note, 'acted_at' => $now->copy()->subDays(20 - $i)]);
+            }
+        }
+
+        /* ---- Lịch & xuất báo cáo (HQ-05-09) ---- */
+        foreach ([
+            ['Báo cáo công nợ tổng hợp', 'debt_summary', 'monthly', 'pdf'],
+            ['Báo cáo dòng tiền đa dự án', 'cashflow', 'weekly', 'excel'],
+            ['Báo cáo tuổi nợ (Aging)', 'aging', 'monthly', 'both'],
+            ['Báo cáo tỷ lệ thu', 'collection', 'monthly', 'pdf'],
+        ] as $i => [$name, $type, $freq, $fmt]) {
+            \App\Models\ReportSchedule::create([
+                'tenant_id' => $tenant->id, 'name' => $name, 'report_type' => $type, 'frequency' => $freq, 'format' => $fmt,
+                'recipients' => ['ceo@sunshinegroup.vn', 'cfo@sunshinegroup.vn'], 'status' => 'active',
+                'next_run_at' => $now->copy()->addDays($i + 1), 'last_run_at' => $now->copy()->subDays(30 - $i), 'created_by' => $hqUser->id,
+            ]);
+        }
+        foreach ([['debt_summary', 'pdf', 'completed'], ['cashflow', 'excel', 'completed'], ['aging', 'pdf', 'processing'], ['collection', 'excel', 'queued']] as $i => [$type, $fmt, $st]) {
+            \App\Models\ReportExportJob::create([
+                'tenant_id' => $tenant->id, 'report_type' => $type, 'format' => $fmt, 'status' => $st,
+                'file_path' => $st === 'completed' ? 'exports/'.$type.'_2026_07.'.$fmt : null,
+                'requested_by' => $hqUser->id, 'completed_at' => $st === 'completed' ? $now->copy()->subHours($i + 1) : null,
+            ]);
+        }
+
+        /* ---- AI phân tích rủi ro (HQ-05-10) ---- */
+        $snap('ai_risk_kpi', 68, ['metric' => 'portfolio_risk'], null);
+        $snap('ai_risk_kpi', 28.45 * $B, ['metric' => 'forecast_collection'], null);
+        $snap('ai_risk_kpi', 63.2, ['metric' => 'avg_recovery_prob'], null);
+        $snap('ai_risk_kpi', 14, ['metric' => 'alerts'], null);
+        $snap('ai_risk_kpi', 7, ['metric' => 'high_risk_projects'], null);
+        foreach (['2026-06' => [25.34, 31.25], '2026-07' => [28.45, 31.25], '2026-08' => [30.12, 31.25]] as $p => [$actual, $target]) {
+            $snap('ai_forecast', $actual * $B, ['period' => $p, 'actual' => $actual, 'target' => $target], $p);
+        }
+        $risks = [
+            ['Sunshine Riverside – Block A', 'Doanh nghiệp', 12.58, 92, 28.4, 75, 'Ưu tiên gặp & làm việc trực tiếp', 'critical'],
+            ['Công ty TNHH Phú Thịnh', 'Doanh nghiệp', 8.76, 85, 32.1, 63, 'Đặt lịch thanh toán mới', 'critical'],
+            ['Sunshine City Sài Gòn – Tower B', 'Doanh nghiệp', 7.42, 78, 41.7, 42, 'Theo dõi sát – cảnh báo sớm', 'high'],
+            ['Công ty CP Xây dựng An Phát', 'Doanh nghiệp', 6.05, 72, 46.3, 35, 'Gửi nhắc nợ & đối chiếu', 'high'],
+            ['Sunshine Garden – Shophouse 12', 'Cá nhân', 5.32, 61, 59.2, 26, 'Nhắc tự động', 'medium'],
+            ['Công ty TNHH Minh Khang', 'Doanh nghiệp', 4.88, 58, 61.4, 22, 'Theo dõi định kỳ', 'medium'],
+            ['Sunshine Golden River – Unit 03', 'Cá nhân', 3.96, 52, 67.9, 18, 'Gửi nhắc nợ', 'medium'],
+            ['Công ty CP Thương mại ABC', 'Doanh nghiệp', 3.45, 47, 72.3, 15, 'Theo dõi định kỳ', 'low'],
+            ['Sunshine Diamond River – Block C', 'Cá nhân', 3.12, 41, 76.8, 12, 'Duy trì theo dõi', 'low'],
+            ['Khách hàng khác', '—', 10.23, 39, 79.3, 10, 'Duy trì theo dõi', 'low'],
+        ];
+        foreach ($risks as $i => [$name, $group, $debtTy, $aiScore, $prob, $delay, $action, $sev]) {
+            \App\Models\AiInsight::create([
+                'tenant_id' => $tenant->id, 'category' => 'debt_risk', 'severity' => $sev,
+                'title' => $name, 'body' => 'Khách hàng có rủi ro công nợ với điểm AI '.$aiScore.'/100.',
+                'score' => $aiScore, 'recommendation' => $action, 'status' => 'new', 'generated_at' => $now,
+                'metadata' => ['rank' => $i + 1, 'group' => $group, 'debt_ty' => $debtTy, 'recovery_prob' => $prob, 'delay_days' => $delay, 'handler' => $i % 2 ? 'Trần Mạnh Quân' : 'Lê Hoàng Nam'],
+            ]);
+        }
+    }
+
+    /**
+     * HQ-02 — Billing, ví công ty & tương tác Platform cho tenant Sunshine Group.
+     * Tái sử dụng Batch 07 (billing_invoices/usage/pass-through) + delta HQ-02 (ví công ty,
+     * rate card, plan change, metric snapshot). Số khớp ảnh HQ-02-01/03/10.
+     */
+    private function seedHq02(User $admin): void
+    {
+        $now = Carbon::parse('2026-07-02');
+        $tenant = Tenant::where('code', 'T-SSG-HQ')->first();
+        if (! $tenant) {
+            return;
+        }
+        $hqUser = User::where('email', 'hq@sunshinegroup.vn')->first() ?? $admin;
+        $projects = Project::where('tenant_id', $tenant->id)->orderBy('id')->get();
+        $plans = \App\Models\Plan::whereIn('code', ['popular', 'full', 'intelligent'])->get()->keyBy('code');
+
+        /* ---- Ví công ty (HQ-02-03) ---- */
+        $wallet = \App\Models\Wallet::create([
+            'tenant_id' => $tenant->id,
+            'balance' => 352_680_000,
+            'credit_limit' => 1_000_000_000,
+            'currency' => 'VND',
+            'auto_topup_enabled' => true,
+            'auto_topup_threshold' => 200_000_000,
+            'auto_topup_amount' => 300_000_000,
+            'payment_method' => 'Vietcombank',
+            'payment_account' => '**** **** 8888',
+            'status' => 'active',
+        ]);
+
+        // Sổ cái ví: 6 lần nạp trong tháng = 745.000.000; + phân bổ dự án + trừ phí.
+        $topups = [150_000_000, 120_000_000, 125_000_000, 100_000_000, 150_000_000, 100_000_000]; // 6 lần = 745M
+        $balanceSeq = [150_000_000, 275_000_000, 225_000_000, 335_000_000, 490_000_000, 360_000_000, 445_000_000, 470_000_000, 385_000_000, 420_000_000, 300_000_000, 352_680_000];
+        foreach ($balanceSeq as $d => $bal) {
+            $isTopup = $d % 2 === 0;
+            \App\Models\WalletTransaction::create([
+                'tenant_id' => $tenant->id,
+                'wallet_id' => $wallet->id,
+                'type' => $isTopup ? 'top_up' : 'deduct',
+                'amount' => $isTopup ? ($topups[intdiv($d, 2)] ?? 100_000_000) : 90_000_000,
+                'balance_after' => $bal,
+                'reference_no' => 'WTX-'.$now->copy()->subDays(12 - $d)->format('Ymd').'-'.($d + 1),
+                'description' => $isTopup ? 'Nạp ví qua Vietcombank' : 'Trừ phí nền tảng & pass-through',
+                'status' => 'confirmed',
+                'posted_at' => $now->copy()->subDays(12 - $d),
+                'created_by' => $hqUser->id,
+            ]);
+        }
+        // Phân bổ ngân sách dự phòng theo dự án (HQ-02-03 phải panel): 210/160/120/80 = 570M.
+        $alloc = [[$projects[0] ?? null, 210_000_000], [$projects[1] ?? null, 160_000_000], [$projects[2] ?? null, 120_000_000], [null, 80_000_000]];
+        foreach ($alloc as [$proj, $amount]) {
+            \App\Models\WalletTransaction::create([
+                'tenant_id' => $tenant->id,
+                'wallet_id' => $wallet->id,
+                'project_id' => $proj?->id,
+                'type' => 'allocation',
+                'amount' => $amount,
+                'reference_no' => 'ALLOC-'.($proj?->code ?? 'RESERVE'),
+                'description' => $proj ? ('Ngân sách dự phòng: '.$proj->name) : 'Ngân sách dự phòng HQ',
+                'status' => 'confirmed',
+                'posted_at' => $now->copy()->subDays(3),
+                'created_by' => $hqUser->id,
+            ]);
+        }
+        // 1 yêu cầu nạp ví đang chờ + 1 yêu cầu tăng hạn mức.
+        \App\Models\WalletTopupRequest::create([
+            'tenant_id' => $tenant->id, 'wallet_id' => $wallet->id, 'request_no' => 'TOPUP-2026-014',
+            'kind' => 'top_up', 'amount' => 200_000_000, 'method' => 'Vietcombank', 'status' => 'pending',
+            'note' => 'Nạp bổ sung cho kỳ 07/2026', 'requested_by' => $hqUser->id,
+        ]);
+        \App\Models\WalletTopupRequest::create([
+            'tenant_id' => $tenant->id, 'wallet_id' => $wallet->id, 'request_no' => 'CLR-2026-003',
+            'kind' => 'credit_limit', 'amount' => 1_500_000_000, 'method' => null, 'status' => 'pending',
+            'note' => 'Đề nghị nâng hạn mức tín dụng lên 1,5 tỷ', 'requested_by' => $hqUser->id,
+        ]);
+
+        /* ---- Usage / pass-through (HQ-02-01/05/06) ---- */
+        $period = \App\Models\UsagePeriod::firstOrCreate(
+            ['code' => '2026-07'],
+            ['period_start' => $now->copy()->startOfMonth(), 'period_end' => $now->copy()->endOfMonth(), 'status' => 'open'],
+        );
+        // meter_type => [used, limit, overage_amount]
+        $usage = [
+            'sms' => [174_000, 300_000, 0],
+            'zalo' => [92_000, 120_000, 0],
+            'email' => [78_000, 150_000, 0],
+            'payment_gateway' => [4_200, 10_000, 0],
+            'platform' => [8, 24, 0], // số dự án dùng / hạn mức gói
+        ];
+        foreach ($usage as $meter => [$used, $limit, $ov]) {
+            \App\Models\UsageRecord::create([
+                'tenant_id' => $tenant->id,
+                'usage_period_id' => $period->id,
+                'meter_type' => $meter,
+                'usage_value' => $used,
+                'included_limit' => $limit,
+                'overage_value' => max(0, $used - $limit),
+                'overage_amount' => $ov,
+                'source' => 'collected',
+                'status' => 'calculated',
+            ]);
+        }
+        // Quota alert cho Zalo (76.7% — gần ngưỡng) + SMS (58%).
+        \App\Models\QuotaAlert::create([
+            'tenant_id' => $tenant->id, 'usage_period_id' => $period->id, 'meter_type' => 'zalo',
+            'usage_value' => 92_000, 'included_limit' => 120_000, 'over_percent' => 76.7,
+            'estimated_fee' => 0, 'recommendation' => 'Cân nhắc mua thêm gói Zalo ZNS', 'status' => 'open',
+        ]);
+
+        /* ---- Rate cards (HQ-02-05) ---- */
+        foreach ([
+            ['sms', 'SMS Brandname', 850, 10], ['zalo', 'Zalo ZNS', 500, 8],
+            ['email', 'Email Marketing', 120, 5], ['payment_gateway', 'Cổng thanh toán', 0, 1.1],
+            ['platform', 'Phí nền tảng / dự án', 6_000_000, 0],
+        ] as [$ch, $name, $price, $markup]) {
+            \App\Models\BillingRateCard::create([
+                'tenant_id' => null, 'channel' => $ch, 'meter_code' => $ch, 'name' => $name,
+                'unit_price' => $price, 'markup_percent' => $markup, 'currency' => 'VND',
+                'effective_from' => Carbon::parse('2026-01-01'), 'is_active' => true,
+            ]);
+        }
+
+        /* ---- Metric snapshots: cơ cấu chi phí + xu hướng + top dự án + dự báo ---- */
+        $components = ['platform_fee' => 80_750_000, 'sms' => 17_400_000, 'zalo' => 14_000_000, 'email' => 7_800_000, 'payment_gateway' => 6_000_000, 'other' => 2_500_000];
+        foreach ($components as $key => $val) {
+            \App\Models\MetricSnapshot::create([
+                'tenant_id' => $tenant->id, 'metric_key' => 'cost_component', 'period' => '2026-07',
+                'value' => $val, 'dimension' => ['channel' => $key], 'captured_at' => $now,
+            ]);
+        }
+        $trend = ['2026-02' => 96_800_000, '2026-03' => 102_300_000, '2026-04' => 108_700_000, '2026-05' => 117_500_000, '2026-06' => 118_300_000, '2026-07' => 128_450_000];
+        foreach ($trend as $p => $val) {
+            \App\Models\MetricSnapshot::create([
+                'tenant_id' => $tenant->id, 'metric_key' => 'monthly_cost', 'period' => $p,
+                'value' => $val, 'captured_at' => $now,
+            ]);
+        }
+        $topProjects = [[$projects[0] ?? null, 45_230_000], [$projects[1] ?? null, 28_640_000], [$projects[2] ?? null, 19_870_000], [$projects[3] ?? null, 14_710_000]];
+        foreach ($topProjects as $rank => [$proj, $val]) {
+            \App\Models\MetricSnapshot::create([
+                'tenant_id' => $tenant->id, 'project_id' => $proj?->id, 'metric_key' => 'project_cost', 'period' => '2026-07',
+                'value' => $val, 'dimension' => ['rank' => $rank + 1, 'project' => $proj?->name], 'captured_at' => $now,
+            ]);
+        }
+        // Dự báo tháng tới (HQ-02-09): +6.3%.
+        \App\Models\MetricSnapshot::create([
+            'tenant_id' => $tenant->id, 'metric_key' => 'forecast', 'period' => '2026-08',
+            'value' => 136_540_000, 'dimension' => ['growth_percent' => 6.3, 'confidence' => 'medium'], 'captured_at' => $now,
+        ]);
+
+        /* ---- Hóa đơn platform (HQ-02-07/02) ---- */
+        $invMonths = ['2026-02' => 96_800_000, '2026-03' => 102_300_000, '2026-04' => 108_700_000, '2026-05' => 117_500_000, '2026-06' => 118_300_000, '2026-07' => 128_450_000];
+        $mi = 0;
+        foreach ($invMonths as $p => $total) {
+            $isCurrent = $p === '2026-07';
+            $issue = Carbon::parse($p.'-01');
+            $inv = \App\Models\BillingInvoice::create([
+                'invoice_no' => 'PINV-'.str_replace('-', '', $p).'-SSG',
+                'tenant_id' => $tenant->id,
+                'period' => $p,
+                'status' => $isCurrent ? 'partially_paid' : 'paid',
+                'issue_date' => $issue,
+                'due_date' => $issue->copy()->addDays(15),
+                'subtotal' => $total,
+                'discount_total' => 0,
+                'tax_total' => 0,
+                'total_amount' => $total,
+                'paid_amount' => $isCurrent ? 80_000_000 : $total,
+                'remaining_amount' => $isCurrent ? $total - 80_000_000 : 0,
+                'currency' => 'VND',
+            ]);
+            // Lines: phí nền tảng + pass-through gộp.
+            foreach ([['subscription', 'Phí nền tảng (gói dịch vụ)', round($total * 0.63)], ['pass_through', 'Pass-through (SMS/Zalo/Email/Gateway)', round($total * 0.35)], ['usage_overage', 'Vượt hạn mức usage', $total - round($total * 0.63) - round($total * 0.35)]] as [$lt, $desc, $amt]) {
+                \App\Models\BillingInvoiceLine::create([
+                    'invoice_id' => $inv->id, 'line_type' => $lt, 'description' => $desc,
+                    'quantity' => 1, 'unit_price' => $amt, 'amount' => $amt, 'tax_rate' => 0,
+                ]);
+            }
+            if (! $isCurrent) {
+                \App\Models\BillingPayment::create([
+                    'invoice_id' => $inv->id, 'tenant_id' => $tenant->id, 'payment_method' => 'bank',
+                    'amount' => $total, 'paid_at' => $issue->copy()->addDays(10), 'transaction_ref' => 'PAY-'.$inv->invoice_no, 'status' => 'confirmed',
+                ]);
+            }
+            $mi++;
+        }
+        // Đối soát (HQ-02-08): 1 khớp + 1 chênh lệch.
+        $latestInv = \App\Models\BillingInvoice::where('tenant_id', $tenant->id)->latest('id')->first();
+        \App\Models\BillingReconciliation::create([
+            'tenant_id' => $tenant->id, 'invoice_id' => $latestInv?->id, 'bank_transaction_ref' => 'VCB-20260710-001',
+            'status' => 'matched', 'difference_amount' => 0, 'confirmed_by' => $hqUser->id, 'confirmed_at' => $now,
+        ]);
+        \App\Models\BillingReconciliation::create([
+            'tenant_id' => $tenant->id, 'invoice_id' => $latestInv?->id, 'bank_transaction_ref' => 'VCB-20260710-002',
+            'status' => 'mismatch', 'difference_amount' => 1_250_000,
+        ]);
+        \App\Models\BillingAdjustment::create([
+            'case_id' => 'ADJ-SSG-2026-001', 'tenant_id' => $tenant->id, 'invoice_id' => $latestInv?->id,
+            'adjustment_type' => 'overcharge_sms', 'amount' => 1_250_000, 'reason' => 'Tính trùng phí SMS kỳ 06/2026', 'status' => 'pending_approval',
+            'requested_by' => $hqUser->id,
+        ]);
+
+        /* ---- Plan change requests (HQ-02-10): 128 = 18 processing / 27 pending / 78 completed / 5 rejected ---- */
+        $statusPlan = array_merge(
+            array_fill(0, 18, 'processing'),
+            array_fill(0, 27, 'pending_approval'),
+            array_fill(0, 78, 'completed'),
+            array_fill(0, 5, 'rejected'),
+        );
+        $types = ['upgrade', 'downgrade', 'renew'];
+        $planCodes = ['popular', 'full', 'intelligent'];
+        foreach ($statusPlan as $k => $status) {
+            $type = $types[$k % 3];
+            $proj = $projects[$k % $projects->count()];
+            $from = $plans[$planCodes[$k % 3]];
+            $to = $type === 'renew' ? $from : $plans[$planCodes[($k + 1) % 3]];
+            $content = match ($type) {
+                'upgrade' => 'Nâng cấp từ '.$from->name.' lên '.$to->name,
+                'downgrade' => 'Hạ từ '.$from->name.' xuống '.$to->name,
+                default => 'Gia hạn thêm '.(6 + ($k % 2) * 6).' tháng',
+            };
+            \App\Models\PlanChangeRequest::create([
+                'tenant_id' => $tenant->id,
+                'request_no' => sprintf('REQ-2026-%05d', 128 - $k),
+                'project_id' => $proj->id,
+                'change_type' => $type,
+                'from_plan_id' => $from->id,
+                'to_plan_id' => $to->id,
+                'content' => $content,
+                'effective_date' => $now->copy()->addDays(($k % 20) + 5),
+                'estimated_delta' => ($type === 'downgrade' ? -1 : 1) * (2_000_000 + ($k % 5) * 1_000_000),
+                'status' => $status,
+                'requested_by' => $hqUser->id,
+                'approved_by' => in_array($status, ['completed', 'rejected'], true) ? $hqUser->id : null,
+                'approved_at' => in_array($status, ['completed', 'rejected'], true) ? $now->copy()->subDays($k % 25) : null,
+                'created_at' => $now->copy()->subDays($k % 30),
+            ]);
+        }
+    }
+
+    /**
+     * HQ-01 — Cổng Công ty: một công ty vận hành đa dự án (Sunshine Group) với 24 dự án,
+     * BQL/nhân sự, gói dịch vụ theo dự án, module override, import. Khớp ảnh HQ-01-01
+     * (Tổng 24 · Đang hoạt động 18 · Trial 3 · Tạm ngừng 3 · gia hạn sắp tới 6 · BQL thiếu 4;
+     * Tòa nhà 32 · Căn hộ 12.540 · Diện tích 238.500 m²).
+     *
+     * @param  array<string, \Spatie\Permission\Models\Role>  $roles
+     */
+    private function seedHq01(array $roles, User $admin): void
+    {
+        $now = Carbon::parse('2026-07-02');
+
+        $tenant = Tenant::create([
+            'code' => 'T-SSG-HQ',
+            'name' => 'Công ty CP Quản lý Bất động sản Sunshine Group',
+            'short_name' => 'Sunshine Group',
+            'tax_code' => '0316666888',
+            'phone' => '1900 6888',
+            'email' => 'hq@sunshinegroup.vn',
+            'website' => 'https://sunshinegroup.vn',
+            'address' => 'Tòa nhà Sunshine Center, Q.1',
+            'city' => 'TP. Hồ Chí Minh',
+            'legal_representative' => 'Nguyễn Minh Anh',
+            'contact_person' => 'Khối Vận hành',
+            'contact_phone' => '028 3999 6888',
+            'plan' => 'enterprise',
+            'status' => 'active',
+            'primary_color' => '#0b1b3f',
+            'secondary_color' => '#c8a24c',
+            'app_config' => ['locale' => 'vi', 'currency' => 'VND'],
+        ]);
+
+        $company = \App\Models\Company::create([
+            'tenant_id' => $tenant->id,
+            'code' => 'CO-SSG-HQ',
+            'name' => 'Công ty CP Quản lý Bất động sản Sunshine Group',
+            'short_name' => 'Sunshine Group',
+            'tax_code' => '0316666888',
+            'phone' => '028 3999 6888',
+            'email' => 'hq@sunshinegroup.vn',
+            'address' => 'Q.1, TP. HCM',
+            'legal_representative' => 'Nguyễn Minh Anh',
+            'status' => 'active',
+        ]);
+
+        // HQ operator (tenant-level) — dùng để test cổng /hq không cần platform admin.
+        $hqUser = User::create([
+            'tenant_id' => $tenant->id,
+            'name' => 'Nguyễn Minh Anh',
+            'title' => 'Quản trị HQ',
+            'account_type' => 'staff',
+            'is_platform_admin' => false,
+            'email' => 'hq@sunshinegroup.vn',
+            'password' => Hash::make('Bms@2026!'),
+            'email_verified_at' => now(),
+        ]);
+        $hqUser->assignRole($roles['company_admin']);
+        \App\Models\UserRoleScope::create([
+            'user_id' => $hqUser->id,
+            'role_id' => $roles['company_admin']->id,
+            'scope_type' => \App\Models\UserRoleScope::SCOPE_TENANT,
+            'tenant_id' => $tenant->id,
+        ]);
+
+        // --- Departments (công ty) — khớp donut HQ-01-05 ---
+        $deptDefs = [
+            ['BGD', 'Ban giám đốc'], ['KT', 'Kỹ thuật'], ['KE', 'Kế toán'],
+            ['CS', 'CSKH'], ['BV', 'Bảo vệ'],
+        ];
+        $deptByCode = [];
+        foreach ($deptDefs as [$code, $name]) {
+            $deptByCode[$code] = Department::create(['tenant_id' => $tenant->id, 'code' => $code, 'name' => $name]);
+        }
+
+        $plans = \App\Models\Plan::whereIn('code', ['popular', 'full', 'intelligent'])->get()->keyBy('code');
+
+        // --- 24 dự án (8 dòng đầu khớp đúng ảnh HQ-01-01) ---
+        // [code, name, typeLabel, managerName, planCode, status, renewSoon, deptCode]
+        $projectDefs = [
+            ['SG-001', 'Sunshine Garden', 'Chung cư cao cấp', 'Trần Quốc Hùng', 'full', 'active', false, 'BGD'],
+            ['RP-002', 'River Park Residence', 'Chung cư', 'Lê Thu Hương', 'popular', 'active', false, 'BGD'],
+            ['CP-003', 'Central Plaza', 'Tổ hợp TM & VP', 'Phạm Minh Tuấn', 'full', 'active', false, 'BGD'],
+            ['GH-004', 'Green Heights', 'Chung cư', 'Đỗ Thị Mai', 'intelligent', 'active', false, 'BGD'],
+            ['LB-005', 'Lakeside Building', 'Văn phòng', 'Nguyễn Văn Hòa', 'popular', 'active', true, 'BGD'],
+            ['MT-006', 'Moonlight Tower', 'Chung cư cao cấp', 'Vũ Hoàng Nam', 'intelligent', 'trial', false, 'BGD'],
+            ['OS-007', 'Ocean Suites', 'Chung cư', 'Lê Thị Kim Anh', 'popular', 'suspended', false, 'BGD'],
+            ['SK-008', 'Skyline Tower', 'Tổ hợp TM & VP', 'Hoàng Anh Dũng', 'full', 'active', false, 'BGD'],
+            ['GV-009', 'Garden Villa', 'Biệt thự', 'Trần Văn Lộc', 'full', 'active', true, 'BGD'],
+            ['SP-010', 'Sunrise Park', 'Chung cư', 'Ngô Thị Bích', 'popular', 'active', false, 'BGD'],
+            ['DP-011', 'Diamond Plaza', 'Tổ hợp TM & VP', 'Bùi Quang Huy', 'full', 'active', true, 'BGD'],
+            ['GT-012', 'Golden Tower', 'Chung cư cao cấp', 'Đặng Thị Lan', 'intelligent', 'active', false, 'BGD'],
+            ['RV-013', 'River View', 'Chung cư', 'Phan Văn Đức', 'popular', 'active', false, 'BGD'],
+            ['CH-014', 'City Heights', 'Chung cư', 'Trịnh Thị Hoa', 'popular', 'active', true, 'BGD'],
+            ['MP-015', 'Metro Plaza', 'Tổ hợp TM & VP', 'Hồ Minh Khôi', 'full', 'active', false, 'BGD'],
+            ['PL-016', 'Pearl Land', 'Chung cư cao cấp', 'Lý Thị Ngọc', 'intelligent', 'active', false, 'BGD'],
+            ['ST-017', 'Star Tower', 'Văn phòng', 'Cao Văn Sơn', 'full', 'active', true, 'BGD'],
+            ['EC-018', 'Eco City', 'Khu đô thị', 'Dương Thị Thu', 'popular', 'active', false, 'BGD'],
+            ['SC-019', 'Sunshine City', 'Chung cư cao cấp', 'Vương Minh Đức', 'popular', 'active', true, 'BGD'],
+            ['GC-020', 'Grand Center', 'Tổ hợp TM & VP', 'Tạ Thị Yến', 'full', 'active', false, 'BGD'],
+            ['LM-021', 'Luxury Marina', 'Chung cư cao cấp', 'Đinh Văn Toàn', 'intelligent', 'trial', false, 'BGD'],
+            ['HP-022', 'Harbor Point', 'Chung cư', 'Mai Thị Hạnh', 'intelligent', 'trial', false, 'BGD'],
+            ['WT-023', 'West Tower', 'Văn phòng', 'Chu Văn Bình', 'popular', 'suspended', false, 'BGD'],
+            ['NP-024', 'North Park', 'Chung cư', 'Lâm Thị Diệu', 'popular', 'suspended', false, 'BGD'],
+        ];
+
+        $count = count($projectDefs);
+        // Aggregate targets: buildings 32, apartments 12.540, land 238.500.
+        $baseApt = intdiv(12540, $count);      // 522
+        $baseLand = intdiv(238500, $count);    // 9937
+        $managers = [];
+
+        foreach ($projectDefs as $i => [$code, $name, $typeLabel, $managerName, $planCode, $status, $renewSoon, $deptCode]) {
+            // Manager staff (user + staff_profile). Trưởng BQL: 18 thuộc Ban giám đốc, 6 senior thuộc Kỹ thuật.
+            $mgrDept = $i < 18 ? 'BGD' : 'KT';
+            $mUser = User::create([
+                'tenant_id' => $tenant->id,
+                'name' => $managerName,
+                'title' => 'Trưởng BQL',
+                'account_type' => 'staff',
+                'is_platform_admin' => false,
+                'email' => 'bql'.sprintf('%02d', $i + 1).'@sunshinegroup.vn',
+                'password' => Hash::make('Bms@2026!'),
+                'email_verified_at' => now(),
+            ]);
+            $manager = \App\Models\StaffProfile::create([
+                'tenant_id' => $tenant->id,
+                'user_id' => $mUser->id,
+                'department_id' => $deptByCode[$mgrDept]->id,
+                'employee_code' => sprintf('NS-%03d', $i + 1),
+                'position' => 'Trưởng BQL',
+                'phone' => '09'.str_pad((string) (11000000 + $i), 8, '0', STR_PAD_LEFT),
+                'gender' => $i % 2 ? 'Nam' : 'Nữ',
+                'hire_date' => Carbon::parse('2023-01-01')->addMonths($i),
+                'status' => 'active',
+            ]);
+            $managers[] = $manager;
+
+            $buildingCount = $i < 8 ? 2 : 1;   // 8×2 + 16×1 = 32
+            $apt = $baseApt + ($i === 0 ? 12540 - $baseApt * $count : 0);
+            $land = $baseLand + ($i === 0 ? 238500 - $baseLand * $count : 0);
+
+            $project = Project::create([
+                'tenant_id' => $tenant->id,
+                'company_id' => $company->id,
+                'code' => $code,
+                'name' => $name,
+                'type' => $typeLabel,
+                'status' => $status,
+                'address' => 'TP. Hồ Chí Minh',
+                'city' => 'TP. Hồ Chí Minh',
+                'land_area_sqm' => $land,
+                'building_count' => $buildingCount,
+                'apartment_count' => $apt,
+                'investor' => 'Sunshine Group',
+                'handover_date' => Carbon::parse('2022-01-01')->addMonths($i * 2),
+                'contact_person' => $managerName,
+                'contact_phone' => '1900 6888',
+                'description' => $name.' — dự án do Sunshine Group vận hành.',
+            ]);
+
+            // BQL team — 4 dự án đầu tiên (index 0..3) đánh dấu thiếu nhân sự.
+            $understaffed = $i < 4;
+            \App\Models\BqlTeam::create([
+                'tenant_id' => $tenant->id,
+                'project_id' => $project->id,
+                'code' => 'BQL-'.$code,
+                'name' => 'BQL '.$name,
+                'manager_employee_id' => $manager->id,
+                'hotline' => '1900 6888',
+                'email' => strtolower(str_replace(['-', ' '], '', $code)).'@sunshinegroup.vn',
+                'address' => 'Văn phòng BQL '.$name,
+                'status' => $status === 'suspended' ? 'inactive' : 'active',
+                'metadata' => ['understaffed' => $understaffed, 'required_headcount' => 6, 'current_headcount' => $understaffed ? 3 : 6],
+            ]);
+
+            // Subscription period theo dự án. Base date để chu kỳ +1 năm KHÔNG rơi vào
+            // cửa sổ 30 ngày (2026-07) — chỉ dự án renewSoon mới "sắp gia hạn".
+            $started = Carbon::parse('2025-09-01')->addDays($i * 5);
+            $periodEnd = $renewSoon ? $now->copy()->addDays(10 + ($i % 15))  // gia hạn trong 30 ngày
+                : $started->copy()->addYear();
+            \App\Models\ProjectSubscriptionPeriod::create([
+                'tenant_id' => $tenant->id,
+                'project_id' => $project->id,
+                'plan_id' => $plans[$planCode]->id,
+                'status' => match ($status) {
+                    'trial' => 'trial',
+                    'suspended' => 'suspended',
+                    default => 'active',
+                },
+                'started_at' => $started,
+                'trial_ends_at' => $status === 'trial' ? $started->copy()->addDays(30) : null,
+                'current_period_start' => $started,
+                'current_period_end' => $periodEnd,
+                'billing_anchor_day' => 1,
+                'auto_renew' => $status !== 'suspended',
+                'price_snapshot_json' => ['plan' => $planCode, 'monthly' => (int) ($plans[$planCode]->monthly_base_price ?? 0)],
+                'approved_by_platform_at' => $status === 'trial' ? null : $started,
+            ]);
+
+            // Assign manager to project (primary).
+            \App\Models\EmployeeProjectAssignment::create([
+                'tenant_id' => $tenant->id,
+                'project_id' => $project->id,
+                'employee_id' => $manager->id,
+                'department_id' => $deptByCode[$mgrDept]->id,
+                'role_id' => $roles['building_manager']->id,
+                'assignment_type' => 'primary',
+                'workload_percent' => 100,
+                'priority' => 'high',
+                'effective_from' => $started,
+                'status' => $status === 'suspended' ? 'expired' : 'active',
+                'assigned_by' => $hqUser->id,
+                'approved_by' => $hqUser->id,
+                'approved_at' => $started,
+            ]);
+        }
+
+        // --- Nhân sự công ty (HQ-01-05): tổng 128 (24 Trưởng BQL ở trên + 104 dưới đây).
+        // Phân bổ phòng ban khớp donut: Kỹ thuật 58, Kế toán 12, CSKH 22, Bảo vệ 18, Ban giám đốc 18.
+        // 16 người cuối = "Chờ phân công" (pending, chưa gán dự án) ⇒ Đang làm việc 112 / Chờ 16.
+        $fillPlan = array_merge(
+            array_fill(0, 52, 'KT'),  // KT: 6 (trưởng BQL) + 52 = 58
+            array_fill(0, 12, 'KE'),
+            array_fill(0, 22, 'CS'),
+            array_fill(0, 18, 'BV'),
+        );
+        $ho = ['Nguyễn', 'Trần', 'Lê', 'Phạm', 'Hoàng', 'Huỳnh', 'Phan', 'Vũ', 'Võ', 'Đặng', 'Bùi', 'Đỗ', 'Hồ', 'Ngô', 'Dương', 'Lý'];
+        $dem = ['Văn', 'Thị', 'Minh', 'Quang', 'Ngọc', 'Thanh', 'Hữu', 'Đức', 'Thu', 'Hải', 'Anh', 'Gia'];
+        $ten = ['An', 'Bình', 'Cường', 'Dũng', 'Hà', 'Hạnh', 'Khoa', 'Lan', 'Mai', 'Nam', 'Oanh', 'Phúc', 'Quân', 'Sơn', 'Tâm', 'Uyên', 'Vân', 'Yến', 'Bảo', 'Chi'];
+        $posByDept = [
+            'KT' => ['Kỹ sư dự án', 'Kỹ thuật viên', 'Kỹ sư điện', 'Kỹ sư M&E'],
+            'KE' => ['Kế toán viên', 'Kế toán tổng hợp', 'Kế toán trưởng'],
+            'CS' => ['Nhân viên CSKH', 'Chuyên viên CSKH'],
+            'BV' => ['Nhân viên bảo vệ', 'Giám sát an ninh'],
+        ];
+        $fill = [];
+        foreach ($fillPlan as $j => $deptCode) {
+            $pending = $j >= 88; // 16 người cuối chờ phân công
+            $u = User::create([
+                'tenant_id' => $tenant->id,
+                'name' => $ho[$j % 16].' '.$dem[$j % 12].' '.$ten[$j % 20],
+                'title' => $posByDept[$deptCode][$j % count($posByDept[$deptCode])],
+                'account_type' => 'staff',
+                'is_platform_admin' => false,
+                'email' => 'ns'.sprintf('%03d', 25 + $j).'@sunshinegroup.vn',
+                'password' => Hash::make('Bms@2026!'),
+                'email_verified_at' => now(),
+            ]);
+            $fill[] = \App\Models\StaffProfile::create([
+                'tenant_id' => $tenant->id,
+                'user_id' => $u->id,
+                'department_id' => $deptByCode[$deptCode]->id,
+                'employee_code' => sprintf('NS-%03d', 25 + $j),
+                'position' => $posByDept[$deptCode][$j % count($posByDept[$deptCode])],
+                'phone' => '09'.str_pad((string) (30000000 + $j), 8, '0', STR_PAD_LEFT),
+                'gender' => $j % 2 ? 'Nam' : 'Nữ',
+                'hire_date' => Carbon::parse('2022-01-01')->addDays($j * 8),
+                'status' => $pending ? 'pending' : 'active',
+            ]);
+        }
+
+        // Phân công: 88 người đầu (active) gán dự án; 36 trong số đó thêm dự án thứ 2 (Đa dự án 36).
+        $activeProjects = Project::where('tenant_id', $tenant->id)->where('status', 'active')->orderBy('id')->get();
+        foreach (array_slice($fill, 0, 88) as $k => $sp) {
+            $primary = $activeProjects[$k % $activeProjects->count()];
+            \App\Models\EmployeeProjectAssignment::create([
+                'tenant_id' => $tenant->id,
+                'project_id' => $primary->id,
+                'employee_id' => $sp->id,
+                'department_id' => $sp->department_id,
+                'role_id' => $roles['technician']->id,
+                'assignment_type' => 'primary',
+                'workload_percent' => 100,
+                'priority' => 'normal',
+                'effective_from' => Carbon::parse('2025-03-01'),
+                'status' => 'active',
+                'assigned_by' => $hqUser->id,
+                'approved_by' => $hqUser->id,
+                'approved_at' => Carbon::parse('2025-03-01'),
+            ]);
+            // 36 người đầu tiên nhận thêm 1 dự án phụ (secondary) ⇒ đa dự án.
+            if ($k < 36) {
+                $secondary = $activeProjects[($k + 5) % $activeProjects->count()];
+                \App\Models\EmployeeProjectAssignment::create([
+                    'tenant_id' => $tenant->id,
+                    'project_id' => $secondary->id,
+                    'employee_id' => $sp->id,
+                    'department_id' => $sp->department_id,
+                    'role_id' => $roles['technician']->id,
+                    'assignment_type' => 'secondary',
+                    'workload_percent' => 50,
+                    'priority' => 'normal',
+                    'effective_from' => Carbon::parse('2025-06-01'),
+                    'status' => 'active',
+                    'assigned_by' => $hqUser->id,
+                    'approved_by' => $hqUser->id,
+                    'approved_at' => Carbon::parse('2025-06-01'),
+                ]);
+            }
+        }
+
+        // --- Lịch sử luân chuyển (HQ-01-07) ---
+        for ($h = 0; $h < 6; $h++) {
+            $emp = $fill[$h];
+            \App\Models\EmployeeAssignmentHistory::create([
+                'tenant_id' => $tenant->id,
+                'employee_id' => $emp->id,
+                'from_project_id' => $activeProjects[$h]->id,
+                'to_project_id' => $activeProjects[($h + 1) % $activeProjects->count()]->id,
+                'new_department_id' => $emp->department_id,
+                'transfer_code' => sprintf('LC-2026-%03d', $h + 1),
+                'reason' => 'Điều chuyển theo nhu cầu vận hành dự án',
+                'effective_at' => $now->copy()->subDays(($h + 1) * 7),
+                'status' => $h < 4 ? 'effective' : ($h === 4 ? 'pending_approval' : 'approved'),
+                'requested_by' => $hqUser->id,
+                'approved_by' => $h === 4 ? null : $hqUser->id,
+                'approved_at' => $h === 4 ? null : $now->copy()->subDays(($h + 1) * 7 + 1),
+            ]);
+        }
+
+        // --- Module overrides (HQ-01-09) ---
+        $moduleKeys = ['x2ai', 'contractor_library', 'report_library', 'rag', 'supplier_library', 'kb_inheritance', 'public_project', 'prompt_guardrail'];
+        foreach (array_slice($activeProjects->all(), 0, 8) as $mi => $p) {
+            \App\Models\ProjectModuleOverride::create([
+                'tenant_id' => $tenant->id,
+                'project_id' => $p->id,
+                'module_key' => $moduleKeys[$mi],
+                'source' => $mi % 2 ? 'addon' : 'manual_override',
+                'status' => $mi % 4 === 0 ? 'pending' : ($mi % 4 === 3 ? 'locked' : 'enabled'),
+                'requested_by' => $hqUser->id,
+                'approved_by' => $mi % 4 === 0 ? null : $hqUser->id,
+                'approved_at' => $mi % 4 === 0 ? null : $now->copy()->subDays($mi * 3),
+                'effective_from' => $now->copy()->subDays($mi * 3),
+                'metadata' => ['note' => 'Điều chỉnh module theo yêu cầu dự án'],
+            ]);
+        }
+
+        // --- Import batches (HQ-01-10) ---
+        $batch = \App\Models\ImportBatch::create([
+            'tenant_id' => $tenant->id,
+            'import_type' => 'projects_employees',
+            'file_name' => 'import_du_an_nhan_su_2026.xlsx',
+            'storage_path' => 'imports/ssg/import_du_an_nhan_su_2026.xlsx',
+            'status' => 'validated',
+            'total_rows' => 30,
+            'valid_rows' => 27,
+            'error_rows' => 3,
+            'created_by' => $hqUser->id,
+            'metadata' => ['sheet' => 'DuAn'],
+        ]);
+        for ($r = 1; $r <= 8; $r++) {
+            \App\Models\ImportBatchRow::create([
+                'tenant_id' => $tenant->id,
+                'import_batch_id' => $batch->id,
+                'row_number' => $r,
+                'row_type' => $r <= 5 ? 'project' : 'employee',
+                'external_code' => sprintf('IMP-%03d', $r),
+                'raw_payload' => ['ten' => 'Dòng '.$r, 'ma' => sprintf('IMP-%03d', $r)],
+                'normalized_payload' => ['name' => 'Dòng '.$r],
+                'validation_status' => $r <= 6 ? 'valid' : ($r === 7 ? 'warning' : 'error'),
+                'validation_errors' => $r === 8 ? ['ma_du_an' => 'Trùng mã dự án'] : null,
+            ]);
+        }
     }
 
     /** Addendum / P6 — KB governance + AI guardrail + retrieval log + mở rộng prompt. */

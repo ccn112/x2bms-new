@@ -129,12 +129,21 @@ return new class extends Migration
     /** @return array<int, string> base tables that should receive soft deletes */
     private function includeTables(): array
     {
-        // Schema::getTableListing() may return schema-qualified names (e.g. "db.table")
-        // on Laravel 13 / MySQL — strip the prefix so the deny match works.
-        $tables = array_map(
-            fn (string $t) => str_contains($t, '.') ? substr($t, strrpos($t, '.') + 1) : $t,
-            Schema::getTableListing(),
-        );
+        // Schema::getTableListing() on Laravel 13 / MySQL returns schema-qualified
+        // names for EVERY database on the server (e.g. "otherdb.foo"). Keep only the
+        // current database's tables, then strip the "db." prefix before the deny match.
+        $database = DB::connection()->getDatabaseName();
+        $tables = [];
+        foreach (Schema::getTableListing() as $t) {
+            if (str_contains($t, '.')) {
+                [$schema, $name] = explode('.', $t, 2);
+                if ($schema !== $database) {
+                    continue; // table belongs to a different database on the same server
+                }
+                $t = $name;
+            }
+            $tables[] = $t;
+        }
 
         return array_values(array_filter(
             $tables,

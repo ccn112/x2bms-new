@@ -41,6 +41,11 @@ class CurrentContext
 
     public function tenantId(): ?int
     {
+        // HQ portal: a platform admin may operate "as" a chosen company (tenant).
+        if (auth()->user()?->isPlatformAdmin() && ($hqTenant = session('hq_tenant_id'))) {
+            return (int) $hqTenant;
+        }
+
         return auth()->user()?->tenant_id ?? $this->project()?->tenant_id;
     }
 
@@ -67,7 +72,13 @@ class CurrentContext
         }
 
         if ($user->isPlatformAdmin()) {
-            return Project::query()->orderBy('name')->get();
+            // When acting as a company in the HQ portal, scope to that tenant's projects.
+            $hqTenant = session('hq_tenant_id');
+
+            return Project::query()
+                ->when($hqTenant, fn ($q) => $q->where('tenant_id', (int) $hqTenant))
+                ->orderBy('name')
+                ->get();
         }
 
         $query = Project::query()
@@ -101,6 +112,45 @@ class CurrentContext
     public function setProject(int $projectId): void
     {
         session(['current_project_id' => $projectId]);
+    }
+
+    /* =========================================================================
+     * HQ portal — multi-project aggregation scope.
+     *
+     * The Tenant HQ (công ty vận hành) aggregates across MANY projects, unlike
+     * the single-project BQL context. Selection is session-backed and validated
+     * against the projects the user may access; empty/unset = ALL projects.
+     * ========================================================================= */
+
+    /** @return array<int> the project ids HQ screens aggregate over (∅ selection ⇒ all available) */
+    public function hqProjectIds(): array
+    {
+        $available = $this->availableProjects()->pluck('id')->all();
+        $selected = session('hq_selected_project_ids');
+
+        if (! is_array($selected) || $selected === []) {
+            return $available;
+        }
+
+        // Keep only still-accessible ids; fall back to all if the selection went stale.
+        $valid = array_values(array_intersect(array_map('intval', $selected), $available));
+
+        return $valid ?: $available;
+    }
+
+    /** True when the HQ scope spans every project the user may access. */
+    public function hqAllProjectsSelected(): bool
+    {
+        return count($this->hqProjectIds()) === $this->availableProjects()->count();
+    }
+
+    /** @param array<int> $projectIds empty array ⇒ all projects */
+    public function setHqProjects(array $projectIds): void
+    {
+        $available = $this->availableProjects()->pluck('id')->all();
+        $valid = array_values(array_intersect(array_map('intval', $projectIds), $available));
+
+        session(['hq_selected_project_ids' => $valid]);
     }
 
     /* =========================================================================
