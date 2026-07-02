@@ -579,6 +579,8 @@ class DemoDataSeeder extends Seeder
 
         $this->seedFeeCatalog($tenant, $project, $building);
         $this->seedBillingAndPayments($tenant, $building, $currentPeriod, $admin);
+        $this->seedBql03Receivables($tenant, $building, $project, $currentPeriod, $admin);
+        $this->seedBql0302Cycles($tenant, $building);
         $this->seedSecondaryBuilding($tenant, $project, $firstNames);
         $this->seedSecondProject($tenant, $firstNames);
         $this->seedCrossCompanyResident($tenant, $apartments[10]);
@@ -3252,17 +3254,18 @@ class DemoDataSeeder extends Seeder
      */
     private function seedFeeCatalog(Tenant $tenant, Project $project, Building $building): void
     {
+        // [code, name, category, unit, amount, note, applies_to, vat%, formula_text, is_complex]
         $types = [
-            ['QL', 'Phí quản lý', 'management', 'per_sqm', 16_500, 'Đồng/m²/tháng'],
-            ['OTO', 'Phí gửi ô tô', 'parking', 'per_vehicle', 1_200_000, 'Đồng/xe/tháng'],
-            ['XEMAY', 'Phí gửi xe máy', 'parking', 'per_vehicle', 120_000, 'Đồng/xe/tháng'],
-            ['NUOC', 'Phí nước sinh hoạt', 'utility', 'per_m3', 15_000, 'Đồng/m³'],
-            ['RAC', 'Phí vệ sinh', 'service', 'fixed', 50_000, 'Đồng/tháng'],
+            ['QL', 'Phí quản lý', 'management', 'per_sqm', 16_500, 'Đồng/m²/tháng', 'Căn hộ, Văn phòng', 10, 'Đơn giá (VND/m²) × Diện tích', false],
+            ['OTO', 'Phí gửi ô tô', 'parking', 'per_vehicle', 1_200_000, 'Đồng/xe/tháng', 'Cư dân, Khách thuê', 10, 'Theo bậc số lượng xe', true],
+            ['XEMAY', 'Phí gửi xe máy', 'parking', 'per_vehicle', 120_000, 'Đồng/xe/tháng', 'Cư dân, Khách thuê', 10, 'Theo bậc số lượng xe', true],
+            ['NUOC', 'Phí nước sinh hoạt', 'utility', 'per_m3', 15_000, 'Đồng/m³', 'Căn hộ, Văn phòng', 5, '(Chỉ số mới − Chỉ số cũ) × Đơn giá', false],
+            ['RAC', 'Phí vệ sinh', 'service', 'fixed', 50_000, 'Đồng/tháng', 'Căn hộ', 0, 'Đơn giá cố định', false],
         ];
 
         $managementType = null;
         $managementRate = null;
-        foreach ($types as [$code, $name, $cat, $unit, $amount, $note]) {
+        foreach ($types as [$code, $name, $cat, $unit, $amount, $note, $appliesTo, $vat, $formulaText, $complex]) {
             $feeType = \App\Models\FeeType::create([
                 'tenant_id' => $tenant->id,
                 'code' => $code,
@@ -3272,6 +3275,12 @@ class DemoDataSeeder extends Seeder
                 'is_recurring' => true,
                 'status' => 'active',
                 'note' => $note,
+                'applies_to' => $appliesTo,
+                'frequency' => 'monthly',
+                'vat_percent' => $vat,
+                'formula_text' => $formulaText,
+                'effective_from' => Carbon::parse('2026-01-01'),
+                'is_complex' => $complex,
             ]);
             $rate = \App\Models\FeeRate::create([
                 'tenant_id' => $tenant->id,
@@ -3316,6 +3325,436 @@ class DemoDataSeeder extends Seeder
             'project_id' => $project->id,
             'effective_from' => Carbon::parse('2026-01-01'),
         ]);
+
+        $this->seedBql03CatalogExtra($tenant);
+    }
+
+    /**
+     * BQL-03-01 — extra catalogue fee rules (display-only, not wired into billing)
+     * so "Biểu phí & quy tắc tính phí" and its KPI counters reflect a realistic
+     * catalogue: 28 active / 6 pending / 4 inactive, 9 complex formulas, 12 touched
+     * this month. Codes use the BF- prefix; the 5 functional types keep QL/RAC/etc.
+     */
+    private function seedBql03CatalogExtra(Tenant $tenant): void
+    {
+        // [name, category, applies_to, vat, formula_text, frequency, complex]
+        $active = [
+            ['Phí quản lý theo gói', 'management', 'Văn phòng', 10, 'Theo gói diện tích', 'monthly', false],
+            ['Phí quản lý khu TMDV', 'management', 'Khách thuê', 10, 'Đơn giá (VND/m²) × Diện tích', 'monthly', false],
+            ['Phí gửi xe đạp', 'parking', 'Cư dân', 0, 'Đơn giá cố định', 'monthly', false],
+            ['Phí gửi ô tô vãng lai', 'parking', 'Khách thuê', 10, 'Đơn giá × Số giờ', 'per_use', true],
+            ['Phí gửi xe tầng hầm B2', 'parking', 'Cư dân', 10, 'Theo bậc số lượng xe', 'monthly', true],
+            ['Tiền điện chỉ số', 'utility', 'Căn hộ, Văn phòng', 10, '(Chỉ số mới − Chỉ số cũ) × Đơn giá', 'monthly', false],
+            ['Điện theo khung giờ', 'utility', 'Văn phòng', 10, 'Theo khung giờ × Đơn giá', 'monthly', true],
+            ['Nước nóng trung tâm', 'utility', 'Căn hộ', 5, '(Chỉ số mới − Chỉ số cũ) × Đơn giá', 'monthly', false],
+            ['Phí điều hòa trung tâm', 'utility', 'Văn phòng', 10, 'Theo công suất × Đơn giá', 'monthly', true],
+            ['Quỹ bảo trì', 'reserve', 'Căn hộ', 0, '% Giá trị căn hộ × Tỷ lệ QBT', 'yearly', true],
+            ['Quỹ dự phòng vận hành', 'reserve', 'Căn hộ', 0, 'Đơn giá cố định', 'yearly', false],
+            ['Phí Internet nội bộ', 'service', 'Căn hộ', 10, 'Gói cơ bản', 'monthly', false],
+            ['Phí truyền hình cáp', 'service', 'Căn hộ', 10, 'Gói cơ bản', 'monthly', false],
+            ['Phí vệ sinh khu TMDV', 'service', 'Khách thuê', 10, 'Đơn giá theo diện tích', 'monthly', false],
+            ['Phí diệt côn trùng', 'service', 'Căn hộ', 10, 'Đơn giá cố định', 'quarterly', false],
+            ['Phí sử dụng bể bơi', 'service', 'Cư dân', 10, 'Đơn giá × Lượt', 'per_use', false],
+            ['Phí sử dụng gym', 'service', 'Cư dân', 10, 'Đơn giá cố định', 'monthly', false],
+            ['Phí thẻ ra vào bổ sung', 'surcharge', 'Cư dân, Khách thuê', 10, 'Đơn giá × Số thẻ', 'per_use', false],
+            ['Phụ thu ngoài giờ', 'surcharge', 'Cư dân, Khách thuê', 10, 'Đơn giá/giờ × Số giờ', 'per_use', false],
+            ['Phụ thu chuyển nhà', 'surcharge', 'Cư dân', 10, 'Đơn giá cố định', 'per_use', false],
+            ['Phí đăng ký thi công', 'surcharge', 'Cư dân', 10, 'Đơn giá cố định', 'per_use', false],
+            ['Phí giữ chỗ tiện ích', 'surcharge', 'Cư dân', 10, 'Đơn giá × Lượt', 'per_use', false],
+            ['Phí quảng cáo thang máy', 'other', 'Khách thuê', 10, 'Theo hợp đồng', 'monthly', false],
+        ];
+        $pending = [
+            ['Phí quản lý theo gói 2027', 'management', 'Văn phòng', 10, 'Theo gói diện tích', 'monthly', false],
+            ['Phụ thu cuối tuần', 'surcharge', 'Cư dân, Khách thuê', 10, 'Đơn giá × Hệ số cuối tuần', 'per_use', true],
+            ['Điện năng lượng mặt trời', 'utility', 'Căn hộ', 5, 'Theo sản lượng × Đơn giá', 'monthly', true],
+            ['Phí sạc xe điện', 'utility', 'Cư dân', 10, 'Chỉ số × Đơn giá', 'monthly', false],
+            ['Phí kho chứa đồ', 'service', 'Cư dân', 10, 'Đơn giá/m² × Diện tích', 'monthly', false],
+            ['Gói dịch vụ cao cấp', 'service', 'Căn hộ', 10, 'Gói cao cấp', 'monthly', false],
+        ];
+        $inactive = [
+            ['Phí điện theo khung giờ (cũ)', 'utility', 'Căn hộ, Văn phòng', 10, 'Theo khung giờ × Đơn giá', 'monthly', false],
+            ['Phụ thu cuối tuần (cũ)', 'surcharge', 'Cư dân, Khách thuê', 10, 'Đơn giá × Hệ số cuối tuần', 'per_use', false],
+            ['Phí giữ xe cũ 2025', 'parking', 'Cư dân', 10, 'Theo bậc số lượng xe', 'monthly', false],
+            ['Gói Internet cũ 2025', 'service', 'Căn hộ', 10, 'Gói cơ bản', 'monthly', false],
+        ];
+
+        $prefix = ['management' => 'QL', 'parking' => 'GX', 'utility' => 'DN', 'reserve' => 'GBT', 'service' => 'DV', 'surcharge' => 'PT', 'other' => 'KH'];
+        $counter = [];
+        $recentIds = [];   // fee types "updated this month" (target 12: 5 functional + 7 here)
+        $seq = 0;
+
+        $make = function (array $def, string $status, ?string $effectiveFrom) use ($tenant, $prefix, &$counter, &$recentIds, &$seq) {
+            [$name, $cat, $appliesTo, $vat, $formula, $freq, $complex] = $def;
+            $counter[$cat] = ($counter[$cat] ?? 0) + 1;
+            $ft = \App\Models\FeeType::create([
+                'tenant_id' => $tenant->id,
+                'code' => 'BF-'.$prefix[$cat].'-'.str_pad((string) $counter[$cat], 2, '0', STR_PAD_LEFT),
+                'name' => $name,
+                'category' => $cat,
+                'unit' => 'per_unit',
+                'is_recurring' => $freq === 'monthly',
+                'status' => $status,
+                'applies_to' => $appliesTo,
+                'frequency' => $freq,
+                'vat_percent' => $vat,
+                'formula_text' => $formula,
+                'effective_from' => $effectiveFrom ? Carbon::parse($effectiveFrom) : null,
+                'is_complex' => $complex,
+            ]);
+            if ($seq < 7) {
+                $recentIds[] = $ft->id;   // keep updated_at = now (this month)
+            }
+            $seq++;
+
+            return $ft;
+        };
+
+        foreach ($active as $def) {
+            $make($def, 'active', '2026-01-01');
+        }
+        foreach ($pending as $def) {
+            $make($def, 'pending', '2026-08-01');
+        }
+        foreach ($inactive as $def) {
+            $make($def, 'inactive', null);
+        }
+
+        // Backdate "updated_at" for every extra row except the first 7 so the
+        // "Cập nhật tháng này" KPI lands at 12 (5 functional + 7 recent extras).
+        \App\Models\FeeType::where('tenant_id', $tenant->id)
+            ->where('code', 'like', 'BF-%')
+            ->whereNotIn('id', $recentIds)
+            ->update(['updated_at' => Carbon::parse('2026-05-15 09:00')]);
+    }
+
+    /**
+     * BQL-03-02..09 backbone — scale Tòa A to 1,248 real apartments (+residents),
+     * then generate the current-period statement book and the debt/aging ledger so
+     * every finance screen's headline matches the handoff images with 100% real
+     * rows (no snapshots): 1.086 published / 124 pending / 732 viewed / 148 overdue,
+     * total receivable 8,42 tỷ; 24 debtor ledgers, aging 1,02 tỷ / 650tr / 320tr /
+     * 210tr. Uses bulk inserts for speed.
+     */
+    private function seedBql03Receivables(Tenant $tenant, Building $building, Project $project, BillingPeriod $period, User $admin): void
+    {
+        $db = \Illuminate\Support\Facades\DB::connection()->getName();
+        $DB = fn (string $t) => \Illuminate\Support\Facades\DB::table($t);
+        $now = Carbon::parse('2026-07-02 09:00');
+        $tid = $tenant->id;
+        $bid = $building->id;
+
+        // Exact-sum distributor: split $total into $count parts using $weight(i).
+        $distribute = function (int $total, int $count, callable $weight): array {
+            $w = [];
+            $sum = 0.0;
+            for ($i = 0; $i < $count; $i++) {
+                $wi = $weight($i);
+                $w[] = $wi;
+                $sum += $wi;
+            }
+            $out = [];
+            $acc = 0;
+            for ($i = 0; $i < $count - 1; $i++) {
+                $v = (int) round($total * $w[$i] / $sum);
+                $out[] = $v;
+                $acc += $v;
+            }
+            $out[] = $total - $acc;
+
+            return $out;
+        };
+
+        // ---- 1. Scale apartments in Tòa A up to 1,248 (+ a resident each) ----
+        $target = 1248;
+        $existing = Apartment::where('building_id', $bid)->count();
+        $floorIds = \App\Models\Floor::where('building_id', $bid)->pluck('id')->all() ?: [null];
+        $firstNames = ['An', 'Bình', 'Cường', 'Dũng', 'Giang', 'Hà', 'Hùng', 'Khánh', 'Lan', 'Minh', 'Nam', 'Oanh', 'Phúc', 'Quân', 'Sơn', 'Thảo', 'Uyên', 'Vân', 'Xuân', 'Yến'];
+        $lastNames = ['Nguyễn Văn', 'Trần Thị', 'Lê Minh', 'Phạm Quang', 'Đỗ Thu', 'Vũ Hoàng', 'Ngô Đức', 'Đặng Thùy', 'Bùi Thị', 'Hoàng Anh', 'Trịnh Văn', 'Đinh Văn', 'Trương Hải', 'Phan Thị', 'Dương Minh'];
+
+        $aptRows = [];
+        for ($i = $existing; $i < $target; $i++) {
+            $block = ['A', 'B', 'C'][intdiv($i, 416) % 3];
+            $floorNo = (intdiv($i, 8) % 25) + 1;
+            $unitNo = ($i % 8) + 1;
+            $aptRows[] = [
+                'tenant_id' => $tid, 'building_id' => $bid,
+                'floor_id' => $floorIds[$i % count($floorIds)],
+                'code' => sprintf('%s%02d.%02d', $block, $floorNo, $unitNo),
+                'status' => 'occupied',
+                'area_sqm' => 60 + ($i % 8) * 7.5,
+                'type' => ['1PN - 1WC', '2PN - 2WC', '3PN - 2WC'][$i % 3],
+                'created_at' => $now, 'updated_at' => $now,
+            ];
+        }
+        foreach (array_chunk($aptRows, 500) as $chunk) {
+            $DB('apartments')->insert($chunk);
+        }
+
+        // New apartments carry a dotted code (existing use "A-1206"); fetch in order.
+        $newApts = $DB('apartments')->where('building_id', $bid)->where('code', 'like', '%.%')
+            ->orderBy('id')->pluck('id')->all();
+
+        // One resident + primary relation per new apartment.
+        $resRows = [];
+        foreach ($newApts as $k => $aptId) {
+            $name = $lastNames[$k % count($lastNames)].' '.$firstNames[($k * 3) % count($firstNames)];
+            $resRows[] = [
+                'tenant_id' => $tid, 'building_id' => $bid,
+                'code' => sprintf('CDX-%05d', $k + 1),
+                'full_name' => $name,
+                'phone' => '09'.str_pad((string) (30000000 + $k), 8, '0', STR_PAD_LEFT),
+                'email' => 'cdx'.($k + 1).'@x2bms.vn',
+                'status' => 'active',
+                'created_at' => $now, 'updated_at' => $now,
+            ];
+        }
+        foreach (array_chunk($resRows, 500) as $chunk) {
+            $DB('residents')->insert($chunk);
+        }
+        $newRes = $DB('residents')->where('code', 'like', 'CDX-%')->orderBy('id')->pluck('id')->all();
+        $relRows = [];
+        foreach ($newApts as $k => $aptId) {
+            $relRows[] = [
+                'tenant_id' => $tid, 'resident_id' => $newRes[$k], 'apartment_id' => $aptId,
+                'role' => 'owner', 'is_primary' => true, 'start_date' => '2023-01-01',
+                'created_at' => $now, 'updated_at' => $now,
+            ];
+        }
+        foreach (array_chunk($relRows, 500) as $chunk) {
+            $DB('resident_apartment_relations')->insert($chunk);
+        }
+
+        // ---- 2. Statement book for the current period ----
+        // Normalise the ~12 statements already seeded for this period to "published"
+        // so counts start from a known base, then add the rest.
+        $DB('statements')->where('billing_period_id', $period->id)->update([
+            'approval_status' => 'published',
+            'published_at' => Carbon::parse('2026-07-01 10:00'),
+            'due_date' => '2026-07-20',
+            'sent_channel' => 'app',
+            'assignee_name' => 'Nguyễn Thị Lan',
+        ]);
+        $baseStmts = $DB('statements')->where('billing_period_id', $period->id)->count();
+        $baseSum = (int) $DB('statements')->where('billing_period_id', $period->id)->sum('total_amount');
+        // Mark 12 of the base as viewed (contributes to the 732 "đã xem").
+        $baseIds = $DB('statements')->where('billing_period_id', $period->id)->orderBy('id')->pluck('id')->all();
+        $DB('statements')->whereIn('id', array_slice($baseIds, 0, min(12, count($baseIds))))
+            ->update(['viewed_at' => Carbon::parse('2026-07-03 08:00')]);
+        $baseViewed = min(12, count($baseIds));
+
+        $totalReceivable = 8_420_000_000;
+        $publishedTarget = 1086;
+        $pendingTarget = 124;
+        $viewedTarget = 732;
+        $overdueTarget = 148;
+
+        $newPublished = max(0, $publishedTarget - $baseStmts);   // e.g. 1074
+        $newPending = $pendingTarget;                             // 124
+        $newCount = $newPublished + $newPending;                  // 1198
+
+        // Apartments for the new statements: those right after the ones already billed.
+        $allApts = Apartment::where('building_id', $bid)->orderBy('id')->pluck('id')->all();
+        $stmtApts = array_slice($allApts, $baseStmts, $newCount);
+
+        // Totals distributed so the grand period sum is exactly 8,42 tỷ.
+        $remaining = $totalReceivable - $baseSum;
+        $totals = $distribute($remaining, $newCount, fn ($i) => 0.75 + ($i % 9) * 0.06);
+
+        $viewedNeeded = $viewedTarget - $baseViewed;   // new published to mark viewed
+        $stmtRows = [];
+        foreach ($stmtApts as $j => $aptId) {
+            $isPublished = $j < $newPublished;
+            $total = max(1_000_000, $totals[$j]);
+            $isOverdue = $isPublished && $j >= ($newPublished - $overdueTarget); // last 148 published
+            if ($isOverdue) {
+                $paid = 0;
+                $status = 'issued';
+            } elseif ($j % 3 === 0 && $isPublished) {
+                $paid = $total;
+                $status = 'paid';
+            } elseif ($isPublished) {
+                $paid = (int) round($total * 0.4);
+                $status = 'partial';
+            } else { // pending publish
+                $paid = 0;
+                $status = 'issued';
+            }
+            $stmtRows[] = [
+                'tenant_id' => $tid, 'building_id' => $bid, 'billing_period_id' => $period->id,
+                'apartment_id' => $aptId,
+                'code' => sprintf('BK-2026-07-%04d', $baseStmts + $j + 1),
+                'total_amount' => $total, 'paid_amount' => $paid, 'status' => $status,
+                'approval_status' => $isPublished ? 'published' : 'pending',
+                'published_at' => $isPublished ? Carbon::parse('2026-07-01 10:00') : null,
+                'viewed_at' => ($isPublished && $j < $viewedNeeded) ? Carbon::parse('2026-07-04 09:00') : null,
+                'due_date' => $isOverdue ? '2026-06-20' : '2026-07-20',
+                'assignee_name' => ['Nguyễn Thị Lan', 'Phạm Văn Tuấn', 'Nguyễn Huy Hoàng'][$j % 3],
+                'sent_channel' => ['app', 'email', 'sms', 'zalo'][$j % 4],
+                'created_at' => $now, 'updated_at' => $now,
+            ];
+        }
+        foreach (array_chunk($stmtRows, 500) as $chunk) {
+            $DB('statements')->insert($chunk);
+        }
+
+        // Fee lines for the new statements (drives "Số khoản phí" on 03-04 and the
+        // statement detail on 03-09). 5-7 lines each, amounts summing to the total.
+        $feeItems = [
+            ['Phí quản lý', 0.40], ['Phí gửi xe ô tô', 0.13], ['Phí gửi xe máy', 0.05],
+            ['Điện sinh hoạt', 0.22], ['Nước sinh hoạt', 0.07], ['Internet nội bộ', 0.05], ['Phí tiện ích', 0.08],
+        ];
+        $newStmts = $DB('statements')->where('billing_period_id', $period->id)->whereNotNull('code')
+            ->orderBy('id')->get(['id', 'total_amount']);
+        $lineRows = [];
+        foreach ($newStmts as $s) {
+            $n = 5 + ($s->id % 3); // 5..7 lines
+            $items = array_slice($feeItems, 0, $n);
+            $parts = $distribute((int) $s->total_amount, $n, fn ($i) => $items[$i][1]);
+            foreach ($items as $i => [$label, $w]) {
+                $amt = $parts[$i];
+                $lineRows[] = [
+                    'statement_id' => $s->id, 'fee_type' => $label, 'amount' => $amt,
+                    'quantity' => 1, 'unit_price' => $amt, 'created_at' => $now, 'updated_at' => $now,
+                ];
+            }
+        }
+        foreach (array_chunk($lineRows, 1000) as $chunk) {
+            $DB('statement_lines')->insert($chunk);
+        }
+
+        // ---- 3. Debt / aging ledger: 24 debtor records ----
+        $agingBuckets = [
+            'bucket_0_30' => 1_020_000_000,
+            'bucket_31_60' => 650_000_000,
+            'bucket_61_90' => 320_000_000,
+            'bucket_over_90' => 210_000_000,
+        ];
+        $debtCount = 24;
+        $split = [];
+        foreach ($agingBuckets as $col => $bTotal) {
+            $split[$col] = $distribute($bTotal, $debtCount, fn ($i) => max(0.0, 1.0 + sin($i * 1.3) + ($i % 4) * 0.4));
+        }
+
+        // Reuse the ~12 existing Tòa A debts, top up to 24, then rewrite all with buckets.
+        $debtApts = array_slice($allApts, 0, $debtCount);
+        $existingDebtCount = $DB('debts')->where('building_id', $bid)->count();
+        for ($n = $existingDebtCount; $n < $debtCount; $n++) {
+            $DB('debts')->insert([
+                'tenant_id' => $tid, 'building_id' => $bid, 'apartment_id' => $debtApts[$n],
+                'amount' => 0, 'is_overdue' => true, 'created_at' => $now, 'updated_at' => $now,
+            ]);
+        }
+        $debtIds = $DB('debts')->where('building_id', $bid)->orderBy('id')->limit($debtCount)->pluck('id')->all();
+        $recovery = ['new', 'in_progress', 'overdue_handling'];
+        $assignees = ['Nguyễn Thị Lan', 'Phạm Văn Tuấn', 'Nguyễn Huy Hoàng'];
+        $periodsAgo = ['07/2026', '06/2026', '05/2026', '04/2026', '03/2026'];
+
+        // Risk by overdue severity rank (older buckets weigh more): top 4 critical,
+        // next 6 high, next 8 medium, rest low — a realistic spread like the image.
+        $severity = [];
+        foreach ($debtIds as $n => $debtId) {
+            $severity[$n] = $split['bucket_over_90'][$n] * 3 + $split['bucket_61_90'][$n] * 2 + $split['bucket_31_60'][$n];
+        }
+        arsort($severity);
+        $riskByIndex = [];
+        $rank = 0;
+        foreach (array_keys($severity) as $n) {
+            $riskByIndex[$n] = $rank < 4 ? 'critical' : ($rank < 10 ? 'high' : ($rank < 18 ? 'medium' : 'low'));
+            $rank++;
+        }
+
+        foreach ($debtIds as $n => $debtId) {
+            $b0 = $split['bucket_0_30'][$n];
+            $b1 = $split['bucket_31_60'][$n];
+            $b2 = $split['bucket_61_90'][$n];
+            $b3 = $split['bucket_over_90'][$n];
+            $amount = $b0 + $b1 + $b2 + $b3;
+            $riskKey = $riskByIndex[$n];
+            $apt = Apartment::find($debtApts[$n]);
+            $resName = optional(\App\Models\Resident::whereHas('apartmentRelations', fn ($q) => $q->where('apartment_id', $debtApts[$n]))->first())->full_name
+                ?? ('Cư dân '.($apt->code ?? $n));
+            $DB('debts')->where('id', $debtId)->update([
+                'code' => sprintf('AR-2026-%04d', $n + 1),
+                'apartment_id' => $debtApts[$n],
+                'resident_name' => $resName,
+                'last_period_code' => $periodsAgo[$n % count($periodsAgo)],
+                'amount' => $amount,
+                'bucket_0_30' => $b0, 'bucket_31_60' => $b1, 'bucket_61_90' => $b2, 'bucket_over_90' => $b3,
+                'is_overdue' => ($b1 + $b2 + $b3) > 0,
+                'risk_level' => $riskKey,
+                'recovery_status' => $recovery[$n % 3],
+                'assignee_name' => $assignees[$n % 3],
+                'updated_at' => $now,
+            ]);
+        }
+
+        // ---- 4. Prior-period statement history for the 24 debtors (03-06 ledger) ----
+        // Fully-paid statements for the 6 months before the current period so each
+        // apartment's debt book shows a real multi-period history.
+        $priorPeriods = BillingPeriod::where('building_id', $bid)->where('id', '<>', $period->id)
+            ->orderByDesc('period_month')->take(6)->get();
+        $histRows = [];
+        foreach ($debtApts as $n => $aptId) {
+            foreach ($priorPeriods as $p) {
+                $total = 5_000_000 + ($n % 5) * 250_000;
+                $histRows[] = [
+                    'tenant_id' => $tid, 'building_id' => $bid, 'billing_period_id' => $p->id,
+                    'apartment_id' => $aptId,
+                    'code' => sprintf('BK-%s-D%03d', str_replace('-', '', $p->code), $n + 1),
+                    'total_amount' => $total, 'paid_amount' => $total, 'status' => 'paid',
+                    'approval_status' => 'published',
+                    'published_at' => Carbon::parse($p->period_month)->addDay()->setTime(10, 0),
+                    'due_date' => Carbon::parse($p->period_month)->addDays(19)->toDateString(),
+                    'sent_channel' => 'app',
+                    'created_at' => $now, 'updated_at' => $now,
+                ];
+            }
+        }
+        foreach (array_chunk($histRows, 500) as $chunk) {
+            $DB('statements')->insert($chunk);
+        }
+    }
+
+    /**
+     * BQL-03-02 — fee cycles list ("Chu kỳ phí & đợt thu"): one cycle per fee type
+     * per month (CP-YYYY-MM-XX), matching the handoff image. Separate from the
+     * monthly billing_periods used by the statement backbone (filtered by CP- code).
+     * KPI targets: 6 đang mở / 3 chờ chốt.
+     */
+    private function seedBql0302Cycles(Tenant $tenant, Building $building): void
+    {
+        $scope = 'Tòa A1, A2, A3';
+        // [suffix, month, name, fee_category, scope, status]
+        $cycles = [
+            ['DV', '2026-07', 'Phí quản lý tháng 07/2026', 'Phí quản lý', $scope, 'open'],
+            ['XE', '2026-07', 'Phí gửi xe tháng 07/2026', 'Phí gửi xe', $scope, 'open'],
+            ['DN', '2026-07', 'Điện nước tháng 07/2026', 'Điện nước', $scope, 'open'],
+            ['DVTM', '2026-07', 'Phí dịch vụ khác 07/2026', 'Phí dịch vụ', 'Tòa A1', 'pending_close'],
+            ['DV', '2026-06', 'Phí quản lý tháng 06/2026', 'Phí quản lý', $scope, 'open'],
+            ['XE', '2026-06', 'Phí gửi xe tháng 06/2026', 'Phí gửi xe', $scope, 'open'],
+            ['DN', '2026-06', 'Điện nước tháng 06/2026', 'Điện nước', $scope, 'open'],
+            ['DV', '2026-05', 'Phí quản lý tháng 05/2026', 'Phí quản lý', $scope, 'pending_close'],
+            ['XE', '2026-05', 'Phí gửi xe tháng 05/2026', 'Phí gửi xe', $scope, 'pending_close'],
+            ['DV', '2026-04', 'Phí quản lý tháng 04/2026', 'Phí quản lý', $scope, 'published'],
+        ];
+        $expectedByCategory = ['Phí quản lý' => 4_216_800_000, 'Phí gửi xe' => 1_248_000_000, 'Điện nước' => 1_856_300_000, 'Phí dịch vụ' => 312_000_000];
+
+        foreach ($cycles as [$suffix, $month, $name, $cat, $scopeLabel, $status]) {
+            BillingPeriod::create([
+                'tenant_id' => $tenant->id,
+                'building_id' => $building->id,
+                'code' => sprintf('CP-%s-%s', $month, $suffix),
+                'label' => 'Kỳ '.substr($month, 5, 2).'/'.substr($month, 0, 4),
+                'name' => $name,
+                'fee_category' => $cat,
+                'scope_label' => $scopeLabel,
+                'period_month' => Carbon::parse($month.'-01'),
+                'expected_units' => $scopeLabel === 'Tòa A1' ? 416 : 1248,
+                'expected_amount' => $expectedByCategory[$cat] ?? 0,
+                'status' => $status,
+                'is_current' => false,
+            ]);
+        }
     }
 
     /**
