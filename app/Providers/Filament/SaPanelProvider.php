@@ -50,6 +50,7 @@ class SaPanelProvider extends PanelProvider
                 NavigationGroup::make('SaaS Billing')->icon('heroicon-o-banknotes'),
                 NavigationGroup::make('Integration Center')->icon('heroicon-o-bolt'),
                 NavigationGroup::make('Support Center')->icon('heroicon-o-lifebuoy'),
+                NavigationGroup::make('Design System')->icon('heroicon-o-swatch'),
             ])
             ->discoverPages(in: app_path('Filament/Sa/Pages'), for: 'App\\Filament\\Sa\\Pages')
             ->discoverWidgets(in: app_path('Filament/Sa/Widgets'), for: 'App\\Filament\\Sa\\Widgets')
