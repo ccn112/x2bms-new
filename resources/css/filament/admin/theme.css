@@ -241,3 +241,56 @@ h1, h2, h3, h4,
         padding-inline: 0;
     }
 }
+
+/* =========================================================================
+   BQL density & responsive layer (handoff 0307 UI_DENSITY_RESPONSIVE_FIX).
+   SCOPED to `.x2-bql-page` only — never touches HQ/SuperAdmin/Billing.
+   Goal: remove large whitespace, one tab+action row, compact KPI (88–96px),
+   dense table for operational screens. Keep Filament core as-is.
+   ========================================================================= */
+.x2-bql-page {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+/* Neutralize direct-child default margins so the flex `gap` governs spacing
+   (kills the tab row's mb-4 and any stray mt on stacked blocks). */
+.x2-bql-page > * {
+    margin-top: 0 !important;
+    margin-bottom: 0 !important;
+}
+
+/* Compact KPI cards: 88–96px tall, smaller number — more rows visible below. */
+.x2-bql-page .x2-kpi {
+    padding: 14px 16px;
+    min-height: 88px;
+}
+.x2-bql-page .x2-kpi .font-title {
+    font-size: 1.5rem;
+    line-height: 2rem;
+}
+
+/* Filter/search sits flush above the table; trim Filament's header padding. */
+.x2-bql-page .fi-ta-header-ctn {
+    padding-top: 10px;
+    padding-bottom: 10px;
+}
+
+/* Dense table rows — SCOPED (allowed to touch .fi-* only under .x2-bql-page). */
+.x2-bql-page .fi-ta table th {
+    height: 44px;
+    padding-top: 8px;
+    padding-bottom: 8px;
+}
+.x2-bql-page .fi-ta table td {
+    padding-top: 8px;
+    padding-bottom: 8px;
+    font-size: 13px;
+}
+
+@media (max-width: 767px) {
+    .x2-bql-page {
+        gap: 12px;
+    }
+}

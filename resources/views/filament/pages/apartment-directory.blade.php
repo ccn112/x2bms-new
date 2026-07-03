@@ -1,29 +1,31 @@
 <x-filament-panels::page>
-    <x-x2.action-bar>
-        <div class="flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-1.5">
-            <svg class="h-4 w-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="m21 21-4.3-4.3M11 19a8 8 0 1 1 0-16 8 8 0 0 1 0 16Z"/></svg>
-            <input type="text" wire:model.live.debounce.400ms="search" placeholder="Tìm mã căn…" class="w-40 border-0 p-0 text-sm focus:ring-0" />
+    {{-- BQL density layer (handoff 0307): scoped .x2-bql-page controls spacing/density. --}}
+    <div class="x2-bql-page">
+        {{-- DS-01: tab trang inline với action page-level (tiêu đề nằm ở topbar). --}}
+        <x-x2.page.tabs :tabs="$tabs" :active="$activeTab">
+            <x-slot:actions>
+                <x-x2.btn icon="heroicon-m-arrow-up-tray" wire:click="notifyImport">Nhập dữ liệu</x-x2.btn>
+                <x-x2.btn icon="heroicon-m-arrow-down-tray" wire:click="export">Xuất dữ liệu</x-x2.btn>
+                <x-x2.btn as="a" href="{{ url('/fila/apartments/create') }}" variant="gold" icon="heroicon-m-plus">Thêm căn hộ</x-x2.btn>
+            </x-slot:actions>
+        </x-x2.page.tabs>
+
+        {{-- KPI — tổng theo context (5 card compact 88–96px), BẤT BIẾN theo filter. --}}
+        <x-x2.kpi-row :cols="5">
+            @foreach ($kpis as $kpi)
+                <x-x2.card.kpi
+                    class="x2-kpi"
+                    :label="$kpi['label']"
+                    :value="$kpi['value']"
+                    :sub="$kpi['sub'] ?? null"
+                    :accent="$kpi['accent']"
+                    :icon="$kpi['icon'] ?? 'heroicon-o-chart-bar'" />
+            @endforeach
+        </x-x2.kpi-row>
+
+        {{-- Bảng Filament: search / lọc / sort / row + bulk action / phân trang (dense) --}}
+        <div class="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+            {{ $this->table }}
         </div>
-    </x-x2.action-bar>
-
-    <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        @foreach ($kpis as $kpi)
-            <x-x2.kpi-card :label="$kpi['label']" :value="$kpi['value']" :accent="$kpi['accent']" />
-        @endforeach
     </div>
-
-    <x-x2.section-card title="Căn hộ" :subtitle="'Hiển thị '.$shown.' / '.$total.' căn'">
-        <x-x2.data-table
-            :columns="[
-                ['key' => 'code', 'label' => 'Mã căn'],
-                ['key' => 'floor', 'label' => 'Tầng'],
-                ['key' => 'area', 'label' => 'Diện tích'],
-                ['key' => 'owner', 'label' => 'Chủ sở hữu'],
-                ['key' => 'residents', 'label' => 'Cư dân'],
-                ['key' => 'debt', 'label' => 'Công nợ'],
-                ['key' => 'action', 'label' => ''],
-            ]"
-            :rows="$rows"
-            empty="Không tìm thấy căn hộ" />
-    </x-x2.section-card>
 </x-filament-panels::page>
