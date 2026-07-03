@@ -42,6 +42,8 @@ class FilaPanelProvider extends PanelProvider
             ->colors([
                 'primary' => Color::Amber,
             ])
+            // DS-01 font applied panel-wide (stock chrome kept, only typeface changes).
+            ->font('Plus Jakarta Sans')
             ->discoverResources(in: app_path('Filament/Resources'), for: 'App\Filament\Resources')
             ->pages([
                 Dashboard::class,

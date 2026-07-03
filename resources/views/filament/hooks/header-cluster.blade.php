@@ -117,7 +117,7 @@
         <div x-show="open" x-cloak x-transition x-on:click.outside="open = false"
             class="absolute right-0 z-50 mt-2 w-96 rounded-2xl border border-gray-100 bg-white shadow-2xl dark:border-white/10 dark:bg-gray-900">
             <div class="flex items-center justify-between border-b border-gray-100 px-4 py-3 dark:border-white/10">
-                <span class="text-sm font-semibold text-gray-800 dark:text-gray-100" style="font-family:'Manrope',sans-serif">Thông báo</span>
+                <span class="text-sm font-semibold text-gray-800 dark:text-gray-100" style="font-family:'Plus Jakarta Sans',sans-serif">Thông báo</span>
                 <span class="rounded-full bg-x2-red/10 px-2 py-0.5 text-[11px] font-medium text-x2-red">{{ $notifCount }} mới</span>
             </div>
             <div class="max-h-72 overflow-y-auto py-1">

@@ -37,6 +37,8 @@ class AdminPanelProvider extends PanelProvider
             ->viteTheme('resources/css/filament/admin/theme.css')
             ->maxContentWidth(Width::Full)
             ->sidebarCollapsibleOnDesktop()
+            ->sidebarWidth('20rem')            // DS-01 shell: 300–320px expanded
+            ->collapsedSidebarWidth('5rem')    // DS-01 shell: collapsed rail
             ->globalSearch(false) // custom header search (WEB-UX-10) instead of Filament's
             ->userMenuItems([
                 MenuItem::make()
@@ -66,10 +68,10 @@ class AdminPanelProvider extends PanelProvider
             // on the stock /fila panel (FilaPanelProvider) to avoid slug clashes.
             ->discoverPages(in: app_path('Filament/Pages'), for: 'App\Filament\Pages')
             ->discoverWidgets(in: app_path('Filament/Widgets'), for: 'App\Filament\Widgets')
-            // Fonts: Inter (body) + Manrope (titles & menu) — WEB-UX typography.
+            // Fonts (DS-01): Inter (body/table/form) + Plus Jakarta Sans (titles/menu/KPI).
             ->renderHook(
                 PanelsRenderHook::HEAD_END,
-                fn (): string => '<link rel="stylesheet" href="https://fonts.bunny.net/css?family=inter:400,500,600,700|manrope:500,600,700,800&display=swap">',
+                fn (): string => '<link rel="stylesheet" href="https://fonts.bunny.net/css?family=inter:400,500,600,700|plus-jakarta-sans:400,500,600,700,800&display=swap">',
             )
             // Sidebar: X2-BMS brand block pinned to the top of the navy rail (WEB-UX-00).
             ->renderHook(

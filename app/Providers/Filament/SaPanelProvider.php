@@ -53,9 +53,10 @@ class SaPanelProvider extends PanelProvider
             ])
             ->discoverPages(in: app_path('Filament/Sa/Pages'), for: 'App\\Filament\\Sa\\Pages')
             ->discoverWidgets(in: app_path('Filament/Sa/Widgets'), for: 'App\\Filament\\Sa\\Widgets')
+            // Fonts (DS-01): Inter (body) + Plus Jakarta Sans (titles/menu/KPI).
             ->renderHook(
                 PanelsRenderHook::HEAD_END,
-                fn (): string => '<link rel="stylesheet" href="https://fonts.bunny.net/css?family=inter:400,500,600,700|manrope:500,600,700,800&display=swap">',
+                fn (): string => '<link rel="stylesheet" href="https://fonts.bunny.net/css?family=inter:400,500,600,700|plus-jakarta-sans:400,500,600,700,800&display=swap">',
             )
             ->renderHook(
                 PanelsRenderHook::SIDEBAR_START,

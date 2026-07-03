@@ -7,23 +7,38 @@
 
 /* X2-BMS brand palette (mirrors resources/css/app.css so x2-* utilities work inside the panel). */
 @theme {
+    /* DS-01 typography — Plus Jakarta Sans (headings/KPI) + Inter (body/table/form). */
     --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif;
-    --font-title: 'Manrope', 'Inter', ui-sans-serif, sans-serif;
+    --font-title: 'Plus Jakarta Sans', 'Inter', ui-sans-serif, sans-serif;
 
-    --color-x2-navy: #0b1b3f;
+    /* DS-01 core palette (tokens/DESIGN_TOKENS.json). */
+    --color-x2-navy: #0b2146;        /* navy-900 */
+    --color-x2-navy-950: #071a3a;
     --color-x2-navy-700: #122a5c;
     --color-x2-navy-600: #1b3a78;
-    --color-x2-primary: #2563eb;
+    --color-x2-primary: #2563eb;     /* blue-600 */
     --color-x2-primary-600: #1d4ed8;
-    --color-x2-gold: #c8a24c;        /* champagne gold — active nav */
-    --color-x2-gold-600: #b08a35;
-    --color-x2-canvas: #f4f6fb;
+    --color-x2-gold: #d5a331;        /* gold-600 — active nav / CTA */
+    --color-x2-gold-600: #b8862a;
+    --color-x2-canvas: #f8fafc;      /* --x2-bg */
     --color-x2-green: #16a34a;
     --color-x2-teal: #0d9488;
     --color-x2-amber: #f59e0b;
     --color-x2-red: #ef4444;
     --color-x2-blue: #3b82f6;
     --color-x2-slate: #64748b;
+    --color-x2-ai: #7c3aed;          /* AI/X2AI accent */
+}
+
+/* DS-01 layout tokens (consumed by x2.* components in Phase 1). */
+:root {
+    --x2-sidebar-width: 20rem;
+    --x2-sidebar-collapsed-width: 5rem;
+    --x2-topbar-height: 4.25rem;
+    --x2-content-padding: 1.5rem;
+    --x2-card-radius: 12px;
+    --x2-button-height: 40px;
+    --x2-table-row-height: 56px;
 }
 
 /* Alpine cloak — hide dropdown panels until Alpine initialises. */
@@ -32,7 +47,8 @@
 }
 
 /* =========================================================================
-   Typography — Inter for body, Manrope for titles & menu (WEB-UX).
+   Typography (DS-01) — Inter for body/table/form, Plus Jakarta Sans for
+   titles, headings, menu & KPI numbers.
    ========================================================================= */
 html.fi,
 .fi-body {
@@ -45,7 +61,7 @@ html.fi,
 .fi-breadcrumbs,
 h1, h2, h3, h4,
 .font-title {
-    font-family: 'Manrope', 'Inter', ui-sans-serif, sans-serif;
+    font-family: 'Plus Jakarta Sans', 'Inter', ui-sans-serif, sans-serif;
 }
 
 /* =========================================================================

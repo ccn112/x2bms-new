@@ -56,9 +56,10 @@ class HqPanelProvider extends PanelProvider
             ])
             ->discoverPages(in: app_path('Filament/Hq/Pages'), for: 'App\\Filament\\Hq\\Pages')
             ->discoverWidgets(in: app_path('Filament/Hq/Widgets'), for: 'App\\Filament\\Hq\\Widgets')
+            // Fonts (DS-01): Inter (body) + Plus Jakarta Sans (titles/menu/KPI).
             ->renderHook(
                 PanelsRenderHook::HEAD_END,
-                fn (): string => '<link rel="stylesheet" href="https://fonts.bunny.net/css?family=inter:400,500,600,700|manrope:500,600,700,800&display=swap">',
+                fn (): string => '<link rel="stylesheet" href="https://fonts.bunny.net/css?family=inter:400,500,600,700|plus-jakarta-sans:400,500,600,700,800&display=swap">',
             )
             // Sidebar brand block — reuse the shared X2-BMS brand, labelled HQ PORTAL.
             ->renderHook(
