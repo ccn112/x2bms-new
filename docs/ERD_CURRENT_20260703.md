@@ -2,7 +2,7 @@
 
 > **Nguồn:** introspect trực tiếp MySQL `x2bms` đang chạy (không đọc migration, vì migration add-only + có bảng đã drop/rename).
 > **Quy mô:** **326 bảng** = **303 bảng nghiệp vụ + 23 bảng `_archive`** (Batch 08 soft-delete). **691 khoá ngoại**. 65 migration đã chạy.
-> **Đối chiếu mục tiêu:** `docs/CANONICAL_ENTITY_MAP.md` (~185 bảng canonical, 6 tier). Bản `ERD_DRAFT.md` cũ chỉ phủ pilot Tier 1–3 → tài liệu này thay thế.
+> **Đối chiếu mục tiêu:** `docs/CANONICAL_ENTITY_MAP.md` (6 tier). Lưu ý: canonical gốc được phủ 100% ở ~185 bảng (mốc 2026-07-01); scope sau đó phình lên khi nhận thêm handoff mới (addendum/Batch 07-08-10/HQ) → 303. **Số bảng không phải thước đo mục tiêu** — xem §9.1. Bản `ERD_DRAFT.md` cũ chỉ phủ pilot Tier 1–3 → tài liệu này thay thế.
 > Ký hiệu mermaid: chỉ vẽ FK thật (belongsTo). Cột tenancy `tenant_id → project_id → building_id → apartment_id` xuất hiện ở hầu hết bảng nghiệp vụ (row-level tenancy) — lược bớt trong sơ đồ cho gọn.
 
 ---
@@ -282,7 +282,9 @@ erDiagram
 | **T5 Lifecycle/Ecosystem** | ~25 | Lõi ✔ | ✅ **~90%** — thiếu bảng con smart-home/BĐS/service |
 | **T6 AI/X2AI** | ~13 | Lõi ✔ **đổi tên** | ✅ **~100%** — đổi tên + mở rộng (usage/guardrail/retrieval/test) |
 
-**Tổng thể: CSDL đã VƯỢT mục tiêu canonical.** Mục tiêu ~185 bảng; hiện có **303 bảng nghiệp vụ**. Mọi thực thể lõi Tier 1–3 (pilot bắt buộc) có mặt và có quan hệ đúng. Tier 4–6 phân kỳ **có chủ đích, đã ghi nhận** (addendum SuperAdmin + Batch 07/08/10 được chọn làm canonical mới).
+**Tổng thể: CSDL phủ đủ canonical gốc VÀ phạm vi handoff nhận thêm sau.** Mọi thực thể lõi Tier 1–3 (pilot bắt buộc) có mặt và có quan hệ đúng; Tier 4–6 phân kỳ **có chủ đích, đã ghi nhận** (addendum SuperAdmin + Batch 07/08/10 chọn làm canonical mới).
+
+> ⚠️ **Đính chính cách diễn đạt:** số bảng KHÔNG phải thước đo mục tiêu, và "303 > 185 nên vượt mục tiêu" là sai logic. Diễn biến thật: canonical map gốc (hợp nhất 3 gói handoff đầu) được **phủ 100% ở ~185 bảng** (mốc 2026-07-01); sau đó **scope mục tiêu tự phình ra** khi nhận thêm các gói handoff mới làm canonical (SuperAdmin addendum, Batch 07/08/10, HQ Portal) → +~120 bảng → 303. Vậy 303 là **phạm vi mở rộng đã được phủ**, không phải "over-deliver so với một mục tiêu cố định 185". Ngoài ra một phần delta là **overhead/trùng lặp** (23 bảng `_archive` rỗng, 3 bảng audit song song) — chi phí hạ tầng, không tính là độ phủ nghiệp vụ. Kết luận đúng: *đủ phủ, đúng scope hiện tại, còn một ít trùng lặp cần dọn (§10).*
 
 ### 9.2 Phân kỳ có chủ đích (rename/supersede — KHÔNG phải lỗi)
 
