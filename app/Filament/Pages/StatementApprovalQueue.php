@@ -47,6 +47,13 @@ class StatementApprovalQueue extends Page implements HasTable
 
     protected string $view = 'filament.pages.statement-approval-queue';
 
+    // Superseded in nav by StatementList (BQL-03-04 "Hóa đơn & thanh toán"); the
+    // approval/publish flow remains reachable at this route.
+    public static function shouldRegisterNavigation(): bool
+    {
+        return false;
+    }
+
     public const STATUS = [
         'draft' => ['Nháp', 'gray'],
         'pending' => ['Chờ duyệt', 'warning'],

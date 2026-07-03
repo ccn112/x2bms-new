@@ -4,7 +4,7 @@
   "configurations": [
     {
       "name": "x2bms",
-      "runtimeExecutable": "C:\\Users\\ADMIN\\.config\\herd\\bin\\php.bat",
+      "runtimeExecutable": "php",
       "runtimeArgs": ["artisan", "serve", "--host=127.0.0.1", "--port=8010"],
       "port": 8010
     }
