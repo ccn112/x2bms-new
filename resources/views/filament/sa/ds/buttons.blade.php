@@ -1,7 +1,4 @@
-<x-filament-panels::page>
-    @include('filament.sa.ds._nav', ['active' => 'buttons'])
-
-    <div class="grid grid-cols-1 gap-5 xl:grid-cols-2">
+<div class="grid grid-cols-1 gap-6 xl:grid-cols-2">
         {{-- 1. Button hierarchy --}}
         <x-x2.card.info title="1. Thứ bậc nút (Button hierarchy)" icon="heroicon-o-cursor-arrow-rays">
             <table class="w-full text-sm">
@@ -60,7 +57,7 @@
         </x-x2.card.info>
     </div>
 
-    <div class="mt-5 grid grid-cols-1 gap-5 xl:grid-cols-2">
+    <div class="mt-6 grid grid-cols-1 gap-5 xl:grid-cols-2">
         {{-- 3. Topbar elements --}}
         <x-x2.card.info title="3. Thành phần thanh đầu trang" icon="heroicon-o-window">
             <div class="flex flex-wrap items-center gap-4">
@@ -110,4 +107,3 @@
             </div>
         </x-x2.card.info>
     </div>
-</x-filament-panels::page>

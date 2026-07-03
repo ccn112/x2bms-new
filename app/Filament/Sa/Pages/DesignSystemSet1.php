@@ -21,29 +21,29 @@ use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
 
 /**
- * Design System · Form, Filter & Search.
- * Section 1/2/5-6 render REAL Filament fields (TextInput/Select/CheckboxList/
- * Radio/Toggle/DatePicker/FileUpload) so the guide matches the actual UI Filament
- * produces. Filter Bar & Advanced Drawer (composite patterns) stay as blade mocks.
+ * Design System · Bộ tổng quan (App Shell & UI) — 1 nav menu, các trang gộp vào tab:
+ * Nền tảng · KPI & Bảng · Nút & Hành động · Form & Lọc · Modal & AI · Tabs & Chi tiết.
+ * HasForms để tab "Form & Lọc" render field Filament thật. Trang chỉ ở /sa;
+ * chuẩn thiết kế áp chung cho /sa /hq /admin qua theme.css + component x2.*.
  */
-class DesignSystemForms extends Page implements HasForms
+class DesignSystemSet1 extends Page implements HasForms
 {
     use InteractsWithForms;
     use PlatformScreen;
 
-    protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-pencil-square';
+    protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-swatch';
 
     protected static string|\UnitEnum|null $navigationGroup = 'Design System';
 
-    protected static ?string $navigationLabel = 'Form, Bộ lọc & Tìm kiếm';
+    protected static ?string $navigationLabel = 'Bộ tổng quan (App Shell & UI)';
 
-    protected static ?int $navigationSort = 4;
+    protected static ?int $navigationSort = 1;
 
-    protected static ?string $title = 'Design System · Form, Filter & Search';
+    protected static ?string $title = 'Design System · Tổng quan App Shell & UI';
 
-    protected static ?string $slug = 'design-system/forms';
+    protected static ?string $slug = 'design-system';
 
-    protected string $view = 'filament.sa.ds.forms';
+    protected string $view = 'filament.sa.ds.set1';
 
     public ?array $data = [];
 
@@ -71,65 +71,43 @@ class DesignSystemForms extends Page implements HasForms
             ->statePath('data')
             ->components([
                 Grid::make(3)->schema([
-                    // 1. Input fields
                     Section::make('1. Các trường nhập liệu')
-                        ->icon('heroicon-o-pencil')
-                        ->columnSpan(1)
+                        ->icon('heroicon-o-pencil')->columnSpan(1)
                         ->schema([
                             TextInput::make('text')->label('Nhập liệu văn bản')->placeholder('Nhập nội dung'),
                             TextInput::make('search')->label('Tìm kiếm')->placeholder('Tìm kiếm…')
                                 ->prefixIcon('heroicon-m-magnifying-glass'),
                             TextInput::make('phone')->label('Số điện thoại')->tel()->prefix('+84')->placeholder('912 345 678'),
                             TextInput::make('amount')->label('Tiền tệ')->numeric()->prefix('VND')->placeholder('1.250.000'),
-                            Textarea::make('note')->label('Vùng văn bản')->placeholder('Nhập nội dung chi tiết…')
-                                ->rows(3)->maxLength(500),
+                            Textarea::make('note')->label('Vùng văn bản')->placeholder('Nhập nội dung chi tiết…')->rows(3)->maxLength(500),
                             FileUpload::make('file')->label('Tải tệp lên')->multiple()
                                 ->disk('public')->directory('ds-demo')
-                                ->acceptedFileTypes(['application/pdf', 'image/png', 'image/jpeg'])
-                                ->maxSize(10240)
+                                ->acceptedFileTypes(['application/pdf', 'image/png', 'image/jpeg'])->maxSize(10240)
                                 ->helperText('Hỗ trợ: .pdf, .jpg, .png (tối đa 10MB)'),
                             Grid::make(2)->schema([
                                 DatePicker::make('from')->label('Từ ngày')->native(false),
                                 DatePicker::make('to')->label('Đến ngày')->native(false),
                             ]),
                         ]),
-
-                    // 2. Selects & controls
                     Section::make('2. Lựa chọn & Điều khiển')
-                        ->icon('heroicon-o-adjustments-horizontal')
-                        ->columnSpan(1)
+                        ->icon('heroicon-o-adjustments-horizontal')->columnSpan(1)
                         ->schema([
-                            Select::make('single')->label('Chọn một (Select)')
-                                ->placeholder('Chọn một tùy chọn')->native(false)
-                                ->options($depts),
-                            Select::make('multi')->label('Chọn nhiều (Multi-select)')
-                                ->multiple()->native(false)->options($depts),
+                            Select::make('single')->label('Chọn một (Select)')->placeholder('Chọn một tùy chọn')->native(false)->options($depts),
+                            Select::make('multi')->label('Chọn nhiều (Multi-select)')->multiple()->native(false)->options($depts),
                             Grid::make(2)->schema([
-                                CheckboxList::make('checks')->label('Checkbox')
-                                    ->options(['tat_ca' => 'Tất cả'] + $depts)->columns(1),
-                                Radio::make('radio')->label('Radio')
-                                    ->options(['1' => 'Tùy chọn 1', '2' => 'Tùy chọn 2', '3' => 'Tùy chọn 3']),
+                                CheckboxList::make('checks')->label('Checkbox')->options(['tat_ca' => 'Tất cả'] + $depts)->columns(1),
+                                Radio::make('radio')->label('Radio')->options(['1' => 'Tùy chọn 1', '2' => 'Tùy chọn 2', '3' => 'Tùy chọn 3']),
                             ]),
                             Toggle::make('switch')->label('Switch (Bật/Tắt)')->inline(false),
                         ]),
-
-                    // 5-6. Validation states & label hierarchy
                     Section::make('5. Xác thực & Thứ bậc nhãn')
-                        ->icon('heroicon-o-check-circle')
-                        ->columnSpan(1)
+                        ->icon('heroicon-o-check-circle')->columnSpan(1)
                         ->schema([
-                            TextInput::make('label_req')->label('Nhãn chính (bắt buộc)')->required()
-                                ->placeholder('Nhập nội dung')
-                                ->helperText('Mô tả ngắn gọn về trường nhập liệu.'),
-                            TextInput::make('label_opt')->label('Nhãn phụ (không bắt buộc)')
-                                ->placeholder('Nhập nội dung')
-                                ->helperText('Thông tin bổ sung.'),
-                            TextInput::make('label_ok')->label('Thành công')
-                                ->helperText('Dữ liệu hợp lệ.'),
-                            TextInput::make('disabled')->label('Vô hiệu hóa')->disabled()
-                                ->placeholder('Không thể chỉnh sửa'),
-                            Placeholder::make('states_note')
-                                ->label('')
+                            TextInput::make('label_req')->label('Nhãn chính (bắt buộc)')->required()->placeholder('Nhập nội dung')->helperText('Mô tả ngắn gọn về trường nhập liệu.'),
+                            TextInput::make('label_opt')->label('Nhãn phụ (không bắt buộc)')->placeholder('Nhập nội dung')->helperText('Thông tin bổ sung.'),
+                            TextInput::make('label_ok')->label('Thành công')->helperText('Dữ liệu hợp lệ.'),
+                            TextInput::make('disabled')->label('Vô hiệu hóa')->disabled()->placeholder('Không thể chỉnh sửa'),
+                            Placeholder::make('states_note')->label('')
                                 ->content('Trạng thái focus (viền xanh), lỗi (viền đỏ + thông báo) hiển thị khi xác thực biểu mẫu.'),
                         ]),
                 ]),

@@ -28,6 +28,7 @@
     --color-x2-blue: #3b82f6;
     --color-x2-slate: #64748b;
     --color-x2-ai: #7c3aed;          /* AI/X2AI accent */
+    --color-x2-info: #06b6d4;        /* DS-02 semantic info (cyan) */
 }
 
 /* DS-01 layout tokens (consumed by x2.* components in Phase 1). */
@@ -36,7 +37,10 @@
     --x2-sidebar-collapsed-width: 5rem;
     --x2-topbar-height: 4.25rem;
     --x2-content-padding: 1.5rem;
-    --x2-card-radius: 12px;
+    --x2-card-radius: 16px;          /* DS-02: card radius 16 */
+    --x2-input-radius: 12px;         /* DS-02: input/button radius 10–12 */
+    --x2-section-gap: 24px;          /* DS-02: 24px section rhythm */
+    --x2-card-padding: 20px;         /* DS-02: card padding 20–24 */
     --x2-button-height: 40px;
     --x2-table-row-height: 56px;
 }

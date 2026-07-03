@@ -1,7 +1,4 @@
-<x-filament-panels::page>
-    @include('filament.sa.ds._nav', ['active' => 'data-display'])
-
-    <div class="mb-4 flex items-start gap-2 rounded-xl border border-x2-primary/20 bg-x2-primary/5 px-4 py-3 text-sm text-slate-600">
+<div class="mb-4 flex items-start gap-2 rounded-xl border border-x2-primary/20 bg-x2-primary/5 px-4 py-3 text-sm text-slate-600">
         <span class="text-x2-primary">@svg('heroicon-o-information-circle', 'h-5 w-5')</span>
         <p><b>Lưu ý:</b> KPI hiển thị tổng hợp theo ngữ cảnh hiện tại và <b>không bị ảnh hưởng bởi bộ lọc</b>. Bộ lọc chỉ áp dụng cho bảng dữ liệu bên dưới.</p>
     </div>
@@ -107,4 +104,3 @@
             <p class="text-xs text-slate-500">Không thể tải dữ liệu. Thử lại.</p>
         </div>
     </div>
-</x-filament-panels::page>

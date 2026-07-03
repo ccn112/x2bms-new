@@ -1,7 +1,4 @@
-<x-filament-panels::page>
-    @include('filament.sa.ds._nav', ['active' => 'foundations'])
-
-    <div class="grid grid-cols-1 gap-5 xl:grid-cols-3">
+<div class="grid grid-cols-1 gap-6 xl:grid-cols-3">
         {{-- 1. Typography --}}
         <x-x2.card.info title="1. Hệ thống Typography" icon="heroicon-o-language" class="xl:col-span-2">
             <div class="grid gap-6 sm:grid-cols-2">
@@ -51,7 +48,7 @@
         </x-x2.card.info>
     </div>
 
-    <div class="mt-5 grid grid-cols-1 gap-5 xl:grid-cols-3">
+    <div class="mt-6 grid grid-cols-1 gap-5 xl:grid-cols-3">
         {{-- 3. Spacing & Radius --}}
         <x-x2.card.info title="3. Khoảng cách & Bo góc" icon="heroicon-o-view-columns">
             <div class="grid grid-cols-2 gap-6">
@@ -124,4 +121,3 @@
             </div>
         </x-x2.card.info>
     </div>
-</x-filament-panels::page>

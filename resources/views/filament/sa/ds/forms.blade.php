@@ -1,7 +1,4 @@
-<x-filament-panels::page>
-    @include('filament.sa.ds._nav', ['active' => 'forms'])
-
-    <div class="mb-4 flex items-start gap-2 rounded-xl border border-x2-primary/20 bg-x2-primary/5 px-4 py-3 text-sm text-slate-600">
+<div class="mb-4 flex items-start gap-2 rounded-xl border border-x2-primary/20 bg-x2-primary/5 px-4 py-3 text-sm text-slate-600">
         <span class="text-x2-primary">@svg('heroicon-o-information-circle', 'h-5 w-5')</span>
         <p>Các trường bên dưới là <b>component Filament thật</b> (TextInput, Select, CheckboxList, Radio, Toggle, DatePicker, FileUpload) — đúng như UI hệ thống render, không phải mô phỏng.</p>
     </div>
@@ -10,7 +7,7 @@
     {{ $this->form }}
 
     {{-- 3 · 4: composite patterns (design mocks, không phải field đơn) --}}
-    <div class="mt-5 grid grid-cols-1 gap-5 xl:grid-cols-2">
+    <div class="mt-6 grid grid-cols-1 gap-5 xl:grid-cols-2">
         <x-x2.card.info title="3. Thanh lọc (Filter Bar) tại chỗ" icon="heroicon-o-funnel">
             <x-x2.filter.bar :advancedCount="3">
                 <x-slot:search>
@@ -45,4 +42,3 @@
             <p class="mt-3 text-xs text-slate-400">Drawer mở từ nút “Bộ lọc nâng cao”; nhóm điều kiện theo tab, đáy có Đặt lại / Áp dụng.</p>
         </x-x2.card.info>
     </div>
-</x-filament-panels::page>

@@ -1,7 +1,4 @@
-<x-filament-panels::page>
-    @include('filament.sa.ds._nav', ['active' => 'records'])
-
-    <div class="grid grid-cols-1 gap-5 xl:grid-cols-3">
+<div class="grid grid-cols-1 gap-6 xl:grid-cols-3">
         {{-- 1. Tab types --}}
         <x-x2.card.info title="1. Kiểu tab" icon="heroicon-o-rectangle-stack">
             <div class="mb-3 text-xs font-semibold text-slate-500">Tab trang (Page tabs)</div>
@@ -41,7 +38,7 @@
         </x-x2.card.info>
     </div>
 
-    <div class="mt-5 grid grid-cols-1 gap-5 xl:grid-cols-3">
+    <div class="mt-6 grid grid-cols-1 gap-5 xl:grid-cols-3">
         {{-- 3. Info blocks --}}
         <x-x2.card.info title="3. Khối thông tin (Info blocks)" icon="heroicon-o-squares-2x2" class="xl:col-span-2">
             <div class="grid gap-4 sm:grid-cols-2">
@@ -92,4 +89,3 @@
             </x-x2.card.info>
         </div>
     </div>
-</x-filament-panels::page>

@@ -1,7 +1,4 @@
-<x-filament-panels::page>
-    @include('filament.sa.ds._nav', ['active' => 'overlays'])
-
-    <div class="grid grid-cols-1 gap-5 xl:grid-cols-3">
+<div class="grid grid-cols-1 gap-6 xl:grid-cols-3">
         {{-- 1. Modal & Drawer --}}
         <x-x2.card.info title="1. Modal & Drawer" icon="heroicon-o-window">
             <div class="space-y-3">
@@ -44,7 +41,7 @@
         </x-x2.card.info>
     </div>
 
-    <div class="mt-5 grid grid-cols-1 gap-5 xl:grid-cols-3">
+    <div class="mt-6 grid grid-cols-1 gap-5 xl:grid-cols-3">
         {{-- 4. Approval --}}
         <x-x2.card.info title="4. Phê duyệt (Approval)" icon="heroicon-o-check-badge">
             <div class="text-sm">
@@ -76,4 +73,3 @@
             </div>
         </x-x2.card.info>
     </div>
-</x-filament-panels::page>
