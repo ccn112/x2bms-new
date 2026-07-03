@@ -50,6 +50,27 @@ class ResidentDirectory extends Page implements HasTable
 
     protected string $view = 'filament.pages.resident-directory';
 
+    /** DS-01-05 tab row: all|owner|tenant|pending|locked (scopes the table). */
+    public ?string $activeTab = 'all';
+
+    public function setTab(string $tab): void
+    {
+        $this->activeTab = $tab;
+        $this->resetTableSearch();
+    }
+
+    /** Apply the active tab as a query scope (shared by table + tab counts). */
+    private function scopeByTab(\Illuminate\Database\Eloquent\Builder $q, string $tab): \Illuminate\Database\Eloquent\Builder
+    {
+        return match ($tab) {
+            'owner' => $q->whereHas('apartmentRelations', fn ($r) => $r->where('role', 'owner')),
+            'tenant' => $q->whereHas('apartmentRelations', fn ($r) => $r->where('role', 'tenant')),
+            'pending' => $q->where('status', 'pending'),
+            'locked' => $q->where('status', 'inactive'),
+            default => $q,
+        };
+    }
+
     /** @var array<string, array{0:string,1:string}> status => [label, color] */
     private const STATUS = [
         'active' => ['Hoạt động', 'success'],
@@ -62,13 +83,29 @@ class ResidentDirectory extends Page implements HasTable
     protected function getViewData(): array
     {
         $buildingIds = app(\App\Support\Context\CurrentContext::class)->buildingIds();
+        $base = fn () => Resident::query()->whereIn('building_id', $buildingIds);
 
+        $total = $base()->count();
+        $active = (clone $base())->where('status', 'active')->count();
+        $pending = (clone $base())->where('status', 'pending')->count();
+        $locked = (clone $base())->where('status', 'inactive')->count();
+        $updatedToday = (clone $base())->whereDate('updated_at', now())->count();
+
+        // KPIs are context-wide totals (DS-01: never react to table filters/tabs).
         return [
             'kpis' => [
-                ['label' => 'Tổng cư dân', 'value' => Resident::whereIn('building_id', $buildingIds)->count(), 'accent' => 'blue', 'sub' => 'Toàn dự án'],
-                ['label' => 'Đang hoạt động', 'value' => Resident::whereIn('building_id', $buildingIds)->where('status', 'active')->count(), 'accent' => 'green'],
-                ['label' => 'Chờ duyệt', 'value' => ResidentApprovalRequest::whereIn('building_id', $buildingIds)->where('status', 'pending')->count(), 'accent' => 'amber', 'sub' => 'Hồ sơ mới'],
-                ['label' => 'Đã khóa', 'value' => Resident::whereIn('building_id', $buildingIds)->where('status', 'inactive')->count(), 'accent' => 'red'],
+                ['label' => 'Tổng cư dân', 'value' => number_format($total, 0, ',', '.'), 'accent' => 'blue', 'icon' => 'heroicon-o-users', 'sub' => '100% tổng cư dân'],
+                ['label' => 'Đang hoạt động', 'value' => number_format($active, 0, ',', '.'), 'accent' => 'green', 'icon' => 'heroicon-o-arrow-trending-up', 'sub' => $total ? round($active / $total * 100, 1).'%' : '0%'],
+                ['label' => 'Chờ duyệt', 'value' => number_format($pending, 0, ',', '.'), 'accent' => 'amber', 'icon' => 'heroicon-o-clock', 'sub' => 'Hồ sơ mới'],
+                ['label' => 'Đã khóa', 'value' => number_format($locked, 0, ',', '.'), 'accent' => 'red', 'icon' => 'heroicon-o-lock-closed', 'sub' => $total ? round($locked / $total * 100, 1).'%' : '0%'],
+                ['label' => 'Cập nhật gần đây', 'value' => number_format($updatedToday, 0, ',', '.'), 'accent' => 'teal', 'icon' => 'heroicon-o-clock', 'sub' => 'Hôm nay'],
+            ],
+            'tabs' => [
+                ['key' => 'all', 'label' => 'Tất cả', 'count' => $total],
+                ['key' => 'owner', 'label' => 'Chủ sở hữu', 'count' => $this->scopeByTab($base(), 'owner')->count()],
+                ['key' => 'tenant', 'label' => 'Người thuê', 'count' => $this->scopeByTab($base(), 'tenant')->count()],
+                ['key' => 'pending', 'label' => 'Chờ duyệt', 'count' => $pending],
+                ['key' => 'locked', 'label' => 'Đã khóa', 'count' => $locked],
             ],
         ];
     }
@@ -80,7 +117,10 @@ class ResidentDirectory extends Page implements HasTable
         $buildingOptions = $ctx->buildings()->pluck('name', 'id')->all();
 
         return $table
-            ->query(Resident::query()->whereIn('building_id', $buildingIds)->with(['apartmentRelations.apartment.floor', 'building']))
+            ->query($this->scopeByTab(
+                Resident::query()->whereIn('building_id', $buildingIds)->with(['apartmentRelations.apartment.floor', 'building']),
+                $this->activeTab ?? 'all',
+            ))
             ->defaultSort('created_at', 'desc')
             ->columns([
                 TextColumn::make('code')

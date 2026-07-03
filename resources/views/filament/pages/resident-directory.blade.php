@@ -1,29 +1,27 @@
 <x-filament-panels::page>
-    {{-- Title sits in the header; here we show the subtitle + primary actions. --}}
-    <x-x2.action-bar subtitle="Quản lý thông tin cư dân, chủ hộ, người thuê và tài khoản trong tòa">
-        <a href="#" class="flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-600 hover:bg-slate-50">
-            <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M12 16V4m0 0L8 8m4-4 4 4M4 20h16"/></svg>
-            Nhập dữ liệu
-        </a>
-        <a href="#" class="flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-600 hover:bg-slate-50">
-            <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v12m0 0 4-4m-4 4-4-4M4 20h16"/></svg>
-            Xuất dữ liệu
-        </a>
-        <a href="{{ url('/fila/residents/create') }}" class="flex items-center gap-1.5 rounded-lg bg-x2-gold px-3.5 py-1.5 text-sm font-semibold text-white shadow-sm hover:bg-x2-gold-600">
-            <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 5v14M5 12h14"/></svg>
-            Thêm mới
-        </a>
-    </x-x2.action-bar>
+    {{-- DS-01-05: tab row inline with page-level actions (title stays in the topbar). --}}
+    <x-x2.page.tabs :tabs="$tabs" :active="$activeTab" wire="setTab">
+        <x-slot:actions>
+            <x-x2.btn icon="heroicon-m-arrow-up-tray">Nhập dữ liệu</x-x2.btn>
+            <x-x2.btn icon="heroicon-m-arrow-down-tray">Xuất dữ liệu</x-x2.btn>
+            <x-x2.btn as="a" href="{{ url('/fila/residents/create') }}" variant="gold" icon="heroicon-m-plus">Thêm mới</x-x2.btn>
+        </x-slot:actions>
+    </x-x2.page.tabs>
 
-    {{-- KPI row --}}
-    <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+    {{-- KPI row — context-wide totals (5 cards), Plus Jakarta numbers. --}}
+    <x-x2.kpi-row :cols="5">
         @foreach ($kpis as $kpi)
-            <x-x2.kpi-card :label="$kpi['label']" :value="$kpi['value']" :sub="$kpi['sub'] ?? null" :accent="$kpi['accent']" />
+            <x-x2.card.kpi
+                :label="$kpi['label']"
+                :value="$kpi['value']"
+                :sub="$kpi['sub'] ?? null"
+                :accent="$kpi['accent']"
+                :icon="$kpi['icon'] ?? 'heroicon-o-chart-bar'" />
         @endforeach
-    </div>
+    </x-x2.kpi-row>
 
     {{-- Filament table: search / filters / row + bulk actions / pagination --}}
-    <div class="rounded-2xl border border-slate-100 bg-white p-1 shadow-sm">
+    <div class="mt-4 rounded-xl border border-slate-200 bg-white p-1 shadow-sm">
         {{ $this->table }}
     </div>
 </x-filament-panels::page>
