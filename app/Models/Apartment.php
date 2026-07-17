@@ -20,6 +20,9 @@ class Apartment extends Model
     protected $casts = [
         'area_sqm' => 'decimal:2',
         'handover_date' => 'date',
+        'handover_price' => 'decimal:2',
+        'contract_signed_at' => 'date',
+        'documents' => 'array',
     ];
 
     public function floor(): BelongsTo

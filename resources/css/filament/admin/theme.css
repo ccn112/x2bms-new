@@ -131,6 +131,16 @@ h1, h2, h3, h4,
     }
 }
 
+/* Hàng tab (x-x2.page.tabs): overflow-x-auto khiến trình duyệt ép overflow-y=auto →
+   hiện scrollbar dọc (▲▼) ở cuối hàng. Ẩn thanh cuộn (giữ cuộn ngang khi tràn). */
+.x2-tabnav {
+    scrollbar-width: none;
+    overscroll-behavior-x: contain;
+}
+.x2-tabnav::-webkit-scrollbar {
+    display: none;
+}
+
 /* Giảm ~2/3 khoảng trắng dọc quanh header (padding + gap header↔nội dung):
    mặc định spacing*8 = 32px → spacing*3 = 12px. Đặc hơn cho màn vận hành BQL. */
 .fi-page-header-main-ctn {

@@ -13,6 +13,7 @@ use Filament\Actions\Action;
 use Filament\Actions\ActionGroup;
 use Filament\Actions\BulkAction;
 use Filament\Actions\BulkActionGroup;
+use Filament\Navigation\NavigationItem;
 use Filament\Notifications\Notification;
 use Filament\Pages\Page;
 use Filament\Tables\Columns\TextColumn;
@@ -126,6 +127,20 @@ class ApartmentDirectory extends Page implements HasTable
     private function buildingIds(): array
     {
         return $this->ctx()->buildingIds() ?: [0];
+    }
+
+    /** Nav "Hồ sơ căn hộ" active cả khi đang ở màn chi tiết căn (apartments/{id}/profile),
+        nhưng KHÔNG active ở /apartments/tree (mục nav riêng). */
+    public static function getNavigationItems(): array
+    {
+        return [
+            NavigationItem::make(static::getNavigationLabel())
+                ->group(static::getNavigationGroup())
+                ->icon(static::getNavigationIcon())
+                ->sort(static::getNavigationSort())
+                ->url(static::getUrl())
+                ->isActiveWhen(fn (): bool => request()->is('admin/apartments') || request()->is('admin/apartments/*/profile')),
+        ];
     }
 
     /** Breadcrumb Filament — mỗi mục có icon; 2 mục đầu click được, mục cuối = trang hiện tại. */

@@ -10,14 +10,14 @@
      connects visually to the active tab. Page-level actions inline on the RIGHT.
      Usage: <x-x2.page.tabs :tabs="..." :active="$tab" wire="setTab"><x-slot:actions>…</x-slot></x-x2.page.tabs> --}}
 <div {{ $attributes->class(['relative mb-4 flex flex-col gap-3 border-b border-slate-200 sm:flex-row sm:items-center sm:justify-between']) }}>
-    <nav class="flex items-center gap-1 overflow-x-auto">
+    <nav class="x2-tabnav flex items-center gap-1 overflow-x-auto">
         @foreach ($tabs as $t)
             @php
                 $isActive = ($t['key'] ?? null) === $active;
                 $base = 'group relative inline-flex items-center gap-1.5 whitespace-nowrap px-3.5 py-2.5 text-sm transition';
                 $state = $isActive
                     ? 'font-title font-bold text-x2-primary'
-                    : 'font-medium text-slate-500 hover:text-slate-800';
+                    : 'font-semibold text-slate-600 hover:text-slate-900';
             @endphp
             <{{ isset($t['url']) ? 'a' : 'button' }}
                 @class([$base, $state])
