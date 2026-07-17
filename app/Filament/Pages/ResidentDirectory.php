@@ -475,7 +475,6 @@ class ResidentDirectory extends Page implements HasTable
                     ->icon('heroicon-m-plus')
                     ->url(url('/fila/residents/create')),
             ])
-            ->striped()
             ->paginated([10, 25, 50, 100]);
     }
 

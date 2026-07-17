@@ -321,7 +321,6 @@ class ApartmentDirectory extends Page implements HasTable
             ->emptyStateHeading('Không tìm thấy căn hộ phù hợp')
             ->emptyStateDescription('Không có kết quả nào khớp với bộ lọc hiện tại.')
             ->emptyStateIcon('heroicon-o-home-modern')
-            ->striped()
             ->paginated([10, 25, 50, 100]);
     }
 

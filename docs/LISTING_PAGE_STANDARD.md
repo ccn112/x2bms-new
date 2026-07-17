@@ -187,6 +187,7 @@ Blade: checkbox `wire:model="cols.KEY"` (**deferred, KHÔNG .live**) + nút "Áp
 - **Density BQL**: bọc `.x2-bql-page` (KPI compact, table dense th44/td8) — chỉ sửa `.fi-*` **trong** `.x2-bql-page`.
 - **Mobile card**: `@media(max-width:767px)` ẩn `.fi-ta-content`+`.fi-ta-header-ctn`, hiện `.x2-mobile-cards`; GIỮ `.fi-pagination`.
 - Màu **gold** đăng ký ở `AdminPanelProvider::colors(['gold' => Color::hex('#d5a331')])`.
+- **Freeze cột (MẶC ĐỊNH mọi bảng listing, chốt 2026-07-17):** ô chọn + cột `code` sticky trái, cột thao tác (`td:last-child` + `.fi-ta-actions-header-cell`) sticky phải — khi cuộn ngang thì mã + thao tác đứng yên. Scoped `.x2-bql-page`; nền trắng nên **bỏ `->striped()`**. **Quy ước: cột đầu bảng listing đặt tên `code`** để được freeze-trái; bảng không có `code` thì thêm selector nhắm cột đó. (KHÔNG làm toggle per-user — freeze là default; muốn loại trừ 1 bảng thì override riêng.)
 
 Các rule header/spacing áp cho **mọi trang có breadcrumb** → dùng `getBreadcrumbs()` là kế thừa đồng bộ.
 

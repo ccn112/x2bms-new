@@ -334,6 +334,39 @@ h1, h2, h3, h4,
     font-size: 13px;
 }
 
+/* Freeze cột đầu (chọn + Mã căn) + cột thao tác (cuối) khi bảng cuộn ngang.
+   Chỉ trong bảng BQL list. Nền trắng đặc để nội dung cuộn không lộ qua. */
+.x2-bql-page .fi-ta-selection-cell {
+    position: sticky;
+    left: 0;
+    z-index: 3;
+    width: 3rem;
+    min-width: 3rem;
+    background: #fff;
+}
+.x2-bql-page .fi-ta-header-cell-code,
+.x2-bql-page .fi-ta-cell-code {
+    position: sticky;
+    left: 3rem;
+    z-index: 3;
+    background: #fff;
+    box-shadow: 6px 0 8px -6px rgba(15, 23, 42, 0.15);
+}
+.x2-bql-page .fi-ta-actions-header-cell,
+.x2-bql-page .fi-ta table tbody tr > td:last-child {
+    position: sticky;
+    right: 0;
+    z-index: 3;
+    background: #fff;
+    box-shadow: -6px 0 8px -6px rgba(15, 23, 42, 0.15);
+}
+/* Header của cột freeze nổi trên header row */
+.x2-bql-page .fi-ta-selection-cell,
+.x2-bql-page .fi-ta-header-cell-code,
+.x2-bql-page .fi-ta-actions-header-cell {
+    z-index: 4;
+}
+
 /* Mobile card/list mode (density Task 7). Card list ẩn mặc định (desktop dùng bảng). */
 .x2-bql-page .x2-mobile-cards {
     display: none;
