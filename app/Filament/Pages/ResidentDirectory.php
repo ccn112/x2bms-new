@@ -6,11 +6,11 @@ use App\Models\AuditLog;
 use App\Models\Resident;
 use App\Models\ResidentApartmentRelation;
 use App\Models\ResidentApprovalRequest;
+use App\Support\Context\CurrentContext;
 use BackedEnum;
 use Filament\Actions\Action;
 use Filament\Actions\ActionGroup;
 use Filament\Actions\BulkAction;
-use Filament\Actions\BulkActionGroup;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Components\Select;
@@ -22,7 +22,6 @@ use Filament\Schemas\Components\Wizard\Step;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Concerns\InteractsWithTable;
 use Filament\Tables\Contracts\HasTable;
-use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\HtmlString;
@@ -50,129 +49,304 @@ class ResidentDirectory extends Page implements HasTable
 
     protected string $view = 'filament.pages.resident-directory';
 
-    /** DS-01-05 tab row: all|owner|tenant|pending|locked (scopes the table). */
-    public ?string $activeTab = 'all';
+    // --- X2FilterBar (không dùng tab — theo style danh sách căn hộ) ---
+    public ?string $fBuilding = null;
+    public ?string $fRole = null;    // owner|tenant|member (thay tab Loại cư dân)
+    public ?string $fStatus = null;  // active|pending|inactive (thay tab Trạng thái)
+    public ?string $fSearch = null;
+    public ?string $fCreatedFrom = null;
+    public ?string $fCreatedTo = null;
+    public ?string $fHasApartment = null; // yes | no
 
-    public function setTab(string $tab): void
+    private const FILTER_LABELS = [
+        'fBuilding' => 'Tòa', 'fRole' => 'Loại cư dân', 'fStatus' => 'Trạng thái',
+        'fCreatedFrom' => 'Tạo từ', 'fCreatedTo' => 'Tạo đến', 'fHasApartment' => 'Gắn căn',
+    ];
+
+    private const ADVANCED_KEYS = ['fCreatedFrom', 'fCreatedTo', 'fHasApartment'];
+
+    /** status → tone của x-x2.status-badge (green|amber|red|slate) cho card mobile. */
+    private const STATUS_TONE = ['active' => 'green', 'pending' => 'amber', 'inactive' => 'red'];
+
+    /** Cột bật/tắt hiển thị (dropdown "Cột" nhóm cùng filter bar). key => nhãn. */
+    private const COLS = [
+        'code' => 'Mã CD', 'full_name' => 'Họ và tên', 'phone' => 'SĐT', 'building' => 'Tòa',
+        'apartment' => 'Căn hộ', 'role' => 'Loại cư dân', 'status' => 'Trạng thái', 'created_at' => 'Ngày tạo',
+    ];
+
+    /** @var array<string,bool> cột đang hiển thị (khởi tạo tất cả true để checkbox khớp thực tế). */
+    public array $cols = [];
+
+    public function mount(): void
     {
-        $this->activeTab = $tab;
+        $this->cols = array_fill_keys(array_keys(self::COLS), true);
+    }
+
+    /** Nút "Áp dụng" — deferred wire:model commit khi bấm (không cần logic thêm). */
+    public function applyCols(): void {}
+
+    public function resetCols(): void
+    {
+        $this->cols = array_fill_keys(array_keys(self::COLS), true);
+    }
+
+    private function colShown(string $key): bool
+    {
+        return $this->cols[$key] ?? true;
+    }
+
+    public function getBreadcrumbs(): array
+    {
+        return [
+            url('/admin') => $this->crumb('heroicon-m-home', 'Tổng quan'),
+            $this->crumb('heroicon-m-users', 'Cư dân'),
+        ];
+    }
+
+    private function crumb(string $icon, string $label): HtmlString
+    {
+        return new HtmlString('<span class="inline-flex items-center gap-1">'
+            .svg($icon, 'h-4 w-4 shrink-0 opacity-70')->toHtml().'<span>'.e($label).'</span></span>');
+    }
+
+    protected function getHeaderActions(): array
+    {
+        return [
+            Action::make('import')->label('Nhập dữ liệu')->icon('heroicon-m-arrow-up-tray')->color('gray')
+                ->action(fn () => Notification::make()->title('Nhập dữ liệu cư dân')->body('Trình nhập liệu bổ sung ở đợt Import/Export.')->info()->send()),
+            Action::make('export')->label('Xuất dữ liệu')->icon('heroicon-m-arrow-down-tray')->color('gray')
+                ->action('export'),
+            Action::make('create')->label('Thêm cư dân')->icon('heroicon-m-plus')->color('gold')
+                ->url(url('/fila/residents/create')),
+        ];
+    }
+
+    /** Đổi filter/tab → về trang 1 + XÓA cache records (bắt buộc, xem LISTING_PAGE_STANDARD). */
+    private function refreshTable(): void
+    {
+        $this->resetPage($this->getTablePaginationPageName());
+        $this->flushCachedTableRecords();
         $this->resetTableSearch();
     }
 
-    /** Apply the active tab as a query scope (shared by table + tab counts). */
-    private function scopeByTab(\Illuminate\Database\Eloquent\Builder $q, string $tab): \Illuminate\Database\Eloquent\Builder
+    public function updated(string $property): void
     {
-        return match ($tab) {
-            'owner' => $q->whereHas('apartmentRelations', fn ($r) => $r->where('role', 'owner')),
-            'tenant' => $q->whereHas('apartmentRelations', fn ($r) => $r->where('role', 'tenant')),
-            'pending' => $q->where('status', 'pending'),
-            'locked' => $q->where('status', 'inactive'),
-            default => $q,
-        };
+        if (str_starts_with($property, 'f') && array_key_exists($property, array_flip([...array_keys(self::FILTER_LABELS), 'fSearch']))) {
+            $this->refreshTable();
+        }
     }
 
-    /** @var array<string, array{0:string,1:string}> status => [label, color] */
+    private function buildingIds(): array
+    {
+        return app(CurrentContext::class)->buildingIds() ?: [0];
+    }
+
+    /** Áp toàn bộ filter nghiệp vụ (dùng chung bảng + KPI + export). */
+    private function applyFilters(\Illuminate\Database\Eloquent\Builder $q): \Illuminate\Database\Eloquent\Builder
+    {
+        return $q
+            ->when($this->fBuilding, fn ($q, $v) => $q->where('building_id', $v))
+            ->when($this->fRole, fn ($q, $v) => $q->whereHas('apartmentRelations', fn ($r) => $r->where('role', $v)))
+            ->when($this->fStatus, fn ($q, $v) => $q->where('status', $v))
+            ->when($this->fSearch, fn ($q, $v) => $q->where(fn ($w) => $w
+                ->where('code', 'like', "%{$v}%")->orWhere('full_name', 'like', "%{$v}%")
+                ->orWhere('phone', 'like', "%{$v}%")->orWhere('email', 'like', "%{$v}%")))
+            ->when($this->fCreatedFrom, fn ($q, $v) => $q->whereDate('created_at', '>=', $v))
+            ->when($this->fCreatedTo, fn ($q, $v) => $q->whereDate('created_at', '<=', $v))
+            ->when($this->fHasApartment === 'yes', fn ($q) => $q->whereHas('apartmentRelations'))
+            ->when($this->fHasApartment === 'no', fn ($q) => $q->whereDoesntHave('apartmentRelations'));
+    }
+
+    private function baseQuery(): \Illuminate\Database\Eloquent\Builder
+    {
+        return $this->applyFilters(Resident::query()->whereIn('building_id', $this->buildingIds()));
+    }
+
+    /** Query bảng (kèm eager load). */
+    private function filteredQuery(): \Illuminate\Database\Eloquent\Builder
+    {
+        return $this->applyFilters(
+            Resident::query()->whereIn('building_id', $this->buildingIds())
+                ->with(['apartmentRelations.apartment.floor', 'building'])
+        );
+    }
+
+    private function filterOptions(): array
+    {
+        $ctx = app(CurrentContext::class);
+
+        return [
+            'buildings' => $ctx->buildings()->pluck('name', 'id')->all(),
+            'roles' => self::ROLES,
+            'statuses' => collect(self::STATUS)->map(fn ($v) => $v[0])->all(),
+        ];
+    }
+
+    private function activeChips(): array
+    {
+        $opts = $this->filterOptions();
+        $display = [
+            'fBuilding' => fn ($v) => $opts['buildings'][$v] ?? $v,
+            'fRole' => fn ($v) => self::ROLES[$v] ?? $v,
+            'fStatus' => fn ($v) => self::STATUS[$v][0] ?? $v,
+            'fCreatedFrom' => fn ($v) => $v, 'fCreatedTo' => fn ($v) => $v,
+            'fHasApartment' => fn ($v) => $v === 'yes' ? 'Đã gắn căn' : 'Chưa gắn căn',
+        ];
+        $chips = [];
+        foreach (self::FILTER_LABELS as $key => $label) {
+            if (filled($this->{$key})) {
+                $chips[] = ['key' => $key, 'label' => $label, 'value' => ($display[$key])($this->{$key})];
+            }
+        }
+
+        return $chips;
+    }
+
+    private function advancedCount(): int
+    {
+        return count(array_filter(self::ADVANCED_KEYS, fn ($k) => filled($this->{$k})));
+    }
+
+    public function clearFilter(string $key): void
+    {
+        if (array_key_exists($key, array_flip([...array_keys(self::FILTER_LABELS), 'fSearch']))) {
+            $this->{$key} = null;
+            $this->refreshTable();
+        }
+    }
+
+    public function clearAllFilters(): void
+    {
+        foreach ([...array_keys(self::FILTER_LABELS), 'fSearch'] as $key) {
+            $this->{$key} = null;
+        }
+        $this->refreshTable();
+    }
+
+    public function clearAdvanced(): void
+    {
+        foreach (self::ADVANCED_KEYS as $key) {
+            $this->{$key} = null;
+        }
+        $this->refreshTable();
+    }
+
+    /** Dữ liệu card mobile. */
+    public function cardMeta(Resident $r): array
+    {
+        return [
+            'apartment' => $r->primaryRelation()?->apartment?->code ?? '—',
+            'role' => self::ROLES[$r->primaryRelation()?->role] ?? '—',
+            'statusLabel' => self::STATUS[$r->status][0] ?? $r->status,
+            'statusTone' => self::STATUS_TONE[$r->status] ?? 'slate',
+        ];
+    }
+
+    /** Xuất CSV cư dân theo filter hiện tại + audit. */
+    public function export()
+    {
+        $rows = $this->filteredQuery()->reorder()->orderBy('code')->get();
+        $this->audit('resident.export', 'Xuất danh sách cư dân ('.$rows->count().' dòng)');
+        $filename = 'residents_'.now()->format('Ymd_His').'.csv';
+
+        return response()->streamDownload(function () use ($rows) {
+            $out = fopen('php://output', 'w');
+            fwrite($out, chr(0xEF).chr(0xBB).chr(0xBF));
+            fputcsv($out, ['Mã CD', 'Họ tên', 'SĐT', 'Email', 'Tòa', 'Căn hộ', 'Loại', 'Trạng thái']);
+            foreach ($rows as $r) {
+                fputcsv($out, [
+                    $r->code, $r->full_name, $r->phone, $r->email, $r->building?->name,
+                    $r->primaryRelation()?->apartment?->code ?? '',
+                    self::ROLES[$r->primaryRelation()?->role] ?? '',
+                    self::STATUS[$r->status][0] ?? $r->status,
+                ]);
+            }
+            fclose($out);
+        }, $filename, ['Content-Type' => 'text/csv; charset=UTF-8']);
+    }
+
+    /** @var array<string, array{0:string,1:string}> status => [label, color Filament] */
     private const STATUS = [
         'active' => ['Hoạt động', 'success'],
         'pending' => ['Chờ duyệt', 'warning'],
-        'inactive' => ['Đã khóa', 'danger'],
+        'inactive' => ['Tạm khóa', 'danger'],
     ];
 
     private const ROLES = ['owner' => 'Chủ sở hữu', 'tenant' => 'Người thuê', 'member' => 'Thành viên'];
 
     protected function getViewData(): array
     {
-        $buildingIds = app(\App\Support\Context\CurrentContext::class)->buildingIds();
-        $base = fn () => Resident::query()->whereIn('building_id', $buildingIds);
+        // KPI = breakdown theo trạng thái, tính lại theo BỘ LỌC hiện tại (owner 2026-07-17).
+        $total = $this->baseQuery()->count();
+        $active = $this->baseQuery()->where('status', 'active')->count();
+        $pending = $this->baseQuery()->where('status', 'pending')->count();
+        $locked = $this->baseQuery()->where('status', 'inactive')->count();
+        $missing = $this->baseQuery()->where(fn ($q) => $q->whereNull('id_no')->orWhere('id_no', ''))->count();
+        $pct = fn (int $n) => $total ? round($n / $total * 100, 1).'%' : '0%';
 
-        $total = $base()->count();
-        $active = (clone $base())->where('status', 'active')->count();
-        $pending = (clone $base())->where('status', 'pending')->count();
-        $locked = (clone $base())->where('status', 'inactive')->count();
-        $updatedToday = (clone $base())->whereDate('updated_at', now())->count();
-
-        // KPIs are context-wide totals (DS-01: never react to table filters/tabs).
         return [
             'kpis' => [
-                ['label' => 'Tổng cư dân', 'value' => number_format($total, 0, ',', '.'), 'accent' => 'blue', 'icon' => 'heroicon-o-users', 'sub' => '100% tổng cư dân'],
-                ['label' => 'Đang hoạt động', 'value' => number_format($active, 0, ',', '.'), 'accent' => 'green', 'icon' => 'heroicon-o-arrow-trending-up', 'sub' => $total ? round($active / $total * 100, 1).'%' : '0%'],
-                ['label' => 'Chờ duyệt', 'value' => number_format($pending, 0, ',', '.'), 'accent' => 'amber', 'icon' => 'heroicon-o-clock', 'sub' => 'Hồ sơ mới'],
-                ['label' => 'Đã khóa', 'value' => number_format($locked, 0, ',', '.'), 'accent' => 'red', 'icon' => 'heroicon-o-lock-closed', 'sub' => $total ? round($locked / $total * 100, 1).'%' : '0%'],
-                ['label' => 'Cập nhật gần đây', 'value' => number_format($updatedToday, 0, ',', '.'), 'accent' => 'teal', 'icon' => 'heroicon-o-clock', 'sub' => 'Hôm nay'],
+                ['label' => 'Tổng cư dân', 'value' => number_format($total, 0, ',', '.'), 'accent' => 'blue', 'icon' => 'heroicon-o-users', 'sub' => '100% kết quả lọc'],
+                ['label' => 'Hoạt động', 'value' => number_format($active, 0, ',', '.'), 'accent' => 'green', 'icon' => 'heroicon-o-arrow-trending-up', 'sub' => $pct($active)],
+                ['label' => 'Chờ duyệt', 'value' => number_format($pending, 0, ',', '.'), 'accent' => 'amber', 'icon' => 'heroicon-o-clock', 'sub' => $pct($pending)],
+                ['label' => 'Tạm khóa', 'value' => number_format($locked, 0, ',', '.'), 'accent' => 'red', 'icon' => 'heroicon-o-lock-closed', 'sub' => $pct($locked)],
+                ['label' => 'Thiếu dữ liệu', 'value' => number_format($missing, 0, ',', '.'), 'accent' => 'teal', 'icon' => 'heroicon-o-exclamation-triangle', 'sub' => $pct($missing).' (thiếu CCCD)'],
             ],
-            'tabs' => [
-                ['key' => 'all', 'label' => 'Tất cả', 'count' => $total],
-                ['key' => 'owner', 'label' => 'Chủ sở hữu', 'count' => $this->scopeByTab($base(), 'owner')->count()],
-                ['key' => 'tenant', 'label' => 'Người thuê', 'count' => $this->scopeByTab($base(), 'tenant')->count()],
-                ['key' => 'pending', 'label' => 'Chờ duyệt', 'count' => $pending],
-                ['key' => 'locked', 'label' => 'Đã khóa', 'count' => $locked],
-            ],
+            'filterOptions' => $this->filterOptions(),
+            'activeChips' => $this->activeChips(),
+            'advancedCount' => $this->advancedCount(),
+            'columnToggle' => self::COLS,
         ];
     }
 
     public function table(Table $table): Table
     {
-        $ctx = app(\App\Support\Context\CurrentContext::class);
-        $buildingIds = $ctx->buildingIds();
-        $buildingOptions = $ctx->buildings()->pluck('name', 'id')->all();
-
         return $table
-            ->query($this->scopeByTab(
-                Resident::query()->whereIn('building_id', $buildingIds)->with(['apartmentRelations.apartment.floor', 'building']),
-                $this->activeTab ?? 'all',
-            ))
+            // Closure (Filament v4 cache Table) — đọc đúng filter + tab hiện tại.
+            ->query(fn (): \Illuminate\Database\Eloquent\Builder => $this->filteredQuery())
             ->defaultSort('created_at', 'desc')
             ->columns([
                 TextColumn::make('code')
                     ->label('Mã CD')
-                    ->searchable()
                     ->sortable()
-                    ->color('gray'),
+                    ->color('gray')
+                    ->visible(fn (): bool => $this->colShown('code')),
                 TextColumn::make('full_name')
                     ->label('Họ và tên')
-                    ->searchable()
                     ->color('primary')
                     ->url(fn (Resident $r): string => url('/admin/residents/'.$r->id.'/detail'))
-                    ->description(fn (Resident $r): ?string => $r->email),
+                    ->description(fn (Resident $r): ?string => $r->email)
+                    ->visible(fn (): bool => $this->colShown('full_name')),
                 TextColumn::make('phone')
                     ->label('SĐT')
-                    ->searchable()
-                    ->icon('heroicon-m-phone'),
+                    ->icon('heroicon-m-phone')
+                    ->visible(fn (): bool => $this->colShown('phone')),
                 TextColumn::make('building.name')
                     ->label('Tòa')
                     ->badge()
                     ->color('gray')
-                    ->toggleable(),
+                    ->visible(fn (): bool => $this->colShown('building')),
                 TextColumn::make('apartment')
                     ->label('Căn hộ')
-                    ->state(fn (Resident $r): string => $r->primaryRelation()?->apartment?->code ?? '—'),
+                    ->state(fn (Resident $r): string => $r->primaryRelation()?->apartment?->code ?? '—')
+                    ->visible(fn (): bool => $this->colShown('apartment')),
                 TextColumn::make('role')
                     ->label('Loại cư dân')
                     ->badge()
                     ->color('gray')
-                    ->state(fn (Resident $r): string => self::ROLES[$r->primaryRelation()?->role] ?? '—'),
+                    ->state(fn (Resident $r): string => self::ROLES[$r->primaryRelation()?->role] ?? '—')
+                    ->visible(fn (): bool => $this->colShown('role')),
                 TextColumn::make('status')
                     ->label('Trạng thái')
                     ->badge()
                     ->formatStateUsing(fn (string $state): string => self::STATUS[$state][0] ?? $state)
-                    ->color(fn (string $state): string => self::STATUS[$state][1] ?? 'gray'),
+                    ->color(fn (string $state): string => self::STATUS[$state][1] ?? 'gray')
+                    ->visible(fn (): bool => $this->colShown('status')),
                 TextColumn::make('created_at')
                     ->label('Ngày tạo')
                     ->date('d/m/Y')
                     ->sortable()
-                    ->toggleable(),
-            ])
-            ->filters([
-                SelectFilter::make('building_id')
-                    ->label('Tòa')
-                    ->options($buildingOptions),
-                SelectFilter::make('status')
-                    ->label('Trạng thái')
-                    ->options([
-                        'active' => 'Hoạt động',
-                        'pending' => 'Chờ duyệt',
-                        'inactive' => 'Đã khóa',
-                    ]),
+                    ->visible(fn (): bool => $this->colShown('created_at')),
             ])
             ->recordActions([
                 Action::make('quickView')
@@ -214,9 +388,9 @@ class ResidentDirectory extends Page implements HasTable
                     Action::make('history')->label('Lịch sử')->icon('heroicon-m-clock')->url('#'),
                 ])->icon('heroicon-m-ellipsis-vertical')->color('gray'),
             ])
+            // Bulk action hiện thẳng thành nút (không gom dropdown "Tác vụ hàng loạt").
             ->toolbarActions([
-                BulkActionGroup::make([
-                    BulkAction::make('approve')
+                BulkAction::make('approve')
                         ->label('Duyệt / kích hoạt')
                         ->icon('heroicon-m-check-circle')
                         ->color('success')
@@ -286,7 +460,6 @@ class ResidentDirectory extends Page implements HasTable
                         ->icon('heroicon-m-arrow-down-tray')
                         ->color('gray')
                         ->action(fn () => Notification::make()->title('Đang chuẩn bị file xuất…')->info()->send()),
-                ]),
             ])
             ->emptyStateHeading('Không tìm thấy cư dân phù hợp')
             ->emptyStateDescription('Không có kết quả nào khớp với bộ lọc hiện tại.')
@@ -296,10 +469,7 @@ class ResidentDirectory extends Page implements HasTable
                     ->label('Xóa bộ lọc')
                     ->icon('heroicon-m-x-mark')
                     ->color('gray')
-                    ->action(function (): void {
-                        $this->resetTableFiltersForm();
-                        $this->resetTableSearch();
-                    }),
+                    ->action(fn () => $this->clearAllFilters()),
                 Action::make('addResident')
                     ->label('Thêm cư dân mới')
                     ->icon('heroicon-m-plus')
