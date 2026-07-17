@@ -1130,3 +1130,25 @@ Cần hard-refresh trình duyệt sau build.
 ## 2026-07-01 — Lưu context: handoff SuperAdmin + Batch 07
 
 Tạo `docs/SESSION_HANDOFF_20260701_SUPERADMIN_BILLING.md` — snapshot đầy đủ phiên (SuperAdmin WEB-UX-22 12 màn + Batch 07 SaaS Billing 3 rounds): kiến trúc bổ sung (PlatformScreen/WritesBillingAudit/nav groups/FeatureGate reconcile), bảng đối chiếu 21 màn↔page↔slug, cách chạy/verify, 8 bẫy Filament, việc còn lại. Kiểm chứng lại: migrate:fresh --seed sạch, platform+billing render 200, Batch07 API 10/10 test PASS.
+
+---
+
+## 2026-07-17 — BQL-01 cụm Căn hộ + Danh sách cư dân + Chuẩn trang listing
+
+**Chuẩn trang listing** `docs/LISTING_PAGE_STANDARD.md` (áp mọi màn list /admin): header = title ở topbar + breadcrumb (icon, click được) + action ở header Filament (`getHeaderActions`, nút tạo màu `gold`); **KPI card tính lại theo filter**; **X2FilterBar** (inline select + search + drawer nâng cao + chip); **toggle cột** (dropdown "Cột" trong filter bar: `cols` init all-true + `->visible()` + deferred `wire:model` + Áp dụng/Đặt lại, KHÔNG dùng `->toggleable()`); **bulk action inline** (không `BulkActionGroup`); **mobile card** (<768px ẩn `.fi-ta-content`, hiện `.x2-mobile-cards`); **freeze cột** mặc định (ô chọn + `code` sticky trái, thao tác sticky phải; bỏ `->striped()`); bỏ tab điều hướng (dùng sidebar).
+
+**BẪY (đã trả giá):** (1) bảng phải `->query(fn () => $this->filteredQuery())` — **closure**, Builder tĩnh bị Filament cache Table → filter đóng băng; (2) đổi filter phải `resetPage(getTablePaginationPageName())` **+ `flushCachedTableRecords()`** (KHÔNG có `resetTablePage()`); (3) **Filament = v4**: layout `Section/Grid` ở `Filament\Schemas\Components`, action modal dùng `->schema()` (không `->form()`); (4) toggle cột: `cols` init all-true để checkbox khớp cột đang hiện.
+
+**Màn đã dựng:**
+- **05 Danh sách căn hộ** (`ApartmentDirectory`) = reference chuẩn listing.
+- **06 Chi tiết căn hộ 360** (`ApartmentProfile`, `/apartments/{id}/profile`) bản GIÀU (ref BQL-01-03): KPI strip 7 · 7 section-tab (Thông tin/Cư dân/Xe-thẻ/Công nợ/Phản ánh/Tài liệu/Lịch sử) · tab Thông tin 3 cột (công tơ, cảnh báo, thông tin nhanh). Action thật: Sửa (slide-over form) · Đổi trạng thái (+`apartment_status_histories`) · Tạo ghi chú (append note) · Xuất hồ sơ (CSV) · Phản ánh (FeedbackRequest).
+- **07 Cây căn hộ** (`ApartmentTree`) 2 khung cố định scroll dọc riêng: trái cây Dự án→Tòa→Tầng→căn; phải toggle Danh sách/Layout (Layout = upload ảnh mặt bằng + hotspot — **option C, để đợt sau**) + danh sách theo tầng wrap (m²+chủ hộ/"Chưa gắn") + panel chi tiết.
+- **01 Danh sách cư dân** (`ResidentDirectory`) theo chuẩn: KPI breakdown trạng thái (Tổng/Hoạt động/Chờ duyệt/Tạm khóa/Thiếu-dữ-liệu=thiếu CCCD) tính theo filter; giữ wizard duyệt hàng loạt.
+
+**Nav:** "Cây căn hộ" thành **mục con của "Hồ sơ căn hộ"** (`navigationParentItem`); nav cha active cả ở màn chi tiết. **Cross-link 2 chiều cư dân ↔ căn hộ** ở mọi màn list/detail/tree.
+
+**Migrations (nullable, không phá seed):** `2026_07_17_000001` (apartments: handover_price/contract_no/contract_signed_at/ownership_term; residents: residence_status) · `000002` (apartments: balcony_direction/position/furniture_status/purpose/contract_type/electric|water|gas_meter_no/documents json). Backfill demo qua `DB::table` (bỏ global scope tenant/project).
+
+**Commits (main, tác giả Joa. Chinh <chtchinh@gmail.com>):** 78d934c → 4292630 → 23740fd → 28838cc → 2e40475 → 1f8fa26 → a235070. Verify: `php -l` + `npm run build` + render 200 + Livewire::test cho filter/tab/toggle/action.
+
+**CÒN LẠI BQL-01:** 04 Chi tiết cư dân 360 (dựng theo `BQL-01-04`, đối xứng chi tiết căn hộ) → 03 wizard thêm → 02 timeline → 08 households/09 residency/10 data-quality. Rồi BQL-02, BQL-03. Layout mặt bằng (option C) làm sau.
