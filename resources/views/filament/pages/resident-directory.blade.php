@@ -77,7 +77,7 @@
                                 <x-x2.status-badge :label="$m['statusLabel']" :tone="$m['statusTone']" />
                             </div>
                             <div class="mt-2.5 flex items-center justify-between gap-3 border-t border-slate-100 pt-2.5 text-xs">
-                                <span class="text-slate-600">{{ $r->building?->name ?? '—' }} · Căn {{ $m['apartment'] }}</span>
+                                <span class="text-slate-600">{{ $r->building?->name ?? '—' }} · Căn @if ($m['apartmentId'])<a href="{{ url('/admin/apartments/'.$m['apartmentId'].'/profile') }}" class="font-medium text-x2-primary">{{ $m['apartment'] }}</a>@else{{ $m['apartment'] }}@endif</span>
                                 <span class="rounded bg-slate-100 px-1.5 py-0.5 text-slate-500">{{ $m['role'] }}</span>
                             </div>
                         </div>

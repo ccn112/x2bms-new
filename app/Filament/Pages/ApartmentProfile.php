@@ -377,6 +377,7 @@ class ApartmentProfile extends Page
     private function residentRows($relations): array
     {
         return $relations->map(fn ($rel) => [
+            'id' => $rel->resident->id,
             'name' => $rel->resident->full_name,
             'relationship' => self::RELATIONSHIP[$rel->resident->relationship_to_head] ?? (self::ROLE[$rel->role] ?? '—'),
             'relationshipTone' => $rel->role === 'owner' ? 'blue' : 'slate',

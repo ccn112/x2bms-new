@@ -20,7 +20,13 @@
             <tbody>
                 @foreach ($rows as $r)
                     <tr class="border-b border-slate-50">
-                        <td class="py-2.5 pr-3 font-medium text-slate-800">{{ $r['name'] }}</td>
+                        <td class="py-2.5 pr-3 font-medium">
+                            @if (! empty($r['id']))
+                                <a href="{{ url('/admin/residents/'.$r['id'].'/detail') }}" class="text-x2-primary hover:underline">{{ $r['name'] }}</a>
+                            @else
+                                <span class="text-slate-800">{{ $r['name'] }}</span>
+                            @endif
+                        </td>
                         <td class="py-2.5 pr-3"><x-x2.status-badge :label="$r['relationship']" :tone="$r['relationshipTone']" /></td>
                         <td class="py-2.5 pr-3 text-slate-600">{{ $r['role'] }}</td>
                         <td class="py-2.5 pr-3 text-slate-600">{{ $r['dob'] }}</td>

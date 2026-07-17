@@ -166,7 +166,7 @@
                             <p class="mb-1.5 text-xs font-semibold text-slate-500">Cư dân gắn với căn ({{ count($selected['residents']) }})</p>
                             @forelse ($selected['residents'] as $r)
                                 <div class="mb-1.5">
-                                    <span class="font-medium text-slate-800">{{ $r['name'] }}</span>
+                                    <a href="{{ url('/admin/residents/'.$r['id'].'/detail') }}" class="font-medium text-x2-primary hover:underline">{{ $r['name'] }}</a>
                                     <span class="ml-1 rounded px-1.5 py-0.5 text-[11px] {{ $r['isOwner'] ? 'bg-x2-primary/10 text-x2-primary' : 'bg-slate-100 text-slate-500' }}">{{ $r['role'] }}</span>
                                     <div class="text-xs text-slate-400">CCCD {{ $r['cccd'] }} · {{ $r['phone'] }}</div>
                                 </div>

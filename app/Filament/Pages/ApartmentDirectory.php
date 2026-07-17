@@ -274,6 +274,8 @@ class ApartmentDirectory extends Page implements HasTable
                     ->label('Chủ thể hiện tại')
                     ->state(fn (Apartment $a): string => $this->holderFor($a)['name'])
                     ->description(fn (Apartment $a): ?string => $this->holderFor($a)['role'])
+                    ->color(fn (Apartment $a): ?string => $this->holderFor($a)['id'] ? 'primary' : null)
+                    ->url(fn (Apartment $a): ?string => ($rid = $this->holderFor($a)['id']) ? url('/admin/residents/'.$rid.'/detail') : null)
                     ->visible(fn (): bool => $this->colShown('holder')),
                 TextColumn::make('resident_count')
                     ->label('Số cư dân')
@@ -448,20 +450,29 @@ class ApartmentDirectory extends Page implements HasTable
             'statusBadgeClass' => self::BADGE[$color] ?? self::BADGE['gray'],
             'holderName' => $holder['name'],
             'holderRole' => $holder['role'],
+            'holderId' => $holder['id'],
             'residentCount' => ResidentApartmentRelation::where('apartment_id', $a->id)->count(),
             'debt' => (float) Debt::where('apartment_id', $a->id)->where('is_overdue', true)->sum('amount'),
         ];
     }
 
+    /** @var array<int,array> memo chủ thể theo căn (tránh query lặp: state+description+url). */
+    private array $holderCache = [];
+
     /** Chủ thể hiện tại của căn: ưu tiên chủ sở hữu, rồi người thuê. */
     private function holderFor(Apartment $a): array
     {
+        if (isset($this->holderCache[$a->id])) {
+            return $this->holderCache[$a->id];
+        }
+
         $rel = ResidentApartmentRelation::where('apartment_id', $a->id)
             ->orderByRaw("FIELD(role,'owner','tenant','member')")
             ->with('resident')
             ->first();
 
-        return [
+        return $this->holderCache[$a->id] = [
+            'id' => $rel?->resident?->id,
             'name' => $rel?->resident?->full_name ?? '—',
             'role' => $rel ? (self::ROLES[$rel->role] ?? null) : null,
         ];

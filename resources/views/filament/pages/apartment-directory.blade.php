@@ -98,7 +98,7 @@
                             <div class="mt-2.5 flex items-center justify-between gap-3 border-t border-slate-100 pt-2.5">
                                 <div class="min-w-0">
                                     <div class="truncate text-xs text-slate-700">
-                                        {{ $m['holderName'] }}@if ($m['holderRole'])<span class="text-slate-400"> · {{ $m['holderRole'] }}</span>@endif
+                                        @if ($m['holderId'])<a href="{{ url('/admin/residents/'.$m['holderId'].'/detail') }}" class="font-medium text-x2-primary">{{ $m['holderName'] }}</a>@else{{ $m['holderName'] }}@endif@if ($m['holderRole'])<span class="text-slate-400"> · {{ $m['holderRole'] }}</span>@endif
                                     </div>
                                     <div class="text-[11px] text-slate-400">{{ $m['residentCount'] }} cư dân · cập nhật {{ $a->updated_at?->format('d/m/Y') }}</div>
                                 </div>

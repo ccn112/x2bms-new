@@ -219,6 +219,7 @@ class ApartmentTree extends Page
             'area' => $a->area_sqm ? number_format((float) $a->area_sqm, 1, ',', '.').' m²' : '—',
             'direction' => $a->direction ?? '—',
             'residents' => $relations->map(fn ($r) => [
+                'id' => $r->resident->id,
                 'name' => $r->resident->full_name,
                 'role' => self::ROLE[$r->role] ?? $r->role,
                 'isOwner' => $r->role === 'owner',

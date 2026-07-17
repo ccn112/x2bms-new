@@ -234,8 +234,11 @@ class ResidentDirectory extends Page implements HasTable
     /** Dữ liệu card mobile. */
     public function cardMeta(Resident $r): array
     {
+        $ap = $r->primaryRelation()?->apartment;
+
         return [
-            'apartment' => $r->primaryRelation()?->apartment?->code ?? '—',
+            'apartment' => $ap?->code ?? '—',
+            'apartmentId' => $ap?->id,
             'role' => self::ROLES[$r->primaryRelation()?->role] ?? '—',
             'statusLabel' => self::STATUS[$r->status][0] ?? $r->status,
             'statusTone' => self::STATUS_TONE[$r->status] ?? 'slate',
@@ -329,6 +332,8 @@ class ResidentDirectory extends Page implements HasTable
                 TextColumn::make('apartment')
                     ->label('Căn hộ')
                     ->state(fn (Resident $r): string => $r->primaryRelation()?->apartment?->code ?? '—')
+                    ->color(fn (Resident $r): ?string => $r->primaryRelation()?->apartment ? 'primary' : null)
+                    ->url(fn (Resident $r): ?string => ($ap = $r->primaryRelation()?->apartment) ? url('/admin/apartments/'.$ap->id.'/profile') : null)
                     ->visible(fn (): bool => $this->colShown('apartment')),
                 TextColumn::make('role')
                     ->label('Loại cư dân')
