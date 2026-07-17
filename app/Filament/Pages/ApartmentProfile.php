@@ -5,6 +5,7 @@ namespace App\Filament\Pages;
 use App\Enums\FeedbackStatus;
 use App\Models\AccessCard;
 use App\Models\Apartment;
+use App\Models\ApartmentStatusHistory;
 use App\Models\AuditLog;
 use App\Models\Debt;
 use App\Models\FeedbackRequest;
@@ -34,6 +35,9 @@ class ApartmentProfile extends Page
     protected static ?string $slug = 'apartments/{apartment}/profile';
 
     protected static bool $shouldRegisterNavigation = false;
+
+    // Thuộc mục "Hồ sơ căn hộ" → sidebar giữ mục cha active khi ở màn chi tiết.
+    protected static ?string $navigationParentItem = 'Hồ sơ căn hộ';
 
     protected string $view = 'filament.pages.apartment-profile';
 
@@ -107,9 +111,45 @@ class ApartmentProfile extends Page
             Action::make('attach')->label('Gắn cư dân')->icon('heroicon-m-user-plus')->color('gray')
                 ->url(url('/admin/residents/binding-queue')),
             Action::make('changeStatus')->label('Đổi trạng thái')->icon('heroicon-m-arrow-path')->color('gray')
-                ->action(fn () => Notification::make()->title('Đổi trạng thái căn hộ')->body('Luồng đổi trạng thái sẽ bổ sung ở đợt sau.')->info()->send()),
+                ->modalWidth('md')->modalHeading('Đổi trạng thái căn '.$this->apartment->code)
+                ->fillForm(fn () => ['status' => $this->apartment->status])
+                ->schema([
+                    Select::make('status')->label('Trạng thái mới')->required()
+                        ->options(collect(self::STATUS)->map(fn ($v) => $v[0])->all()),
+                    Textarea::make('reason')->label('Lý do đổi')->rows(2),
+                ])
+                ->action(function (array $data): void {
+                    $from = $this->apartment->status;
+                    if ($from === $data['status']) {
+                        Notification::make()->title('Trạng thái không thay đổi')->warning()->send();
+
+                        return;
+                    }
+                    $this->apartment->update(['status' => $data['status']]);
+                    ApartmentStatusHistory::create([
+                        'tenant_id' => $this->apartment->tenant_id,
+                        'apartment_id' => $this->apartment->id,
+                        'from_status' => $from,
+                        'to_status' => $data['status'],
+                        'changed_by_id' => auth()->id(),
+                        'reason' => $data['reason'] ?? null,
+                        'changed_at' => now(),
+                    ]);
+                    $this->apartment->refresh()->load('floor', 'building');
+                    $this->audit('apartment.change_status', 'Đổi trạng thái '.$from.' → '.$data['status'].' (căn '.$this->apartment->code.')', $this->apartment->id);
+                    Notification::make()->title('Đã đổi trạng thái căn '.$this->apartment->code)->success()->send();
+                }),
             Action::make('note')->label('Tạo ghi chú')->icon('heroicon-m-chat-bubble-bottom-center-text')->color('gray')
-                ->action(fn () => Notification::make()->title('Tạo ghi chú')->body('Trình ghi chú sẽ bổ sung ở đợt sau.')->info()->send()),
+                ->modalWidth('md')->modalHeading('Thêm ghi chú — căn '.$this->apartment->code)
+                ->schema([Textarea::make('content')->label('Nội dung ghi chú')->required()->rows(3)])
+                ->action(function (array $data): void {
+                    $stamp = now()->format('d/m/Y H:i').' · '.(auth()->user()?->name ?? 'BQL');
+                    $note = trim(($this->apartment->note ? $this->apartment->note."\n" : '').'['.$stamp.'] '.$data['content']);
+                    $this->apartment->update(['note' => $note]);
+                    $this->apartment->refresh()->load('floor', 'building');
+                    $this->audit('apartment.note', 'Thêm ghi chú căn '.$this->apartment->code, $this->apartment->id);
+                    Notification::make()->title('Đã lưu ghi chú')->success()->send();
+                }),
             Action::make('export')->label('Xuất hồ sơ')->icon('heroicon-m-arrow-down-tray')->color('gray')
                 ->action('exportDossier'),
         ];
@@ -169,10 +209,55 @@ class ApartmentProfile extends Page
         $this->tab = $tab;
     }
 
-    public function exportDossier(): void
+    /** Xuất hồ sơ căn (CSV thật): thông tin căn + cư dân + xe + thẻ + công nợ. */
+    public function exportDossier()
     {
-        $this->audit('apartment.export_dossier', 'Xuất hồ sơ căn hộ '.$this->apartment->code, $this->apartment->id);
-        Notification::make()->title('Đang chuẩn bị hồ sơ căn '.$this->apartment->code)->info()->send();
+        $a = $this->apartment;
+        $this->audit('apartment.export_dossier', 'Xuất hồ sơ căn hộ '.$a->code, $a->id);
+
+        $relations = ResidentApartmentRelation::where('apartment_id', $a->id)->with('resident')->get();
+        $vehicles = Vehicle::where('apartment_id', $a->id)->with('resident')->get();
+        $cards = AccessCard::where('apartment_id', $a->id)->get();
+        $debtOverdue = (float) Debt::where('apartment_id', $a->id)->where('is_overdue', true)->sum('amount');
+        $filename = 'ho_so_can_'.str_replace(['/', ' '], '_', $a->code).'_'.now()->format('Ymd_His').'.csv';
+
+        return response()->streamDownload(function () use ($a, $relations, $vehicles, $cards, $debtOverdue) {
+            $out = fopen('php://output', 'w');
+            fwrite($out, chr(0xEF).chr(0xBB).chr(0xBF));
+            fputcsv($out, ['HỒ SƠ CĂN HỘ', $a->code]);
+            fputcsv($out, ['Tòa', $a->building?->name ?? '']);
+            fputcsv($out, ['Tầng', $a->floor?->name ?? '']);
+            fputcsv($out, ['Diện tích (m²)', (string) $a->area_sqm]);
+            fputcsv($out, ['Loại căn', $a->type ?? '']);
+            fputcsv($out, ['Trạng thái', self::STATUS[$a->status][0] ?? $a->status]);
+            fputcsv($out, ['Giá trị bàn giao', $a->handover_price ? number_format((float) $a->handover_price, 0, ',', '.') : '']);
+            fputcsv($out, ['Số hợp đồng', $a->contract_no ?? '']);
+            fputcsv($out, ['Công nợ quá hạn', number_format($debtOverdue, 0, ',', '.')]);
+            fputcsv($out, []);
+
+            fputcsv($out, ['CƯ DÂN LIÊN KẾT']);
+            fputcsv($out, ['Họ tên', 'Vai trò', 'Ngày sinh', 'SĐT']);
+            foreach ($relations as $rel) {
+                $r = $rel->resident;
+                fputcsv($out, [$r?->full_name, self::ROLE[$rel->role] ?? $rel->role, $r?->dob, $r?->phone ?? $r?->contact_phone]);
+            }
+            fputcsv($out, []);
+
+            fputcsv($out, ['PHƯƠNG TIỆN']);
+            fputcsv($out, ['Biển số', 'Loại', 'Chủ xe']);
+            foreach ($vehicles as $v) {
+                fputcsv($out, [$v->plate_no, optional($v->type)->label() ?? $v->type, optional($v->resident)->full_name]);
+            }
+            fputcsv($out, []);
+
+            fputcsv($out, ['THẺ RA VÀO']);
+            fputcsv($out, ['Mã thẻ', 'Loại', 'Trạng thái']);
+            foreach ($cards as $c) {
+                $st = $c->status instanceof \BackedEnum ? $c->status->value : $c->status;
+                fputcsv($out, [$c->card_no, $c->is_biometric ? 'Sinh trắc' : 'RFID', $st]);
+            }
+            fclose($out);
+        }, $filename, ['Content-Type' => 'text/csv; charset=UTF-8']);
     }
 
     protected function getViewData(): array
