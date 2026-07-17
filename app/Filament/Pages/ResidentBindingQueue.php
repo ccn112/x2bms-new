@@ -44,6 +44,9 @@ class ResidentBindingQueue extends Page implements HasTable
 
     protected static string|\UnitEnum|null $navigationGroup = 'Cư dân & Căn hộ';
 
+    // Submenu: nằm dưới "Hồ sơ căn hộ" (ApartmentDirectory) trong sidebar.
+    protected static ?string $navigationParentItem = 'Hồ sơ căn hộ';
+
     protected static ?string $navigationLabel = 'Duyệt gắn căn hộ';
 
     protected static ?int $navigationSort = 20;

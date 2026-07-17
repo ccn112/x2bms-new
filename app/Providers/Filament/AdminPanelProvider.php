@@ -33,6 +33,7 @@ class AdminPanelProvider extends PanelProvider
             ->brandName('X2-BMS')
             ->colors([
                 'primary' => Color::hex('#2563eb'),
+                'gold' => Color::hex('#d5a331'), // DS-01 brand CTA (nút tạo mới nghiệp vụ)
             ])
             ->viteTheme('resources/css/filament/admin/theme.css')
             ->maxContentWidth(Width::Full)

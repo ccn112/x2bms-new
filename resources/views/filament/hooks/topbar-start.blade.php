@@ -43,9 +43,19 @@
                         ? heading.textContent.trim()
                         : (document.title.split('·')[0].split('—')[0].trim());
                 }
-                // Hide the in-content page header now that the title sits in the topbar.
-                const header = heading ? heading.closest('.fi-header') : null;
-                if (header) header.style.display = 'none';
+                // Title now lives in the topbar. Keep Filament's default breadcrumb + header
+                // actions visible (same row); only hide the redundant in-content title/subtitle.
+                // Pages WITHOUT breadcrumbs keep the old behaviour (hide the empty header).
+                const header = (heading && heading.closest('.fi-header'))
+                    || document.querySelector('.fi-main .fi-header');
+                if (!header) return;
+                if (header.classList.contains('fi-header-has-breadcrumbs')) {
+                    header.style.display = '';
+                    header.querySelectorAll('.fi-header-heading, .fi-header-subheading')
+                        .forEach((el) => { el.style.display = 'none'; });
+                } else {
+                    header.style.display = 'none';
+                }
             };
             document.addEventListener('livewire:navigated', sync);
             document.addEventListener('DOMContentLoaded', sync);

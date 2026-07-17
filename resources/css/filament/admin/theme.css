@@ -103,6 +103,41 @@ h1, h2, h3, h4,
     display: none;
 }
 
+/* Ẩn title body cho trang có breadcrumb (title đã dời lên topbar). Dùng CSS chứ KHÔNG
+   dựa JS: Livewire re-render (sau mỗi lần lọc) morph lại header → style JS bị reset →
+   title nhấp nháy/hiện lại. CSS theo class thì bền qua mọi re-render. Topbar JS vẫn
+   đọc được textContent để copy tên trang lên topbar (display:none không xoá text). */
+.fi-main .fi-header-has-breadcrumbs .fi-header-heading {
+    display: none;
+}
+
+/* Trang có breadcrumb (title đã dời lên topbar): heading bị JS ẩn nên header còn
+   breadcrumb (trái) + page actions (phải). Canh về 1 hàng, giữa dọc, sát 2 mép —
+   đúng khuôn DS-01 "row: [trái] … [action phải]". Áp từ md trở lên; mobile giữ mặc định. */
+@media (min-width: 768px) {
+    .fi-main .fi-header-has-breadcrumbs {
+        flex-direction: row;
+        align-items: center;
+        justify-content: space-between;
+        column-gap: 1rem;
+        row-gap: 0;
+    }
+
+    /* Filament mặc định đẩy actions xuống (margin-top ~1.75rem để nằm dưới heading);
+       heading đã ẩn nên bỏ margin để actions canh giữa cùng breadcrumb. */
+    .fi-main .fi-header-has-breadcrumbs .fi-header-actions-ctn {
+        flex-shrink: 0;
+        margin-top: 0;
+    }
+}
+
+/* Giảm ~2/3 khoảng trắng dọc quanh header (padding + gap header↔nội dung):
+   mặc định spacing*8 = 32px → spacing*3 = 12px. Đặc hơn cho màn vận hành BQL. */
+.fi-page-header-main-ctn {
+    row-gap: calc(var(--spacing) * 3);
+    padding-block: calc(var(--spacing) * 3);
+}
+
 /* =========================================================================
    WEB-UX-MOBILE — below lg the desktop topbar is replaced by <x-x2.mobile-shell>
    (compact header + context row + drawer/search/sheet). Hide the desktop topbar so
@@ -289,8 +324,24 @@ h1, h2, h3, h4,
     font-size: 13px;
 }
 
+/* Mobile card/list mode (density Task 7). Card list ẩn mặc định (desktop dùng bảng). */
+.x2-bql-page .x2-mobile-cards {
+    display: none;
+}
+
 @media (max-width: 767px) {
     .x2-bql-page {
         gap: 12px;
+    }
+
+    /* < 768px: ẩn bảng Filament + header toolbar, chuyển sang card list.
+       Giữ .fi-pagination hiển thị → phân trang/sort/filter vẫn do Filament xử lý. */
+    .x2-bql-page .fi-ta-content,
+    .x2-bql-page .fi-ta-header-ctn {
+        display: none;
+    }
+
+    .x2-bql-page .x2-mobile-cards {
+        display: block;
     }
 }
