@@ -160,6 +160,23 @@ class XyzDirectory extends Page implements HasTable
 - `x-x2.kpi-row` / `x-x2.card.kpi`.
 - `x-x2.page.tabs` — **chỉ dùng cho tab lọc-bảng**, không phải tab điều hướng.
 
+### 3.4 Toggle cột (dropdown "Cột") — chốt 2026-07-17
+Đặt nút **"Cột"** trong slot `trailing` của `x-x2.filter.bar` (cạnh "Bộ lọc nâng cao"), KHÔNG dùng `->toggleable()` của Filament (để không hiện trigger gốc trong toolbar).
+```php
+private const COLS = ['code' => 'Mã căn', ... ]; // key => nhãn
+public array $cols = [];
+public function mount(): void { $this->cols = array_fill_keys(array_keys(self::COLS), true); } // BẮT BUỘC init true → checkbox khớp cột đang hiện
+public function applyCols(): void {}                 // nút "Áp dụng" (deferred wire:model commit khi bấm)
+public function resetCols(): void { $this->cols = array_fill_keys(array_keys(self::COLS), true); }
+private function colShown(string $k): bool { return $this->cols[$k] ?? true; }
+// mỗi cột: ->visible(fn () => $this->colShown('code'))
+// getViewData: 'columnToggle' => self::COLS
+```
+Blade: checkbox `wire:model="cols.KEY"` (**deferred, KHÔNG .live**) + nút "Áp dụng" (`wire:click="applyCols"`) + "Đặt lại" (`wire:click="resetCols"`). Init `cols=true` nên checkbox phản ánh đúng cột đang bật.
+
+### 3.5 Bulk action = nút inline (không dropdown)
+`->toolbarActions([...])` truyền **thẳng `BulkAction`**, KHÔNG bọc `BulkActionGroup` → các tác vụ hàng loạt hiện thành nút cạnh nhau trong thanh chọn (không gom dropdown "Tác vụ hàng loạt").
+
 ---
 
 ## 4. CSS chuẩn (đã có trong `resources/css/filament/admin/theme.css`)

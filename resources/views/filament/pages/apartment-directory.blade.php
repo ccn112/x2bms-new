@@ -32,6 +32,34 @@
                         placeholder="Tìm mã căn, chủ sở hữu, người thuê, SĐT…"
                         class="h-9 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-700 focus:border-x2-primary focus:ring-0" />
                 </x-slot:search>
+                <x-slot:trailing>
+                    {{-- Ẩn/hiện cột — nhóm cùng bộ lọc nâng cao (chuẩn listing) --}}
+                    <div x-data="{ colOpen: false }" class="relative">
+                        <button type="button" @click="colOpen = ! colOpen" title="Ẩn/hiện cột"
+                            class="inline-flex h-9 items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 text-sm font-medium text-slate-600 hover:bg-slate-50">
+                            <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6A2.25 2.25 0 016 3.75h2.25v16.5H6A2.25 2.25 0 013.75 18V6zM10.5 3.75h3v16.5h-3V3.75zM15.75 3.75H18A2.25 2.25 0 0120.25 6v12A2.25 2.25 0 0118 20.25h-2.25V3.75z"/></svg>
+                            Cột
+                        </button>
+                        <div x-show="colOpen" x-cloak @click.outside="colOpen = false"
+                            class="absolute right-0 z-20 mt-1 w-56 rounded-xl border border-slate-200 bg-white p-3 shadow-lg">
+                            <div class="mb-2 flex items-center justify-between">
+                                <span class="text-xs font-semibold text-slate-500">Cột hiển thị</span>
+                                <button type="button" wire:click="resetCols" @click="colOpen = false" class="text-xs font-medium text-x2-red hover:underline">Đặt lại</button>
+                            </div>
+                            <div class="space-y-0.5">
+                                @foreach ($columnToggle as $key => $label)
+                                    <label class="flex cursor-pointer items-center gap-2 rounded-md px-1.5 py-1 text-sm text-slate-700 hover:bg-slate-50">
+                                        <input type="checkbox" wire:model="cols.{{ $key }}"
+                                            class="rounded border-slate-300 text-x2-primary focus:ring-x2-primary" />
+                                        {{ $label }}
+                                    </label>
+                                @endforeach
+                            </div>
+                            <button type="button" wire:click="applyCols" @click="colOpen = false"
+                                class="mt-3 w-full rounded-lg bg-x2-primary px-3 py-1.5 text-sm font-semibold text-white hover:opacity-90">Áp dụng</button>
+                        </div>
+                    </div>
+                </x-slot:trailing>
             </x-x2.filter.bar>
 
             {{-- Chip filter đang bật + Xóa tất cả --}}

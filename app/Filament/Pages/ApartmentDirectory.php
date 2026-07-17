@@ -12,7 +12,6 @@ use BackedEnum;
 use Filament\Actions\Action;
 use Filament\Actions\ActionGroup;
 use Filament\Actions\BulkAction;
-use Filament\Actions\BulkActionGroup;
 use Filament\Notifications\Notification;
 use Filament\Pages\Page;
 use Filament\Tables\Columns\TextColumn;
@@ -118,6 +117,32 @@ class ApartmentDirectory extends Page implements HasTable
         'danger' => 'bg-red-50 text-red-700',
     ];
 
+    /** Cột bật/tắt hiển thị (dropdown "Cột" trong filter bar). key => nhãn. */
+    private const COLS = [
+        'code' => 'Mã căn', 'building' => 'Tòa', 'floor' => 'Tầng', 'area' => 'Diện tích', 'type' => 'Loại căn',
+        'status' => 'Trạng thái', 'holder' => 'Chủ thể', 'residents' => 'Số cư dân', 'debt' => 'Công nợ', 'updated' => 'Cập nhật',
+    ];
+
+    /** @var array<string,bool> cột đang hiển thị (khởi tạo tất cả true để checkbox khớp). */
+    public array $cols = [];
+
+    public function mount(): void
+    {
+        $this->cols = array_fill_keys(array_keys(self::COLS), true);
+    }
+
+    public function applyCols(): void {}
+
+    public function resetCols(): void
+    {
+        $this->cols = array_fill_keys(array_keys(self::COLS), true);
+    }
+
+    private function colShown(string $key): bool
+    {
+        return $this->cols[$key] ?? true;
+    }
+
     private function ctx(): CurrentContext
     {
         return app(CurrentContext::class);
@@ -192,6 +217,7 @@ class ApartmentDirectory extends Page implements HasTable
             'filterOptions' => $this->filterOptions(),
             'activeChips' => $this->activeChips(),
             'advancedCount' => $this->advancedCount(),
+            'columnToggle' => self::COLS,
             'kpis' => [
                 ['label' => 'Tổng căn', 'value' => number_format($total, 0, ',', '.'), 'accent' => 'blue', 'icon' => 'heroicon-o-building-office-2', 'sub' => '100% tổng danh mục'],
                 ['label' => 'Đã ở', 'value' => number_format($occupied, 0, ',', '.'), 'accent' => 'green', 'icon' => 'heroicon-o-user-group', 'sub' => $pct($occupied)],
@@ -216,47 +242,57 @@ class ApartmentDirectory extends Page implements HasTable
                     ->sortable()
                     ->color('primary')
                     ->weight('medium')
-                    ->url(fn (Apartment $a): string => url('/admin/apartments/'.$a->id.'/profile')),
+                    ->url(fn (Apartment $a): string => url('/admin/apartments/'.$a->id.'/profile'))
+                    ->visible(fn (): bool => $this->colShown('code')),
                 TextColumn::make('building.name')
                     ->label('Tòa')
                     ->badge()
                     ->color('gray')
-                    ->sortable(),
+                    ->sortable()
+                    ->visible(fn (): bool => $this->colShown('building')),
                 TextColumn::make('floor.name')
                     ->label('Tầng')
                     ->placeholder('—')
-                    ->sortable(),
+                    ->sortable()
+                    ->visible(fn (): bool => $this->colShown('floor')),
                 TextColumn::make('area_sqm')
                     ->label('Diện tích (m²)')
                     ->formatStateUsing(fn ($state): string => $state ? number_format((float) $state, 1, ',', '.') : '—')
-                    ->sortable(),
+                    ->sortable()
+                    ->visible(fn (): bool => $this->colShown('area')),
                 TextColumn::make('type')
                     ->label('Loại căn')
-                    ->placeholder('—'),
+                    ->placeholder('—')
+                    ->visible(fn (): bool => $this->colShown('type')),
                 TextColumn::make('status')
                     ->label('Trạng thái ở')
                     ->badge()
                     ->formatStateUsing(fn (?string $state): string => self::STATUS[$state][0] ?? ($state ?? '—'))
-                    ->color(fn (?string $state): string => self::STATUS[$state][1] ?? 'gray'),
+                    ->color(fn (?string $state): string => self::STATUS[$state][1] ?? 'gray')
+                    ->visible(fn (): bool => $this->colShown('status')),
                 TextColumn::make('current_holder')
                     ->label('Chủ thể hiện tại')
                     ->state(fn (Apartment $a): string => $this->holderFor($a)['name'])
-                    ->description(fn (Apartment $a): ?string => $this->holderFor($a)['role']),
+                    ->description(fn (Apartment $a): ?string => $this->holderFor($a)['role'])
+                    ->visible(fn (): bool => $this->colShown('holder')),
                 TextColumn::make('resident_count')
                     ->label('Số cư dân')
                     ->alignCenter()
-                    ->state(fn (Apartment $a): int => ResidentApartmentRelation::where('apartment_id', $a->id)->count()),
+                    ->state(fn (Apartment $a): int => ResidentApartmentRelation::where('apartment_id', $a->id)->count())
+                    ->visible(fn (): bool => $this->colShown('residents')),
                 TextColumn::make('debt')
                     ->label('Công nợ (VND)')
                     ->alignEnd()
                     ->state(fn (Apartment $a): float => (float) Debt::where('apartment_id', $a->id)->where('is_overdue', true)->sum('amount'))
                     ->formatStateUsing(fn (float $state): string => number_format($state, 0, ',', '.'))
-                    ->color(fn (float $state): string => $state > 0 ? 'danger' : 'success'),
+                    ->color(fn (float $state): string => $state > 0 ? 'danger' : 'success')
+                    ->visible(fn (): bool => $this->colShown('debt')),
                 TextColumn::make('updated_at')
                     ->label('Cập nhật')
                     ->dateTime('d/m/Y H:i')
                     ->sortable()
-                    ->color('gray'),
+                    ->color('gray')
+                    ->visible(fn (): bool => $this->colShown('updated')),
             ])
             ->recordActions([
                 Action::make('view')
@@ -274,14 +310,13 @@ class ApartmentDirectory extends Page implements HasTable
                     Action::make('history')->label('Lịch sử')->icon('heroicon-m-clock')->url(url('/admin/apartments/tree')),
                 ])->icon('heroicon-m-ellipsis-vertical')->color('gray'),
             ])
+            // Bulk action hiện thẳng thành nút (không gom dropdown).
             ->toolbarActions([
-                BulkActionGroup::make([
-                    BulkAction::make('export')
-                        ->label('Xuất dữ liệu')
-                        ->icon('heroicon-m-arrow-down-tray')
-                        ->color('gray')
-                        ->action(fn () => Notification::make()->title('Đang chuẩn bị file xuất…')->info()->send()),
-                ]),
+                BulkAction::make('export')
+                    ->label('Xuất dữ liệu')
+                    ->icon('heroicon-m-arrow-down-tray')
+                    ->color('gray')
+                    ->action(fn () => Notification::make()->title('Đang chuẩn bị file xuất…')->info()->send()),
             ])
             ->emptyStateHeading('Không tìm thấy căn hộ phù hợp')
             ->emptyStateDescription('Không có kết quả nào khớp với bộ lọc hiện tại.')
