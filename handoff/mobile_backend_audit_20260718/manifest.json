@@ -1,0 +1,57 @@
+{
+  "package": "X2-BMS Backend Mobile Readiness Audit",
+  "version": "1.0",
+  "exported_at": "2026-07-18T11:05:03+07:00",
+  "type": "read-only audit",
+  "contains_secrets": false,
+  "note": "Tài liệu phân tích READ-ONLY. Không chứa secret/password/token/private key/.env. Chỉ tham chiếu TÊN biến khi cần.",
+  "git": {
+    "branch": "feat/bql01-04-resident-detail-password-reset",
+    "commit": "ced309432508d5cf1a68e9097ed0326bade709d3",
+    "repository": "ccn112/x2bms-new"
+  },
+  "runtime": {
+    "php": "8.4.15",
+    "database": "MySQL 8.0.44 (schema x2bms)"
+  },
+  "stack": {
+    "laravel/framework": "v13.17.0",
+    "filament/filament": "v5.6.7",
+    "laravel/sanctum": "v4.3.2",
+    "spatie/laravel-permission": "7.4.2"
+  },
+  "codebase_stats": {
+    "models": 284,
+    "migrations": 67,
+    "db_tables": 326,
+    "controllers": 20,
+    "php_enums": 4,
+    "tests": 6,
+    "api_scope": "platform-admin only (no resident/BQL API)"
+  },
+  "files": [
+    { "name": "README.md", "desc": "Mục tiêu, phạm vi, cách đọc gói" },
+    { "name": "REPOSITORY_SNAPSHOT.md", "desc": "Cây thư mục, stack, version, package chính" },
+    { "name": "BACKEND_ARCHITECTURE.md", "desc": "Kiến trúc module, luồng request, service/queue/event, điểm dở" },
+    { "name": "TENANCY_AND_CONTEXT.md", "desc": "Phân cấp tenant/project/building/apartment, context, scope, rủi ro rò dữ liệu" },
+    { "name": "AUTH_AND_RESIDENT_IDENTITY.md", "desc": "User/resident/household, OTP/token/session/device, quan hệ căn hộ, quyền" },
+    { "name": "DATABASE_DOMAIN_MAP.md", "desc": "Bảng theo module, PK/FK, soft delete, audit field, trạng thái migration" },
+    { "name": "DOMAIN_STATE_MACHINES.md", "desc": "Enum trạng thái, transition, actor, side effect" },
+    { "name": "API_ENDPOINT_INVENTORY.md", "desc": "Mọi endpoint: method/route/auth/scope/request/response/status/mobile-ready" },
+    { "name": "API_RESPONSE_AND_ERROR_STANDARD.md", "desc": "Envelope, lỗi, phân trang, thời gian, tiền tệ, i18n" },
+    { "name": "MODULE_READINESS_MATRIX.md", "desc": "Ma trận sẵn sàng theo module (migration/model/service/API/policy/seed/test/mobile)" },
+    { "name": "MOBILE_API_GAPS.md", "desc": "API còn thiếu cho cư dân/BQL, method sai, N+1, offline/sync, idempotency" },
+    { "name": "PAYMENT_NOTIFICATION_UPLOAD_AUDIT.md", "desc": "Payment/webhook/idempotency, FCM/device, upload/signed URL" },
+    { "name": "SECURITY_AND_PRIVACY_AUDIT.md", "desc": "Tenant isolation, PII, consent, revoke, audit, rate limit, OTP abuse, file, log" },
+    { "name": "RECOMMENDED_IMPLEMENTATION_ORDER.md", "desc": "Thứ tự dựng backend theo vertical slice + dependency/blocker" },
+    { "name": "manifest.json", "desc": "Danh sách file, thời điểm export, git, version (không secret)" }
+  ],
+  "headline_findings": [
+    "API nghiệp vụ cho mobile ≈ 0: routes/api.php chỉ có platform-admin (billing/integration/support).",
+    "Xác thực API qua phiên Filament, chưa dùng Sanctum token; chưa có login/token cho cư dân.",
+    "Nghiệp vụ cư dân/BQL nằm trong Filament Pages (Livewire), phụ thuộc CurrentContext (session) — cần refactor sang tầng service/API.",
+    "Hạ tầng async trống (0 Job/Event/Listener/Notification); chưa có push/FCM/device token.",
+    "Rủi ro bảo mật: ảnh CCCD/chân dung ở disk public, không rate-limit API, OTP reset không giới hạn thử, scope tenant phụ thuộc auth() (no-op ngoài web).",
+    "Model/migration/seed cho hầu hết domain đã có → tận dụng được; cần xây lớp API + token + policy + resource."
+  ]
+}
