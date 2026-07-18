@@ -6,6 +6,7 @@ use App\Models\AuditLog;
 use App\Models\Resident;
 use App\Models\ResidentApartmentRelation;
 use App\Models\ResidentApprovalRequest;
+use App\Filament\Concerns\ResetsResidentPassword;
 use App\Support\Context\CurrentContext;
 use BackedEnum;
 use Filament\Actions\Action;
@@ -19,6 +20,7 @@ use Filament\Forms\Components\Toggle;
 use Filament\Notifications\Notification;
 use Filament\Pages\Page;
 use Filament\Schemas\Components\Wizard\Step;
+use Filament\Tables\Columns\ImageColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Concerns\InteractsWithTable;
 use Filament\Tables\Contracts\HasTable;
@@ -34,6 +36,7 @@ use Illuminate\Support\HtmlString;
 class ResidentDirectory extends Page implements HasTable
 {
     use InteractsWithTable;
+    use ResetsResidentPassword;
 
     protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-users';
 
@@ -70,7 +73,7 @@ class ResidentDirectory extends Page implements HasTable
 
     /** Cột bật/tắt hiển thị (dropdown "Cột" nhóm cùng filter bar). key => nhãn. */
     private const COLS = [
-        'code' => 'Mã CD', 'full_name' => 'Họ và tên', 'phone' => 'SĐT', 'building' => 'Tòa',
+        'code' => 'Mã CD', 'avatar' => 'Ảnh', 'full_name' => 'Họ và tên', 'phone' => 'SĐT', 'building' => 'Tòa',
         'apartment' => 'Căn hộ', 'role' => 'Loại cư dân', 'status' => 'Trạng thái', 'created_at' => 'Ngày tạo',
     ];
 
@@ -314,6 +317,11 @@ class ResidentDirectory extends Page implements HasTable
                     ->sortable()
                     ->color('gray')
                     ->visible(fn (): bool => $this->colShown('code')),
+                ImageColumn::make('avatar_url')
+                    ->label('Ảnh')
+                    ->circular()
+                    ->size(36)
+                    ->visible(fn (): bool => $this->colShown('avatar')),
                 TextColumn::make('full_name')
                     ->label('Họ và tên')
                     ->color('primary')
@@ -370,6 +378,16 @@ class ResidentDirectory extends Page implements HasTable
                     ->icon('heroicon-m-pencil-square')
                     ->color('gray')
                     ->url(fn (Resident $r): string => url('/fila/residents/'.$r->id.'/edit')),
+                Action::make('resetPassword')
+                    ->label('Đặt lại mật khẩu')
+                    ->iconButton()
+                    ->icon('heroicon-m-key')
+                    ->color('warning')
+                    ->modalWidth('md')
+                    ->modalHeading(fn (Resident $r): string => 'Đặt lại mật khẩu — '.$r->full_name)
+                    ->modalSubmitActionLabel('Thực hiện')
+                    ->schema($this->resetPasswordSchema())
+                    ->action(fn (Resident $r, array $data) => $this->handleResidentPasswordReset($r, $data)),
                 ActionGroup::make([
                     Action::make('linkApartment')->label('Gắn căn hộ')->icon('heroicon-m-home')->url('#'),
                     Action::make('resendActivation')->label('Gửi lại mã kích hoạt')->icon('heroicon-m-key')->url('#'),

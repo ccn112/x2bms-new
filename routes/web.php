@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Auth\ResidentPasswordResetController;
 use App\Models\AuditLog;
 use App\Models\Project;
 use App\Support\Context\CurrentContext;
@@ -7,6 +8,10 @@ use Illuminate\Support\Facades\Route;
 
 // Designed UI lives on the themed Filament panel at /admin; stock CRUD at /fila.
 Route::get('/', fn () => redirect('/admin'));
+
+// Đặt lại mật khẩu (guest) — tiêu thụ token BQL sinh ở màn cư dân.
+Route::get('/reset-password/{token}', [ResidentPasswordResetController::class, 'show'])->name('password.reset');
+Route::post('/reset-password', [ResidentPasswordResetController::class, 'store'])->name('password.store');
 
 Route::middleware(['auth'])->group(function () {
     // WEB-UX-01 — switch the active project context, then return to the page.

@@ -115,4 +115,14 @@ return [
         'name' => env('MAIL_FROM_NAME', env('APP_NAME', 'Laravel')),
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Địa chỉ nhận thử (test)
+    |--------------------------------------------------------------------------
+    | Khi đặt, MỌI email nghiệp vụ (OTP/link đặt lại mật khẩu…) sẽ được gửi tới
+    | địa chỉ này thay cho email thật của cư dân — tiện kiểm thử. Bỏ trống ở
+    | production để gửi đúng người nhận.
+    */
+    'test_to' => env('MAIL_TEST_TO_ADDRESS'),
+
 ];
