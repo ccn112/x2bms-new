@@ -18,7 +18,51 @@ use App\Http\Controllers\Platform\Integration\WebhookEndpointController;
 use App\Http\Controllers\Platform\Support\DataCorrectionController;
 use App\Http\Controllers\Platform\Support\SupportCenterController;
 use App\Http\Controllers\Platform\Support\SupportTicketController;
+use App\Http\Controllers\Api\V1\AuthController;
+use App\Http\Controllers\Api\V1\BootstrapController;
+use App\Http\Controllers\Api\V1\DeviceController;
+use App\Http\Controllers\Api\V1\OtpController;
 use Illuminate\Support\Facades\Route;
+
+/*
+ * Mobile API v1 — stateless Bearer-token API for the Resident & BQL Flutter apps.
+ * See docs/ARCHITECTURE_X2_PLATFORM_V1.md. User is the single auth principal.
+ */
+Route::prefix('v1')->group(function () {
+    // Public — no auth, cache-friendly.
+    Route::middleware('throttle:public-read')->group(function () {
+        Route::get('public/bootstrap', [BootstrapController::class, 'public']);
+    });
+
+    // Auth.
+    Route::post('auth/login', [AuthController::class, 'login'])->middleware('throttle:auth-login');
+    Route::post('auth/otp/request', [OtpController::class, 'request'])->middleware('throttle:otp');
+    Route::post('auth/otp/verify', [OtpController::class, 'verify'])->middleware('throttle:otp');
+    // Refresh authenticates the refresh token itself (ability checked in controller).
+    Route::post('auth/refresh', [AuthController::class, 'refresh'])->middleware('auth:sanctum');
+
+    // Authenticated (any valid access token).
+    Route::middleware(['auth:sanctum', 'throttle:api'])->group(function () {
+        Route::post('auth/logout', [AuthController::class, 'logout']);
+        Route::get('me/bootstrap', [BootstrapController::class, 'me']);
+        Route::post('me/devices', [DeviceController::class, 'store']);
+        Route::delete('me/devices/{installationId}', [DeviceController::class, 'destroy']);
+    });
+
+    // X2AI chat — auth OPTIONAL (web/app-authed = identified user; else anonymous by
+    // X-Device-Id). Throttle keyed inside the service; a light route throttle guards abuse.
+    Route::middleware('throttle:public-read')->group(function () {
+        Route::post('ai/chat', [\App\Http\Controllers\Api\V1\Ai\ChatController::class, 'chat']);
+        Route::get('ai/chat/sessions', [\App\Http\Controllers\Api\V1\Ai\ChatController::class, 'sessions']);
+        Route::get('ai/chat/sessions/{session}', [\App\Http\Controllers\Api\V1\Ai\ChatController::class, 'session']);
+    });
+
+    // Resident business endpoints — require the `resident` token ability.
+    Route::middleware(['auth:sanctum', 'ability:resident', 'throttle:api'])->prefix('resident')->group(function () {
+        Route::get('statements', [\App\Http\Controllers\Api\V1\Resident\StatementController::class, 'index']);
+        Route::get('statements/{statement}', [\App\Http\Controllers\Api\V1\Resident\StatementController::class, 'show']);
+    });
+});
 
 /*
  * Batch 07 — SaaS Billing API (English business routes). Chỉ SuperAdmin/Billing admin

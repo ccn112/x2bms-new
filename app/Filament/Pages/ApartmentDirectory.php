@@ -201,15 +201,23 @@ class ApartmentDirectory extends Page implements HasTable
     {
         // KPI tính lại theo BỘ LỌC hiện tại (owner 2026-07-17: KPI phản ánh kết quả lọc,
         // không còn "bất biến theo context"). Dùng chung filteredQuery() với bảng.
-        $base = fn () => $this->filteredQuery();
+        // 1 query gộp theo status thay vì 4 lần count().
+        $byStatus = $this->filteredQuery()
+            ->select('status')
+            ->selectRaw('count(*) as c')
+            ->groupBy('status')
+            ->pluck('c', 'status');
 
-        $total = $base()->count();
-        $occupied = (clone $base())->where('status', 'occupied')->count();
-        $vacant = (clone $base())->where('status', 'vacant')->count();
-        $pendingAttach = (clone $base())->where('status', 'pending_attach')->count();
+        $total = (int) $byStatus->sum();
+        $occupied = (int) ($byStatus['occupied'] ?? 0);
+        $vacant = (int) ($byStatus['vacant'] ?? 0);
+        $pendingAttach = (int) ($byStatus['pending_attach'] ?? 0);
 
-        $aptIds = (clone $base())->pluck('id');
-        $withDebt = Debt::whereIn('apartment_id', $aptIds)->where('is_overdue', true)->distinct()->count('apartment_id');
+        // Đếm căn có nợ quá hạn bằng subquery (không pluck toàn bộ id về PHP).
+        $withDebt = Debt::where('is_overdue', true)
+            ->whereIn('apartment_id', $this->filteredQuery()->select('apartments.id'))
+            ->distinct()
+            ->count('apartment_id');
 
         $pct = fn (int $n) => $total ? number_format($n / $total * 100, 1, ',', '.').'%' : '0%';
 
@@ -234,7 +242,7 @@ class ApartmentDirectory extends Page implements HasTable
             // Closure (không phải Builder tĩnh): Filament cache Table nên nếu truyền
             // Builder dựng sẵn thì filter mới KHÔNG vào query. Closure được gọi lại
             // mỗi lần lấy records → đọc đúng $this->f* hiện tại.
-            ->query(fn (): Builder => $this->filteredQuery())
+            ->query(fn (): Builder => $this->tableQuery())
             ->defaultSort('code')
             ->columns([
                 TextColumn::make('code')
@@ -280,12 +288,12 @@ class ApartmentDirectory extends Page implements HasTable
                 TextColumn::make('resident_count')
                     ->label('Số cư dân')
                     ->alignCenter()
-                    ->state(fn (Apartment $a): int => ResidentApartmentRelation::where('apartment_id', $a->id)->count())
+                    ->state(fn (Apartment $a): int => (int) ($a->resident_count ?? 0))
                     ->visible(fn (): bool => $this->colShown('residents')),
                 TextColumn::make('debt')
                     ->label('Công nợ (VND)')
                     ->alignEnd()
-                    ->state(fn (Apartment $a): float => (float) Debt::where('apartment_id', $a->id)->where('is_overdue', true)->sum('amount'))
+                    ->state(fn (Apartment $a): float => (float) ($a->debt_sum ?? 0))
                     ->formatStateUsing(fn (float $state): string => number_format($state, 0, ',', '.'))
                     ->color(fn (float $state): string => $state > 0 ? 'danger' : 'success')
                     ->visible(fn (): bool => $this->colShown('debt')),
@@ -326,7 +334,27 @@ class ApartmentDirectory extends Page implements HasTable
             ->paginated([10, 25, 50, 100]);
     }
 
-    /** Query bảng đã áp toàn bộ filter nghiệp vụ (dùng chung cho bảng + export). */
+    /**
+     * Query cho BẢNG: filter nghiệp vụ + enrich sẵn (tránh N+1):
+     *  - resident_count qua withCount (1 subquery),
+     *  - debt_sum qua subquery cột (1 subquery),
+     *  - holder qua eager-load apartmentRelations (đã sắp theo vai trò) + resident.
+     */
+    private function tableQuery(): Builder
+    {
+        return $this->filteredQuery()
+            ->select('apartments.*')
+            ->withCount('apartmentRelations as resident_count')
+            ->addSelect(['debt_sum' => Debt::query()
+                ->selectRaw('COALESCE(SUM(amount),0)')
+                ->whereColumn('apartment_id', 'apartments.id')
+                ->where('is_overdue', true)])
+            ->with(['apartmentRelations' => fn ($q) => $q
+                ->orderByRaw("FIELD(role,'owner','tenant','member')")
+                ->with('resident:id,full_name')]);
+    }
+
+    /** Query cơ sở đã áp toàn bộ filter nghiệp vụ (dùng cho KPI + export). */
     private function filteredQuery(): Builder
     {
         return Apartment::query()
@@ -451,8 +479,9 @@ class ApartmentDirectory extends Page implements HasTable
             'holderName' => $holder['name'],
             'holderRole' => $holder['role'],
             'holderId' => $holder['id'],
-            'residentCount' => ResidentApartmentRelation::where('apartment_id', $a->id)->count(),
-            'debt' => (float) Debt::where('apartment_id', $a->id)->where('is_overdue', true)->sum('amount'),
+            // Reuse precomputed columns from tableQuery (no per-card query).
+            'residentCount' => (int) ($a->resident_count ?? $a->apartmentRelations()->count()),
+            'debt' => (float) ($a->debt_sum ?? $a->debts()->where('is_overdue', true)->sum('amount')),
         ];
     }
 
@@ -466,10 +495,13 @@ class ApartmentDirectory extends Page implements HasTable
             return $this->holderCache[$a->id];
         }
 
-        $rel = ResidentApartmentRelation::where('apartment_id', $a->id)
-            ->orderByRaw("FIELD(role,'owner','tenant','member')")
-            ->with('resident')
-            ->first();
+        // Prefer eager-loaded relations (tableQuery) → no per-row query.
+        $rel = $a->relationLoaded('apartmentRelations')
+            ? $a->apartmentRelations->first()
+            : $a->apartmentRelations()
+                ->orderByRaw("FIELD(role,'owner','tenant','member')")
+                ->with('resident:id,full_name')
+                ->first();
 
         return $this->holderCache[$a->id] = [
             'id' => $rel?->resident?->id,

@@ -69,10 +69,16 @@ class AdminPanelProvider extends PanelProvider
             // on the stock /fila panel (FilaPanelProvider) to avoid slug clashes.
             ->discoverPages(in: app_path('Filament/Pages'), for: 'App\Filament\Pages')
             ->discoverWidgets(in: app_path('Filament/Widgets'), for: 'App\Filament\Widgets')
+            // Critical shell CSS/JS — kill the sidebar/offset flash on reload (must run
+            // before the external theme + Alpine). See critical-shell.blade.php.
+            ->renderHook(
+                PanelsRenderHook::HEAD_START,
+                fn (): string => Blade::render('@include("filament.hooks.critical-shell")'),
+            )
             // Fonts (DS-01): Inter (body/table/form) + Plus Jakarta Sans (titles/menu/KPI).
             ->renderHook(
                 PanelsRenderHook::HEAD_END,
-                fn (): string => '<link rel="stylesheet" href="https://fonts.bunny.net/css?family=inter:400,500,600,700|plus-jakarta-sans:400,500,600,700,800&display=swap">',
+                fn (): string => '<link rel="stylesheet" href="/fonts/x2-fonts.css">',
             )
             // Sidebar: X2-BMS brand block pinned to the top of the navy rail (WEB-UX-00).
             ->renderHook(

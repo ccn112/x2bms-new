@@ -6,4 +6,5 @@ return [
     App\Providers\Filament\FilaPanelProvider::class,
     App\Providers\Filament\HqPanelProvider::class,
     App\Providers\Filament\SaPanelProvider::class,
+    App\Providers\HorizonServiceProvider::class,
 ];

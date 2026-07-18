@@ -51,4 +51,15 @@ class Apartment extends Model
     {
         return $this->hasMany(Statement::class);
     }
+
+    /** Resident-apartment links (with role/is_primary) — for holder resolution + counts. */
+    public function apartmentRelations(): HasMany
+    {
+        return $this->hasMany(ResidentApartmentRelation::class);
+    }
+
+    public function debts(): HasMany
+    {
+        return $this->hasMany(Debt::class);
+    }
 }

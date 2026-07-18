@@ -283,10 +283,12 @@ class ResidentDirectory extends Page implements HasTable
     protected function getViewData(): array
     {
         // KPI = breakdown theo trạng thái, tính lại theo BỘ LỌC hiện tại (owner 2026-07-17).
-        $total = $this->baseQuery()->count();
-        $active = $this->baseQuery()->where('status', 'active')->count();
-        $pending = $this->baseQuery()->where('status', 'pending')->count();
-        $locked = $this->baseQuery()->where('status', 'inactive')->count();
+        // 1 query gộp theo status thay vì 4 lần count().
+        $byStatus = $this->baseQuery()->select('status')->selectRaw('count(*) as c')->groupBy('status')->pluck('c', 'status');
+        $total = (int) $byStatus->sum();
+        $active = (int) ($byStatus['active'] ?? 0);
+        $pending = (int) ($byStatus['pending'] ?? 0);
+        $locked = (int) ($byStatus['inactive'] ?? 0);
         $missing = $this->baseQuery()->where(fn ($q) => $q->whereNull('id_no')->orWhere('id_no', ''))->count();
         $pct = fn (int $n) => $total ? round($n / $total * 100, 1).'%' : '0%';
 

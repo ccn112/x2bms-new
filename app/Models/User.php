@@ -18,7 +18,9 @@ use Laravel\Sanctum\HasApiTokens;
 use Spatie\Permission\Traits\HasRoles;
 
 #[Fillable(['tenant_id', 'project_id', 'building_id', 'name', 'title', 'is_platform_admin', 'email', 'password', 'account_type', 'phone', 'id_no', 'dob', 'gender', 'nationality', 'kyc_status', 'kyc_verified_at', 'avatar_path'])]
-#[Hidden(['password', 'remember_token'])]
+// PII never leaves the app via array/JSON serialization (API responses). Filament reads
+// attributes directly, so admin forms are unaffected; only api Resources see the masked view.
+#[Hidden(['password', 'remember_token', 'id_no', 'dob'])]
 class User extends Authenticatable implements FilamentUser
 {
     /** @use HasFactory<UserFactory> */
@@ -30,10 +32,42 @@ class User extends Authenticatable implements FilamentUser
         return $this->hasMany(UserRoleScope::class);
     }
 
-    /** True for self-registered resident accounts (global, not tenant-scoped). */
+    /**
+     * Origin hint from registration (self-registered vs BQL-created). NOT authoritative
+     * for capability — a person may be both a resident and BQL staff. Use the relation-
+     * derived helpers below (hasResidentMembership / isStaffOperator) for authorization.
+     */
     public function isResident(): bool
     {
         return $this->account_type === 'resident';
+    }
+
+    /** Capability: this person has at least one (linked) resident membership. */
+    public function hasResidentMembership(): bool
+    {
+        return $this->residentMemberships()->exists();
+    }
+
+    /** Capability: this person operates a BQL/tenant/platform scope (staff hat). */
+    public function isStaffOperator(): bool
+    {
+        return $this->is_platform_admin
+            || $this->roleScopes()->exists()
+            || $this->roles()->exists();
+    }
+
+    /** Sanctum abilities granted to this person's mobile token, derived from relations. */
+    public function tokenAbilities(): array
+    {
+        $abilities = [];
+        if ($this->hasResidentMembership() || $this->isResident()) {
+            $abilities[] = 'resident';
+        }
+        if ($this->isStaffOperator()) {
+            $abilities[] = 'staff';
+        }
+
+        return $abilities ?: ['member']; // member = authenticated but no context yet
     }
 
     /**

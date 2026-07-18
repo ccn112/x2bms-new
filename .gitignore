@@ -28,3 +28,7 @@ Thumbs.db
 _render_hq.php
 _render_admin.php
 _chk.php
+
+**/caddy
+frankenphp
+frankenphp-worker.php

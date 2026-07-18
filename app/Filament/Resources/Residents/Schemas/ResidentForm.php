@@ -101,9 +101,17 @@ class ResidentForm
                                 'matched' => 'Khớp',
                                 'mismatch' => 'Không khớp',
                             ])->default('not_checked'),
-                        FileUpload::make('id_front_path')->label('Ảnh giấy tờ (mặt trước)')->image()->disk('public')->directory('residents/kyc'),
-                        FileUpload::make('id_back_path')->label('Ảnh giấy tờ (mặt sau)')->image()->disk('public')->directory('residents/kyc'),
-                        FileUpload::make('portrait_path')->label('Ảnh chân dung')->image()->disk('public')->directory('residents/kyc'),
+                        // KYC/CCCD is PII — stored on the PRIVATE disk (storage/app/private), never
+                        // a public URL. Served only through the signed, authorized media route.
+                        FileUpload::make('id_front_path')->label('Ảnh giấy tờ (mặt trước)')
+                            ->image()->disk('local')->visibility('private')->directory('residents/kyc')
+                            ->acceptedFileTypes(['image/jpeg', 'image/png'])->maxSize(5120),
+                        FileUpload::make('id_back_path')->label('Ảnh giấy tờ (mặt sau)')
+                            ->image()->disk('local')->visibility('private')->directory('residents/kyc')
+                            ->acceptedFileTypes(['image/jpeg', 'image/png'])->maxSize(5120),
+                        FileUpload::make('portrait_path')->label('Ảnh chân dung')
+                            ->image()->disk('local')->visibility('private')->directory('residents/kyc')
+                            ->acceptedFileTypes(['image/jpeg', 'image/png'])->maxSize(5120),
                     ]),
 
                 Section::make('Thông tin bổ sung')
@@ -125,7 +133,9 @@ class ResidentForm
                         FileUpload::make('documents')
                             ->label('Hợp đồng / Sổ hồng / KT3 / Giấy ủy quyền')
                             ->multiple()
-                            ->disk('public')
+                            // Legal documents contain PII → private disk, served via signed media route.
+                            ->disk('local')
+                            ->visibility('private')
                             ->directory('residents/docs')
                             ->acceptedFileTypes(['application/pdf', 'image/jpeg', 'image/png'])
                             ->maxSize(10240),

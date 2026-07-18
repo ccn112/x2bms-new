@@ -1,0 +1,48 @@
+# X2-BMS — Coolify Docker Compose (web + Horizon worker + scheduler).
+# MySQL & Redis: dùng resource "Database" quản lý bởi Coolify (có backup/UI) và trỏ qua
+# biến môi trường (đặt trong Coolify → Environment Variables). KHÔNG khai báo DB ở đây.
+#
+# Coolify inject env + gán domain/SSL cho service có nhãn. Chỉ service `web` mở cổng.
+
+services:
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      WEB_ROLE: "true"          # container này chạy migrate + optimize khi khởi động
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:8000/up"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+    ports:
+      - "8000"
+    volumes:
+      - app-storage:/app/storage
+    restart: unless-stopped
+
+  worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: ["php", "artisan", "horizon"]
+    volumes:
+      - app-storage:/app/storage
+    restart: unless-stopped
+    depends_on:
+      - web
+
+  scheduler:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: ["php", "artisan", "schedule:work"]
+    volumes:
+      - app-storage:/app/storage
+    restart: unless-stopped
+    depends_on:
+      - web
+
+volumes:
+  app-storage:

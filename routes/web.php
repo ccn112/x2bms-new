@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Auth\ResidentPasswordResetController;
+use App\Http\Controllers\Media\PrivateMediaController;
 use App\Models\AuditLog;
 use App\Models\Project;
 use App\Support\Context\CurrentContext;
@@ -12,6 +13,15 @@ Route::get('/', fn () => redirect('/admin'));
 // Đặt lại mật khẩu (guest) — tiêu thụ token BQL sinh ở màn cư dân.
 Route::get('/reset-password/{token}', [ResidentPasswordResetController::class, 'show'])->name('password.reset');
 Route::post('/reset-password', [ResidentPasswordResetController::class, 'store'])->name('password.store');
+
+// Private resident media (KYC/documents) — requires login + a signed, short-lived URL
+// + ResidentPolicy@view. Never a public URL.
+Route::middleware(['auth', 'signed'])->group(function () {
+    Route::get('/media/residents/{resident}/documents/{index}', [PrivateMediaController::class, 'residentDocument'])
+        ->name('media.resident.document');
+    Route::get('/media/residents/{resident}/{field}', [PrivateMediaController::class, 'resident'])
+        ->name('media.resident.field');
+});
 
 Route::middleware(['auth'])->group(function () {
     // WEB-UX-01 — switch the active project context, then return to the page.

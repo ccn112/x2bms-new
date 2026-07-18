@@ -57,7 +57,7 @@ class SaPanelProvider extends PanelProvider
             // Fonts (DS-01): Inter (body) + Plus Jakarta Sans (titles/menu/KPI).
             ->renderHook(
                 PanelsRenderHook::HEAD_END,
-                fn (): string => '<link rel="stylesheet" href="https://fonts.bunny.net/css?family=inter:400,500,600,700|plus-jakarta-sans:400,500,600,700,800&display=swap">',
+                fn (): string => '<link rel="stylesheet" href="/fonts/x2-fonts.css">',
             )
             ->renderHook(
                 PanelsRenderHook::SIDEBAR_START,
