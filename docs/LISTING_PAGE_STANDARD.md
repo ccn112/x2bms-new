@@ -206,11 +206,31 @@ Các rule header/spacing áp cho **mọi trang có breadcrumb** → dùng `getBr
 
 ---
 
+## 5b. Chuẩn ACTION (nút) — áp cho cả màn list & detail (chốt 2026-07-18)
+
+**Tối đa ~3 nút chính, phần còn lại vào dropdown "Thao tác khác".**
+- Header màn detail / row-action màn list chỉ để **3 action hay dùng nhất**. Phần còn lại (ít dùng / nhạy cảm) gom vào `Filament\Actions\ActionGroup::make([...])->label('Thao tác khác')->icon('heroicon-m-ellipsis-horizontal')->button()->color('gray')` — dùng được cả trong `getHeaderActions()` lẫn `recordActions()`.
+- **Hành động hủy diệt/nhạy cảm** (Khóa, Xóa, Thu hồi) đặt TRONG dropdown, không để ngoài header (tránh bấm nhầm). `->visible()` vẫn chạy đúng bên trong ActionGroup.
+- Reference: header `ResidentDetail` = Chỉnh sửa · Gửi thông báo · Đặt lại mật khẩu + dropdown (Thêm quan hệ · Yêu cầu cập nhật · Xuất hồ sơ · Khóa tài khoản).
+
+**Màu nền nút theo Ý NGHĨA action** (token đăng ký ở `AdminPanelProvider`: `primary`=#2563eb, `gold`=#d5a331; + mặc định `gray`/`success`/`warning`/`danger`/`info`):
+
+| Ý nghĩa | Color | Ví dụ |
+|---|---|---|
+| Tạo mới nghiệp vụ / lưu chính (CTA) | `gold` | Thêm cư dân, Tạo… |
+| Duyệt / kích hoạt / mở khóa / hoàn tất | `success` | Duyệt, Mở khóa tài khoản |
+| Xóa / khóa / thu hồi / từ chối | `danger` | Khóa tài khoản, Xóa |
+| Bảo mật / cảnh báo / tạm hoãn | `warning` | Đặt lại mật khẩu, OTP |
+| Xem / sửa / xuất / điều hướng (trung tính) | `gray` | Chỉnh sửa, Xuất hồ sơ, dropdown |
+| Nhấn mạnh thông tin / liên kết (tiết chế) | `primary` | link nội dung |
+
+---
+
 ## 6. Checklist khi dựng màn listing mới
 
 1. Sidebar: đăng ký page trong nav group đúng (KHÔNG thêm tab điều hướng).
 2. `getBreadcrumbs()` có icon + click được (mục cha), title chỉ topbar.
-3. `getHeaderActions()` — action trang, nút tạo `->color('gold')`.
+3. `getHeaderActions()` / `recordActions()` — tối đa **3 nút chính**, còn lại vào ActionGroup "Thao tác khác"; **màu nút theo ý nghĩa** (§5b); nút tạo `->color('gold')`.
 4. `filteredQuery()` scope `building_id` (context) + tất cả filter; `table()` dùng **closure**.
 5. `updated()` + các nút clear gọi `refreshTable()` (resetPage + flush cache).
 6. KPI trong `getViewData()` tính từ `filteredQuery()` (động theo filter).

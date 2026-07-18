@@ -70,9 +70,12 @@
                         @php $m = $this->cardMeta($r); @endphp
                         <div class="rounded-xl border border-slate-200 bg-white p-3.5 shadow-sm">
                             <div class="flex items-start justify-between gap-3">
-                                <div class="min-w-0">
-                                    <a href="{{ url('/admin/residents/'.$r->id.'/detail') }}" class="font-title text-sm font-bold text-x2-primary">{{ $r->full_name }}</a>
-                                    <div class="mt-0.5 text-xs text-slate-500">{{ $r->code }} · {{ $r->phone ?? '—' }}</div>
+                                <div class="flex min-w-0 items-center gap-3">
+                                    <img src="{{ $r->avatar_url }}" alt="{{ $r->full_name }}" class="h-10 w-10 shrink-0 rounded-full object-cover ring-1 ring-slate-100" />
+                                    <div class="min-w-0">
+                                        <a href="{{ url('/admin/residents/'.$r->id.'/detail') }}" class="font-title text-sm font-bold text-x2-primary">{{ $r->full_name }}</a>
+                                        <div class="mt-0.5 text-xs text-slate-500">{{ $r->code }} · {{ $r->phone ?? '—' }}</div>
+                                    </div>
                                 </div>
                                 <x-x2.status-badge :label="$m['statusLabel']" :tone="$m['statusTone']" />
                             </div>
