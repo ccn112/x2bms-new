@@ -6,8 +6,10 @@ use App\Models\AuditLog;
 use App\Models\Resident;
 use App\Models\ResidentApartmentRelation;
 use App\Models\ResidentApprovalRequest;
+use App\Filament\Concerns\ImportsResidentsFromExcel;
 use App\Filament\Concerns\ResetsResidentPassword;
 use App\Support\Context\CurrentContext;
+use App\Support\Export\ExportsCsv;
 use BackedEnum;
 use Filament\Actions\Action;
 use Filament\Actions\ActionGroup;
@@ -37,6 +39,8 @@ class ResidentDirectory extends Page implements HasTable
 {
     use InteractsWithTable;
     use ResetsResidentPassword;
+    use ExportsCsv;
+    use ImportsResidentsFromExcel;
 
     protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-users';
 
@@ -115,8 +119,8 @@ class ResidentDirectory extends Page implements HasTable
     protected function getHeaderActions(): array
     {
         return [
-            Action::make('import')->label('Nhập dữ liệu')->icon('heroicon-m-arrow-up-tray')->color('gray')
-                ->action(fn () => Notification::make()->title('Nhập dữ liệu cư dân')->body('Trình nhập liệu bổ sung ở đợt Import/Export.')->info()->send()),
+            $this->residentImportAction(),
+            $this->residentImportTemplateAction(),
             Action::make('export')->label('Xuất dữ liệu')->icon('heroicon-m-arrow-down-tray')->color('gray')
                 ->action('export'),
             Action::make('create')->label('Thêm cư dân')->icon('heroicon-m-plus')->color('gold')
@@ -248,27 +252,23 @@ class ResidentDirectory extends Page implements HasTable
         ];
     }
 
-    /** Xuất CSV cư dân theo filter hiện tại + audit. */
+    /** Xuất CSV cư dân theo filter hiện tại + audit. Streaming CSV dùng trait chung. */
     public function export()
     {
         $rows = $this->filteredQuery()->reorder()->orderBy('code')->get();
         $this->audit('resident.export', 'Xuất danh sách cư dân ('.$rows->count().' dòng)');
-        $filename = 'residents_'.now()->format('Ymd_His').'.csv';
 
-        return response()->streamDownload(function () use ($rows) {
-            $out = fopen('php://output', 'w');
-            fwrite($out, chr(0xEF).chr(0xBB).chr(0xBF));
-            fputcsv($out, ['Mã CD', 'Họ tên', 'SĐT', 'Email', 'Tòa', 'Căn hộ', 'Loại', 'Trạng thái']);
-            foreach ($rows as $r) {
-                fputcsv($out, [
-                    $r->code, $r->full_name, $r->phone, $r->email, $r->building?->name,
-                    $r->primaryRelation()?->apartment?->code ?? '',
-                    self::ROLES[$r->primaryRelation()?->role] ?? '',
-                    self::STATUS[$r->status][0] ?? $r->status,
-                ]);
-            }
-            fclose($out);
-        }, $filename, ['Content-Type' => 'text/csv; charset=UTF-8']);
+        return $this->streamCsv(
+            $rows,
+            ['Mã CD', 'Họ tên', 'SĐT', 'Email', 'Tòa', 'Căn hộ', 'Loại', 'Trạng thái'],
+            fn (Resident $r): array => [
+                $r->code, $r->full_name, $r->phone, $r->email, $r->building?->name,
+                $r->primaryRelation()?->apartment?->code ?? '',
+                self::ROLES[$r->primaryRelation()?->role] ?? '',
+                self::STATUS[$r->status][0] ?? $r->status,
+            ],
+            'residents',
+        );
     }
 
     /** @var array<string, array{0:string,1:string}> status => [label, color Filament] */
