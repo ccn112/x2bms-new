@@ -25,7 +25,7 @@
             <option value="tenant">Người thuê</option>
             <option value="member">Thành viên</option>
         </select>
-        <span class="text-sm text-slate-400">{{ count($households) }} hộ</span>
+        <span class="text-sm text-slate-400">{{ number_format($apartmentsPage->total()) }} hộ</span>
     </div>
 
     {{-- Household cards --}}
@@ -78,4 +78,8 @@
             </div>
         @endforelse
     </div>
+
+    @if ($apartmentsPage->hasPages())
+        <div class="mt-2">{{ $apartmentsPage->links() }}</div>
+    @endif
 </x-filament-panels::page>
