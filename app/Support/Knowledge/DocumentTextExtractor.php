@@ -75,10 +75,15 @@ class DocumentTextExtractor
     public function fromStoredFile(string $relativePath): string
     {
         try {
-            if (! Storage::disk('public')->exists($relativePath)) {
+            // Ưu tiên vùng lưu trữ tenant (driver theo ENV); fallback disk 'public' cho file cũ.
+            $ts = app(\App\Support\Storage\TenantStorage::class);
+            if ($ts->exists($relativePath)) {
+                $abs = $ts->localReadablePath($relativePath);
+            } elseif (Storage::disk('public')->exists($relativePath)) {
+                $abs = Storage::disk('public')->path($relativePath);
+            } else {
                 return '';
             }
-            $abs = Storage::disk('public')->path($relativePath);
             $ext = strtolower(pathinfo($relativePath, PATHINFO_EXTENSION));
 
             return match ($ext) {

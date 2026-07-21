@@ -29,7 +29,7 @@ class PrivateMediaController extends Controller
         }
 
         $path = $resident->{$field};
-        $disk = Storage::disk('local');
+        $disk = app(\App\Support\Storage\TenantStorage::class)->disk();
         if (! $path || ! $disk->exists($path)) {
             throw new NotFoundHttpException;
         }
@@ -44,7 +44,7 @@ class PrivateMediaController extends Controller
 
         $documents = (array) ($resident->documents ?? []);
         $path = $documents[$index] ?? null;
-        $disk = Storage::disk('local');
+        $disk = app(\App\Support\Storage\TenantStorage::class)->disk();
         if (! $path || ! $disk->exists($path)) {
             throw new NotFoundHttpException;
         }

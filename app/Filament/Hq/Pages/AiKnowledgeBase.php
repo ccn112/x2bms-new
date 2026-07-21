@@ -10,6 +10,7 @@ use App\Models\KnowledgeCategory;
 use App\Models\Project;
 use App\Models\Tenant;
 use App\Support\Knowledge\DocumentTextExtractor;
+use App\Support\Storage\TenantStorage;
 use BackedEnum;
 use Filament\Actions\Action;
 use Filament\Actions\BulkAction;
@@ -181,7 +182,8 @@ class AiKnowledgeBase extends Page implements HasTable
                 ->columnSpanFull(),
             FileUpload::make('attachments')->label('Tệp đính kèm (để X2AI đọc)')
                 ->multiple()->reorderable()->appendFiles()
-                ->disk('public')->directory('kb-attachments')->preserveFilenames()
+                ->disk(app(TenantStorage::class)->diskName())
+                ->directory(fn (): string => app(TenantStorage::class)->prefix().'/kb-attachments')->preserveFilenames()
                 ->acceptedFileTypes([
                     'application/pdf',
                     'application/msword',

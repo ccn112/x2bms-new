@@ -1,0 +1,35 @@
+<?php
+
+return [
+
+    /*
+    |--------------------------------------------------------------------------
+    | Các bảng thuộc tenant (xuất theo tenant_id) khi backup/export
+    |--------------------------------------------------------------------------
+    |
+    | Dịch vụ backup sẽ xuất từng bảng dưới đây lọc theo `tenant_id` (chỉ xuất bảng
+    | THẬT SỰ có cột tenant_id — tự bỏ qua nếu không có). Thêm dần khi mở rộng.
+    | Đây là backup LOGIC (NDJSON) để tenant mang đi / khôi phục — độc lập DB engine.
+    |
+    */
+    'tables' => [
+        'projects',
+        'buildings',
+        'floors',
+        'apartments',
+        'residents',
+        'resident_apartment_relations',
+        'resident_emergency_contacts',
+        'vehicles',
+        'access_cards',
+        'import_batches',
+        'import_batch_rows',
+        'audit_logs',
+    ],
+
+    /*
+    | Số bản ghi ghi ra mỗi lần (cursor) — an toàn bộ nhớ.
+    */
+    'chunk' => (int) env('TENANT_BACKUP_CHUNK', 1000),
+
+];

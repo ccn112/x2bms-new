@@ -8,6 +8,7 @@ use Filament\Forms\Components\Radio;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
+use App\Support\Storage\TenantStorage;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
 
@@ -104,13 +105,13 @@ class ResidentForm
                         // KYC/CCCD is PII — stored on the PRIVATE disk (storage/app/private), never
                         // a public URL. Served only through the signed, authorized media route.
                         FileUpload::make('id_front_path')->label('Ảnh giấy tờ (mặt trước)')
-                            ->image()->disk('local')->visibility('private')->directory('residents/kyc')
+                            ->image()->disk(app(TenantStorage::class)->diskName())->visibility('private')->directory(fn (): string => app(TenantStorage::class)->prefix().'/residents/kyc')
                             ->acceptedFileTypes(['image/jpeg', 'image/png'])->maxSize(5120),
                         FileUpload::make('id_back_path')->label('Ảnh giấy tờ (mặt sau)')
-                            ->image()->disk('local')->visibility('private')->directory('residents/kyc')
+                            ->image()->disk(app(TenantStorage::class)->diskName())->visibility('private')->directory(fn (): string => app(TenantStorage::class)->prefix().'/residents/kyc')
                             ->acceptedFileTypes(['image/jpeg', 'image/png'])->maxSize(5120),
                         FileUpload::make('portrait_path')->label('Ảnh chân dung')
-                            ->image()->disk('local')->visibility('private')->directory('residents/kyc')
+                            ->image()->disk(app(TenantStorage::class)->diskName())->visibility('private')->directory(fn (): string => app(TenantStorage::class)->prefix().'/residents/kyc')
                             ->acceptedFileTypes(['image/jpeg', 'image/png'])->maxSize(5120),
                     ]),
 
