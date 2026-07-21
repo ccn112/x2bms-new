@@ -123,3 +123,29 @@ GET  /ai/chat/sessions/{id}        → tin nhắn để resume (kiểm quyền t
 - **Chưa có** `POST /auth/register` (tạo tài khoản) — sẽ bổ sung đợt sau.
 - **Chưa có** context header stateless (`X-Context-Id`), private KYC, policy per-domain, push fan-out.
 - Danh tính: **`User` là chủ thể đăng nhập duy nhất**; stack `GlobalUserAccount` không dùng cho mobile.
+
+---
+
+## 10. Slice 0 — Auth (CHỐT + verify E2E 2026-07-21)
+
+> Hợp đồng đóng băng cho Slice 0. Cả 2 repo bám mục này. Nguồn: `x2bms` (server) ↔ `x2mobile` (`RemoteAuthRepository`).
+
+**Đã verify E2E thật** (flutter test → backend live, tài khoản cư dân `0900000555`): login mật khẩu → tokens ✅ · sai mật khẩu → `Err` ✅ · `otp/request` → challenge ✅ · `me/bootstrap` (Bearer access) → 200 ✅.
+
+**Mẫu login đã xác nhận:**
+```
+POST /api/v1/auth/login   Headers: Accept: application/json · X-Device-Id: <uuid>
+Body: { "identifier": "0900000555", "password": "…" }
+→ 200 { "data": { "tokens": { "access_token","refresh_token","access_expires_at","refresh_expires_at","abilities":["resident"] }, "user": {…} }, "meta": {…} }
+```
+**OTP (Flutter map từ `identifier`):** `channel` = có `@` → `email`, ngược lại `phone`; `destination` = identifier; `purpose` = `login`|`register`. `otp/verify` (purpose=login, user tồn tại) trả `data.tokens`.
+
+**⚠️ BẮT BUỘC (bug đã trả giá):** `X2_API_BASE_URL` / baseUrl **phải để path tương đối không có `/` đầu** (`auth/login`) và client tự thêm `/` cuối baseUrl — nếu baseUrl `.../api/v1` (thiếu `/`) + path `auth/login`, Dio **rớt `/v1`** → 404 mọi endpoint. (Đã fix ở `ApiClient` x_core: tự chuẩn hóa `/` cuối.)
+
+**Trạng thái wiring mobile (x2mobile):**
+- ✅ `RemoteAuthRepository`: login / requestOtp / verifyOtp / register (register tạm dùng `otp/request?purpose=register`).
+- ✅ `ApiClient` baseUrl trailing-slash fix.
+- ⬜ `onRefresh` (auto refresh khi 401): CHƯA nối — cần gọi `POST auth/refresh` với **refresh-token** làm Bearer (khác access-token) rồi lưu token mới.
+- ⬜ Backend `POST /auth/register` thật (cần quy tắc `AUTH_AND_RESIDENT_IDENTITY`).
+
+**Tài khoản test (dev seed):** cư dân `0900000555` / `Resident@2026!` (email `nguyenvananh@gmail.com`).
