@@ -46,13 +46,13 @@ class HqPanelProvider extends PanelProvider
             ->globalSearch(false)
             ->navigationGroups([
                 NavigationGroup::make('Tổng quan')->icon('heroicon-o-home'),
-                NavigationGroup::make('Quản lý dự án')->icon('heroicon-o-building-office-2')->collapsed(),
-                NavigationGroup::make('Nhân sự & BQL')->icon('heroicon-o-user-group')->collapsed(),
-                NavigationGroup::make('Billing & Gói dịch vụ')->icon('heroicon-o-banknotes')->collapsed(),
-                NavigationGroup::make('Biểu mẫu & Tri thức')->icon('heroicon-o-document-text')->collapsed(),
-                NavigationGroup::make('Hỗ trợ & Phân quyền')->icon('heroicon-o-lifebuoy')->collapsed(),
-                NavigationGroup::make('Báo cáo')->icon('heroicon-o-chart-bar')->collapsed(),
-                NavigationGroup::make('X2 AI Engine')->icon('heroicon-o-sparkles')->collapsed(),
+                NavigationGroup::make('Quản lý dự án')->icon('heroicon-o-building-office-2'),
+                NavigationGroup::make('Nhân sự & BQL')->icon('heroicon-o-user-group'),
+                NavigationGroup::make('Billing & Gói dịch vụ')->icon('heroicon-o-banknotes'),
+                NavigationGroup::make('Biểu mẫu & Tri thức')->icon('heroicon-o-document-text'),
+                NavigationGroup::make('Hỗ trợ & Phân quyền')->icon('heroicon-o-lifebuoy'),
+                NavigationGroup::make('Báo cáo')->icon('heroicon-o-chart-bar'),
+                NavigationGroup::make('X2 AI Engine')->icon('heroicon-o-sparkles'),
             ])
             ->discoverPages(in: app_path('Filament/Hq/Pages'), for: 'App\\Filament\\Hq\\Pages')
             ->discoverWidgets(in: app_path('Filament/Hq/Widgets'), for: 'App\\Filament\\Hq\\Widgets')

@@ -46,12 +46,12 @@ class SaPanelProvider extends PanelProvider
             ->sidebarCollapsibleOnDesktop()
             ->globalSearch(false)
             ->navigationGroups([
-                NavigationGroup::make('Nền tảng (SuperAdmin)')->icon('heroicon-o-building-library')->collapsed(),
-                NavigationGroup::make('SaaS Billing')->icon('heroicon-o-banknotes')->collapsed(),
-                NavigationGroup::make('Lưu trữ & Sao lưu')->icon('heroicon-o-archive-box')->collapsed(),
-                NavigationGroup::make('Integration Center')->icon('heroicon-o-bolt')->collapsed(),
-                NavigationGroup::make('Support Center')->icon('heroicon-o-lifebuoy')->collapsed(),
-                NavigationGroup::make('Design System')->icon('heroicon-o-swatch')->collapsed(),
+                NavigationGroup::make('Nền tảng (SuperAdmin)')->icon('heroicon-o-building-library'),
+                NavigationGroup::make('SaaS Billing')->icon('heroicon-o-banknotes'),
+                NavigationGroup::make('Lưu trữ & Sao lưu')->icon('heroicon-o-archive-box'),
+                NavigationGroup::make('Integration Center')->icon('heroicon-o-bolt'),
+                NavigationGroup::make('Support Center')->icon('heroicon-o-lifebuoy'),
+                NavigationGroup::make('Design System')->icon('heroicon-o-swatch'),
             ])
             ->discoverPages(in: app_path('Filament/Sa/Pages'), for: 'App\\Filament\\Sa\\Pages')
             ->discoverWidgets(in: app_path('Filament/Sa/Widgets'), for: 'App\\Filament\\Sa\\Widgets')
