@@ -45,13 +45,13 @@ class HqPanelProvider extends PanelProvider
             ->sidebarCollapsibleOnDesktop()
             ->globalSearch(false)
             ->navigationGroups([
-                NavigationGroup::make('Tổng quan')->icon('heroicon-o-home'),
-                NavigationGroup::make('Quản lý dự án')->icon('heroicon-o-building-office-2'),
-                NavigationGroup::make('Nhân sự & BQL')->icon('heroicon-o-user-group'),
-                NavigationGroup::make('Billing & Gói dịch vụ')->icon('heroicon-o-banknotes'),
-                NavigationGroup::make('Biểu mẫu & Tri thức')->icon('heroicon-o-document-text'),
-                NavigationGroup::make('Hỗ trợ & Phân quyền')->icon('heroicon-o-lifebuoy'),
-                NavigationGroup::make('Báo cáo')->icon('heroicon-o-chart-bar'),
+                NavigationGroup::make('Tổng quan'),
+                NavigationGroup::make('Quản lý dự án'),
+                NavigationGroup::make('Nhân sự & BQL'),
+                NavigationGroup::make('Billing & Gói dịch vụ'),
+                NavigationGroup::make('Biểu mẫu & Tri thức'),
+                NavigationGroup::make('Hỗ trợ & Phân quyền'),
+                NavigationGroup::make('Báo cáo'),
                 NavigationGroup::make('X2 AI Engine')->icon('heroicon-o-sparkles'),
             ])
             ->discoverPages(in: app_path('Filament/Hq/Pages'), for: 'App\\Filament\\Hq\\Pages')
