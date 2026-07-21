@@ -25,9 +25,10 @@ class TenantBackupService
 
     /**
      * @param  string  $timestamp  Dấu thời gian (yyyymmdd_His) do caller truyền (an toàn khi chạy nền).
+     * @param  string  $trigger  manual|offboard|scheduled
      * @return string  Key của file .zip trên tenant disk.
      */
-    public function create(int $tenantId, string $timestamp): string
+    public function create(int $tenantId, string $timestamp, string $trigger = 'manual', ?int $createdBy = null): string
     {
         $tables = $this->exportableTables();
 
@@ -79,9 +80,22 @@ class TenantBackupService
         }
         $zip->close();
 
-        // 4) Đưa .zip vào vùng lưu trữ tenant + dọn tạm.
+        // 4) Đưa .zip vào vùng lưu trữ tenant.
         $bundleKey = $this->storage->key('_backups/'.$timestamp.'/backup.zip', $tenantId);
+        $sizeBytes = (int) filesize($zipPath);
         $disk->put($bundleKey, file_get_contents($zipPath));
+
+        // 5) Ghi sổ đăng ký + dọn tạm.
+        \App\Models\TenantBackup::create([
+            'tenant_id' => $tenantId,
+            'path' => $bundleKey,
+            'size_bytes' => $sizeBytes,
+            'file_count' => count($files),
+            'table_counts' => $counts,
+            'app_version' => (string) config('app.version', '1.0'),
+            'trigger' => $trigger,
+            'created_by' => $createdBy,
+        ]);
 
         $this->cleanupDir($work);
 

@@ -22,9 +22,15 @@ class TenantRestoreService
 {
     public function __construct(private readonly TenantStorage $storage) {}
 
-    /** Bundle mới nhất của tenant (theo timestamp trong đường dẫn). */
+    /** Bundle mới nhất của tenant — ưu tiên sổ đăng ký, fallback quét storage. */
     public function latestBundle(int $tenantId): ?string
     {
+        $fromRegistry = \App\Models\TenantBackup::query()
+            ->where('tenant_id', $tenantId)->latest()->value('path');
+        if ($fromRegistry) {
+            return $fromRegistry;
+        }
+
         $prefix = $this->storage->key('_backups', $tenantId);
         $zips = array_values(array_filter(
             $this->storage->disk()->allFiles($prefix),
@@ -85,6 +91,14 @@ class TenantRestoreService
             DB::statement('SET FOREIGN_KEY_CHECKS=1');
         });
 
+        // Kích hoạt lại tenant (rehydrate xong).
+        DB::table('tenants')->where('id', $tenantId)->update([
+            'lifecycle_status' => 'active',
+            'dormant_at' => null,
+            'retention_until' => null,
+            'updated_at' => now(),
+        ]);
+
         // 2) Files: đẩy lại về đúng key trên tenant disk.
         $fileCount = $this->restoreFiles($tmp.'/files');
 
@@ -95,6 +109,10 @@ class TenantRestoreService
 
     private function insertNdjson(string $table, string $file): int
     {
+        // Schema-drift safe: chỉ chèn cột CÒN tồn tại ở schema hiện tại (bundle cũ có thể
+        // thừa cột đã xoá/đổi tên; cột mới sẽ nhận default). Xem manifest.app_version.
+        $current = array_flip(Schema::getColumnListing($table));
+
         $fh = fopen($file, 'r');
         $buffer = [];
         $n = 0;
@@ -104,7 +122,8 @@ class TenantRestoreService
             if ($line === '') {
                 continue;
             }
-            $buffer[] = json_decode($line, true);
+            $row = json_decode($line, true);
+            $buffer[] = array_intersect_key($row, $current);
             $n++;
 
             if (count($buffer) >= 500) {

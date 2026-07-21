@@ -121,8 +121,21 @@ class User extends Authenticatable implements FilamentUser
 
     public function canAccessPanel(Panel $panel): bool
     {
+        // Platform admin (SA) luôn vào được — họ quản lý cả tenant đang dormant.
+        if ($this->is_platform_admin) {
+            return true;
+        }
+
+        // Chặn nhân sự của tenant đang "off" (dormant_archived) hoặc đã purged.
+        if ($this->tenant_id) {
+            $status = \Illuminate\Support\Facades\DB::table('tenants')->where('id', $this->tenant_id)->value('lifecycle_status');
+            if (in_array($status, ['dormant_archived', 'purged'], true)) {
+                return false;
+            }
+        }
+
         // Admin panel = staff/admin accounts (the ~10k), not the 5M residents.
-        return $this->is_platform_admin || $this->roles()->exists();
+        return $this->roles()->exists();
     }
 
     /**

@@ -32,4 +32,15 @@ return [
     */
     'chunk' => (int) env('TENANT_BACKUP_CHUNK', 1000),
 
+    /*
+    | Số ngày giữ bundle sau khi off (dormant) trước khi được phép purge.
+    | Mặc định ~3 năm (đủ cho kịch bản off 2 năm rồi resume).
+    */
+    'retention_days' => (int) env('TENANT_RETENTION_DAYS', 1095),
+
+    /*
+    | Số ngày ân hạn sau khi thuê bao hết hạn trước khi tự động off (dormant).
+    */
+    'grace_days' => (int) env('TENANT_GRACE_DAYS', 60),
+
 ];

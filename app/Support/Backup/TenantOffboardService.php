@@ -28,7 +28,7 @@ class TenantOffboardService
     public function offboard(int $tenantId, string $timestamp): array
     {
         // 1) Backup trước (bundle nằm trong _backups của tenant).
-        $bundle = $this->backup->create($tenantId, $timestamp);
+        $bundle = $this->backup->create($tenantId, $timestamp, 'offboard');
 
         // 2) Purge DB rows (reverse order, FK off).
         $tables = array_values(array_filter(
@@ -56,6 +56,14 @@ class TenantOffboardService
             $disk->delete($key);
             $purgedFiles++;
         }
+
+        // 4) Đánh dấu vòng đời: dormant_archived + mốc retention.
+        DB::table('tenants')->where('id', $tenantId)->update([
+            'lifecycle_status' => 'dormant_archived',
+            'dormant_at' => now(),
+            'retention_until' => now()->addDays((int) config('tenant-backup.retention_days', 1095))->toDateString(),
+            'updated_at' => now(),
+        ]);
 
         return ['bundle' => $bundle, 'purged_tables' => $purged, 'purged_files' => $purgedFiles];
     }
