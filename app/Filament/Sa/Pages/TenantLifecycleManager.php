@@ -28,7 +28,7 @@ class TenantLifecycleManager extends Page implements HasTable
 
     protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-archive-box';
 
-    protected static string|\UnitEnum|null $navigationGroup = 'SaaS Billing';
+    protected static string|\UnitEnum|null $navigationGroup = 'Lưu trữ & Sao lưu';
 
     protected static ?string $navigationLabel = 'Vòng đời & Sao lưu tenant';
 

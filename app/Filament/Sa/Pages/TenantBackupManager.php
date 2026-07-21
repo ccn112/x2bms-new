@@ -24,7 +24,7 @@ class TenantBackupManager extends Page implements HasTable
 
     protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-circle-stack';
 
-    protected static string|\UnitEnum|null $navigationGroup = 'SaaS Billing';
+    protected static string|\UnitEnum|null $navigationGroup = 'Lưu trữ & Sao lưu';
 
     protected static ?string $navigationLabel = 'Bản sao lưu tenant';
 

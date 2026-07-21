@@ -59,11 +59,11 @@ class AdminPanelProvider extends PanelProvider
             // platform (Nền tảng/SaaS Billing/Integration/Support) đã tách sang /sa,
             // bộ AI tách sang /hq.
             ->navigationGroups([
-                NavigationGroup::make('Cư dân & Căn hộ'),
-                NavigationGroup::make('An ninh & Kiểm soát'),
-                NavigationGroup::make('Vận hành'),
-                NavigationGroup::make('Tài chính – Phí'),
-                NavigationGroup::make('Hệ thống'),
+                NavigationGroup::make('Cư dân & Căn hộ')->icon('heroicon-o-users')->collapsed(),
+                NavigationGroup::make('An ninh & Kiểm soát')->icon('heroicon-o-shield-check')->collapsed(),
+                NavigationGroup::make('Vận hành')->icon('heroicon-o-wrench-screwdriver')->collapsed(),
+                NavigationGroup::make('Tài chính – Phí')->icon('heroicon-o-banknotes')->collapsed(),
+                NavigationGroup::make('Hệ thống')->icon('heroicon-o-cog-6-tooth')->collapsed(),
             ])
             // /admin shows only the designed custom pages. Raw CRUD resources live
             // on the stock /fila panel (FilaPanelProvider) to avoid slug clashes.
