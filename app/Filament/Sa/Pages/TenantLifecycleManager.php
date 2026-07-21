@@ -54,10 +54,10 @@ class TenantLifecycleManager extends Page implements HasTable
                 TextColumn::make('code')->label('Mã')->searchable(),
                 TextColumn::make('name')->label('Tên tenant')->searchable(),
                 TextColumn::make('lifecycle_status')->label('Trạng thái')->badge()
-                    ->formatStateUsing(fn (?string $s): string => self::STATUS[$s][0] ?? ($s ?? '—'))
-                    ->color(fn (?string $s): string => self::STATUS[$s][1] ?? 'gray'),
+                    ->formatStateUsing(fn (?string $state): string => self::STATUS[$state][0] ?? ($state ?? '—'))
+                    ->color(fn (?string $state): string => self::STATUS[$state][1] ?? 'gray'),
                 TextColumn::make('backups')->label('Số bản backup')->badge()->color('gray')
-                    ->state(fn (Tenant $r): int => TenantBackup::where('tenant_id', $r->id)->count()),
+                    ->state(fn (Tenant $record): int => TenantBackup::where('tenant_id', $record->id)->count()),
                 TextColumn::make('dormant_at')->label('Off lúc')->dateTime('d/m/Y H:i')->placeholder('—'),
                 TextColumn::make('retention_until')->label('Giữ đến')->date('d/m/Y')->placeholder('—'),
             ])

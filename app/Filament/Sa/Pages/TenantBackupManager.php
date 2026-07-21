@@ -44,25 +44,25 @@ class TenantBackupManager extends Page implements HasTable
                 TextColumn::make('tenant.name')->label('Tenant')->searchable()->sortable(),
                 TextColumn::make('created_at')->label('Thời điểm')->dateTime('d/m/Y H:i')->sortable(),
                 TextColumn::make('trigger')->label('Nguồn')->badge()->color('gray')
-                    ->formatStateUsing(fn (string $s): string => ['manual' => 'Thủ công', 'offboard' => 'Off', 'scheduled' => 'Tự động'][$s] ?? $s),
+                    ->formatStateUsing(fn (string $state): string => ['manual' => 'Thủ công', 'offboard' => 'Off', 'scheduled' => 'Tự động'][$state] ?? $state),
                 TextColumn::make('size_bytes')->label('Dung lượng')
-                    ->formatStateUsing(fn (int $b): string => number_format($b / 1024, 0, ',', '.').' KB'),
+                    ->formatStateUsing(fn (int $state): string => number_format($state / 1024, 0, ',', '.').' KB'),
                 TextColumn::make('file_count')->label('Số file')->alignRight(),
                 TextColumn::make('table_counts')->label('Tổng dòng DB')->alignRight()
-                    ->state(fn (TenantBackup $r): int => array_sum((array) ($r->table_counts ?? []))),
+                    ->state(fn (TenantBackup $record): int => array_sum((array) ($record->table_counts ?? []))),
                 TextColumn::make('app_version')->label('Version')->badge()->color('gray'),
             ])
             ->recordActions([
                 Action::make('download')->label('Tải về')->icon('heroicon-m-arrow-down-tray')->color('gray')
-                    ->visible(fn (TenantBackup $r): bool => app(TenantStorage::class)->exists($r->path))
-                    ->action(fn (TenantBackup $r): StreamedResponse => app(TenantStorage::class)->download(
-                        $r->path, 'backup_'.($r->tenant?->code ?? $r->tenant_id).'_'.$r->created_at->format('Ymd_His').'.zip')),
+                    ->visible(fn (TenantBackup $record): bool => app(TenantStorage::class)->exists($record->path))
+                    ->action(fn (TenantBackup $record): StreamedResponse => app(TenantStorage::class)->download(
+                        $record->path, 'backup_'.($record->tenant?->code ?? $record->tenant_id).'_'.$record->created_at->format('Ymd_His').'.zip')),
                 Action::make('delete')->label('Xóa')->icon('heroicon-m-trash')->color('danger')
                     ->requiresConfirmation()
                     ->modalDescription('Xóa vĩnh viễn bản backup này khỏi lưu trữ (không thể hoàn tác).')
-                    ->action(function (TenantBackup $r): void {
-                        app(TenantStorage::class)->disk()->delete($r->path);
-                        $r->delete();
+                    ->action(function (TenantBackup $record): void {
+                        app(TenantStorage::class)->disk()->delete($record->path);
+                        $record->delete();
                         Notification::make()->title('Đã xóa bản backup')->success()->send();
                     }),
             ]);
