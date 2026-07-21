@@ -7,11 +7,11 @@ use App\Models\ImportBatch;
 use App\Support\Context\CurrentContext;
 use App\Support\Import\Profiles\ResidentImportProfile;
 use App\Support\Import\StagingImporter;
+use App\Support\Storage\TenantStorage;
 use Filament\Actions\Action;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Select;
 use Filament\Notifications\Notification;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\HtmlString;
 use Spatie\SimpleExcel\SimpleExcelWriter;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
@@ -60,21 +60,28 @@ trait ImportsResidentsFromExcel
                         'text/csv',
                         'text/plain',
                     ])
-                    ->disk('local')
-                    ->directory('imports/residents')
+                    // Upload thẳng vào folder riêng của tenant (disk lấy từ ENV: local now, s3 sau).
+                    ->disk(app(TenantStorage::class)->diskName())
+                    ->directory(fn (): string => app(TenantStorage::class)->prefix().'/_incoming/residents')
                     ->required(),
             ])
             ->action(function (array $data): void {
                 $ctx = $this->residentImportContext((int) $data['building_id']);
-                $path = Storage::disk('local')->path($data['file']);
+                $ts = app(TenantStorage::class);
+                $uploadedKey = (string) $data['file'];
 
                 $batch = app(StagingImporter::class)->stage(
-                    $path,
-                    basename((string) $data['file']),
+                    $ts->localReadablePath($uploadedKey),
+                    basename($uploadedKey),
                     new ResidentImportProfile,
                     $ctx,
-                    $data['file'],
+                    $uploadedKey,
                 );
+
+                // Chuyển file nguồn vào vùng dự án theo batch để lưu trữ/backup gọn theo tenant.
+                $finalKey = $ts->key('residents/import/'.$batch->id.'/'.basename($uploadedKey), $ctx['tenant_id'], $ctx['building_id']);
+                $ts->move($uploadedKey, $finalKey);
+                $batch->update(['storage_path' => $finalKey]);
 
                 $this->replaceMountedAction('residentImportPreview', ['batch' => $batch->id]);
             });

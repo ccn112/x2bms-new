@@ -7,6 +7,7 @@ use App\Models\ImportBatch;
 use App\Models\Resident;
 use App\Support\Context\CurrentContext;
 use App\Support\Export\ExportsCsv;
+use App\Support\Storage\TenantStorage;
 use BackedEnum;
 use Filament\Actions\Action;
 use Filament\Notifications\Notification;
@@ -16,9 +17,7 @@ use Filament\Tables\Concerns\InteractsWithTable;
 use Filament\Tables\Contracts\HasTable;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\HtmlString;
-use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 /**
@@ -91,9 +90,8 @@ class ImportHistory extends Page implements HasTable
                     ->modalHeading('Chi tiết dòng import')->modalWidth('4xl')->modalSubmitAction(false)->modalCancelActionLabel('Đóng')
                     ->modalContent(fn (ImportBatch $record): HtmlString => $this->detailContent($record)),
                 Action::make('downloadSource')->label('Tải file nguồn')->icon('heroicon-m-arrow-down-tray')->color('gray')
-                    ->visible(fn (ImportBatch $record): bool => filled($record->storage_path) && Storage::disk('local')->exists($record->storage_path))
-                    ->action(fn (ImportBatch $record): BinaryFileResponse => response()->download(
-                        Storage::disk('local')->path($record->storage_path), $record->file_name)),
+                    ->visible(fn (ImportBatch $record): bool => filled($record->storage_path) && app(TenantStorage::class)->exists($record->storage_path))
+                    ->action(fn (ImportBatch $record): StreamedResponse => app(TenantStorage::class)->download($record->storage_path, $record->file_name)),
                 Action::make('retry')->label('Nhập lại dòng còn lại')->icon('heroicon-m-arrow-path')->color('warning')
                     ->requiresConfirmation()
                     ->modalDescription('Ghi lại các dòng hợp lệ chưa được nhập (dòng đã nhập sẽ bỏ qua — an toàn, không tạo trùng).')
