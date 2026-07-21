@@ -11,6 +11,7 @@
 5. [Kênh thông báo & nhật ký gửi](#5-kênh-thông-báo--nhật-ký-gửi)
 6. [Kiểm tra sức khoẻ (verify)](#6-kiểm-tra-sức-khoẻ-verify)
 7. [Sự cố thường gặp](#7-sự-cố-thường-gặp)
+8. **Lưu trữ · Sao lưu · Vòng đời tenant (SA)** → [`SA_STORAGE_LIFECYCLE.md`](SA_STORAGE_LIFECYCLE.md)
 
 ---
 
