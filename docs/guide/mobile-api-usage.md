@@ -4,14 +4,16 @@ Dành cho lập trình viên app (Cư dân/BQL) và đối tác tích hợp. API
 
 > ⚠️ Trạng thái: Phase 0 đợt 1 — **đã verify end-to-end qua HTTP thật (2026-07-18)**: login → me/bootstrap → refresh (rotate) → logout, kèm 401 cho token sai/thiếu. Một số phần vẫn là skeleton (OTP chưa nối SMS thật, đăng ký tài khoản chưa có). Xem "Giới hạn hiện tại".
 
-## 1. Base URL (theo môi trường)
-| Env | Base URL |
+## 1. Base URL (theo môi trường) — CHỐT 2026-07-21
+| Env | Base URL (`X2_API_BASE_URL`) |
 |---|---|
-| DEV | `https://api-dev.x2bms.vn/api/v1` |
-| STAGING | `https://api-staging.x2bms.vn/api/v1` |
-| PROD | `https://api.x2bms.vn/api/v1` |
+| **PROD (internet)** | `https://x2.fino.vn/api/v1` |
+| **Local (Herd)** | `https://x2bms.test/api/v1` |
+| Local (artisan serve) | `http://127.0.0.1:8123/api/v1` |
 
-Cục bộ: `http://127.0.0.1:8000/api/v1` (sau `php artisan serve`).
+- 1 codebase phục vụ nhiều panel theo **path**; API mobile ở path `/api/v1` cùng domain (không subdomain riêng).
+- **Herd HTTPS (`x2bms.test`):** cert do Herd cấp (trusted trên máy). App/Dio chạy trên **thiết bị/emulator khác máy** có thể chưa tin cert → khi test qua `x2bms.test` dùng máy đã trust, hoặc dùng `http://127.0.0.1:8123` cho test nhanh.
+- Flutter: truyền `--dart-define X2_API_BASE_URL=https://x2.fino.vn/api/v1` (prod) / `https://x2bms.test/api/v1` (local).
 
 ## 2. Headers chuẩn (mọi request)
 | Header | Bắt buộc | Ghi chú |
