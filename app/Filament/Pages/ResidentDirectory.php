@@ -120,7 +120,6 @@ class ResidentDirectory extends Page implements HasTable
     {
         return [
             $this->residentImportAction(),
-            $this->residentImportTemplateAction(),
             Action::make('export')->label('Xuất dữ liệu')->icon('heroicon-m-arrow-down-tray')->color('gray')
                 ->action('export'),
             Action::make('create')->label('Thêm cư dân')->icon('heroicon-m-plus')->color('gold')

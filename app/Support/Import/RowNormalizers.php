@@ -17,36 +17,92 @@ use Illuminate\Support\Str;
  */
 final class RowNormalizers
 {
-    /** Trim + gộp khoảng trắng thừa. Rỗng → null. */
+    /** Quy đổi khoảng trắng "ẩn" (nbsp, zero-width, BOM, tab/newline) → space thường. */
+    private static function stripInvisible(string $value): string
+    {
+        return preg_replace('/[\x{00A0}\x{200B}\x{200C}\x{200D}\x{FEFF}\t\r\n]+/u', ' ', $value) ?? $value;
+    }
+
+    /** Trim + gộp mọi khoảng trắng (kể cả nbsp/zero-width) về 1 space. Rỗng → null. */
     public static function string(?string $value): ?string
     {
         if ($value === null) {
             return null;
         }
 
+        $value = self::stripInvisible($value);
         $value = preg_replace('/\s+/u', ' ', trim($value)) ?? trim($value);
 
         return $value === '' ? null : $value;
     }
 
-    /** Lowercase + trim. Rỗng → null. (Không validate; caller tự đặt rule email.) */
-    public static function email(?string $value): ?string
+    /** Họ tên: chuẩn hóa khoảng trắng + Title Case (unicode) → "nguyễn  văn AN" → "Nguyễn Văn An". */
+    public static function name(?string $value): ?string
     {
         $value = self::string($value);
 
-        return $value === null ? null : Str::lower($value);
+        return $value === null ? null : mb_convert_case($value, MB_CASE_TITLE, 'UTF-8');
     }
 
-    /** Giữ lại chữ số và dấu `+`. Rỗng → null. */
+    /** Email: bỏ MỌI khoảng trắng (kể cả ở giữa) + lowercase. Rỗng → null. */
+    public static function email(?string $value): ?string
+    {
+        if ($value === null) {
+            return null;
+        }
+
+        $value = preg_replace('/\s+/u', '', self::stripInvisible($value)) ?? '';
+
+        return $value === '' ? null : Str::lower($value);
+    }
+
+    /**
+     * SĐT: bỏ mọi ký tự không phải số/`+`; chuẩn hóa VN:
+     *  - `+84`/`84` đầu → `0`; bỏ `+` thừa.
+     *  - Mất số 0 đầu do Excel đọc dạng số (9 chữ số bắt đầu 3/5/7/8/9) → thêm `0`.
+     * Rỗng → null. (Không ép kiểu nếu không nhận diện được — giữ nguyên số đã làm sạch.)
+     */
     public static function phone(?string $value): ?string
     {
         if ($value === null) {
             return null;
         }
 
-        $value = preg_replace('/[^0-9+]/', '', trim($value)) ?? '';
+        $digits = preg_replace('/[^0-9+]/', '', self::stripInvisible($value)) ?? '';
+        if ($digits === '') {
+            return null;
+        }
 
-        return $value === '' ? null : $value;
+        $digits = preg_replace('/^(?:\+?84|0084)/', '0', $digits) ?? $digits;
+        $digits = ltrim($digits, '+');
+
+        if (preg_match('/^[35789]\d{8}$/', $digits)) {
+            $digits = '0'.$digits;
+        }
+
+        return $digits;
+    }
+
+    /**
+     * CCCD/CMND: chỉ giữ chữ số (bỏ dấu cách "079 090 001 234", chấm...).
+     * Mất số 0 đầu do Excel đọc dạng số (còn 11 số) → pad về 12. Rỗng → null.
+     */
+    public static function idNo(?string $value): ?string
+    {
+        if ($value === null) {
+            return null;
+        }
+
+        $digits = preg_replace('/\D+/', '', self::stripInvisible($value)) ?? '';
+        if ($digits === '') {
+            return null;
+        }
+
+        if (strlen($digits) === 11) {
+            $digits = '0'.$digits;
+        }
+
+        return $digits;
     }
 
     /**

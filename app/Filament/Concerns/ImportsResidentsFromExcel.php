@@ -2,6 +2,7 @@
 
 namespace App\Filament\Concerns;
 
+use App\Jobs\CommitImportBatchJob;
 use App\Models\ImportBatch;
 use App\Support\Context\CurrentContext;
 use App\Support\Import\Profiles\ResidentImportProfile;
@@ -33,10 +34,18 @@ trait ImportsResidentsFromExcel
             ->icon('heroicon-m-arrow-up-tray')
             ->color('gray')
             ->modalHeading('Nhập cư dân từ Excel/CSV')
-            ->modalDescription('Tải file .xlsx hoặc .csv. Cột bắt buộc: Họ tên, CCCD/CMND, SĐT. Hệ thống kiểm tra từng dòng trước khi ghi.')
+            ->modalDescription('Bắt buộc: Họ tên. Nên có: CCCD, SĐT, Email (thiếu vẫn nhập được, đánh dấu "chờ bổ sung"). Có thể kèm "Mã căn hộ" + "Vai trò" để gắn căn ngay. Hệ thống kiểm tra từng dòng trước khi ghi.')
             ->modalIcon('heroicon-o-arrow-up-tray')
             ->modalWidth('lg')
             ->modalSubmitActionLabel('Kiểm tra dữ liệu')
+            ->extraModalFooterActions([
+                Action::make('downloadTemplateInline')
+                    ->label('Tải file mẫu (.xlsx)')
+                    ->icon('heroicon-m-document-arrow-down')
+                    ->link()
+                    ->color('gray')
+                    ->action(fn (): BinaryFileResponse => $this->downloadResidentImportTemplate()),
+            ])
             ->schema([
                 Select::make('building_id')
                     ->label('Tòa / dự án')
@@ -72,15 +81,6 @@ trait ImportsResidentsFromExcel
     }
 
     /** Tải file mẫu .xlsx sinh từ ĐÚNG cột của ResidentImportProfile (luôn khớp). */
-    public function residentImportTemplateAction(): Action
-    {
-        return Action::make('residentImportTemplate')
-            ->label('Tải file mẫu')
-            ->icon('heroicon-m-document-arrow-down')
-            ->color('gray')
-            ->action(fn (): BinaryFileResponse => $this->downloadResidentImportTemplate());
-    }
-
     public function downloadResidentImportTemplate(): BinaryFileResponse
     {
         $cols = (new ResidentImportProfile)->columns();
@@ -125,19 +125,17 @@ trait ImportsResidentsFromExcel
                     return;
                 }
 
-                $summary = app(StagingImporter::class)->commit(
-                    $batch,
-                    new ResidentImportProfile,
-                    $this->residentImportContext((int) $batch->building_id),
-                );
+                // Bất đồng bộ: đưa việc ghi vào hàng đợi nền (idempotent, retry được).
+                CommitImportBatchJob::dispatch($batch->id, $this->residentImportContext((int) $batch->building_id));
+                $batch->update(['status' => 'committing']);
 
                 if (method_exists($this, 'audit')) {
-                    $this->audit('resident.import', "Nhập cư dân từ file {$batch->file_name}: tạo {$summary->created}, bỏ qua {$summary->skipped}.");
+                    $this->audit('resident.import', "Đưa vào hàng đợi ghi {$batch->valid_rows} dòng từ file {$batch->file_name}.");
                 }
 
                 Notification::make()
-                    ->title('Đã nhập '.$summary->created.' cư dân')
-                    ->body($summary->skipped > 0 ? $summary->skipped.' dòng lỗi bị bỏ qua.' : null)
+                    ->title('Đã đưa vào hàng đợi xử lý nền')
+                    ->body("Đang ghi {$batch->valid_rows} dòng hợp lệ. Theo dõi tiến độ ở màn \"Nhật ký Import/Export\".")
                     ->success()->send();
 
                 if (method_exists($this, 'refreshTable')) {
