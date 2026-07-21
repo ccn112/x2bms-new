@@ -148,6 +148,11 @@ Body: { "identifier": "0900000555", "password": "…" }
 - ✅ `RemoteAuthRepository`: login / requestOtp / verifyOtp / register (register client tạm gọi `otp/request?purpose=register`).
 - ✅ `ApiClient` baseUrl trailing-slash fix.
 - ✅ `onRefresh` (auto-refresh khi 401): dùng Dio trần gọi `POST auth/refresh` với **refresh-token** làm Bearer → lưu token mới; ApiClient bọc mutex 1-lần. **E2E verify:** refresh xoay token + access cũ bị thu hồi.
-- ⏸️ **Backend `POST /auth/register` (server-side) — HOÃN, chờ quyết định chủ dự án.** `AUTH_AND_RESIDENT_IDENTITY` KHÔNG định nghĩa luồng self-registration. Câu hỏi cần chốt: đăng ký tạo `public_user` rồi nâng lên `resident`? có bước BQL duyệt (dùng `resident_approval_requests`)? định danh bằng CCCD/SĐT match? → làm ở **Slice 1 (Auth + Kích hoạt)** cùng ngữ cảnh duyệt/kích hoạt.
+- ✅ **Backend `POST /auth/register` (luồng A, chốt 2026-07-21) — verify E2E.** `{ name, email, password(min 8), code, phone? }` → xác thực OTP `purpose=register` (gửi qua `otp/request`) → tạo **`User(account_type='public_user')`** (mật khẩu băm qua cast `hashed`) → 201 `{ tokens, user }`. KHÔNG tạo resident; gắn cư dân vào dự án đi qua duyệt/kích hoạt (Slice 1). Lỗi: `OTP_*` (OTP sai), `AUTH_EMAIL_TAKEN` (email đã đăng ký).
+  - **Flutter còn lại (Slice 1a):** màn Đăng ký thu thập name/email/password → gọi `otp/request` rồi `POST /auth/register {code}` (đổi interface `register` hiện tại chỉ có identifier).
+
+## 11. Đăng nhập nhanh (Slice 1a — CẦN credential mới làm thật)
+- **Google / Apple Sign-In:** backend `POST /auth/social { provider, id_token }` → verify token với Google/Apple → find-or-create `User(public_user)` theo email đã xác thực → phát token. **Phụ thuộc:** Google OAuth Client ID (Android/iOS/Web); Apple Developer + Service ID + key `.p8`. Không có credential → không test E2E được.
+- **Vân tay / Face ID:** CLIENT-ONLY (`local_auth`) — mở khóa **phiên đã lưu** (refresh token trong secure store) cục bộ; KHÔNG phải phương thức auth server. Làm được ngay không cần credential.
 
 **Tài khoản test (dev seed):** cư dân `0900000555` / `Resident@2026!` (email `nguyenvananh@gmail.com`).

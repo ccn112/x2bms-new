@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Models\User;
+use App\Services\Auth\OtpService;
 use App\Services\Auth\TokenService;
 use App\Support\Api\ApiResponse;
 use Illuminate\Http\JsonResponse;
@@ -39,6 +40,50 @@ class AuthController extends ApiController
             'tokens' => $pair,
             'user' => $this->publicUser($user),
         ]);
+    }
+
+    /**
+     * POST /api/v1/auth/register — tạo tài khoản public_user (đăng ký từ app).
+     * Luồng A (chốt 2026-07-21): email + mật khẩu + OTP xác thực email.
+     * KHÔNG tạo resident; việc gắn cư dân vào dự án đi qua duyệt/kích hoạt (Slice 1).
+     */
+    public function register(Request $request): JsonResponse
+    {
+        $data = $request->validate([
+            'name' => ['required', 'string', 'max:255'],
+            'email' => ['required', 'email:rfc', 'max:255'],
+            'password' => ['required', 'string', 'min:8'],
+            'code' => ['required', 'string'],
+            'phone' => ['nullable', 'string', 'max:20'],
+        ]);
+
+        // Xác thực OTP đã gửi qua otp/request(purpose=register) tới email.
+        $check = app(OtpService::class)->verify('email', $data['email'], 'register', $data['code']);
+        if (! $check['valid']) {
+            return ApiResponse::error(
+                'OTP_'.strtoupper($check['reason'] ?? 'INVALID'),
+                __('Mã OTP không hợp lệ.'),
+                422,
+                retryable: ($check['reason'] ?? '') === 'mismatch',
+            );
+        }
+
+        if (User::where('email', $data['email'])->exists()) {
+            return ApiResponse::error('AUTH_EMAIL_TAKEN', __('Email đã được đăng ký.'), 422);
+        }
+
+        $user = User::create([
+            'name' => $data['name'],
+            'email' => $data['email'],
+            'phone' => $data['phone'] ?? null,
+            'password' => $data['password'], // cast 'hashed' tự băm
+            'account_type' => 'public_user',
+        ]);
+
+        return ApiResponse::success([
+            'tokens' => $this->tokens->issuePair($user, $this->deviceId($request)),
+            'user' => $this->publicUser($user),
+        ], status: 201);
     }
 
     /** POST /api/v1/auth/refresh — Bearer <refresh_token> with ability token:refresh → new pair. */
