@@ -144,10 +144,10 @@ Body: { "identifier": "0900000555", "password": "…" }
 
 **⚠️ BẮT BUỘC (bug đã trả giá):** `X2_API_BASE_URL` / baseUrl **phải để path tương đối không có `/` đầu** (`auth/login`) và client tự thêm `/` cuối baseUrl — nếu baseUrl `.../api/v1` (thiếu `/`) + path `auth/login`, Dio **rớt `/v1`** → 404 mọi endpoint. (Đã fix ở `ApiClient` x_core: tự chuẩn hóa `/` cuối.)
 
-**Trạng thái wiring mobile (x2mobile):**
-- ✅ `RemoteAuthRepository`: login / requestOtp / verifyOtp / register (register tạm dùng `otp/request?purpose=register`).
+**Trạng thái wiring mobile (x2mobile) — Slice 0 nền auth ĐÓNG (verify E2E):**
+- ✅ `RemoteAuthRepository`: login / requestOtp / verifyOtp / register (register client tạm gọi `otp/request?purpose=register`).
 - ✅ `ApiClient` baseUrl trailing-slash fix.
-- ⬜ `onRefresh` (auto refresh khi 401): CHƯA nối — cần gọi `POST auth/refresh` với **refresh-token** làm Bearer (khác access-token) rồi lưu token mới.
-- ⬜ Backend `POST /auth/register` thật (cần quy tắc `AUTH_AND_RESIDENT_IDENTITY`).
+- ✅ `onRefresh` (auto-refresh khi 401): dùng Dio trần gọi `POST auth/refresh` với **refresh-token** làm Bearer → lưu token mới; ApiClient bọc mutex 1-lần. **E2E verify:** refresh xoay token + access cũ bị thu hồi.
+- ⏸️ **Backend `POST /auth/register` (server-side) — HOÃN, chờ quyết định chủ dự án.** `AUTH_AND_RESIDENT_IDENTITY` KHÔNG định nghĩa luồng self-registration. Câu hỏi cần chốt: đăng ký tạo `public_user` rồi nâng lên `resident`? có bước BQL duyệt (dùng `resident_approval_requests`)? định danh bằng CCCD/SĐT match? → làm ở **Slice 1 (Auth + Kích hoạt)** cùng ngữ cảnh duyệt/kích hoạt.
 
 **Tài khoản test (dev seed):** cư dân `0900000555` / `Resident@2026!` (email `nguyenvananh@gmail.com`).
