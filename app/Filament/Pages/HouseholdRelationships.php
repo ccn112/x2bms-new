@@ -20,6 +20,8 @@ class HouseholdRelationships extends Page
 
     protected static string|\UnitEnum|null $navigationGroup = 'Cư dân & Căn hộ';
 
+    protected static ?string $navigationParentItem = 'Cư dân';
+
     protected static ?string $navigationLabel = 'Quan hệ hộ gia đình';
 
     protected static ?int $navigationSort = 6;

@@ -23,6 +23,8 @@ class ResidentTimeline extends Page
 
     protected static string|\UnitEnum|null $navigationGroup = 'Cư dân & Căn hộ';
 
+    protected static ?string $navigationParentItem = 'Cư dân';
+
     protected static ?string $navigationLabel = 'Dòng thời gian cư dân';
 
     protected static ?int $navigationSort = 8;

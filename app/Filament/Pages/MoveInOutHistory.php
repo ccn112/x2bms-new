@@ -21,6 +21,8 @@ class MoveInOutHistory extends Page
 
     protected static string|\UnitEnum|null $navigationGroup = 'Cư dân & Căn hộ';
 
+    protected static ?string $navigationParentItem = 'Cư dân';
+
     protected static ?string $navigationLabel = 'Lịch sử chuyển đến/đi';
 
     protected static ?int $navigationSort = 7;
