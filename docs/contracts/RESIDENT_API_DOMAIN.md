@@ -48,12 +48,14 @@ dựa scope tenant để lọc dữ liệu cư dân. Luôn scope tường minh t
 Ký hiệu cột: `→` = field API ⟵ cột DB. Enum ghi giá trị **mặc định + quan sát**; xác nhận full set trong model/seeder khi code.
 
 ### ✅ Đã trả (tham chiếu shape chuẩn — không làm lại)
-`GET billing/summary` · `GET notifications` + `POST notifications/{id}/read` · `unread_notification_count` trong `/me/bootstrap`. Code mẫu: `BillingSummaryController`, `NotificationController`, `ResidentNotificationService`.
+`GET billing/summary` · `GET billing/summary/trend?months=` (xu hướng phí N tháng, CD-PAY-01 — do agent x2mobile thêm) · `GET notifications` + `POST notifications/{id}/read` · `unread_notification_count` trong `/me/bootstrap`. Code mẫu: `BillingSummaryController`, `NotificationController`, `ResidentNotificationService`.
+
+> **Statement enrichment (agent x2mobile, branch `feat/resident-statements-enrich` — CHỜ verify HTTP; máy app KHÔNG có php):** `StatementResource` +`code` +`period{label,code,month,start,end,category}` (từ `billingPeriod`, whenLoaded — index eager-load `billingPeriod`, show load `['lines.feeType','billingPeriod']`). `StatementLineResource` +`label`←`fee_type` +`category`←`feeType.category` (fix bug `description` luôn null; giữ alias). Chỉ Resource/Controller/route — không migration. App đã map (period→title/kỳ, line label+icon, trend).
 
 ### 🔨 P2 — Loyalty & Ưu đãi
 **`GET /resident/loyalty`** — model `LoyaltyAccount` (scope `resident_id ∈` user's residents).
 - `points` ← `points_balance` · `tier` ← `tier` (enum: `silver` default; xác nhận gold/platinum trong model) · `status`.
-- `next_tier{name,target,points_to_next}`: **KHÔNG có cột** → tính ở service theo bảng ngưỡng tier (hằng số trong 1 class `LoyaltyTiers`, chốt ngưỡng với owner). `benefits[]`: chưa có bảng → tạm hằng số theo tier hoặc bảng mới (cần quyết).
+- `next_tier{name,target,points_to_next}` + `benefits[]`: ✅ **CHỐT — bảng mới.** `loyalty_tiers` (key, name, min_points, sort) + `loyalty_tier_benefits` (loyalty_tier_id, icon_key, title, subtitle). Service tính next_tier từ points_balance so bảng tiers; benefits lấy theo tier hiện tại. (Backend seed ngưỡng + quyền lợi.)
 
 **`GET /resident/loyalty/activities?cursor=`** — `LoyaltyTransaction` join `loyalty_accounts` theo resident.
 - `title` ← `description` · `occurred_at` ← `transacted_at` · `points` ← `points` (âm nếu `type` là redeem/`points<0`). enum `type`: `earn` default (xác nhận redeem/adjust).
@@ -69,8 +71,9 @@ Ký hiệu cột: `→` = field API ⟵ cột DB. Enum ghi giá trị **mặc đ
 - **KHÔNG dùng `cash_vouchers`** (đó là chứng từ quỹ tài chính: fund_id/payment_request_id — không phải ưu đãi tiêu dùng).
 
 ### 🔨 P2 — Cộng đồng (scope `project_id ∈ projectIds`)
-**`GET community/posts?cursor=`** — `CommunityPost` (`status='published'`, sort ghim? **không có cột pinned** → bỏ hoặc thêm cột; cần quyết).
-- `author{name,role,avatar_url,verified}` ← quan hệ `author_resident_id`→Resident (name; role/verified suy từ resident) · `body` · `likes`←`like_count` · `comments`←`comment_count` · `created_at`. `image_urls[]`, `important`, `pinned`: **chưa có cột** → null/false (hoặc thêm cột, chốt).
+**`GET community/posts?cursor=`** — `CommunityPost` (`status='published'`, scope `project_id ∈ projectIds`; sort `pinned desc, created_at desc`).
+- `author{name,role,avatar_url,verified}` ← quan hệ `author_resident_id`→Resident (name; role/verified suy từ resident) · `body` · `likes`←`like_count` · `comments`←`comment_count` · `created_at`.
+- ✅ **CHỐT — thêm cột** vào `community_posts`: `is_pinned bool`, `is_important bool`, `image_paths json` (ADD-ONLY, guard MySQL nếu cần). API trả `pinned/important/image_urls[]` từ các cột này.
 
 **`GET community/events?cursor=`** — `Event`.
 - `title/location/starts_at/attendees(registered_count)/image_url(chưa có→null)`. `registered` (user đã đăng ký?) ← tồn tại `event_registrations{event_id,resident_id}`.
@@ -86,11 +89,15 @@ Ký hiệu cột: `→` = field API ⟵ cột DB. Enum ghi giá trị **mặc đ
 - **`GET market/listings?cursor=&category=`** ← `marketplace_products` (`status='active'`): `title(name)/price/seller(seller_resident_id→name)/image_url(image_path)/category`. `building`←qua seller's apartment; `rating/favorited`: chưa có → null/false.
 - **`GET market/services?cursor=`** ← `service_providers` (`status='active'`): `title(name)/desc(category)/rating/price(chưa có ở provider → từ service_orders? tạm null)`. `image_url` chưa có.
 - **`GET market/categories`** ← `SELECT DISTINCT category FROM marketplace_products` (hoặc danh sách hằng số) → `[{key,label}]`.
-- `real_estate_listings` = tính năng BĐS riêng (sale/rent), **KHÔNG gộp vào market chung** ở P2 (để sau nếu app cần).
+- ✅ **CHỐT — BĐS tách riêng:** `GET /resident/real-estate?cursor=&type=` ← `real_estate_listings` (`status='active'`, scope `project_id ∈ projectIds`): `type(sale|rent)/title/price/area/bedrooms/owner(owner_resident_id→name)/apartment(apartment_id→code)/published_at`. KHÔNG gộp vào `market/*`.
 
 ### 🔨 P2 — `GET /resident/home` (aggregate, scope hỗn hợp)
 Compose nhẹ cho first-paint:
-- `metrics[]` (AQI/an ninh): **KHÔNG có nguồn dữ liệu backend** → **ĐỀ XUẤT tạm bỏ** (app ẩn) hoặc trả từ config tĩnh; đừng bịa số. (Chốt với owner nếu có IoT/`sensor_events`.)
+- `metrics[]`:
+  - **AQI ✅ CHỐT — nguồn Open-Meteo Air Quality (free, không key), theo `projects.latitude/longitude`** (cột đã có).
+    Backend gọi `https://air-quality-api.open-meteo.com/v1/air-quality?latitude=..&longitude=..&current=european_aqi`
+    → **cache theo project (TTL ~1h)** rồi trả `{key:'aqi', title, value, tone}` (tone theo ngưỡng AQI). KHÔNG gọi trực tiếp từ app (giấu vị trí + đỡ rate-limit). ⚠️ Open-Meteo free = **phi thương mại** → cần chốt gói commercial/nguồn khác (WAQI/IQAir) khi lên prod — xem §4.
+  - **An ninh = KHÔNG phải metric.** ✅ CHỐT — là **nút SOS** (action tile) → app render nút; backend nhận qua endpoint SOS (P3, đặc tả sau). Bỏ khỏi `metrics[]`.
 - `tasks[]`: compose — `fee` ← billing/summary (unpaid), `guest` ← `visitor_registrations` sắp tới của user, `feedback` ← `feedback_requests` đang mở của user. Trả `{key,title,value,status}`.
 - `notices_preview` ← 2 item đầu của `notifications` (tái dùng service).
 
@@ -107,15 +114,19 @@ Compose nhẹ cho first-paint:
   - `vouchers`: thêm `owner_level` (`platform|tenant`, default `tenant`) + đổi `tenant_id` **nullable** (platform voucher tenant_id null). ADD-ONLY, guard MySQL nếu ALTER enum.
   - **Rollout:** bảng pivot `voucher_tenant` (voucher_id, tenant_id, +trạng thái/kỳ triển khai) — SA chọn tenant nào được nhận. Cư dân thấy voucher platform CHỈ khi tenant mình có bản ghi rollout.
   - Màn SA quản lý đối tác/voucher + "triển khai xuống tenant" = việc backend (ngoài phạm vi app); app chỉ đọc `/resident/offers` đã hợp nhất.
-- Lớp `LoyaltyTiers` (ngưỡng tier + benefits) nếu chốt tính `next_tier`.
-- Cân nhắc thêm cột `pinned/important/image` cho `community_posts`, `image` cho events/products (tùy quyết định §5).
+- **Loyalty (bảng mới):** `loyalty_tiers` (key, name, min_points, sort) + `loyalty_tier_benefits` (loyalty_tier_id, icon_key, title, subtitle) + seed. Service tính `next_tier`/`points_to_next` từ `points_balance`.
+- **AQI service:** client HTTP tới Open-Meteo (`air-quality-api.open-meteo.com/v1/air-quality`) theo `projects.latitude/longitude` + **cache TTL ~1h/project**. ⚠️ Open-Meteo free chỉ **phi thương mại** → owner chốt gói commercial hoặc đổi nguồn (WAQI/IQAir có token) trước prod.
+- **community_posts thêm cột:** `is_pinned`, `is_important`, `image_paths(json)` (ADD-ONLY).
+- **SOS (P3):** endpoint nhận SOS từ app (nút "An ninh") — chọn model/bảng khi đặc tả (có `IntercomEvent`/`SensorEvent`/tạo `sos_alerts`?), cần chốt sau.
 
 ## 5. ⛳ Điểm cần OWNER chốt (đang chặn shape cuối)
 1. ✅ **CHỐT:** Offers/Gifts = `vouchers`, **scope toàn tenant** (bỏ cash_vouchers). + Voucher **hợp tác cấp từ SA (platform)** rollout xuống tenant → cần schema §4 (owner_level + pivot `voucher_tenant`). _Còn cần chốt: bản ghi rollout có kỳ hạn/giới hạn số lượng theo tenant không?_
-2. **Market** = 3 nguồn (products/services + categories từ products), **BĐS tách riêng**? (đề xuất: có.)
-3. **Home metrics (AQI/an ninh):** tạm ẩn (đề xuất) hay có nguồn (IoT)?
-4. **Loyalty tier/benefits:** ngưỡng nâng hạng + quyền lợi lấy đâu (hằng số vs bảng mới)?
-5. **community_posts pinned/important + ảnh:** thêm cột hay bỏ field ở app?
+2. ✅ **CHỐT:** Market = products (`marketplace_products`) + services (`service_providers`) + categories; **BĐS tách riêng** `/resident/real-estate` (`real_estate_listings`).
+3. ✅ **CHỐT:** AQI ← Open-Meteo theo `projects.latitude/longitude` (backend proxy + cache; license commercial cần chốt). An ninh = **nút SOS** (không phải metric).
+4. ✅ **CHỐT:** Loyalty tier/benefits = **bảng mới** (`loyalty_tiers` + `loyalty_tier_benefits`, seed).
+5. ✅ **CHỐT:** `community_posts` **thêm cột** `is_pinned/is_important/image_paths`.
+
+**Còn treo (nhỏ):** (a) rollout voucher platform có kỳ hạn/giới hạn số lượng theo tenant? (b) nguồn AQI khi lên prod (license). (c) model đích cho SOS (P3).
 
 ## 6. Vòng đồng bộ
 1. Agent x2mobile code API theo file này; field nào "chưa có cột" → theo hướng đã ghi (null/placeholder) hoặc mở mục §5.
