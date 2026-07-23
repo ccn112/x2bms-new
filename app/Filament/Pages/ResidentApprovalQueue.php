@@ -6,7 +6,9 @@ use App\Models\AuditLog;
 use App\Models\Resident;
 use App\Models\ResidentApartmentRelation;
 use App\Models\ResidentApprovalRequest;
+use App\Support\Rules\ApprovalRiskRules;
 use BackedEnum;
+use Filament\Notifications\Notification;
 use Filament\Pages\Page;
 
 /**
@@ -44,6 +46,17 @@ class ResidentApprovalQueue extends Page
     public function approve(int $id): void
     {
         $req = ResidentApprovalRequest::findOrFail($id);
+
+        // Rule gate: policy_block chặn duyệt nhanh — chuyển sang Chi tiết để override (bắt buộc lý do).
+        if (ApprovalRiskRules::forRequest($req)->isBlocked()) {
+            Notification::make()
+                ->title('Hồ sơ vi phạm chính sách — không thể duyệt nhanh')
+                ->body('Mở Chi tiết để xem cảnh báo; chỉ HQ/SuperAdmin mới override được (kèm lý do).')
+                ->danger()->send();
+
+            return;
+        }
+
         $user = auth()->user();
 
         $resident = Resident::create([
@@ -105,9 +118,24 @@ class ResidentApprovalQueue extends Page
             ['label' => 'Cần bổ sung', 'value' => ResidentApprovalRequest::where('status', 'need_more')->count(), 'accent' => 'red'],
         ];
 
+        $requests = (clone $pending)->with('apartment')->orderByDesc('match_score')->get();
+
+        // Rule-based risk per request (Module 0) — chip + gate ở view.
+        $riskById = $requests->mapWithKeys(function (ResidentApprovalRequest $r): array {
+            $report = ApprovalRiskRules::forRequest($r);
+
+            return [$r->id => [
+                'tone' => $report->tone(),
+                'count' => count($report->all()),
+                'blocked' => $report->isBlocked(),
+                'top' => $report->highestLevel(),
+            ]];
+        })->all();
+
         return [
             'kpis' => $kpis,
-            'requests' => (clone $pending)->with('apartment')->orderByDesc('match_score')->get(),
+            'requests' => $requests,
+            'riskById' => $riskById,
         ];
     }
 }
