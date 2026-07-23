@@ -46,6 +46,7 @@ Route::prefix('v1')->group(function () {
     Route::middleware(['auth:sanctum', 'throttle:api'])->group(function () {
         Route::post('auth/logout', [AuthController::class, 'logout']);
         Route::get('me/bootstrap', [BootstrapController::class, 'me']);
+        Route::patch('me/profile', [\App\Http\Controllers\Api\V1\ProfileController::class, 'update']);
         Route::post('me/devices', [DeviceController::class, 'store']);
         Route::delete('me/devices/{installationId}', [DeviceController::class, 'destroy']);
     });
@@ -70,6 +71,13 @@ Route::prefix('v1')->group(function () {
         // Thông báo cư dân.
         Route::get('notifications', [\App\Http\Controllers\Api\V1\Resident\NotificationController::class, 'index']);
         Route::post('notifications/{notification}/read', [\App\Http\Controllers\Api\V1\Resident\NotificationController::class, 'read']);
+
+        // Điểm thưởng & hạng (tab Ưu đãi — CD-LY-01).
+        Route::get('loyalty', [\App\Http\Controllers\Api\V1\Resident\LoyaltyController::class, 'show']);
+        Route::get('loyalty/activities', [\App\Http\Controllers\Api\V1\Resident\LoyaltyController::class, 'activities']);
+
+        // Căn hộ đang chọn + thành viên hộ (Hồ sơ cư dân — P3).
+        Route::get('apartment', [\App\Http\Controllers\Api\V1\Resident\ApartmentController::class, 'show']);
     });
 });
 
