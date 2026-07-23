@@ -90,6 +90,16 @@ trait BelongsToProject
             return null;
         }
 
+        // Cư dân / member thuần (KHÔNG mang "mũ" staff): project scope là khái niệm của
+        // staff-workspace (BQL), không áp cho họ. An ninh dòng của cư dân đến từ
+        // apartmentIds tường minh (ResidentContextService), KHÔNG phải project scope.
+        // Nếu chạy tiếp, accessibleProjectIds()=[] sẽ khoá SẠCH mọi truy vấn
+        // Resident/Apartment của cư dân (bootstrap contexts, /resident/apartment,
+        // billing, statements đều rỗng). Xem docs/DEV_JOURNAL.md 2026-07-23.
+        if (! $user->isStaffOperator()) {
+            return null;
+        }
+
         // accessibleProjectIds() returns null only for platform admins (handled above),
         // so an empty array here means "granted no project" → see nothing.
         return $user->accessibleProjectIds() ?? [];
