@@ -62,6 +62,13 @@ Route::prefix('v1')->group(function () {
     Route::middleware(['auth:sanctum', 'ability:resident', 'throttle:api'])->prefix('resident')->group(function () {
         Route::get('statements', [\App\Http\Controllers\Api\V1\Resident\StatementController::class, 'index']);
         Route::get('statements/{statement}', [\App\Http\Controllers\Api\V1\Resident\StatementController::class, 'show']);
+
+        // Công nợ tổng hợp (card Tiện ích).
+        Route::get('billing/summary', [\App\Http\Controllers\Api\V1\Resident\BillingSummaryController::class, 'show']);
+
+        // Thông báo cư dân.
+        Route::get('notifications', [\App\Http\Controllers\Api\V1\Resident\NotificationController::class, 'index']);
+        Route::post('notifications/{notification}/read', [\App\Http\Controllers\Api\V1\Resident\NotificationController::class, 'read']);
     });
 });
 

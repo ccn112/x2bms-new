@@ -11,11 +11,15 @@ return new class extends Migration
 {
     public function up(): void
     {
-        DB::statement("ALTER TABLE import_batches MODIFY COLUMN status ENUM('uploaded','mapped','validated','committing','committed','failed','cancelled') NOT NULL DEFAULT 'uploaded'");
+        if (DB::getDriverName() === 'mysql') {
+            DB::statement("ALTER TABLE import_batches MODIFY COLUMN status ENUM('uploaded','mapped','validated','committing','committed','failed','cancelled') NOT NULL DEFAULT 'uploaded'");
+        }
     }
 
     public function down(): void
     {
-        DB::statement("ALTER TABLE import_batches MODIFY COLUMN status ENUM('uploaded','mapped','validated','committed','failed','cancelled') NOT NULL DEFAULT 'uploaded'");
+        if (DB::getDriverName() === 'mysql') {
+            DB::statement("ALTER TABLE import_batches MODIFY COLUMN status ENUM('uploaded','mapped','validated','committed','failed','cancelled') NOT NULL DEFAULT 'uploaded'");
+        }
     }
 };

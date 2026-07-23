@@ -18,8 +18,11 @@ return new class extends Migration
 {
     public function up(): void
     {
-        DB::statement("ALTER TABLE import_batches MODIFY COLUMN import_type ENUM('projects_employees','residents') NOT NULL DEFAULT 'projects_employees'");
-        DB::statement("ALTER TABLE import_batch_rows MODIFY COLUMN row_type ENUM('project','employee','assignment','resident') NOT NULL DEFAULT 'project'");
+        // Enum ALTER chỉ áp cho MySQL; sqlite (test) lưu enum dạng text nên không cần.
+        if (DB::getDriverName() === 'mysql') {
+            DB::statement("ALTER TABLE import_batches MODIFY COLUMN import_type ENUM('projects_employees','residents') NOT NULL DEFAULT 'projects_employees'");
+            DB::statement("ALTER TABLE import_batch_rows MODIFY COLUMN row_type ENUM('project','employee','assignment','resident') NOT NULL DEFAULT 'project'");
+        }
 
         if (! Schema::hasColumn('import_batches', 'building_id')) {
             Schema::table('import_batches', function (Blueprint $table) {
@@ -37,7 +40,9 @@ return new class extends Migration
         }
 
         // Trả enum về danh sách gốc (chỉ an toàn khi chưa có bản ghi 'residents'/'resident').
-        DB::statement("ALTER TABLE import_batch_rows MODIFY COLUMN row_type ENUM('project','employee','assignment') NOT NULL DEFAULT 'project'");
-        DB::statement("ALTER TABLE import_batches MODIFY COLUMN import_type ENUM('projects_employees') NOT NULL DEFAULT 'projects_employees'");
+        if (DB::getDriverName() === 'mysql') {
+            DB::statement("ALTER TABLE import_batch_rows MODIFY COLUMN row_type ENUM('project','employee','assignment') NOT NULL DEFAULT 'project'");
+            DB::statement("ALTER TABLE import_batches MODIFY COLUMN import_type ENUM('projects_employees') NOT NULL DEFAULT 'projects_employees'");
+        }
     }
 };

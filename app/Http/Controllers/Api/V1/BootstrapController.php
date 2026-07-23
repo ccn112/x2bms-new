@@ -26,7 +26,7 @@ class BootstrapController extends ApiController
     }
 
     /** GET /api/v1/me/bootstrap — auth:sanctum. Resolves the person's contexts + mode. */
-    public function me(Request $request): JsonResponse
+    public function me(Request $request, \App\Services\Resident\ResidentNotificationService $notifications): JsonResponse
     {
         /** @var User $user */
         $user = $request->user();
@@ -70,7 +70,9 @@ class BootstrapController extends ApiController
             'branding' => $this->defaultBranding(),
             'enabled_modules' => ['projects', 'content', 'community', 'offers', 'billing', 'feedback', 'amenities', 'notifications'],
             'minimum_app_version' => config('mobile.min_app_version'),
-            'unread_notification_count' => 0, // wired in the notifications slice
+            'unread_notification_count' => empty($residentContexts)
+                ? 0
+                : $notifications->unreadCount($user, $request->header('X-Context-Id')),
         ]);
     }
 

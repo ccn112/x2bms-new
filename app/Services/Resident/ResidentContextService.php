@@ -2,6 +2,7 @@
 
 namespace App\Services\Resident;
 
+use App\Models\Apartment;
 use App\Models\User;
 
 /**
@@ -31,5 +32,27 @@ class ResidentContextService
         }
 
         return $relations->pluck('apartment_id')->unique()->values()->all();
+    }
+
+    /**
+     * Building ids derived from the user's apartments (for building-wide notices etc.).
+     * Bỏ qua global scope tenant vì cư dân tenant_id = NULL.
+     *
+     * @return array<int>
+     */
+    public function buildingIds(User $user, ?string $contextId = null): array
+    {
+        $apartmentIds = $this->apartmentIds($user, $contextId);
+        if (empty($apartmentIds)) {
+            return [];
+        }
+
+        return Apartment::query()
+            ->whereIn('id', $apartmentIds)
+            ->pluck('building_id')
+            ->filter()
+            ->unique()
+            ->values()
+            ->all();
     }
 }
