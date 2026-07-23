@@ -48,7 +48,7 @@
                     @forelse ($rows as $r)
                         <tr class="hover:bg-slate-50/70 dark:hover:bg-white/5">
                             <td class="px-5 py-3">
-                                <div class="font-medium text-slate-800 dark:text-slate-100">{{ $r['name'] }}</div>
+                                <a href="{{ url('/admin/resident-accounts/'.$r['id'].'/detail') }}" class="font-medium text-slate-800 hover:text-x2-primary dark:text-slate-100">{{ $r['name'] }}</a>
                                 <div class="text-xs text-slate-400">{{ $r['phone'] ?: '—' }}@if ($r['email']) · {{ $r['email'] }}@endif</div>
                             </td>
                             <td class="px-5 py-3">
