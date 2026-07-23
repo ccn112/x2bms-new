@@ -5,6 +5,7 @@ namespace App\Filament\Pages;
 use App\Models\AuditLog;
 use App\Models\Resident;
 use App\Models\ResidentApprovalRequest;
+use App\Support\Rules\ApprovalRiskRules;
 use Filament\Notifications\Notification;
 use Filament\Pages\Page;
 
@@ -53,6 +54,8 @@ class AccountApprovalDetail extends Page
             ['Căn hộ', optional($r->apartment)->code, optional($match?->apartmentRelations?->first()?->apartment)->code],
         ];
 
+        $report = ApprovalRiskRules::forRequest($r);
+
         return [
             'r' => $r,
             'match' => $match,
@@ -64,7 +67,19 @@ class AccountApprovalDetail extends Page
                 'hasSystem' => ! is_null($row[2]) && $row[2] !== '',
             ])->all(),
             'statusMeta' => $this->statusMeta($this->enumVal($r->status)),
+            'risk' => $report->toArray(),
+            'riskTone' => $report->tone(),
+            'isBlocked' => $report->isBlocked(),
+            'canOverride' => $this->canOverridePolicyBlock(),
         ];
+    }
+
+    /** HQ (tenant operator) / SuperAdmin (platform admin) mới được override policy_block. */
+    private function canOverridePolicyBlock(): bool
+    {
+        $user = auth()->user();
+
+        return $user !== null && ($user->isPlatformAdmin() || $user->isTenantOperator());
     }
 
     /** Normalise a BackedEnum (Filament cast) to its scalar value. */
@@ -81,6 +96,28 @@ class AccountApprovalDetail extends Page
             return;
         }
 
+        // Rule gate: policy_block chặn phê duyệt, chỉ HQ/SuperAdmin override (bắt buộc ghi lý do).
+        $overrode = false;
+        if ($decision === 'approve') {
+            $report = ApprovalRiskRules::forRequest($this->record);
+            if ($report->isBlocked()) {
+                if (! $this->canOverridePolicyBlock()) {
+                    Notification::make()
+                        ->title('Không thể duyệt — vi phạm chính sách')
+                        ->body('Hồ sơ có cảnh báo chặn duyệt. Chỉ HQ/SuperAdmin mới được override.')
+                        ->danger()->send();
+
+                    return;
+                }
+                if (trim($this->note) === '') {
+                    Notification::make()->title('Override chính sách bắt buộc nhập lý do')->danger()->send();
+
+                    return;
+                }
+                $overrode = true;
+            }
+        }
+
         $map = ['approve' => 'approved', 'need_more' => 'need_more', 'reject' => 'rejected'];
         $verb = ['approve' => 'Phê duyệt', 'need_more' => 'Yêu cầu bổ sung', 'reject' => 'Từ chối'][$decision];
 
@@ -90,8 +127,9 @@ class AccountApprovalDetail extends Page
         AuditLog::create([
             'tenant_id' => $user->tenant_id, 'building_id' => $user->building_id,
             'user_id' => $user->id, 'actor_name' => $user->name,
-            'action' => 'account.'.$decision, 'subject_type' => ResidentApprovalRequest::class, 'subject_id' => $this->record->id,
-            'description' => $verb.' hồ sơ cư dân '.$this->record->full_name.($this->note ? ': '.$this->note : ''),
+            'action' => $overrode ? 'account.approve.override' : 'account.'.$decision,
+            'subject_type' => ResidentApprovalRequest::class, 'subject_id' => $this->record->id,
+            'description' => ($overrode ? '[OVERRIDE policy_block] ' : '').$verb.' hồ sơ cư dân '.$this->record->full_name.($this->note ? ': '.$this->note : ''),
         ]);
 
         Notification::make()->title($verb.' thành công')->{$decision === 'approve' ? 'success' : 'warning'}()->send();

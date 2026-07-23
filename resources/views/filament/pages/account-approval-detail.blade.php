@@ -74,14 +74,63 @@
 
         {{-- Right: decision --}}
         <div class="space-y-4">
+            {{-- Rule risk panel (Module 0 — rule-based, KHÔNG LLM) --}}
+            @php($riskColors = ['red' => ['border-red-200 bg-red-50 dark:bg-red-500/10', 'text-red-700 dark:text-red-300'], 'amber' => ['border-amber-200 bg-amber-50 dark:bg-amber-500/10', 'text-amber-700 dark:text-amber-300'], 'slate' => ['border-slate-200 bg-slate-50 dark:bg-white/5', 'text-slate-600 dark:text-slate-300']])
+            <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-white/10 dark:bg-gray-900">
+                <div class="flex items-center justify-between">
+                    <h3 class="text-sm font-semibold text-slate-900 dark:text-white">Đánh giá rủi ro</h3>
+                    @if (empty($risk))
+                        <x-x2.status-badge label="Không có cảnh báo" tone="green" />
+                    @else
+                        <x-x2.status-badge :label="count($risk).' cảnh báo'" :tone="$riskTone" />
+                    @endif
+                </div>
+                @if (empty($risk))
+                    <p class="mt-3 text-sm text-slate-500 dark:text-slate-400">Không phát hiện rủi ro theo bộ quy tắc. Vẫn nên đối chiếu giấy tờ trước khi duyệt.</p>
+                @else
+                    <ul class="mt-3 space-y-2.5">
+                        @foreach ($risk as $f)
+                            @php($tone = \App\Support\Rules\RiskLevel::tone($f['level']))
+                            @php($c = $riskColors[$tone] ?? $riskColors['slate'])
+                            <li class="rounded-xl border {{ $c[0] }} p-3">
+                                <div class="flex items-center gap-2">
+                                    <span class="text-xs font-semibold uppercase tracking-wide {{ $c[1] }}">{{ \App\Support\Rules\RiskLevel::label($f['level']) }}</span>
+                                </div>
+                                <p class="mt-1 text-sm font-medium text-slate-800 dark:text-slate-100">{{ $f['message'] }}</p>
+                                @if (! empty($f['checklist']))
+                                    <ul class="mt-1.5 space-y-1 text-xs text-slate-500 dark:text-slate-400">
+                                        @foreach ($f['checklist'] as $item)
+                                            <li class="flex gap-1.5"><span class="mt-0.5">•</span><span>{{ $item }}</span></li>
+                                        @endforeach
+                                    </ul>
+                                @endif
+                            </li>
+                        @endforeach
+                    </ul>
+                @endif
+            </div>
+
             <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-white/10 dark:bg-gray-900">
                 <h3 class="text-base font-semibold text-slate-900 dark:text-white">Quyết định xử lý <span class="text-x2-red">*</span></h3>
+                @if ($isBlocked && ! $canOverride)
+                    <p class="mt-3 rounded-lg border border-red-200 bg-red-50 p-2.5 text-xs font-medium text-red-700 dark:bg-red-500/10 dark:text-red-300">Hồ sơ vi phạm chính sách — chỉ HQ/SuperAdmin mới được phê duyệt.</p>
+                @elseif ($isBlocked && $canOverride)
+                    <p class="mt-3 rounded-lg border border-red-200 bg-red-50 p-2.5 text-xs font-medium text-red-700 dark:bg-red-500/10 dark:text-red-300">Có cảnh báo chặn duyệt. Phê duyệt = <b>override</b> (bắt buộc nhập lý do, ghi audit).</p>
+                @endif
                 <div class="mt-4 grid grid-cols-3 gap-2">
-                    <button type="button" wire:click="decide('approve')" wire:confirm="Xác nhận phê duyệt hồ sơ này?"
-                        class="flex flex-col items-center gap-1 rounded-xl border border-green-200 bg-green-50 py-3 text-xs font-semibold text-green-600 transition hover:bg-green-100">
+                    @if ($isBlocked && ! $canOverride)
+                        <button type="button" disabled
+                            class="flex cursor-not-allowed flex-col items-center gap-1 rounded-xl border border-slate-200 bg-slate-50 py-3 text-xs font-semibold text-slate-300 dark:border-white/10 dark:bg-white/5">
+                            <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 0 0 2-2v-6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2Zm10-10V7a4 4 0 0 0-8 0v4h8Z"/></svg>
+                            Phê duyệt
+                        </button>
+                    @else
+                    <button type="button" wire:click="decide('approve')" wire:confirm="{{ $isBlocked ? 'Override cảnh báo chặn duyệt và phê duyệt hồ sơ này?' : 'Xác nhận phê duyệt hồ sơ này?' }}"
+                        class="flex flex-col items-center gap-1 rounded-xl border py-3 text-xs font-semibold transition {{ $isBlocked ? 'border-red-200 bg-red-50 text-red-600 hover:bg-red-100' : 'border-green-200 bg-green-50 text-green-600 hover:bg-green-100' }}">
                         <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"/></svg>
-                        Phê duyệt
+                        {{ $isBlocked ? 'Duyệt (override)' : 'Phê duyệt' }}
                     </button>
+                    @endif
                     <button type="button" wire:click="decide('need_more')"
                         class="flex flex-col items-center gap-1 rounded-xl border border-amber-200 bg-amber-50 py-3 text-xs font-semibold text-amber-600 transition hover:bg-amber-100">
                         <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8 3h6l4 4v14H6V5a2 2 0 0 1 2-2Z"/></svg>
