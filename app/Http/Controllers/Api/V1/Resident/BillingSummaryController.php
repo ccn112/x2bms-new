@@ -56,6 +56,55 @@ class BillingSummaryController extends ApiController
         ]);
     }
 
+    /**
+     * GET /api/v1/resident/billing/summary/trend?months=6
+     * Xu hướng tổng phí theo tháng của căn hộ người dùng (biểu đồ CD-PAY-01).
+     * Gộp statements theo billing_period, cộng total_amount (bcmath), N tháng gần nhất.
+     */
+    public function trend(Request $request): JsonResponse
+    {
+        $apartmentIds = $this->context->apartmentIds($request->user(), $request->header('X-Context-Id'));
+        if (empty($apartmentIds)) {
+            return ApiResponse::success(['bars' => []]);
+        }
+
+        $months = min(max((int) $request->integer('months', 6), 1), 12);
+
+        $rows = Statement::query()
+            ->with('billingPeriod')
+            ->whereIn('apartment_id', $apartmentIds)
+            ->whereNotNull('billing_period_id')
+            ->get(['id', 'billing_period_id', 'total_amount']);
+
+        $byPeriod = [];
+        foreach ($rows as $s) {
+            $bp = $s->billingPeriod;
+            if ($bp === null || $bp->period_month === null) {
+                continue;
+            }
+            $key = $bp->period_month->format('Y-m');
+            if (! isset($byPeriod[$key])) {
+                $byPeriod[$key] = [
+                    'month' => $bp->period_month,
+                    'label' => $bp->period_month->format('m/y'),
+                    'sum' => '0',
+                ];
+            }
+            $byPeriod[$key]['sum'] = bcadd($byPeriod[$key]['sum'], (string) ($s->total_amount ?? '0'), 2);
+        }
+
+        // Sắp theo tháng tăng dần, lấy N tháng gần nhất.
+        ksort($byPeriod);
+        $bars = array_slice(array_values($byPeriod), -$months);
+
+        return ApiResponse::success([
+            'bars' => array_map(fn ($b) => [
+                'label' => $b['label'],
+                'value' => $this->trimMoney($b['sum']),
+            ], $bars),
+        ]);
+    }
+
     private function emptySummary(): array
     {
         return [

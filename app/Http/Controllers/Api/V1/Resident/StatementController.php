@@ -30,6 +30,7 @@ class StatementController extends ApiController
         $perPage = min((int) $request->integer('per_page', 20), 50);
 
         $paginator = Statement::query()
+            ->with('billingPeriod') // period label for the card title
             ->whereIn('apartment_id', $apartmentIds)
             ->orderByDesc('issued_at')
             ->orderByDesc('id')
@@ -48,7 +49,7 @@ class StatementController extends ApiController
             throw new NotFoundHttpException; // don't leak existence of other apartments' statements
         }
 
-        $statement->load('lines');
+        $statement->load(['lines.feeType', 'billingPeriod']);
 
         return ApiResponse::success(StatementResource::make($statement)->resolve($request));
     }

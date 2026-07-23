@@ -63,8 +63,9 @@ Route::prefix('v1')->group(function () {
         Route::get('statements', [\App\Http\Controllers\Api\V1\Resident\StatementController::class, 'index']);
         Route::get('statements/{statement}', [\App\Http\Controllers\Api\V1\Resident\StatementController::class, 'show']);
 
-        // Công nợ tổng hợp (card Tiện ích).
+        // Công nợ tổng hợp (card Tiện ích) + xu hướng phí 6 tháng (CD-PAY-01).
         Route::get('billing/summary', [\App\Http\Controllers\Api\V1\Resident\BillingSummaryController::class, 'show']);
+        Route::get('billing/summary/trend', [\App\Http\Controllers\Api\V1\Resident\BillingSummaryController::class, 'trend']);
 
         // Thông báo cư dân.
         Route::get('notifications', [\App\Http\Controllers\Api\V1\Resident\NotificationController::class, 'index']);
