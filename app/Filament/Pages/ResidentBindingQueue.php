@@ -8,6 +8,9 @@ use App\Models\GlobalUserAccount;
 use App\Models\ResidentBindingRequest;
 use App\Models\ResidentUnitBinding;
 use App\Models\User;
+use App\Support\Rules\BindingRiskRules;
+use App\Support\Rules\RiskLevel;
+use App\Support\Rules\RiskReport;
 use BackedEnum;
 use Filament\Actions\Action;
 use Filament\Forms\Components\Select;
@@ -113,6 +116,15 @@ class ResidentBindingQueue extends Page implements HasTable
                 TextColumn::make('status')->label('Trạng thái')->badge()
                     ->formatStateUsing(fn (string $state) => self::STATUS[$state][0] ?? $state)
                     ->color(fn (string $state) => self::STATUS[$state][1] ?? 'gray'),
+                TextColumn::make('risk')->label('Rủi ro')->badge()
+                    ->getStateUsing(function (ResidentBindingRequest $r) {
+                        $rep = $this->riskFor($r);
+
+                        return $rep->isEmpty() ? 'OK' : RiskLevel::label($rep->highestLevel()).' · '.count($rep->all());
+                    })
+                    ->color(fn (ResidentBindingRequest $r) => match ($this->riskFor($r)->tone()) {
+                        'red' => 'danger', 'amber' => 'warning', 'green' => 'success', default => 'gray',
+                    }),
                 TextColumn::make('requested_at')->label('Gửi lúc')->dateTime('d/m/Y')->sortable(),
                 TextColumn::make('reviewer.name')->label('Người duyệt')->placeholder('—')->toggleable(),
             ])
@@ -169,6 +181,9 @@ class ResidentBindingQueue extends Page implements HasTable
                 'previousBindings' => $r->account
                     ? ResidentUnitBinding::withoutGlobalScope('tenant')->with('apartment')->where('user_account_id', $r->user_account_id)->get()
                     : collect(),
+                'risk' => array_map(fn (array $f) => [
+                    'label' => $f['message'], 'tone' => RiskLevel::tone($f['level']), 'checklist' => $f['checklist'],
+                ], $this->riskFor($r)->toArray()),
                 'statusMap' => self::STATUS,
                 'roleMap' => self::ROLE,
             ]))
@@ -207,6 +222,20 @@ class ResidentBindingQueue extends Page implements HasTable
         $action = $status === 'rejected' ? 'binding.reject' : 'binding.need_more';
         $this->audit($action, self::STATUS[$status][0].' '.$r->code, ResidentBindingRequest::class, $r->id);
         Notification::make()->title(self::STATUS[$status][0])->success()->send();
+    }
+
+    /** Căn đã có chủ sở hữu đang hoạt động (bởi tài khoản khác). */
+    private function unitTaken(ResidentBindingRequest $r): bool
+    {
+        return (bool) ($r->apartment_id && ResidentUnitBinding::withoutGlobalScope('tenant')
+            ->where('apartment_id', $r->apartment_id)->where('status', 'active')
+            ->where('user_account_id', '!=', $r->user_account_id)->exists());
+    }
+
+    /** RiskReport (Module 0) cho 1 yêu cầu gắn căn. */
+    private function riskFor(ResidentBindingRequest $r): RiskReport
+    {
+        return BindingRiskRules::forRequest($r, $this->duplicateAccounts($r)->count(), $this->unitTaken($r));
     }
 
     /** Tài khoản khác trùng SĐT/email (nghi trùng người) — dùng cho cảnh báo trước duyệt. */

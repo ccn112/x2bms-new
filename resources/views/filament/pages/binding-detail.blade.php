@@ -1,9 +1,33 @@
 @php
     $acc = $record->account;
     $ev = data_get($record->evidence_files_json, 'evidence', []);
+    $toneClass = [
+        'red' => 'border-red-200 bg-red-50 text-red-700',
+        'amber' => 'border-amber-200 bg-amber-50 text-amber-700',
+        'slate' => 'border-slate-200 bg-slate-50 text-slate-600',
+    ];
 @endphp
 
 <div class="space-y-5 text-sm">
+    {{-- Đánh giá rủi ro (Module 0) --}}
+    @if (! empty($risk ?? []))
+        <div class="rounded-xl border border-slate-100 p-4">
+            <p class="mb-2 font-semibold text-slate-700">Đánh giá rủi ro ({{ count($risk) }})</p>
+            <ul class="space-y-2">
+                @foreach ($risk as $f)
+                    <li class="rounded-lg border p-2.5 {{ $toneClass[$f['tone']] ?? $toneClass['slate'] }}">
+                        <p class="font-medium">{{ $f['label'] }}</p>
+                        @if (! empty($f['checklist']))
+                            <ul class="mt-1 list-disc pl-5 text-xs opacity-80">
+                                @foreach ($f['checklist'] as $item)<li>{{ $item }}</li>@endforeach
+                            </ul>
+                        @endif
+                    </li>
+                @endforeach
+            </ul>
+        </div>
+    @endif
+
     {{-- Cảnh báo trùng --}}
     @if ($duplicates->isNotEmpty())
         <div class="rounded-xl border border-amber-200 bg-amber-50 p-3 text-amber-800">
