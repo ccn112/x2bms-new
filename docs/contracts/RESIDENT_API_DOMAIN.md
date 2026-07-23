@@ -112,12 +112,12 @@ Compose nhẹ cho first-paint:
 - **`ResidentContextService::tenantIds($user, $ctx)`** — từ `apartmentIds` → `apartments.tenant_id`. Cho offers/voucher toàn tenant.
 - **Voucher platform (hợp tác SA) — schema mới (mirror pattern Notification 3 lớp):**
   - `vouchers`: thêm `owner_level` (`platform|tenant`, default `tenant`) + đổi `tenant_id` **nullable** (platform voucher tenant_id null). ADD-ONLY, guard MySQL nếu ALTER enum.
-  - **Rollout:** bảng pivot `voucher_tenant` (voucher_id, tenant_id, +trạng thái/kỳ triển khai) — SA chọn tenant nào được nhận. Cư dân thấy voucher platform CHỈ khi tenant mình có bản ghi rollout.
+  - **Rollout (CHỐT — có kỳ hạn):** pivot `voucher_tenant` (voucher_id, tenant_id, `starts_at`, `ends_at`, status) — SA chọn tenant + **kỳ hạn hiệu lực**. Cư dân thấy voucher platform CHỈ khi tenant mình có rollout đang trong kỳ (`now BETWEEN starts_at AND ends_at`). (Giới hạn số lượng/tenant: chưa yêu cầu — thêm sau nếu cần.)
   - Màn SA quản lý đối tác/voucher + "triển khai xuống tenant" = việc backend (ngoài phạm vi app); app chỉ đọc `/resident/offers` đã hợp nhất.
 - **Loyalty (bảng mới):** `loyalty_tiers` (key, name, min_points, sort) + `loyalty_tier_benefits` (loyalty_tier_id, icon_key, title, subtitle) + seed. Service tính `next_tier`/`points_to_next` từ `points_balance`.
-- **AQI service:** client HTTP tới Open-Meteo (`air-quality-api.open-meteo.com/v1/air-quality`) theo `projects.latitude/longitude` + **cache TTL ~1h/project**. ⚠️ Open-Meteo free chỉ **phi thương mại** → owner chốt gói commercial hoặc đổi nguồn (WAQI/IQAir có token) trước prod.
+- **AQI service (CHỐT — free tạm, ENV-ready):** client HTTP tới Open-Meteo theo `projects.latitude/longitude` + **cache TTL ~1h/project**. Cấu hình qua **`config/services.php` + ENV** (`AQI_BASE_URL` default `https://air-quality-api.open-meteo.com/v1/air-quality`, `AQI_API_KEY` nullable, `AQI_PROVIDER` default `open-meteo`) → lên prod owner chỉ đổi ENV/key, không sửa code. Đặt sẵn key rỗng trong `.env.example`.
 - **community_posts thêm cột:** `is_pinned`, `is_important`, `image_paths(json)` (ADD-ONLY).
-- **SOS (P3):** endpoint nhận SOS từ app (nút "An ninh") — chọn model/bảng khi đặc tả (có `IntercomEvent`/`SensorEvent`/tạo `sos_alerts`?), cần chốt sau.
+- **SOS (CHỐT — bảng mới `sos_alerts`):** `sos_alerts` (tenant_id, project_id, building_id, apartment_id, resident_id, user_id, `latitude/longitude` nullable, `status` default `open` = open|acknowledged|resolved|false_alarm, `note`, timestamps). Endpoint `POST /resident/sos` tạo alert + audit + (sau) notify BQL. Đặc tả chi tiết ở P3.
 
 ## 5. ⛳ Điểm cần OWNER chốt (đang chặn shape cuối)
 1. ✅ **CHỐT:** Offers/Gifts = `vouchers`, **scope toàn tenant** (bỏ cash_vouchers). + Voucher **hợp tác cấp từ SA (platform)** rollout xuống tenant → cần schema §4 (owner_level + pivot `voucher_tenant`). _Còn cần chốt: bản ghi rollout có kỳ hạn/giới hạn số lượng theo tenant không?_
@@ -126,7 +126,7 @@ Compose nhẹ cho first-paint:
 4. ✅ **CHỐT:** Loyalty tier/benefits = **bảng mới** (`loyalty_tiers` + `loyalty_tier_benefits`, seed).
 5. ✅ **CHỐT:** `community_posts` **thêm cột** `is_pinned/is_important/image_paths`.
 
-**Còn treo (nhỏ):** (a) rollout voucher platform có kỳ hạn/giới hạn số lượng theo tenant? (b) nguồn AQI khi lên prod (license). (c) model đích cho SOS (P3).
+**Đã chốt nốt:** (a) rollout voucher platform **có kỳ hạn** (`starts_at/ends_at`; chưa giới hạn số lượng). (b) AQI **dùng Open-Meteo free tạm, ENV-ready** để owner gắn key/gói khi lên prod. (c) SOS → bảng mới **`sos_alerts`** + `POST /resident/sos`.
 
 ## 6. Vòng đồng bộ
 1. Agent x2mobile code API theo file này; field nào "chưa có cột" → theo hướng đã ghi (null/placeholder) hoặc mở mục §5.
