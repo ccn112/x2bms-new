@@ -58,8 +58,13 @@ Ký hiệu cột: `→` = field API ⟵ cột DB. Enum ghi giá trị **mặc đ
 **`GET /resident/loyalty/activities?cursor=`** — `LoyaltyTransaction` join `loyalty_accounts` theo resident.
 - `title` ← `description` · `occurred_at` ← `transacted_at` · `points` ← `points` (âm nếu `type` là redeem/`points<0`). enum `type`: `earn` default (xác nhận redeem/adjust).
 
-**`GET /resident/offers?cursor=` + `GET /resident/loyalty/gifts`** — **ĐỀ XUẤT map cả 2 → `vouchers`** (scope `tenant_id`; nhưng cư dân tenant-null → scope theo `project→tenant` của căn, hoặc voucher toàn tenant hiển thị chung — cần chốt §5).
-- offers: `vouchers` `status='active'` & `valid_to >= today`. `id/badge(type)/title(name)/expiry_date(valid_to)`; `image_url` **chưa có cột** → null/placeholder.
+**`GET /resident/offers?cursor=` + `GET /resident/loyalty/gifts`** — map cả 2 → `vouchers`.
+- **Scope (CHỐT): voucher toàn tenant.** Cư dân `tenant_id=null` → lấy tenant qua `apartments.tenant_id`
+  của các căn user (thêm `ResidentContextService::tenantIds()`). Hiển thị voucher `tenant_id ∈ tenantIds`.
+- **+ Voucher hợp tác cấp từ SA (platform):** nền tảng đi hợp tác đơn vị ngoài → SA tạo voucher
+  **owner_level=platform**, rồi **triển khai (rollout)** xuống 1 số tenant. Cư dân thấy = voucher tenant mình
+  **∪** voucher platform đã rollout tới tenant đó. → **cần nền schema mới, xem §4.**
+- offers: `status='active'` & `valid_to >= today`. `id/badge(type)/title(name)/expiry_date(valid_to)`; `image_url` **chưa có cột** → null/placeholder.
 - gifts: `vouchers` có `points_cost > 0`. `points_cost`, `title(name)`, `overline(type)`.
 - **KHÔNG dùng `cash_vouchers`** (đó là chứng từ quỹ tài chính: fund_id/payment_request_id — không phải ưu đãi tiêu dùng).
 
@@ -96,12 +101,17 @@ Compose nhẹ cho first-paint:
 - Action tiles (amenities booking `amenity_bookings`, guest `visitor_registrations`, feedback `feedback_requests`): đặc tả khi tới lượt; đều có bảng sẵn với `resident_id/apartment_id`.
 
 ## 4. Việc backend cần bổ sung (nền dùng chung — nên làm sớm)
-- **`ResidentContextService::projectIds($user, $ctx)`** — từ `buildingIds` → `buildings.project_id`. Gần như mọi endpoint community/market/loyalty cần. (Backend/agent bổ sung, cập nhật §1.)
+- **`ResidentContextService::projectIds($user, $ctx)`** — từ `buildingIds` → `buildings.project_id`. Gần như mọi endpoint community/market/loyalty cần.
+- **`ResidentContextService::tenantIds($user, $ctx)`** — từ `apartmentIds` → `apartments.tenant_id`. Cho offers/voucher toàn tenant.
+- **Voucher platform (hợp tác SA) — schema mới (mirror pattern Notification 3 lớp):**
+  - `vouchers`: thêm `owner_level` (`platform|tenant`, default `tenant`) + đổi `tenant_id` **nullable** (platform voucher tenant_id null). ADD-ONLY, guard MySQL nếu ALTER enum.
+  - **Rollout:** bảng pivot `voucher_tenant` (voucher_id, tenant_id, +trạng thái/kỳ triển khai) — SA chọn tenant nào được nhận. Cư dân thấy voucher platform CHỈ khi tenant mình có bản ghi rollout.
+  - Màn SA quản lý đối tác/voucher + "triển khai xuống tenant" = việc backend (ngoài phạm vi app); app chỉ đọc `/resident/offers` đã hợp nhất.
 - Lớp `LoyaltyTiers` (ngưỡng tier + benefits) nếu chốt tính `next_tier`.
 - Cân nhắc thêm cột `pinned/important/image` cho `community_posts`, `image` cho events/products (tùy quyết định §5).
 
 ## 5. ⛳ Điểm cần OWNER chốt (đang chặn shape cuối)
-1. **Offers/Gifts = `vouchers`?** (đề xuất: có; bỏ cash_vouchers). Voucher hiển thị cho cư dân theo **toàn tenant** hay **theo project**? (schema chỉ có tenant_id).
+1. ✅ **CHỐT:** Offers/Gifts = `vouchers`, **scope toàn tenant** (bỏ cash_vouchers). + Voucher **hợp tác cấp từ SA (platform)** rollout xuống tenant → cần schema §4 (owner_level + pivot `voucher_tenant`). _Còn cần chốt: bản ghi rollout có kỳ hạn/giới hạn số lượng theo tenant không?_
 2. **Market** = 3 nguồn (products/services + categories từ products), **BĐS tách riêng**? (đề xuất: có.)
 3. **Home metrics (AQI/an ninh):** tạm ẩn (đề xuất) hay có nguồn (IoT)?
 4. **Loyalty tier/benefits:** ngưỡng nâng hạng + quyền lợi lấy đâu (hằng số vs bảng mới)?
