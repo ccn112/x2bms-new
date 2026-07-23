@@ -107,17 +107,13 @@ Compose nhẹ cho first-paint:
 - **`GET /resident/apartment`** ← thành viên căn (household) — dùng quan hệ đã có.
 - Action tiles (amenities booking `amenity_bookings`, guest `visitor_registrations`, feedback `feedback_requests`): đặc tả khi tới lượt; đều có bảng sẵn với `resident_id/apartment_id`.
 
-## 4. Việc backend cần bổ sung (nền dùng chung — nên làm sớm)
-- **`ResidentContextService::projectIds($user, $ctx)`** — từ `buildingIds` → `buildings.project_id`. Gần như mọi endpoint community/market/loyalty cần.
-- **`ResidentContextService::tenantIds($user, $ctx)`** — từ `apartmentIds` → `apartments.tenant_id`. Cho offers/voucher toàn tenant.
-- **Voucher platform (hợp tác SA) — schema mới (mirror pattern Notification 3 lớp):**
-  - `vouchers`: thêm `owner_level` (`platform|tenant`, default `tenant`) + đổi `tenant_id` **nullable** (platform voucher tenant_id null). ADD-ONLY, guard MySQL nếu ALTER enum.
-  - **Rollout (CHỐT — có kỳ hạn):** pivot `voucher_tenant` (voucher_id, tenant_id, `starts_at`, `ends_at`, status) — SA chọn tenant + **kỳ hạn hiệu lực**. Cư dân thấy voucher platform CHỈ khi tenant mình có rollout đang trong kỳ (`now BETWEEN starts_at AND ends_at`). (Giới hạn số lượng/tenant: chưa yêu cầu — thêm sau nếu cần.)
-  - Màn SA quản lý đối tác/voucher + "triển khai xuống tenant" = việc backend (ngoài phạm vi app); app chỉ đọc `/resident/offers` đã hợp nhất.
-- **Loyalty (bảng mới):** `loyalty_tiers` (key, name, min_points, sort) + `loyalty_tier_benefits` (loyalty_tier_id, icon_key, title, subtitle) + seed. Service tính `next_tier`/`points_to_next` từ `points_balance`.
-- **AQI service (CHỐT — free tạm, ENV-ready):** client HTTP tới Open-Meteo theo `projects.latitude/longitude` + **cache TTL ~1h/project**. Cấu hình qua **`config/services.php` + ENV** (`AQI_BASE_URL` default `https://air-quality-api.open-meteo.com/v1/air-quality`, `AQI_API_KEY` nullable, `AQI_PROVIDER` default `open-meteo`) → lên prod owner chỉ đổi ENV/key, không sửa code. Đặt sẵn key rỗng trong `.env.example`.
-- **community_posts thêm cột:** `is_pinned`, `is_important`, `image_paths(json)` (ADD-ONLY).
-- **SOS (CHỐT — bảng mới `sos_alerts`):** `sos_alerts` (tenant_id, project_id, building_id, apartment_id, resident_id, user_id, `latitude/longitude` nullable, `status` default `open` = open|acknowledged|resolved|false_alarm, `note`, timestamps). Endpoint `POST /resident/sos` tạo alert + audit + (sau) notify BQL. Đặc tả chi tiết ở P3.
+## 4. Nền dùng chung — ✅ ĐÃ DỰNG (2026-07-23, commit foundation)
+- ✅ **`ResidentContextService::projectIds()` + `tenantIds()`** — đã thêm (buildings.project_id / apartments.tenant_id).
+- ✅ **Voucher platform:** `vouchers` + `owner_level`(platform|tenant, default tenant) + `tenant_id` **nullable**; pivot **`voucher_tenant`**(voucher_id, tenant_id, `starts_at`, `ends_at`, status). Cư dân thấy voucher platform CHỈ khi tenant mình có rollout đang trong kỳ (`now BETWEEN starts_at AND ends_at`). _Màn SA quản lý đối tác + triển khai = việc backend riêng; app chỉ đọc `/resident/offers` hợp nhất._
+- ✅ **Loyalty:** bảng `loyalty_tiers`(key,name,min_points,sort) + `loyalty_tier_benefits`(loyalty_tier_id,icon_key,title,subtitle), **đã seed** silver(0)/gold(5000)/platinum(20000) + benefit mẫu. Model `LoyaltyTier`/`LoyaltyTierBenefit`. Service tính `next_tier`/`points_to_next` từ `points_balance`.
+- ✅ **community_posts:** đã thêm `is_pinned`, `is_important`, `image_paths(json)`.
+- ✅ **AQI config:** `config('services.aqi')` + ENV (`AQI_PROVIDER/AQI_BASE_URL/AQI_API_KEY/AQI_CACHE_TTL`), `.env.example` đã có. **Còn lại (agent build endpoint):** viết AqiService gọi HTTP + cache theo project, dùng trong `/resident/home`.
+- ✅ **SOS — dùng bảng có sẵn `sos_alerts`** (migration `2026_07_01_000010`, model `App\Models\SosAlert`). **KHÔNG tạo bảng mới.** Cột thật: tenant_id, project_id, building_id, apartment_id, resident_id, `source`(app|panic_button|intercom), `status`(**triggered**|acknowledged|responding|resolved|false_alarm), `location`(string), `triggered_at`, acknowledged_by_id, resolved_at, note. Endpoint `POST /resident/sos`: tạo với `source='app'`, `status='triggered'`, scope resident/apartment, `location`= "lat,lng" hoặc mô tả; + audit + (sau) notify BQL.
 
 ## 5. ⛳ Điểm cần OWNER chốt (đang chặn shape cuối)
 1. ✅ **CHỐT:** Offers/Gifts = `vouchers`, **scope toàn tenant** (bỏ cash_vouchers). + Voucher **hợp tác cấp từ SA (platform)** rollout xuống tenant → cần schema §4 (owner_level + pivot `voucher_tenant`). _Còn cần chốt: bản ghi rollout có kỳ hạn/giới hạn số lượng theo tenant không?_

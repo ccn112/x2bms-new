@@ -53,4 +53,13 @@ return [
         ],
     ],
 
+    // Air Quality (Home metric AQI). Mặc định Open-Meteo free (không cần key, phi thương mại).
+    // Lên prod: đổi ENV sang gói/nguồn có key thương mại (WAQI/IQAir) — không sửa code.
+    'aqi' => [
+        'provider' => env('AQI_PROVIDER', 'open-meteo'),
+        'base_url' => env('AQI_BASE_URL', 'https://air-quality-api.open-meteo.com/v1/air-quality'),
+        'api_key' => env('AQI_API_KEY'),
+        'cache_ttl' => (int) env('AQI_CACHE_TTL', 3600), // giây
+    ],
+
 ];
