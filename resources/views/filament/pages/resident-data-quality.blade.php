@@ -1,9 +1,10 @@
 @php
     $barColor = ['amber' => 'bg-amber-500', 'red' => 'bg-red-500', 'blue' => 'bg-blue-500', 'green' => 'bg-green-500'];
-    $tagColor = [
-        'Thiếu SĐT' => 'bg-amber-50 text-amber-600', 'Thiếu email' => 'bg-amber-50 text-amber-600',
-        'Thiếu CCCD' => 'bg-red-50 text-red-600', 'Thiếu ngày sinh' => 'bg-amber-50 text-amber-600',
-        'KYC chờ' => 'bg-blue-50 text-blue-600', 'Trùng SĐT' => 'bg-red-50 text-red-600', 'Trùng email' => 'bg-red-50 text-red-600',
+    // Tag tô theo mức rủi ro (RiskLevel::tone → green|amber|red|slate).
+    $toneClass = [
+        'red' => 'bg-red-50 text-red-600 dark:bg-red-500/10 dark:text-red-300',
+        'amber' => 'bg-amber-50 text-amber-600 dark:bg-amber-500/10 dark:text-amber-300',
+        'slate' => 'bg-slate-100 text-slate-500 dark:bg-white/10 dark:text-slate-300',
     ];
 @endphp
 
@@ -65,7 +66,7 @@
                                 <td class="px-5 py-3">
                                     <div class="flex flex-wrap gap-1">
                                         @foreach ($r['tags'] as $t)
-                                            <span class="inline-flex rounded-md px-2 py-0.5 text-xs font-medium {{ $tagColor[$t] ?? 'bg-slate-100 text-slate-500' }}">{{ $t }}</span>
+                                            <span class="inline-flex rounded-md px-2 py-0.5 text-xs font-medium {{ $toneClass[$t['tone']] ?? $toneClass['slate'] }}">{{ $t['label'] }}</span>
                                         @endforeach
                                     </div>
                                 </td>

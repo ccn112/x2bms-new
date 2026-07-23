@@ -4,6 +4,8 @@ namespace App\Filament\Pages;
 
 use App\Models\Resident;
 use App\Support\Context\CurrentContext;
+use App\Support\Rules\DataQualityRules;
+use App\Support\Rules\RiskLevel;
 use BackedEnum;
 use Filament\Pages\Page;
 use Illuminate\Database\Eloquent\Builder;
@@ -62,21 +64,37 @@ class ResidentDataQuality extends Page
             ->whereNotNull('dob')->count();
         $completeness = $total ? round($complete / $total * 100) : 0;
 
-        // Rows needing attention (top 40) with per-record issue tags.
+        // Rows needing attention — per-record issues từ DataQualityRules (Module 0, cùng nguồn
+        // với màn chi tiết/duyệt) + phát hiện trùng cross-record (rule per-resident không có).
+        $shortLabels = [
+            'missing_phone' => 'Thiếu SĐT', 'missing_email' => 'Thiếu email', 'missing_id_no' => 'Thiếu CCCD',
+            'missing_dob' => 'Thiếu ngày sinh', 'kyc_not_verified' => 'KYC chưa xác thực', 'face_mismatch' => 'Ảnh ≠ giấy tờ',
+        ];
         $issues = (clone $this->scoped())->latest('updated_at')->limit(200)->get()
-            ->map(function (Resident $r) use ($dupPhones, $dupEmails) {
-                $tags = [];
-                if (! $r->phone) $tags[] = 'Thiếu SĐT';
-                if (! $r->email) $tags[] = 'Thiếu email';
-                if (! $r->id_no) $tags[] = 'Thiếu CCCD';
-                if (! $r->dob) $tags[] = 'Thiếu ngày sinh';
-                if ($r->kyc_status && ! in_array($r->kyc_status, ['verified', 'approved', 'passed'])) $tags[] = 'KYC chờ';
-                if ($r->phone && ($dupPhones[$r->phone] ?? 0) > 1) $tags[] = 'Trùng SĐT';
-                if ($r->email && ($dupEmails[$r->email] ?? 0) > 1) $tags[] = 'Trùng email';
+            ->map(function (Resident $r) use ($dupPhones, $dupEmails, $shortLabels) {
+                $report = DataQualityRules::forResident($r);
+                $tags = array_map(fn (array $f) => [
+                    'label' => $shortLabels[$f['code']] ?? $f['message'],
+                    'tone' => RiskLevel::tone($f['level']),
+                ], $report->toArray());
 
-                return ['id' => $r->id, 'name' => $r->full_name, 'phone' => $r->phone, 'email' => $r->email, 'code' => $r->code, 'tags' => $tags];
+                // Trùng lặp (cross-record) — high_risk vì có thể là hồ sơ nhân bản.
+                $hasDup = false;
+                if ($r->phone && ($dupPhones[$r->phone] ?? 0) > 1) { $tags[] = ['label' => 'Trùng SĐT', 'tone' => 'red']; $hasDup = true; }
+                if ($r->email && ($dupEmails[$r->email] ?? 0) > 1) { $tags[] = ['label' => 'Trùng email', 'tone' => 'red']; $hasDup = true; }
+
+                $severity = $report->highestLevel() !== null ? RiskLevel::severity($report->highestLevel()) : 0;
+                if ($hasDup) {
+                    $severity = max($severity, RiskLevel::severity(RiskLevel::HIGH_RISK));
+                }
+
+                return [
+                    'id' => $r->id, 'name' => $r->full_name, 'phone' => $r->phone, 'email' => $r->email,
+                    'code' => $r->code, 'tags' => $tags, 'severity' => $severity,
+                ];
             })
             ->filter(fn ($r) => count($r['tags']) > 0)
+            ->sortByDesc('severity')   // nặng trước
             ->take(40)->values()->all();
 
         return [
