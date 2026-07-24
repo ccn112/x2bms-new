@@ -91,6 +91,40 @@ Scope: voucher tenant của user **∪** voucher platform (SA) đã rollout tớ
 > **Ghi chú:** `image_url` chưa có cột trong `vouchers` → luôn `null`, app dùng placeholder.
 > `is_platform=true` = voucher đối tác nền tảng (rollout xuống tenant) — app có thể gắn nhãn "Đối tác".
 
+## 6. Cộng đồng (tab Cộng đồng) ✅ 2026-07-24
+
+Scope: `project_id ∈ projectIds` của user. Cư dân tenant_id=NULL → không dựa tenant scope.
+
+**GET `/resident/community/posts?cursor=`** — bài đăng (pinned trước, mới nhất trước; `status=published`).
+```json
+{ "data": [{"id":"3","author":{"name":"Nguyễn Văn Cường","role":"owner","avatar_url":"...","verified":false},
+  "body":"...","likes":11,"comments":4,"pinned":false,"important":false,"image_urls":[],"created_at":"..."}] }
+```
+> `image_urls` từ cột `community_posts.image_paths` (json). `role` từ quan hệ căn của tác giả; `verified` = tác giả có tài khoản (`user_id`).
+
+**GET `/resident/community/events?cursor=`** — sự kiện (`status=published`, sắp diễn ra trước).
+```json
+{ "data": [{"id":"..","title":"Đêm nhạc acoustic sân vườn","description":"...","location":"Sảnh block B",
+  "starts_at":"...","ends_at":"...","capacity":120,"attendees":45,"registered":false,"image_url":null}] }
+```
+> `registered` = user (resident của user) đã đăng ký (`event_registrations`). `image_url` chưa có cột → null.
+
+**GET `/resident/community/polls`** — khảo sát đang mở (`status=open`) + trạng thái vote của user.
+```json
+{ "data": [{"id":"..","question":"...","type":"single","status":"open","closes_at":"...",
+  "total_participants":101,"voted":true,"voted_option_id":"4",
+  "options":[{"id":"1","label":"Hồ bơi","votes":40,"percent":40}]}] }
+```
+**POST `/resident/community/polls/{poll}/vote`** body `{ "option_id": 4 }` — 1 vote / poll / resident.
+- 200 → trả PollResource đã cập nhật (`voted=true`). 409 `already_voted` nếu đã vote. 422 `poll_closed`/`invalid_option`.
+
+**GET `/resident/community/groups`** — nhóm cộng đồng của dự án (`status=active`).
+```json
+{ "data": [{"id":"1","name":"Hội cư dân block A","description":"...","category":null,
+  "members":320,"joined":false,"icon_key":null,"image_url":null}] }
+```
+> `category`/`icon_key`/`image_url` chưa có cột → null. `joined` chưa có bảng membership → false.
+
 ---
 
 ## Trạng thái triển khai
@@ -102,7 +136,7 @@ Scope: voucher tenant của user **∪** voucher platform (SA) đã rollout tớ
 | Hoá đơn | statements(+detail), billing/summary(+trend) | ✅ | ✅ |
 | Thông báo | notifications(+read) | ✅ | ✅ |
 | Ưu đãi | loyalty, loyalty/activities, **offers**, **loyalty/gifts** | ✅ | ⏳ đang wire |
-| Cộng đồng | community/* | ⏳ | ⏳ |
+| Cộng đồng | **community/posts,events,polls(+vote),groups** | ✅ | ⏳ đang wire |
 | Chợ + BĐS | market/*, real-estate | ⏳ | ⏳ |
 | Home | home | ⏳ | ⏳ |
 | Payments/SOS | payments, sos | ⏳ | ⏳ |

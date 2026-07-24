@@ -80,6 +80,13 @@ Route::prefix('v1')->group(function () {
         // Ưu đãi — voucher không cần đổi điểm (CD-OF-01).
         Route::get('offers', [\App\Http\Controllers\Api\V1\Resident\OfferController::class, 'index']);
 
+        // Cộng đồng (CD-CM-*) — scope theo dự án.
+        Route::get('community/posts', [\App\Http\Controllers\Api\V1\Resident\CommunityController::class, 'posts']);
+        Route::get('community/events', [\App\Http\Controllers\Api\V1\Resident\CommunityController::class, 'events']);
+        Route::get('community/polls', [\App\Http\Controllers\Api\V1\Resident\CommunityController::class, 'polls']);
+        Route::post('community/polls/{poll}/vote', [\App\Http\Controllers\Api\V1\Resident\CommunityController::class, 'vote']);
+        Route::get('community/groups', [\App\Http\Controllers\Api\V1\Resident\CommunityController::class, 'groups']);
+
         // Căn hộ đang chọn + thành viên hộ (Hồ sơ cư dân — P3).
         Route::get('apartment', [\App\Http\Controllers\Api\V1\Resident\ApartmentController::class, 'show']);
     });

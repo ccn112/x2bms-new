@@ -2,8 +2,13 @@
 
 namespace Database\Seeders;
 
+use App\Models\CommunityGroup;
+use App\Models\CommunityPost;
+use App\Models\Event;
 use App\Models\LoyaltyAccount;
 use App\Models\LoyaltyTransaction;
+use App\Models\Poll;
+use App\Models\PollOption;
 use App\Models\Voucher;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Carbon;
@@ -23,10 +28,93 @@ class ResidentDemoContentSeeder extends Seeder
     /** Resident demo #6 → resident_id chính (primary). */
     private const DEMO_RESIDENT_ID = 1305;
 
+    /** Dự án của cư dân demo (projectIds user #6 = 1,3). */
+    private const DEMO_PROJECT_ID = 1;
+
     public function run(): void
     {
         $this->seedVouchers();
         $this->seedLoyalty();
+        $this->seedCommunity();
+    }
+
+    /** Tab Cộng đồng: posts + events + polls(+options) + groups (scope project 1). */
+    private function seedCommunity(): void
+    {
+        $p = self::DEMO_PROJECT_ID;
+
+        $posts = [
+            ['key' => 'welcome', 'body' => 'Chào mừng cư dân mới của toà nhà! Cùng tham gia nhóm cộng đồng nhé.', 'pinned' => true, 'important' => true, 'likes' => 34, 'comments' => 8],
+            ['key' => 'maintenance', 'body' => 'Lịch bảo trì thang máy block A: 8h-11h thứ Bảy tuần này.', 'pinned' => false, 'important' => true, 'likes' => 12, 'comments' => 3],
+            ['key' => 'yardsale', 'body' => 'Nhà mình thanh lý bộ sofa còn mới 90%, ai quan tâm inbox nhé!', 'pinned' => false, 'important' => false, 'likes' => 5, 'comments' => 2],
+        ];
+        foreach ($posts as $i => $po) {
+            CommunityPost::withoutGlobalScopes()->updateOrCreate(
+                ['project_id' => $p, 'title' => 'SEED-'.$po['key']],
+                [
+                    'tenant_id' => 1,
+                    'author_resident_id' => self::DEMO_RESIDENT_ID,
+                    'body' => $po['body'],
+                    'like_count' => $po['likes'],
+                    'comment_count' => $po['comments'],
+                    'is_pinned' => $po['pinned'],
+                    'is_important' => $po['important'],
+                    'image_paths' => [],
+                    'status' => 'published',
+                    'created_at' => Carbon::parse('2026-07-'.(10 + $i)),
+                ]
+            );
+        }
+
+        $events = [
+            ['title' => 'Đêm nhạc acoustic sân vườn', 'location' => 'Sảnh block B', 'starts' => '2026-08-05 19:00', 'cap' => 120, 'reg' => 45],
+            ['title' => 'Lớp yoga buổi sáng', 'location' => 'Khu sinh hoạt tầng 3', 'starts' => '2026-08-10 06:30', 'cap' => 30, 'reg' => 22],
+        ];
+        foreach ($events as $e) {
+            Event::withoutGlobalScopes()->updateOrCreate(
+                ['project_id' => $p, 'title' => $e['title']],
+                [
+                    'tenant_id' => 1,
+                    'location' => $e['location'],
+                    'description' => 'Sự kiện cộng đồng nội khu.',
+                    'starts_at' => Carbon::parse($e['starts']),
+                    'ends_at' => Carbon::parse($e['starts'])->addHours(2),
+                    'capacity' => $e['cap'],
+                    'registered_count' => $e['reg'],
+                    'status' => 'published',
+                ]
+            );
+        }
+
+        $poll = Poll::withoutGlobalScopes()->updateOrCreate(
+            ['project_id' => $p, 'question' => 'Bạn muốn tiện ích nào được nâng cấp trước?'],
+            ['tenant_id' => 1, 'type' => 'single', 'status' => 'open', 'closes_at' => Carbon::parse('2026-08-31'), 'vote_count' => 0]
+        );
+        $options = ['Hồ bơi', 'Phòng gym', 'Sân chơi trẻ em', 'BBQ sân thượng'];
+        $votes = [40, 30, 20, 10];
+        $total = 0;
+        foreach ($options as $idx => $label) {
+            PollOption::updateOrCreate(
+                ['poll_id' => $poll->id, 'label' => $label],
+                ['vote_count' => $votes[$idx], 'sort' => $idx]
+            );
+            $total += $votes[$idx];
+        }
+        $poll->update(['vote_count' => $total]);
+
+        $groups = [
+            ['name' => 'Hội cư dân block A', 'desc' => 'Trao đổi thông tin block A', 'members' => 320],
+            ['name' => 'Cha mẹ & con nhỏ', 'desc' => 'Kết nối các gia đình có trẻ nhỏ', 'members' => 145],
+            ['name' => 'Thể thao & sức khoẻ', 'desc' => 'Chạy bộ, gym, yoga nội khu', 'members' => 210],
+        ];
+        foreach ($groups as $g) {
+            CommunityGroup::withoutGlobalScopes()->updateOrCreate(
+                ['project_id' => $p, 'name' => $g['name']],
+                ['tenant_id' => 1, 'description' => $g['desc'], 'member_count' => $g['members'], 'status' => 'active']
+            );
+        }
+
+        $this->command?->info('  Community: 3 posts + 2 events + 1 poll(4 options) + 3 groups (project '.$p.').');
     }
 
     /** Tài khoản điểm + hoạt động gần đây cho cư dân demo (tab Ưu đãi — CD-LY-01). */

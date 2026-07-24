@@ -15,6 +15,12 @@ class CommunityPost extends Model
 
     protected $guarded = [];
 
+    protected $casts = [
+        'is_pinned' => 'boolean',
+        'is_important' => 'boolean',
+        'image_paths' => 'array',
+    ];
+
     public function group(): BelongsTo
     {
         return $this->belongsTo(CommunityGroup::class, 'community_group_id');
