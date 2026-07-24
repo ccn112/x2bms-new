@@ -30,7 +30,7 @@ class BootstrapController extends ApiController
             'name' => $p->name,
             'location' => collect([$p->district, $p->city])->filter()->implode(', ') ?: ($p->address ?? ''),
             'status' => $p->status,
-            'image' => null,
+            'image' => \App\Support\DemoImage::url('building,residential,skyline', $p->id, 1200, 700),
             'summary' => $p->description,
         ])->all();
 

@@ -2,13 +2,15 @@
 
 namespace App\Http\Resources\Api\V1;
 
+use App\Support\DemoImage;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Illuminate\Support\Facades\Storage;
 
 /**
  * @property \App\Models\CommunityPost $resource
- * Bài đăng cộng đồng (tab Cộng đồng — CD-CM-01). Ảnh từ cột `image_paths` (json).
+ * Bài đăng cộng đồng (tab Cộng đồng — CD-CM-01). Ảnh từ cột `image_paths` (json);
+ * nếu rỗng → 1 ảnh demo theo chủ đề (DemoImage) để feed luôn giàu hình ảnh.
  */
 class CommunityPostResource extends JsonResource
 {
@@ -27,6 +29,9 @@ class CommunityPostResource extends JsonResource
             ->map(fn ($p) => str_starts_with((string) $p, 'http') ? $p : Storage::disk('public')->url($p))
             ->values()
             ->all();
+        if (empty($images)) {
+            $images = [DemoImage::url('apartment,community,neighbor', $this->id)];
+        }
 
         return [
             'id' => (string) $this->id,

@@ -2,13 +2,14 @@
 
 namespace App\Http\Resources\Api\V1;
 
+use App\Support\DemoImage;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
 /**
  * @property \App\Models\Voucher $resource
  * Ưu đãi (tab Ưu đãi — CD-OF-01). Là voucher hiển thị cho cư dân KHÔNG cần đổi
- * điểm (points_cost = 0/null). `image_url` chưa có cột → null (app dùng placeholder).
+ * điểm (points_cost = 0/null). `image_url` = ảnh demo theo chủ đề (DemoImage).
  */
 class OfferResource extends JsonResource
 {
@@ -21,7 +22,7 @@ class OfferResource extends JsonResource
             'badge' => $this->type,
             'value' => $this->value === null ? null : (string) $this->value,
             'expiry_date' => optional($this->valid_to)->toDateString(),
-            'image_url' => null,
+            'image_url' => DemoImage::url('shopping,voucher,discount', $this->id),
             'is_platform' => $this->owner_level === 'platform',
         ];
     }

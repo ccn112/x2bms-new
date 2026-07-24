@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources\Api\V1;
 
+use App\Support\DemoImage;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Illuminate\Support\Facades\Storage;
@@ -9,6 +10,7 @@ use Illuminate\Support\Facades\Storage;
 /**
  * @property \App\Models\Amenity $resource
  * Tiện ích nội khu (gym/hồ bơi/BBQ…). `slots` chỉ kèm khi controller load quan hệ.
+ * `image_url` từ `image_path`; nếu rỗng → ảnh demo theo type/name (DemoImage).
  */
 class AmenityResource extends JsonResource
 {
@@ -16,7 +18,7 @@ class AmenityResource extends JsonResource
     {
         $image = $this->image_path
             ? (str_starts_with($this->image_path, 'http') ? $this->image_path : Storage::disk('public')->url($this->image_path))
-            : null;
+            : DemoImage::url($this->demoKeywords(), $this->id);
 
         return [
             'id' => (string) $this->id,
@@ -36,5 +38,18 @@ class AmenityResource extends JsonResource
                 fn () => AmenitySlotResource::collection($this->slots)->resolve($request)
             ),
         ];
+    }
+
+    /** Chủ đề ảnh demo theo loại/tên tiện ích. */
+    private function demoKeywords(): string
+    {
+        $haystack = mb_strtolower(trim(($this->type ?? '').' '.($this->name ?? '')));
+
+        return match (true) {
+            str_contains($haystack, 'pool') || str_contains($haystack, 'bể') || str_contains($haystack, 'hồ') => 'swimming,pool',
+            str_contains($haystack, 'gym') => 'gym,fitness',
+            str_contains($haystack, 'bbq') => 'barbecue,grill',
+            default => 'amenity,facility',
+        };
     }
 }

@@ -2,13 +2,14 @@
 
 namespace App\Http\Resources\Api\V1;
 
+use App\Support\DemoImage;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
 /**
  * @property \App\Models\Event $resource
  * Sự kiện cộng đồng (tab Cộng đồng — CD-CM-04). `registered` = user đã đăng ký
- * (set từ controller qua $additional). `image_url` chưa có cột → null.
+ * (set từ controller qua $additional). `image_url` = ảnh demo theo chủ đề (DemoImage).
  */
 class EventResource extends JsonResource
 {
@@ -24,7 +25,7 @@ class EventResource extends JsonResource
             'capacity' => $this->capacity === null ? null : (int) $this->capacity,
             'attendees' => (int) $this->registered_count,
             'registered' => (bool) ($this->registered ?? false),
-            'image_url' => null,
+            'image_url' => DemoImage::url('event,party,concert', $this->id),
         ];
     }
 }
