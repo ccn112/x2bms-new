@@ -1720,3 +1720,17 @@ Tạo `docs/SESSION_HANDOFF_20260701_SUPERADMIN_BILLING.md` — snapshot đầy 
 **Commits (main, tác giả Joa. Chinh <chtchinh@gmail.com>):** 78d934c → 4292630 → 23740fd → 28838cc → 2e40475 → 1f8fa26 → a235070. Verify: `php -l` + `npm run build` + render 200 + Livewire::test cho filter/tab/toggle/action.
 
 **CÒN LẠI BQL-01:** 04 Chi tiết cư dân 360 (dựng theo `BQL-01-04`, đối xứng chi tiết căn hộ) → 03 wizard thêm → 02 timeline → 08 households/09 residency/10 data-quality. Rồi BQL-02, BQL-03. Layout mặt bằng (option C) làm sau.
+
+---
+
+## 2026-07-24 — Filament: quản lý Cổng thanh toán (payment_channels)
+
+Dựng `PaymentChannelResource` (panel **fila**, `/fila/payment-channels`, discover tự động qua `FilaPanelProvider`) để BQL/owner tự bật/tắt cổng + nhập tài khoản nhận VietQR per tenant + per project. Bám convention v5 hiện có (`form(Schema)`, `table(Table)`, thư mục `Schemas/Tables/Pages`, trait `SoftDeletableResource`).
+
+- **Form** (3 Section): (1) Phạm vi — tenant (`->relationship('tenant','name')`, `->live()`) + project (`->options()` lọc theo `Get('tenant_id')`, nullable, placeholder "Tất cả dự án"); (2) Cổng — channel (vietqr/vnpay/momo, `->live()`) + display_name + is_enabled (Toggle, default true) + sort; (3) config ĐỘNG theo channel: vietqr → 4 field `config.bank_bin|bank_code|account_no|account_name` (dot-notation map vào JSON nhờ cast `config=>array`); vnpay/momo → Placeholder ghi chú "khoá bí mật ở ENV" + Select `config.env`.
+- **Table**: tenant, project (placeholder "— Tất cả dự án"), channel (badge màu), display_name, is_enabled (`ToggleColumn` toggle nhanh), sort; filter channel (Select) + is_enabled (Ternary) + TrashedFilter.
+- **Model**: thêm `project(): BelongsTo` vào `App\Models\PaymentChannel` (project_id nullable, không FK constraint).
+- **Nav**: group "Thanh toán", icon `OutlinedCreditCard`, label "Cổng thanh toán".
+- **Tenancy**: panel fila không bật Filament tenancy → chọn tenant thủ công; global scope `BelongsToTenant` vẫn tự lọc theo tenant của user đăng nhập (nếu có), không phá scope.
+
+**Verify:** `filament:optimize-clear` OK; `route:list --path=fila` thấy 3 route (index/create/edit); `php -l` sạch; class autoload + `project()` OK; `artisan about` chạy không lỗi.

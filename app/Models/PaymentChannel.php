@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Models\Concerns\BelongsToTenant;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 /**
@@ -21,4 +22,10 @@ class PaymentChannel extends Model
         'is_enabled' => 'boolean',
         'config' => 'array',
     ];
+
+    /** Dự án áp dụng; null = tất cả dự án của tenant. */
+    public function project(): BelongsTo
+    {
+        return $this->belongsTo(Project::class);
+    }
 }
