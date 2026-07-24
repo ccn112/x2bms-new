@@ -17,10 +17,47 @@ class BootstrapController extends ApiController
     /** GET /api/v1/public/bootstrap — no auth. Branding + enabled modules + min version. */
     public function public(Request $request): JsonResponse
     {
+        // Không auth → BelongsToTenant/BelongsToProject đều no-op → hiển thị showcase.
+        $projects = \App\Models\Project::query()
+            ->whereNotIn('status', ['archived', 'inactive'])
+            ->orderByDesc('id')
+            ->limit(12)
+            ->get();
+
+        $featuredProjects = $projects->map(fn ($p) => [
+            'id' => (string) $p->id,
+            'slug' => $p->code ?: (string) $p->id,
+            'name' => $p->name,
+            'location' => collect([$p->district, $p->city])->filter()->implode(', ') ?: ($p->address ?? ''),
+            'status' => $p->status,
+            'image' => null,
+            'summary' => $p->description,
+        ])->all();
+
+        // Nội dung công khai = thông báo cấp nền tảng (platform) đã publish (an toàn đa tenant).
+        $content = \App\Models\Notification::query()
+            ->where('owner_level', 'platform')
+            ->where('status', 'published')
+            ->orderByDesc('published_at')
+            ->orderByDesc('id')
+            ->limit(6)
+            ->get()
+            ->map(fn ($n) => [
+                'id' => (string) $n->id,
+                'slug' => $n->code ?: (string) $n->id,
+                'type' => $n->type,
+                'title' => $n->title,
+                'published_at' => optional($n->published_at ?? $n->created_at)->toIso8601String(),
+                'body' => $n->body ?? $n->summary,
+            ])->all();
+
         return ApiResponse::success([
             'experience_mode' => 'public',
             'branding' => $this->defaultBranding(),
+            'city' => ['name' => $projects->first()->city ?? 'TP. Hồ Chí Minh'],
             'enabled_modules' => ['projects', 'content', 'community', 'offers'],
+            'featured_projects' => $featuredProjects,
+            'content' => $content,
             'minimum_app_version' => config('mobile.min_app_version'),
         ]);
     }
