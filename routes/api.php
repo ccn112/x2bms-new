@@ -100,6 +100,10 @@ Route::prefix('v1')->group(function () {
         // SOS an ninh — cư dân bấm nút khẩn (P3).
         Route::post('sos', [\App\Http\Controllers\Api\V1\Resident\SosController::class, 'store']);
 
+        // Lịch sử thanh toán (CD-PAY-05). Khởi tạo thanh toán chờ owner chốt cổng.
+        Route::get('payments', [\App\Http\Controllers\Api\V1\Resident\PaymentController::class, 'index']);
+        Route::get('payments/{payment}', [\App\Http\Controllers\Api\V1\Resident\PaymentController::class, 'show']);
+
         // Căn hộ đang chọn + thành viên hộ (Hồ sơ cư dân — P3).
         Route::get('apartment', [\App\Http\Controllers\Api\V1\Resident\ApartmentController::class, 'show']);
     });

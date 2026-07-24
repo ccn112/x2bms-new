@@ -31,11 +31,71 @@ class ResidentDemoContentSeeder extends Seeder
     /** Dự án của cư dân demo (projectIds user #6 = 1,3). */
     private const DEMO_PROJECT_ID = 1;
 
+    /** Căn hộ của cư dân demo #6 (primary). */
+    private const DEMO_APARTMENT_ID = 11;
+
     public function run(): void
     {
         $this->seedVouchers();
         $this->seedLoyalty();
         $this->seedCommunity();
+        $this->seedPayments();
+    }
+
+    /** Lịch sử thanh toán cho cư dân demo (tab Hoá đơn — CD-PAY-05). */
+    private function seedPayments(): void
+    {
+        $methodId = DB::table('payment_methods')->where('is_active', true)->value('id')
+            ?? DB::table('payment_methods')->value('id');
+
+        $apt = DB::table('apartments')->where('id', self::DEMO_APARTMENT_ID)->first();
+        if ($apt === null) {
+            $this->command?->warn('  Payments: bỏ qua — không thấy apartment #'.self::DEMO_APARTMENT_ID);
+
+            return;
+        }
+
+        $statementId = DB::table('statements')
+            ->where('apartment_id', self::DEMO_APARTMENT_ID)
+            ->where('status', 'paid')
+            ->value('id');
+
+        $rows = [
+            ['code' => 'PM-2026-06-11', 'amount' => '5000000.00', 'method' => 'Chuyển khoản', 'ref' => 'FT2606110001', 'at' => '2026-06-11'],
+            ['code' => 'PM-2026-05-10', 'amount' => '5000000.00', 'method' => 'VietQR', 'ref' => 'FT2605100002', 'at' => '2026-05-10'],
+        ];
+        foreach ($rows as $r) {
+            $paymentId = DB::table('payments')->where('code', $r['code'])->value('id');
+            $attrs = [
+                'tenant_id' => $apt->tenant_id,
+                'building_id' => $apt->building_id,
+                'apartment_id' => self::DEMO_APARTMENT_ID,
+                'resident_id' => self::DEMO_RESIDENT_ID,
+                'payment_method_id' => $methodId,
+                'amount' => $r['amount'],
+                'paid_at' => Carbon::parse($r['at']),
+                'reference_no' => $r['ref'],
+                'status' => 'completed',
+                'note' => 'Thanh toán phí quản lý',
+                'updated_at' => now(),
+            ];
+            if ($paymentId) {
+                DB::table('payments')->where('id', $paymentId)->update($attrs);
+            } else {
+                $attrs['code'] = $r['code'];
+                $attrs['created_at'] = now();
+                $paymentId = DB::table('payments')->insertGetId($attrs);
+            }
+
+            if ($statementId) {
+                DB::table('payment_allocations')->updateOrInsert(
+                    ['payment_id' => $paymentId, 'statement_id' => $statementId],
+                    ['amount' => $r['amount'], 'updated_at' => now(), 'created_at' => now()]
+                );
+            }
+        }
+
+        $this->command?->info('  Payments: 2 thanh toán (apt '.self::DEMO_APARTMENT_ID.') + allocation vào statement đã trả.');
     }
 
     /** Tab Cộng đồng: posts + events + polls(+options) + groups (scope project 1). */

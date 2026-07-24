@@ -168,6 +168,20 @@ Scope: `project_id ∈ projectIds` của user. Cư dân tenant_id=NULL → khôn
 - Tạo `sos_alerts` (`source=app`, `status=triggered`) scope theo căn đang chọn. `location` = "lat,lng" nếu gửi toạ độ, else mô tả, else mã căn.
 - 201 → `{ "data": { "id", "status":"triggered", "triggered_at" } }`. 403 `no_apartment` nếu chưa gắn căn.
 
+## 9. Thanh toán (tab Hoá đơn — CD-PAY-05) ✅ 2026-07-24 (history)
+
+**GET `/resident/payments?cursor=`** — lịch sử thanh toán (scope căn/resident của user, mới nhất trước).
+```json
+{ "data": [{"id":"10","code":"PM-2026-06-11","amount":"5000000.00","status":"completed",
+  "method":"Chuyển khoản","reference_no":"FT2606110001","paid_at":"...","note":"..."}] }
+```
+**GET `/resident/payments/{id}`** — chi tiết + phân bổ vào hoá đơn.
+```json
+{ "data": { /* như trên */ "allocations":[{"statement_id":1271,"statement_line_id":null,"amount":"5000000.00"}] } }
+```
+> **KHỞI TẠO thanh toán (POST /resident/payments):** CHƯA làm — cần owner chốt **cổng thanh toán**
+> (VietQR/VNPay/MoMo…) + credentials. Nút "Thanh toán" trong app vẫn no-op tới khi chốt. Xem §"Điểm chờ owner".
+
 ---
 
 ## Trạng thái triển khai
@@ -183,4 +197,12 @@ Scope: `project_id ∈ projectIds` của user. Cư dân tenant_id=NULL → khôn
 | Chợ + BĐS | **market/listings,services,categories + real-estate** | ✅ | ⏳ đang wire |
 | Home | **home** (AQI live + tasks + notices) | ✅ | ⏳ đang wire |
 | SOS | **sos** | ✅ | ⏳ đang wire |
-| Payments | payments | ⏳ | ⏳ |
+| Payments | **payments** (history+detail) | ✅ | ⏳ đang wire |
+
+## Điểm chờ owner chốt (chặn shape cuối)
+
+- **Cổng thanh toán** (POST /resident/payments): chọn VietQR/VNPay/MoMo… + credentials → mới build được khởi tạo giao dịch + trạng thái (CD-PAY-05 nút Thanh toán).
+- **Offers/Gifts:** rollout voucher platform có giới hạn số lượng theo tenant không (hiện chỉ theo kỳ starts_at/ends_at)?
+- **AQI:** Open-Meteo free = phi thương mại → chốt gói/nguồn khi lên prod (ENV AQI_* đã sẵn).
+- **Community groups:** cần bảng membership để `joined` đúng (hiện luôn false); `category/icon/image` cần cột nếu muốn hiển thị.
+- **eKYC/household invite:** contract chưa chốt (app còn stub).
