@@ -62,4 +62,21 @@ return [
         'cache_ttl' => (int) env('AQI_CACHE_TTL', 3600), // giây
     ],
 
+    // Cổng thanh toán. VietQR không cần credential (chỉ số tài khoản trong
+    // payment_channels.config). VNPay/MoMo cần khoá bí mật — để ở ENV (KHÔNG lưu DB).
+    // Owner bật cổng qua bảng payment_channels; khoá dùng chung theo merchant.
+    'vnpay' => [
+        'tmn_code' => env('VNPAY_TMN_CODE'),
+        'secret' => env('VNPAY_HASH_SECRET'),
+        'base_url' => env('VNPAY_BASE_URL', 'https://sandbox.vnpayment.vn/paymentv2/vpcpay.html'),
+        'return_url' => env('VNPAY_RETURN_URL'),
+    ],
+    'momo' => [
+        'partner_code' => env('MOMO_PARTNER_CODE'),
+        'access_key' => env('MOMO_ACCESS_KEY'),
+        'secret' => env('MOMO_SECRET_KEY'),
+        'base_url' => env('MOMO_BASE_URL', 'https://test-payment.momo.vn/v2/gateway/api/create'),
+        'return_url' => env('MOMO_RETURN_URL'),
+    ],
+
 ];

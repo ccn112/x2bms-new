@@ -86,6 +86,8 @@ Route::prefix('v1')->group(function () {
         Route::get('community/polls', [\App\Http\Controllers\Api\V1\Resident\CommunityController::class, 'polls']);
         Route::post('community/polls/{poll}/vote', [\App\Http\Controllers\Api\V1\Resident\CommunityController::class, 'vote']);
         Route::get('community/groups', [\App\Http\Controllers\Api\V1\Resident\CommunityController::class, 'groups']);
+        Route::post('community/groups/{group}/join', [\App\Http\Controllers\Api\V1\Resident\CommunityController::class, 'joinGroup']);
+        Route::delete('community/groups/{group}/join', [\App\Http\Controllers\Api\V1\Resident\CommunityController::class, 'leaveGroup']);
 
         // Chợ nội khu (CD-MK-*) — listings/services/categories scope dự án/tenant.
         Route::get('market/listings', [\App\Http\Controllers\Api\V1\Resident\MarketController::class, 'listings']);
@@ -100,8 +102,11 @@ Route::prefix('v1')->group(function () {
         // SOS an ninh — cư dân bấm nút khẩn (P3).
         Route::post('sos', [\App\Http\Controllers\Api\V1\Resident\SosController::class, 'store']);
 
-        // Lịch sử thanh toán (CD-PAY-05). Khởi tạo thanh toán chờ owner chốt cổng.
+        // Lịch sử thanh toán (CD-PAY-05).
         Route::get('payments', [\App\Http\Controllers\Api\V1\Resident\PaymentController::class, 'index']);
+        // Cổng thanh toán: liệt kê cổng bật + tạo intent (VietQR/VNPay/MoMo).
+        Route::get('payment-methods', [\App\Http\Controllers\Api\V1\Resident\PaymentChannelController::class, 'index']);
+        Route::post('payments/intent', [\App\Http\Controllers\Api\V1\Resident\PaymentChannelController::class, 'intent']);
         Route::get('payments/{payment}', [\App\Http\Controllers\Api\V1\Resident\PaymentController::class, 'show']);
 
         // Căn hộ đang chọn + thành viên hộ (Hồ sơ cư dân — P3).

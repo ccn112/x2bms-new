@@ -20,7 +20,7 @@ class CommunityGroupResource extends JsonResource
             'description' => $this->description,
             'category' => null,
             'members' => (int) $this->member_count,
-            'joined' => false,
+            'joined' => (bool) ($this->joined ?? false),
             'icon_key' => null,
             'image_url' => null,
         ];

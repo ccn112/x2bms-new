@@ -70,6 +70,9 @@ Khi thêm module → bổ sung hàm `seedXxx()` vào seeder này.
 | | `AQI_BASE_URL` | Open-Meteo air-quality | Đổi sang WAQI/IQAir khi prod (không sửa code). |
 | | `AQI_API_KEY` | — | Set khi dùng nguồn có key. |
 | | `AQI_CACHE_TTL` | `3600` | Giây; cache AQI theo project. |
+| **VNPay** | `VNPAY_TMN_CODE` / `VNPAY_HASH_SECRET` | — | Bật cổng vnpay (khoá bí mật KHÔNG lưu DB). `VNPAY_BASE_URL`/`VNPAY_RETURN_URL`. |
+| **MoMo** | `MOMO_PARTNER_CODE` / `MOMO_ACCESS_KEY` / `MOMO_SECRET_KEY` | — | Bật cổng momo. `MOMO_BASE_URL`/`MOMO_RETURN_URL`. |
+| **VietQR** | — | (không cần key) | Cấu hình tài khoản nhận trong bảng `payment_channels.config`. |
 
 Cấu hình đọc qua `config('services.x2ai')` / `config('services.aqi')`.
 
@@ -83,6 +86,25 @@ Cấu hình đọc qua `config('services.x2ai')` / `config('services.aqi')`.
 - **Kiểm soát chi phí:** `X2AI_MAX_TOKENS`, model rẻ mặc định; rate-limit ở tầng route (`throttle`). Chi tiết kiến trúc/tái dùng: `.claude/skill/CHAT_MODULE_HANDOFF.md`.
 
 ---
+
+## 5b. Cổng thanh toán — bật/cấu hình per tenant/dự án
+
+Bảng **`payment_channels`** (tenant_id, project_id nullable, channel `vietqr|vnpay|momo`, is_enabled, config json).
+`project_id = NULL` → áp dụng mọi dự án của tenant; có giá trị → riêng dự án đó (ưu tiên bản ghi riêng dự án).
+
+**Bật VietQR** (không cần credential — chỉ tài khoản nhận):
+```php
+App\Models\PaymentChannel::updateOrCreate(
+  ['tenant_id'=>1,'project_id'=>null,'channel'=>'vietqr'],
+  ['is_enabled'=>true,'display_name'=>'Chuyển khoản VietQR','config'=>[
+     'bank_bin'=>'970436','bank_code'=>'VCB',
+     'account_no'=>'1234567890','account_name'=>'BAN QUAN LY ...']]);
+```
+QR sinh server-side (EMVCo napas, CRC16) với số tiền = công nợ hoá đơn, nội dung = `TT <mã HĐ>`.
+App render QR (`qr_string`) + hiện danh sách app ngân hàng (`bank_apps` từ `config/vietnam_banks.php`) để deeplink.
+
+**Bật VNPay/MoMo:** tạo bản ghi channel `vnpay`/`momo` + set ENV `VNPAY_*` / `MOMO_*` (§4). Chưa set khoá →
+`intent` trả `status=not_configured` (app xử lý mềm). Signer redirect_url hoàn thiện khi có sandbox creds.
 
 ## 6. Lấy token & kiểm thử HTTP
 

@@ -8,6 +8,7 @@ use App\Http\Resources\Api\V1\CommunityPostResource;
 use App\Http\Resources\Api\V1\EventResource;
 use App\Http\Resources\Api\V1\PollResource;
 use App\Models\CommunityGroup;
+use App\Models\CommunityGroupMember;
 use App\Models\CommunityPost;
 use App\Models\Event;
 use App\Models\Poll;
@@ -179,7 +180,7 @@ class CommunityController extends ApiController
         return ApiResponse::success(PollResource::make($poll)->resolve($request));
     }
 
-    /** GET /resident/community/groups — nhóm cộng đồng của dự án. */
+    /** GET /resident/community/groups — nhóm cộng đồng của dự án (+ đã tham gia?). */
     public function groups(Request $request): JsonResponse
     {
         $projectIds = $this->projectIds($request);
@@ -194,6 +195,69 @@ class CommunityController extends ApiController
             ->orderBy('name')
             ->get();
 
+        $residentIds = $this->residentIds($request);
+        $joinedIds = empty($residentIds) ? [] : CommunityGroupMember::query()
+            ->whereIn('resident_id', $residentIds)
+            ->whereIn('community_group_id', $groups->pluck('id'))
+            ->pluck('community_group_id')
+            ->all();
+
+        $groups->each(fn ($g) => $g->joined = in_array($g->id, $joinedIds, true));
+
         return ApiResponse::success(CommunityGroupResource::collection($groups)->resolve($request));
+    }
+
+    /** POST /resident/community/groups/{group}/join */
+    public function joinGroup(Request $request, CommunityGroup $group): JsonResponse
+    {
+        if (! in_array($group->project_id, $this->projectIds($request), true)) {
+            return ApiResponse::error('not_found', 'Không tìm thấy nhóm.', 404);
+        }
+
+        $residentId = $request->user()->residentMemberships()->value('id');
+        if ($residentId === null) {
+            return ApiResponse::error('no_resident', 'Tài khoản chưa gắn cư dân.', 403);
+        }
+
+        $created = false;
+        DB::transaction(function () use ($group, $residentId, &$created) {
+            $member = CommunityGroupMember::firstOrCreate(
+                ['community_group_id' => $group->id, 'resident_id' => $residentId],
+                ['role' => 'member', 'joined_at' => now()],
+            );
+            if ($member->wasRecentlyCreated) {
+                $group->increment('member_count');
+                $created = true;
+            }
+        });
+
+        $group->refresh();
+        $group->joined = true;
+
+        return ApiResponse::success(CommunityGroupResource::make($group)->resolve($request));
+    }
+
+    /** DELETE /resident/community/groups/{group}/join — rời nhóm. */
+    public function leaveGroup(Request $request, CommunityGroup $group): JsonResponse
+    {
+        $residentId = $request->user()->residentMemberships()->value('id');
+        if ($residentId === null) {
+            return ApiResponse::error('no_resident', 'Tài khoản chưa gắn cư dân.', 403);
+        }
+
+        DB::transaction(function () use ($group, $residentId) {
+            $deleted = CommunityGroupMember::query()
+                ->where('community_group_id', $group->id)
+                ->where('resident_id', $residentId)
+                ->delete();
+            if ($deleted > 0 && $group->member_count > 0) {
+                $group->decrement('member_count');
+            }
+        });
+
+        $group->refresh();
+        $group->joined = false;
+
+        return ApiResponse::success(CommunityGroupResource::make($group)->resolve($request));
     }
 }

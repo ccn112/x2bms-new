@@ -123,7 +123,9 @@ Scope: `project_id ∈ projectIds` của user. Cư dân tenant_id=NULL → khôn
 { "data": [{"id":"1","name":"Hội cư dân block A","description":"...","category":null,
   "members":320,"joined":false,"icon_key":null,"image_url":null}] }
 ```
-> `category`/`icon_key`/`image_url` chưa có cột → null. `joined` chưa có bảng membership → false.
+> `category`/`icon_key`/`image_url` chưa có cột → null. `joined` = cư dân đã tham gia (bảng `community_group_members`).
+
+**POST `/resident/community/groups/{group}/join`** · **DELETE `/resident/community/groups/{group}/join`** — tham gia / rời nhóm (1 resident/nhóm). Trả CommunityGroupResource cập nhật (`joined`, `members`).
 
 ## 7. Chợ nội khu + BĐS (tab Chợ) ✅ 2026-07-24
 
@@ -179,8 +181,35 @@ Scope: `project_id ∈ projectIds` của user. Cư dân tenant_id=NULL → khôn
 ```json
 { "data": { /* như trên */ "allocations":[{"statement_id":1271,"statement_line_id":null,"amount":"5000000.00"}] } }
 ```
-> **KHỞI TẠO thanh toán (POST /resident/payments):** CHƯA làm — cần owner chốt **cổng thanh toán**
-> (VietQR/VNPay/MoMo…) + credentials. Nút "Thanh toán" trong app vẫn no-op tới khi chốt. Xem §"Điểm chờ owner".
+### Cổng thanh toán ✅ 2026-07-24
+
+Cổng bật theo **tenant** + áp dụng theo **dự án** (bảng `payment_channels`; owner enable qua backend).
+
+**GET `/resident/payment-methods`** — cổng đang bật cho ngữ cảnh cư dân.
+```json
+{ "data": [
+  {"channel":"vietqr","display_name":"Chuyển khoản VietQR","sort":1,
+   "bank":{"code":"VCB","account_name":"BAN QUAN LY SUNSHINE GARDEN"}},
+  {"channel":"vnpay","display_name":"VNPay","sort":2} ] }
+```
+
+**POST `/resident/payments/intent`** body `{ "statement_id": 11, "channel": "vietqr"|"vnpay"|"momo" }`.
+Số tiền = công nợ còn lại của hoá đơn; nội dung = `TT <mã hoá đơn>` (fallback `TT HD<id>`).
+
+- **vietqr** → QR chuẩn EMVCo (napas) + ảnh + list app ngân hàng:
+```json
+{ "data": {
+  "channel":"vietqr","statement_id":11,"statement_code":null,
+  "amount":"13200000.00","content":"TT HD11",
+  "qr_string":"00020101021238540010A0000007270124...6304XXXX",   // app render QR (qr_flutter), CRC16 hợp lệ
+  "qr_image_url":"https://img.vietqr.io/image/VCB-1234567890-compact2.png?amount=13200000&addInfo=...",
+  "bank":{"bin":"970436","code":"VCB","account_no":"1234567890","account_name":"..."},
+  "bank_apps":[{"code":"VCB","bin":"970436","name":"Vietcombank","logo":"...","android_package":"com.VCB","ios_scheme":"vietcombank://"}, ...] } }
+```
+  → App hiển thị QR để quét bằng bất kỳ app ngân hàng, và nút "Mở app" theo `bank_apps` (deeplink Android package / iOS scheme, best-effort).
+- **vnpay/momo** → nếu backend đã cấu hình credential (ENV): trả `redirect_url` (đang scaffold). Chưa cấu hình → `{ "status":"not_configured", "message":... }` (app hiện mờ/ẩn). Owner bật qua `payment_channels` + set ENV `VNPAY_*`/`MOMO_*`.
+
+Lỗi: 404 `not_found` (hoá đơn không thuộc user) · 422 `already_paid`/`channel_unavailable`/`channel_not_configured`.
 
 ---
 
@@ -197,12 +226,13 @@ Scope: `project_id ∈ projectIds` của user. Cư dân tenant_id=NULL → khôn
 | Chợ + BĐS | **market/listings,services,categories + real-estate** | ✅ | ⏳ đang wire |
 | Home | **home** (AQI live + tasks + notices) | ✅ | ⏳ đang wire |
 | SOS | **sos** | ✅ | ⏳ đang wire |
-| Payments | **payments** (history+detail) | ✅ | ⏳ đang wire |
+| Payments | **payments** (history+detail) · **payment-methods** · **payments/intent** (VietQR ✅, VNPay/MoMo chờ creds) | ✅ | ⏳ đang wire |
+| Cộng đồng+ | **community/groups/{id}/join** (POST/DELETE) | ✅ | ⏳ đang wire |
 
 ## Điểm chờ owner chốt (chặn shape cuối)
 
-- **Cổng thanh toán** (POST /resident/payments): chọn VietQR/VNPay/MoMo… + credentials → mới build được khởi tạo giao dịch + trạng thái (CD-PAY-05 nút Thanh toán).
+- **VNPay/MoMo:** VietQR đã chạy (không cần credential). VNPay/MoMo cần owner set ENV `VNPAY_*`/`MOMO_*` + bật cổng trong `payment_channels` → khi đó `intent` trả `redirect_url` (signer đang scaffold, hoàn thiện khi có sandbox creds).
 - **Offers/Gifts:** rollout voucher platform có giới hạn số lượng theo tenant không (hiện chỉ theo kỳ starts_at/ends_at)?
 - **AQI:** Open-Meteo free = phi thương mại → chốt gói/nguồn khi lên prod (ENV AQI_* đã sẵn).
-- **Community groups:** cần bảng membership để `joined` đúng (hiện luôn false); `category/icon/image` cần cột nếu muốn hiển thị.
+- **Community groups:** `category/icon/image` cần thêm cột nếu muốn hiển thị (membership `joined` đã có).
 - **eKYC/household invite:** contract chưa chốt (app còn stub).

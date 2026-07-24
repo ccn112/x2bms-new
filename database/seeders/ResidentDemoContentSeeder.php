@@ -3,8 +3,10 @@
 namespace Database\Seeders;
 
 use App\Models\CommunityGroup;
+use App\Models\CommunityGroupMember;
 use App\Models\CommunityPost;
 use App\Models\Event;
+use App\Models\PaymentChannel;
 use App\Models\LoyaltyAccount;
 use App\Models\LoyaltyTransaction;
 use App\Models\Poll;
@@ -40,6 +42,34 @@ class ResidentDemoContentSeeder extends Seeder
         $this->seedLoyalty();
         $this->seedCommunity();
         $this->seedPayments();
+        $this->seedPaymentChannels();
+    }
+
+    /** Cổng thanh toán demo: bật VietQR cho tenant 1 (toàn bộ dự án). */
+    private function seedPaymentChannels(): void
+    {
+        PaymentChannel::withoutGlobalScopes()->updateOrCreate(
+            ['tenant_id' => 1, 'project_id' => null, 'channel' => 'vietqr'],
+            [
+                'is_enabled' => true,
+                'display_name' => 'Chuyển khoản VietQR',
+                'sort' => 1,
+                'config' => [
+                    'bank_bin' => '970436',       // Vietcombank
+                    'bank_code' => 'VCB',
+                    'account_no' => '1234567890',
+                    'account_name' => 'BAN QUAN LY SUNSHINE GARDEN',
+                ],
+            ]
+        );
+
+        // VNPay bật nhưng CHƯA cấu hình credential (ENV) → app hiện not_configured.
+        PaymentChannel::withoutGlobalScopes()->updateOrCreate(
+            ['tenant_id' => 1, 'project_id' => null, 'channel' => 'vnpay'],
+            ['is_enabled' => true, 'display_name' => 'VNPay', 'sort' => 2, 'config' => ['env' => 'sandbox']]
+        );
+
+        $this->command?->info('  Payment channels: VietQR (VCB) + VNPay(chờ cấu hình) cho tenant 1.');
     }
 
     /** Lịch sử thanh toán cho cư dân demo (tab Hoá đơn — CD-PAY-05). */
@@ -174,7 +204,16 @@ class ResidentDemoContentSeeder extends Seeder
             );
         }
 
-        $this->command?->info('  Community: 3 posts + 2 events + 1 poll(4 options) + 3 groups (project '.$p.').');
+        // Cư dân demo tham gia sẵn 1 nhóm (để `joined=true` demo).
+        $firstGroup = CommunityGroup::withoutGlobalScopes()->where('project_id', $p)->orderBy('id')->first();
+        if ($firstGroup) {
+            CommunityGroupMember::firstOrCreate(
+                ['community_group_id' => $firstGroup->id, 'resident_id' => self::DEMO_RESIDENT_ID],
+                ['role' => 'member', 'joined_at' => Carbon::parse('2026-07-01')],
+            );
+        }
+
+        $this->command?->info('  Community: 3 posts + 2 events + 1 poll(4 options) + 3 groups + 1 membership (project '.$p.').');
     }
 
     /** Tài khoản điểm + hoạt động gần đây cho cư dân demo (tab Ưu đãi — CD-LY-01). */
