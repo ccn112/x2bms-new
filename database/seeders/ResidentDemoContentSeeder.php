@@ -45,19 +45,28 @@ class ResidentDemoContentSeeder extends Seeder
         $this->seedPaymentChannels();
     }
 
-    /** Cổng thanh toán demo: bật VietQR cho tenant 1 (toàn bộ dự án). */
+    /**
+     * Cổng thanh toán demo — mô hình MỖI DỰ ÁN 1 TÀI KHOẢN (owner chốt 2026-07-24).
+     * VietQR gắn theo `project_id` cụ thể; tài khoản thật do owner nhập qua admin Filament
+     * (fila/payment-channels). Số tài khoản dưới đây là DEMO — thay bằng TK thật khi golive.
+     */
     private function seedPaymentChannels(): void
     {
+        // Dọn bản ghi VietQR toàn-tenant cũ (nếu có) để về đúng mô hình per-project.
+        PaymentChannel::withoutGlobalScopes()
+            ->where('tenant_id', 1)->whereNull('project_id')->where('channel', 'vietqr')
+            ->forceDelete();
+
         PaymentChannel::withoutGlobalScopes()->updateOrCreate(
-            ['tenant_id' => 1, 'project_id' => null, 'channel' => 'vietqr'],
+            ['tenant_id' => 1, 'project_id' => self::DEMO_PROJECT_ID, 'channel' => 'vietqr'],
             [
                 'is_enabled' => true,
                 'display_name' => 'Chuyển khoản VietQR',
                 'sort' => 1,
                 'config' => [
-                    'bank_bin' => '970436',       // Vietcombank
+                    'bank_bin' => '970436',       // Vietcombank (DEMO)
                     'bank_code' => 'VCB',
-                    'account_no' => '1234567890',
+                    'account_no' => '1234567890', // DEMO — thay bằng TK thật của dự án
                     'account_name' => 'BAN QUAN LY SUNSHINE GARDEN',
                 ],
             ]
@@ -65,11 +74,11 @@ class ResidentDemoContentSeeder extends Seeder
 
         // VNPay bật nhưng CHƯA cấu hình credential (ENV) → app hiện not_configured.
         PaymentChannel::withoutGlobalScopes()->updateOrCreate(
-            ['tenant_id' => 1, 'project_id' => null, 'channel' => 'vnpay'],
+            ['tenant_id' => 1, 'project_id' => self::DEMO_PROJECT_ID, 'channel' => 'vnpay'],
             ['is_enabled' => true, 'display_name' => 'VNPay', 'sort' => 2, 'config' => ['env' => 'sandbox']]
         );
 
-        $this->command?->info('  Payment channels: VietQR (VCB) + VNPay(chờ cấu hình) cho tenant 1.');
+        $this->command?->info('  Payment channels: VietQR (VCB, DEMO) + VNPay(chờ cấu hình) cho DỰ ÁN '.self::DEMO_PROJECT_ID.'.');
     }
 
     /** Lịch sử thanh toán cho cư dân demo (tab Hoá đơn — CD-PAY-05). */
