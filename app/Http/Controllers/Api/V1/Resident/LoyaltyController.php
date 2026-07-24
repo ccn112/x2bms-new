@@ -3,10 +3,12 @@
 namespace App\Http\Controllers\Api\V1\Resident;
 
 use App\Http\Controllers\Api\V1\ApiController;
+use App\Http\Resources\Api\V1\GiftResource;
 use App\Http\Resources\Api\V1\LoyaltyActivityResource;
 use App\Models\LoyaltyAccount;
 use App\Models\LoyaltyTier;
 use App\Models\LoyaltyTransaction;
+use App\Services\Resident\VoucherVisibilityService;
 use App\Support\Api\ApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -84,6 +86,26 @@ class LoyaltyController extends ApiController
             ->cursorPaginate($perPage);
 
         $items = LoyaltyActivityResource::collection($paginator->getCollection())->resolve($request);
+
+        return ApiResponse::paginated($items, $paginator->nextCursor()?->encode());
+    }
+
+    /**
+     * GET /api/v1/resident/loyalty/gifts — quà đổi điểm (voucher points_cost > 0)
+     * hiển thị cho cư dân theo tenant (∪ voucher platform đã rollout). cursor.
+     */
+    public function gifts(Request $request, VoucherVisibilityService $vouchers): JsonResponse
+    {
+        $perPage = min((int) $request->integer('per_page', 20), 50);
+
+        $paginator = $vouchers
+            ->visibleQuery($request->user(), $request->header('X-Context-Id'))
+            ->where('points_cost', '>', 0)
+            ->orderBy('points_cost')
+            ->orderByDesc('id')
+            ->cursorPaginate($perPage);
+
+        $items = GiftResource::collection($paginator->getCollection())->resolve($request);
 
         return ApiResponse::paginated($items, $paginator->nextCursor()?->encode());
     }

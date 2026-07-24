@@ -75,6 +75,10 @@ Route::prefix('v1')->group(function () {
         // Điểm thưởng & hạng (tab Ưu đãi — CD-LY-01).
         Route::get('loyalty', [\App\Http\Controllers\Api\V1\Resident\LoyaltyController::class, 'show']);
         Route::get('loyalty/activities', [\App\Http\Controllers\Api\V1\Resident\LoyaltyController::class, 'activities']);
+        Route::get('loyalty/gifts', [\App\Http\Controllers\Api\V1\Resident\LoyaltyController::class, 'gifts']);
+
+        // Ưu đãi — voucher không cần đổi điểm (CD-OF-01).
+        Route::get('offers', [\App\Http\Controllers\Api\V1\Resident\OfferController::class, 'index']);
 
         // Căn hộ đang chọn + thành viên hộ (Hồ sơ cư dân — P3).
         Route::get('apartment', [\App\Http\Controllers\Api\V1\Resident\ApartmentController::class, 'show']);

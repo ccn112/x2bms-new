@@ -48,7 +48,8 @@ dựa scope tenant để lọc dữ liệu cư dân. Luôn scope tường minh t
 Ký hiệu cột: `→` = field API ⟵ cột DB. Enum ghi giá trị **mặc định + quan sát**; xác nhận full set trong model/seeder khi code.
 
 ### ✅ Đã trả (tham chiếu shape chuẩn — không làm lại)
-`GET billing/summary` · `GET billing/summary/trend?months=` (xu hướng phí N tháng, CD-PAY-01 — do agent x2mobile thêm) · `GET notifications` + `POST notifications/{id}/read` · `unread_notification_count` trong `/me/bootstrap`. Code mẫu: `BillingSummaryController`, `NotificationController`, `ResidentNotificationService`.
+`GET billing/summary` · `GET billing/summary/trend?months=` (xu hướng phí N tháng, CD-PAY-01; trả `{data:{bars:[{label,value}]}}` — app đọc đúng shape này) · `GET notifications` + `POST notifications/{id}/read` · `unread_notification_count` trong `/me/bootstrap` · `GET statements`(+`/{id}` enrich `code`/`period{}`/line `label`/`category`) · `GET apartment`.
+**Tab Ưu đãi (2026-07-24):** `GET loyalty` + `loyalty/activities` + **`GET offers`** (voucher points_cost=0/null) + **`GET loyalty/gifts`** (voucher points_cost>0). Scope voucher qua `VoucherVisibilityService` (tenant ∪ platform rollout). Shape đầy đủ: `docs/api/RESIDENT_API_REFERENCE.md`. Code mẫu: `BillingSummaryController`, `NotificationController`, `LoyaltyController`, `OfferController`, `VoucherVisibilityService`.
 
 > **Statement enrichment (agent x2mobile, branch `feat/resident-statements-enrich` — CHỜ verify HTTP; máy app KHÔNG có php):** `StatementResource` +`code` +`period{label,code,month,start,end,category}` (từ `billingPeriod`, whenLoaded — index eager-load `billingPeriod`, show load `['lines.feeType','billingPeriod']`). `StatementLineResource` +`label`←`fee_type` +`category`←`feeType.category` (fix bug `description` luôn null; giữ alias). Chỉ Resource/Controller/route — không migration. App đã map (period→title/kỳ, line label+icon, trend).
 
