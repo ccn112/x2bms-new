@@ -59,16 +59,17 @@ Scope: `apartment_id ∈` căn của user.
 
 **GET `/resident/notifications`** (cursor) · **POST `/resident/notifications/{id}/read`**.
 Scope theo `notification_audiences` (all|building|apartment) + `status=published` + chưa hết hạn.
+> Mỗi item trả thêm `cover_url` = ảnh demo thật (DemoImage 1200×500) nếu `cover_path` rỗng — để danh sách thông báo giàu hình ảnh.
 
 ## 5. Ưu đãi (tab Ưu đãi) ✅ 2026-07-24
 
 **GET `/resident/loyalty`** — điểm & hạng thành viên. Scope: `loyalty_accounts.resident_id ∈` resident của user.
 ```json
-{ "data": { "points": 3200, "status": "active",
-  "tier": {"key":"silver","name":"Bạc"},
-  "next_tier": {"key":"gold","name":"Vàng","target":5000,"points_to_next":1800},
+{ "data": { "points": 4200, "status": "active",
+  "tier": {"key":"gold","name":"Vàng"},
+  "next_tier": {"key":"gold","name":"Vàng","target":5000,"points_to_next":800},
   "benefits": [{"icon_key":"gift","title":"Tích điểm mọi giao dịch","subtitle":"Đổi quà & ưu đãi"}],
-  "updated_at": null } }
+  "updated_at": "..." } }
 ```
 
 **GET `/resident/loyalty/activities?cursor=`** — lịch sử điểm (mới nhất trước). `points` âm = đổi/redeem.
@@ -80,15 +81,17 @@ Scope theo `notification_audiences` (all|building|apartment) + `status=published
 Scope: voucher tenant của user **∪** voucher platform (SA) đã rollout tới tenant đó & đang trong kỳ. `status=active`, còn hạn.
 ```json
 { "data": [{"id":"..","code":"OF-GYM50","title":"Ưu đãi 50% vé gym nội khu",
-  "badge":"discount","value":"50.00","expiry_date":"2026-12-31","image_url":null,"is_platform":false}] }
+  "badge":"discount","value":"50.00","expiry_date":"2026-12-31",
+  "image_url":"https://loremflickr.com/800/600/shopping%2Cvoucher%2Cdiscount?lock=..","is_platform":false}] }
 ```
 
 **GET `/resident/loyalty/gifts?cursor=`** — quà đổi điểm (voucher `points_cost > 0`). Cùng scope offers.
 ```json
 { "data": [{"id":"1","code":"GIAM10","title":"Giảm 10% dịch vụ","overline":"discount",
-  "points_cost":200,"value":"10.00","expiry_date":"2026-12-31","image_url":null,"is_platform":false}] }
+  "points_cost":200,"value":"10.00","expiry_date":"2026-12-31",
+  "image_url":"https://loremflickr.com/800/600/gift%2Cpresent?lock=..","is_platform":false}] }
 ```
-> **Ghi chú:** `image_url` chưa có cột trong `vouchers` → luôn `null`, app dùng placeholder.
+> **Ghi chú:** `image_url` = **URL ảnh demo thật** theo chủ đề (helper `App\Support\DemoImage`, nguồn loremflickr, ổn định theo id). `vouchers` chưa có cột ảnh → luôn trả ảnh demo, không còn `null`.
 > `is_platform=true` = voucher đối tác nền tảng (rollout xuống tenant) — app có thể gắn nhãn "Đối tác".
 
 ## 6. Cộng đồng (tab Cộng đồng) ✅ 2026-07-24
@@ -98,16 +101,18 @@ Scope: `project_id ∈ projectIds` của user. Cư dân tenant_id=NULL → khôn
 **GET `/resident/community/posts?cursor=`** — bài đăng (pinned trước, mới nhất trước; `status=published`).
 ```json
 { "data": [{"id":"3","author":{"name":"Nguyễn Văn Cường","role":"owner","avatar_url":"...","verified":false},
-  "body":"...","likes":11,"comments":4,"pinned":false,"important":false,"image_urls":[],"created_at":"..."}] }
+  "body":"...","likes":11,"comments":4,"pinned":false,"important":false,
+  "image_urls":["https://loremflickr.com/800/600/apartment%2Ccommunity%2Cneighbor?lock=.."],"created_at":"..."}] }
 ```
-> `image_urls` từ cột `community_posts.image_paths` (json). `role` từ quan hệ căn của tác giả; `verified` = tác giả có tài khoản (`user_id`).
+> `image_urls` từ cột `community_posts.image_paths` (json); nếu rỗng → 1 ảnh demo thật (DemoImage) để feed luôn có hình. `role` từ quan hệ căn của tác giả; `verified` = tác giả có tài khoản (`user_id`).
 
 **GET `/resident/community/events?cursor=`** — sự kiện (`status=published`, sắp diễn ra trước).
 ```json
 { "data": [{"id":"..","title":"Đêm nhạc acoustic sân vườn","description":"...","location":"Sảnh block B",
-  "starts_at":"...","ends_at":"...","capacity":120,"attendees":45,"registered":false,"image_url":null}] }
+  "starts_at":"...","ends_at":"...","capacity":120,"attendees":45,"registered":false,
+  "image_url":"https://loremflickr.com/800/600/event%2Cparty%2Cconcert?lock=.."}] }
 ```
-> `registered` = user (resident của user) đã đăng ký (`event_registrations`). `image_url` chưa có cột → null.
+> `registered` = user (resident của user) đã đăng ký (`event_registrations`). `image_url` = ảnh demo thật (DemoImage) theo chủ đề sự kiện.
 
 **GET `/resident/community/polls`** — khảo sát đang mở (`status=open`) + trạng thái vote của user.
 ```json
@@ -121,9 +126,10 @@ Scope: `project_id ∈ projectIds` của user. Cư dân tenant_id=NULL → khôn
 **GET `/resident/community/groups`** — nhóm cộng đồng của dự án (`status=active`).
 ```json
 { "data": [{"id":"1","name":"Hội cư dân block A","description":"...","category":null,
-  "members":320,"joined":false,"icon_key":null,"image_url":null}] }
+  "members":320,"joined":false,"icon_key":null,
+  "image_url":"https://loremflickr.com/800/600/community%2Cpeople%2Cgroup?lock=.."}] }
 ```
-> `category`/`icon_key`/`image_url` chưa có cột → null. `joined` = cư dân đã tham gia (bảng `community_group_members`).
+> `category`/`icon_key` chưa có cột → null; `image_url` = ảnh demo thật (DemoImage). `joined` = cư dân đã tham gia (bảng `community_group_members`).
 
 **POST `/resident/community/groups/{group}/join`** · **DELETE `/resident/community/groups/{group}/join`** — tham gia / rời nhóm (1 resident/nhóm). Trả CommunityGroupResource cập nhật (`joined`, `members`).
 
@@ -133,23 +139,26 @@ Scope: `project_id ∈ projectIds` của user. Cư dân tenant_id=NULL → khôn
 ```json
 { "data": [{"id":"3","title":"Bộ bàn ăn gỗ","description":"...","price":"3200000.00","category":"household",
   "condition":"used","seller":"Nguyễn Văn Cường","building":"Sunshine Garden - Tòa A",
-  "image_url":null,"rating":null,"favorited":false,"created_at":"..."}] }
+  "image_url":"https://loremflickr.com/800/600/furniture%2Chome?lock=..","rating":null,"favorited":false,"created_at":"..."}] }
 ```
-> `image_url` từ `image_path`; `rating`/`favorited` chưa có cột → null/false. `building` = toà nhà của người bán.
+> `image_url` từ `image_path`; nếu rỗng → ảnh demo thật (DemoImage) chọn chủ đề theo `category` (household→furniture, electronics→gadget, fashion→clothes, khác→product). `rating`/`favorited` chưa có cột → null/false. `building` = toà nhà của người bán.
 
 **GET `/resident/market/services?cursor=`** — nhà cung cấp dịch vụ (scope `tenant_id ∈ tenantIds` — bảng KHÔNG có project_id).
 ```json
 { "data": [{"id":"1","title":"Giặt là 5 sao","description":"laundry","category":"laundry",
-  "phone":"0900000000","rating":"4.7","price":null,"image_url":null}] }
+  "phone":"0900000000","rating":"4.7","price":null,"image_url":"https://loremflickr.com/800/600/service%2Crepair%2Claundry?lock=.."}] }
 ```
+> `image_url` = ảnh demo thật (DemoImage) theo `category` của nhà cung cấp.
 
 **GET `/resident/market/categories`** — danh mục sản phẩm (distinct) của dự án. → `[{"key":"household","label":"household"}]`
 
 **GET `/resident/real-estate?cursor=&type=sale|rent`** — tin BĐS nội khu (TÁCH riêng khỏi market/*; scope project).
 ```json
 { "data": [{"id":"2","code":"RE-0002","type":"rent","title":"Cho thuê 1PN full nội thất",
-  "price":"12000000.00","area":"45.00","bedrooms":1,"owner":"Nguyễn Văn Bình","apartment":"A-0102","published_at":"..."}] }
+  "price":"12000000.00","area":"45.00","bedrooms":1,"owner":"Nguyễn Văn Bình","apartment":"A-0102",
+  "image_url":"https://loremflickr.com/800/600/apartment%2Cinterior%2Crealestate?lock=..","published_at":"..."}] }
 ```
+> `image_url` = ảnh demo thật (DemoImage) — field bổ sung 2026-07-24 để tab BĐS giàu hình ảnh.
 
 ## 8. Home + SOS ✅ 2026-07-24
 
@@ -235,9 +244,9 @@ Danh mục scope theo **dự án** (`project_id ∈ projectIds`, `status=active`
 ```json
 { "data": [{"id":"1","code":"GYM","name":"Phòng Gym","type":"gym","description":"...","capacity":30,
   "open_time":"05:00","close_time":"22:00","booking_unit":"slot","price":"0.00",
-  "requires_approval":false,"image_url":null}] }
+  "requires_approval":false,"image_url":"https://loremflickr.com/800/600/gym%2Cfitness?lock=.."}] }
 ```
-> `image_url` từ `image_path` (Storage public url) — hiện null.
+> `image_url` từ `image_path` (Storage public url); nếu rỗng → ảnh demo thật (DemoImage) theo type/name (pool→swimming, gym→fitness, bbq→grill, khác→facility).
 
 **GET `/resident/amenities/{amenity}`** — + `slots[]` (`day_of_week` null = mọi ngày). 404 nếu tiện ích không thuộc dự án user.
 ```json
@@ -285,9 +294,10 @@ Scope: `resident_id ∈` resident của user **HOẶC** `apartment_id ∈` căn 
 **GET `/resident/notifications/{notification}`** — chi tiết FULL (kèm `body`) + tự đánh dấu đã đọc. Dùng `ResidentNotificationService::visibleQuery` → không thấy = 404.
 ```json
 { "data": {"id":"3","kind":"maintenance","title":"...","summary":"...","body":"<p>...</p>",
-  "cover_url":null,"priority":"high","is_pinned":false,"is_read":true,"created_at":"2026-06-29T07:00:00+00:00"} }
+  "cover_url":"https://loremflickr.com/1200/500/announcement%2Cbuilding%2Cnotice?lock=..","priority":"high","is_pinned":false,"is_read":true,"created_at":"2026-06-29T07:00:00+00:00"} }
 ```
-> `kind` map từ cột `type`; `cover_url` từ `cover_path` (hiện null); `created_at` = `published_at`. Gọi endpoint này đánh dấu đã đọc (idempotent) → `is_read=true`.
+> `kind` map từ cột `type`; `cover_url` từ `cover_path`, nếu rỗng → ảnh demo thật (DemoImage 1200×500). `created_at` = `published_at`. Gọi endpoint này đánh dấu đã đọc (idempotent) → `is_read=true`.
+> **Lưu ý:** danh sách `/resident/notifications` (§4) nay cũng trả `cover_url` (ảnh demo nếu chưa có `cover_path`).
 
 ## 14. Biên lai thanh toán (bổ sung §9) ✅ 2026-07-24
 
@@ -326,5 +336,6 @@ Scope: `resident_id ∈` resident của user **HOẶC** `apartment_id ∈` căn 
 - **VNPay/MoMo:** VietQR đã chạy (không cần credential). VNPay/MoMo cần owner set ENV `VNPAY_*`/`MOMO_*` + bật cổng trong `payment_channels` → khi đó `intent` trả `redirect_url` (signer đang scaffold, hoàn thiện khi có sandbox creds).
 - **Offers/Gifts:** rollout voucher platform có giới hạn số lượng theo tenant không (hiện chỉ theo kỳ starts_at/ends_at)?
 - **AQI:** Open-Meteo free = phi thương mại → chốt gói/nguồn khi lên prod (ENV AQI_* đã sẵn).
-- **Community groups:** `category/icon/image` cần thêm cột nếu muốn hiển thị (membership `joined` đã có).
+- **Community groups:** `category/icon` cần thêm cột nếu muốn hiển thị (membership `joined` đã có). `image_url` nay trả ảnh demo (DemoImage) — thay bằng cột ảnh thật khi có.
+- **Ảnh demo (DemoImage):** mọi `image_url`/`image_urls`/`cover_url` hiện trả URL ảnh thật từ loremflickr khi bản ghi chưa có cột/đường dẫn ảnh riêng. Khi module upload ảnh thật hoàn thiện, Resource ưu tiên ảnh thật (đã code sẵn nhánh `image_path`/`cover_path`/`image_paths`).
 - **eKYC/household invite:** contract chưa chốt (app còn stub).

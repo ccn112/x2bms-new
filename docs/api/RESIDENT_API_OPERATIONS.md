@@ -47,13 +47,15 @@ Dữ liệu demo các tab cư dân trong **`ResidentDemoContentSeeder`** (idempo
 php artisan db:seed --class=ResidentDemoContentSeeder
 ```
 
-Phủ (scope tenant 1 / project 1 / resident demo #1305 = user #6):
-- **Vouchers:** 3 offers (points_cost=0) + 1 voucher **platform** rollout tenant 1 + 2 gift cũ.
-- **Loyalty:** tài khoản 3200đ (Bạc) + 4 hoạt động.
-- **Cộng đồng:** 3 posts + 2 events + 1 poll(4 options) + 3 groups.
-- **Payments:** 2 thanh toán (apt 11) + allocation vào statement đã trả.
+Phủ (scope tenant 1 / project 1 / resident demo #1305 = user #6) — **volume demo tăng 2026-07-24**:
+- **Vouchers:** 8 offers (points_cost=0) + 6 gifts (points_cost>0) + 1 voucher **platform** rollout tenant 1.
+- **Loyalty:** tài khoản 4200đ (Vàng) + 10 hoạt động (earn/redeem xen kẽ).
+- **Cộng đồng:** 10 posts (pinned/important đa dạng) + 5 events + 3 polls (3-4 options) + 5 groups + 1 membership.
+- **Chợ + BĐS:** 10 sản phẩm (household/electronics/fashion/kids/sports) + 6 nhà cung cấp dịch vụ + 5 tin BĐS (3 bán + 2 thuê).
+- **Thông báo:** 4 thông báo published (audience `all`, có `body`) hiển thị cho cư dân.
+- **Payments:** 2 thanh toán (apt 11) + allocation. **Visitors** 5 · **Amenity bookings** 4 · **Feedback** 4 (status/priority đa dạng).
 
-Market/BĐS/notifications/statements dùng dữ liệu seed nền có sẵn (đủ scope user #6).
+Mọi `image_url`/`image_urls`/`cover_url` trả **URL ảnh thật** (helper `App\Support\DemoImage`, nguồn loremflickr) khi bản ghi chưa có cột ảnh riêng → app "giàu hình ảnh" khi demo.
 Khi thêm module → bổ sung hàm `seedXxx()` vào seeder này.
 
 ---
