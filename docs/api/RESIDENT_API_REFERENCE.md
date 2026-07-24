@@ -149,6 +149,25 @@ Scope: `project_id ∈ projectIds` của user. Cư dân tenant_id=NULL → khôn
   "price":"12000000.00","area":"45.00","bedrooms":1,"owner":"Nguyễn Văn Bình","apartment":"A-0102","published_at":"..."}] }
 ```
 
+## 8. Home + SOS ✅ 2026-07-24
+
+**GET `/resident/home`** — tổng hợp first-paint tab Home (metrics + tasks + notices_preview).
+```json
+{ "data": {
+  "metrics": [{"key":"aqi","title":"Chất lượng không khí","value":95,"unit":"AQI","tone":"moderate","label":"Trung bình"}],
+  "tasks": [
+    {"key":"fee","title":"Công nợ","value":"13200000.00","count":1,"status":"due"},
+    {"key":"guest","title":"Khách sắp đến","value":"0","count":0,"status":"none"},
+    {"key":"feedback","title":"Phản ánh đang xử lý","value":"0","count":0,"status":"none"} ],
+  "notices_preview": [ /* 2 NotificationResource mới nhất */ ] } }
+```
+> **AQI:** backend proxy Open-Meteo theo `projects.latitude/longitude` + cache theo project (TTL `AQI_CACHE_TTL`). `metrics=[]` nếu project không có toạ độ / API lỗi (app ẩn, không vỡ). `tone` ∈ good|moderate|poor|bad.
+> **tasks:** fee←công nợ, guest←`visitor_registrations` sắp tới, feedback←`feedback_requests` đang mở.
+
+**POST `/resident/sos`** — nút SOS an ninh. Body (tuỳ chọn): `{ "lat":10.787, "lng":106.751, "location":"...", "note":"..." }`.
+- Tạo `sos_alerts` (`source=app`, `status=triggered`) scope theo căn đang chọn. `location` = "lat,lng" nếu gửi toạ độ, else mô tả, else mã căn.
+- 201 → `{ "data": { "id", "status":"triggered", "triggered_at" } }`. 403 `no_apartment` nếu chưa gắn căn.
+
 ---
 
 ## Trạng thái triển khai
@@ -162,5 +181,6 @@ Scope: `project_id ∈ projectIds` của user. Cư dân tenant_id=NULL → khôn
 | Ưu đãi | loyalty, loyalty/activities, **offers**, **loyalty/gifts** | ✅ | ⏳ đang wire |
 | Cộng đồng | **community/posts,events,polls(+vote),groups** | ✅ | ⏳ đang wire |
 | Chợ + BĐS | **market/listings,services,categories + real-estate** | ✅ | ⏳ đang wire |
-| Home | home | ⏳ | ⏳ |
-| Payments/SOS | payments, sos | ⏳ | ⏳ |
+| Home | **home** (AQI live + tasks + notices) | ✅ | ⏳ đang wire |
+| SOS | **sos** | ✅ | ⏳ đang wire |
+| Payments | payments | ⏳ | ⏳ |

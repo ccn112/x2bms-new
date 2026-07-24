@@ -94,6 +94,12 @@ Route::prefix('v1')->group(function () {
         // BĐS nội khu — tách riêng khỏi market/*.
         Route::get('real-estate', [\App\Http\Controllers\Api\V1\Resident\MarketController::class, 'realEstate']);
 
+        // Home aggregate (CD-HOME) — metrics(AQI)/tasks/notices_preview.
+        Route::get('home', [\App\Http\Controllers\Api\V1\Resident\HomeController::class, 'index']);
+
+        // SOS an ninh — cư dân bấm nút khẩn (P3).
+        Route::post('sos', [\App\Http\Controllers\Api\V1\Resident\SosController::class, 'store']);
+
         // Căn hộ đang chọn + thành viên hộ (Hồ sơ cư dân — P3).
         Route::get('apartment', [\App\Http\Controllers\Api\V1\Resident\ApartmentController::class, 'show']);
     });
