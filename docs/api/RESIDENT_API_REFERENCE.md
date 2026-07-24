@@ -125,6 +125,30 @@ Scope: `project_id ∈ projectIds` của user. Cư dân tenant_id=NULL → khôn
 ```
 > `category`/`icon_key`/`image_url` chưa có cột → null. `joined` chưa có bảng membership → false.
 
+## 7. Chợ nội khu + BĐS (tab Chợ) ✅ 2026-07-24
+
+**GET `/resident/market/listings?cursor=&category=`** — sản phẩm (scope `project_id ∈ projectIds`, `status=active`).
+```json
+{ "data": [{"id":"3","title":"Bộ bàn ăn gỗ","description":"...","price":"3200000.00","category":"household",
+  "condition":"used","seller":"Nguyễn Văn Cường","building":"Sunshine Garden - Tòa A",
+  "image_url":null,"rating":null,"favorited":false,"created_at":"..."}] }
+```
+> `image_url` từ `image_path`; `rating`/`favorited` chưa có cột → null/false. `building` = toà nhà của người bán.
+
+**GET `/resident/market/services?cursor=`** — nhà cung cấp dịch vụ (scope `tenant_id ∈ tenantIds` — bảng KHÔNG có project_id).
+```json
+{ "data": [{"id":"1","title":"Giặt là 5 sao","description":"laundry","category":"laundry",
+  "phone":"0900000000","rating":"4.7","price":null,"image_url":null}] }
+```
+
+**GET `/resident/market/categories`** — danh mục sản phẩm (distinct) của dự án. → `[{"key":"household","label":"household"}]`
+
+**GET `/resident/real-estate?cursor=&type=sale|rent`** — tin BĐS nội khu (TÁCH riêng khỏi market/*; scope project).
+```json
+{ "data": [{"id":"2","code":"RE-0002","type":"rent","title":"Cho thuê 1PN full nội thất",
+  "price":"12000000.00","area":"45.00","bedrooms":1,"owner":"Nguyễn Văn Bình","apartment":"A-0102","published_at":"..."}] }
+```
+
 ---
 
 ## Trạng thái triển khai
@@ -137,6 +161,6 @@ Scope: `project_id ∈ projectIds` của user. Cư dân tenant_id=NULL → khôn
 | Thông báo | notifications(+read) | ✅ | ✅ |
 | Ưu đãi | loyalty, loyalty/activities, **offers**, **loyalty/gifts** | ✅ | ⏳ đang wire |
 | Cộng đồng | **community/posts,events,polls(+vote),groups** | ✅ | ⏳ đang wire |
-| Chợ + BĐS | market/*, real-estate | ⏳ | ⏳ |
+| Chợ + BĐS | **market/listings,services,categories + real-estate** | ✅ | ⏳ đang wire |
 | Home | home | ⏳ | ⏳ |
 | Payments/SOS | payments, sos | ⏳ | ⏳ |

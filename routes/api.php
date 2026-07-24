@@ -87,6 +87,13 @@ Route::prefix('v1')->group(function () {
         Route::post('community/polls/{poll}/vote', [\App\Http\Controllers\Api\V1\Resident\CommunityController::class, 'vote']);
         Route::get('community/groups', [\App\Http\Controllers\Api\V1\Resident\CommunityController::class, 'groups']);
 
+        // Chợ nội khu (CD-MK-*) — listings/services/categories scope dự án/tenant.
+        Route::get('market/listings', [\App\Http\Controllers\Api\V1\Resident\MarketController::class, 'listings']);
+        Route::get('market/services', [\App\Http\Controllers\Api\V1\Resident\MarketController::class, 'services']);
+        Route::get('market/categories', [\App\Http\Controllers\Api\V1\Resident\MarketController::class, 'categories']);
+        // BĐS nội khu — tách riêng khỏi market/*.
+        Route::get('real-estate', [\App\Http\Controllers\Api\V1\Resident\MarketController::class, 'realEstate']);
+
         // Căn hộ đang chọn + thành viên hộ (Hồ sơ cư dân — P3).
         Route::get('apartment', [\App\Http\Controllers\Api\V1\Resident\ApartmentController::class, 'show']);
     });
