@@ -30,6 +30,14 @@ class PaymentResource extends JsonResource
                     'amount' => $a->amount === null ? null : (string) $a->amount,
                 ])->values()->all()
             ),
+            'receipt' => $this->when(
+                $this->relationLoaded('receipt'),
+                fn () => $this->receipt === null ? null : [
+                    'code' => $this->receipt->code,
+                    'amount' => $this->receipt->amount === null ? null : (string) $this->receipt->amount,
+                    'issued_at' => optional($this->receipt->issued_at)->toIso8601String(),
+                ]
+            ),
         ];
     }
 }

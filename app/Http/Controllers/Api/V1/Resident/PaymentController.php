@@ -66,7 +66,7 @@ class PaymentController extends ApiController
             return ApiResponse::error('not_found', 'Không tìm thấy thanh toán.', 404);
         }
 
-        $payment->load(['method', 'allocations']);
+        $payment->load(['method', 'allocations', 'receipt']);
 
         return ApiResponse::success(PaymentResource::make($payment)->resolve($request));
     }
