@@ -211,6 +211,93 @@ Số tiền = công nợ còn lại của hoá đơn; nội dung = `TT <mã hoá
 
 Lỗi: 404 `not_found` (hoá đơn không thuộc user) · 422 `already_paid`/`channel_unavailable`/`channel_not_configured`.
 
+## 10. Đăng ký khách (C12 — visitor_registrations) ✅ 2026-07-24
+
+Scope: `apartment_id ∈` căn của user. status: `pending|approved|rejected|checked_in|checked_out|expired|cancelled`.
+
+**GET `/resident/visitors?cursor=`** — đăng ký khách của căn user (mới nhất trước).
+```json
+{ "data": [{"id":"6","code":"KH-SEED-002","visitor_name":"Giao hàng Shopee","visitor_phone":"0987654321",
+  "purpose":"Giao hàng","vehicle_plate":null,"num_guests":1,
+  "expected_at":"2026-07-25T09:30:00+00:00","expected_leave_at":null,"status":"approved","created_at":"..."}] }
+```
+**POST `/resident/visitors`** body `{visitor_name*, visitor_phone, purpose, vehicle_plate, num_guests, expected_at*, expected_leave_at}`.
+- 201 → VisitorRegistrationResource. `code` tự sinh (`KH`+random). status mặc định `pending`. apartment/building/project/resident/host_user lấy từ context (căn primary hoặc `X-Context-Id`).
+- 403 `no_apartment` nếu chưa gắn căn.
+
+**POST `/resident/visitors/{visitor}/cancel`** — chỉ chủ căn → status `cancelled`. 404 `not_found` (không thuộc user) · 422 `cannot_cancel` (đã checked_in/out).
+
+## 11. Đặt tiện ích (amenities / amenity_slots / amenity_bookings) ✅ 2026-07-24
+
+Danh mục scope theo **dự án** (`project_id ∈ projectIds`, `status=active`); booking scope theo resident/căn của user. Booking status: `pending|confirmed|rejected|cancelled|completed|no_show`.
+
+**GET `/resident/amenities`** — tiện ích active của dự án user.
+```json
+{ "data": [{"id":"1","code":"GYM","name":"Phòng Gym","type":"gym","description":"...","capacity":30,
+  "open_time":"05:00","close_time":"22:00","booking_unit":"slot","price":"0.00",
+  "requires_approval":false,"image_url":null}] }
+```
+> `image_url` từ `image_path` (Storage public url) — hiện null.
+
+**GET `/resident/amenities/{amenity}`** — + `slots[]` (`day_of_week` null = mọi ngày). 404 nếu tiện ích không thuộc dự án user.
+```json
+{ "data": { /* như trên */ "slots":[{"id":"1","day_of_week":null,"start_time":"08:00","end_time":"10:00","capacity":15,"status":"open"}] } }
+```
+
+**GET `/resident/amenity-bookings?cursor=`** — lượt đặt của user (mới nhất trước).
+```json
+{ "data": [{"id":"8","code":"BK-SEED-002","amenity":{"id":"1","name":"Phòng Gym"},
+  "booking_date":"2026-08-02","start_time":"18:00","end_time":"20:00","party_size":4,
+  "status":"pending","price":"0.00","note":"Tiệc BBQ cuối tuần"}] }
+```
+**POST `/resident/amenity-bookings`** body `{amenity_id*, amenity_slot_id, booking_date*, start_time, end_time, party_size, note}`.
+- 201 → AmenityBookingResource. status = `pending` nếu `amenity.requires_approval`, ngược lại `confirmed`. `price` copy từ amenity. resident/apartment/building lấy từ context + amenity.
+- 404 `not_found` (amenity không thuộc dự án/không active) · 422 `invalid_slot` (slot không thuộc amenity).
+
+**DELETE `/resident/amenity-bookings/{booking}`** — chủ booking → status `cancelled`. 404 `not_found` · 422 `cannot_cancel` (đã completed/no_show).
+
+## 12. Phản ánh / yêu cầu dịch vụ (feedback_requests) ✅ 2026-07-24
+
+Scope: `resident_id ∈` resident của user **HOẶC** `apartment_id ∈` căn của user. status enum: `new|assigned|in_progress|resolved|closed`.
+
+**GET `/resident/feedback-categories`** — danh mục phản ánh của tenant user.
+```json
+{ "data": [{"id":"1","code":"KT","name":"Kỹ thuật","color":"#2563eb"}] }
+```
+**GET `/resident/feedback?cursor=`** — phản ánh của user (mới nhất trước).
+```json
+{ "data": [{"id":"148","code":"PA-SEED-001","title":"Đèn hành lang tầng 8 bị hỏng","description":"...",
+  "category":{"id":"1","name":"Kỹ thuật","color":"#2563eb"},"status":"in_progress","priority":"normal",
+  "sla_due_at":null,"resolved_at":null,"rating":null,"created_at":"..."}] }
+```
+**POST `/resident/feedback`** body `{feedback_category_id, title*, description*, priority}`.
+- 201 → FeedbackRequestResource. status mặc định `new`, `channel='app'`, `code` tự sinh (`PA`+random). apartment/building/project/resident/user lấy từ context. `feedback_category_id` phải thuộc tenant user (else null).
+- 403 `no_apartment` nếu chưa gắn căn.
+
+**GET `/resident/feedback/{feedback}`** — chi tiết (chỉ của user) + `timeline[]` (bình luận công khai + lịch sử trạng thái). 404 `not_found`.
+```json
+{ "data": { /* như trên */ "timeline":[{"type":"comment","author":"...","body":"...","at":"..."},
+  {"type":"status","from_status":"new","to_status":"in_progress","note":null,"at":"..."}] } }
+```
+
+## 13. Chi tiết thông báo (bổ sung §4) ✅ 2026-07-24
+
+**GET `/resident/notifications/{notification}`** — chi tiết FULL (kèm `body`) + tự đánh dấu đã đọc. Dùng `ResidentNotificationService::visibleQuery` → không thấy = 404.
+```json
+{ "data": {"id":"3","kind":"maintenance","title":"...","summary":"...","body":"<p>...</p>",
+  "cover_url":null,"priority":"high","is_pinned":false,"is_read":true,"created_at":"2026-06-29T07:00:00+00:00"} }
+```
+> `kind` map từ cột `type`; `cover_url` từ `cover_path` (hiện null); `created_at` = `published_at`. Gọi endpoint này đánh dấu đã đọc (idempotent) → `is_read=true`.
+
+## 14. Biên lai thanh toán (bổ sung §9) ✅ 2026-07-24
+
+**GET `/resident/payments/{id}`** nay trả thêm `receipt` (khi có biên lai — quan hệ `Payment::receipt()` hasOne).
+```json
+{ "data": { /* payment + allocations */
+  "receipt":{"code":"BL-000011","amount":"5000000.00","issued_at":"2026-05-10T00:00:00+00:00"} } }
+```
+> `receipt=null` nếu chưa phát hành biên lai. Chỉ có ở endpoint chi tiết (không có ở list).
+
 ---
 
 ## Trạng thái triển khai
@@ -228,6 +315,11 @@ Lỗi: 404 `not_found` (hoá đơn không thuộc user) · 422 `already_paid`/`c
 | SOS | **sos** | ✅ | ⏳ đang wire |
 | Payments | **payments** (history+detail) · **payment-methods** · **payments/intent** (VietQR ✅, VNPay/MoMo chờ creds) | ✅ | ⏳ đang wire |
 | Cộng đồng+ | **community/groups/{id}/join** (POST/DELETE) | ✅ | ⏳ đang wire |
+| Đăng ký khách | **visitors** (list/create/cancel) | ✅ | ⏳ đang wire |
+| Tiện ích | **amenities(+detail/slots)** · **amenity-bookings** (list/create/cancel) | ✅ | ⏳ đang wire |
+| Phản ánh | **feedback-categories** · **feedback** (list/create/detail+timeline) | ✅ | ⏳ đang wire |
+| Thông báo+ | **notifications/{id}** (detail full body + mark read) | ✅ | ⏳ đang wire |
+| Payments+ | **payments/{id}.receipt** (biên lai) | ✅ | ⏳ đang wire |
 
 ## Điểm chờ owner chốt (chặn shape cuối)
 

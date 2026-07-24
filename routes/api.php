@@ -111,6 +111,27 @@ Route::prefix('v1')->group(function () {
 
         // Căn hộ đang chọn + thành viên hộ (Hồ sơ cư dân — P3).
         Route::get('apartment', [\App\Http\Controllers\Api\V1\Resident\ApartmentController::class, 'show']);
+
+        // Đăng ký khách (C12 — visitor_registrations).
+        Route::get('visitors', [\App\Http\Controllers\Api\V1\Resident\VisitorController::class, 'index']);
+        Route::post('visitors', [\App\Http\Controllers\Api\V1\Resident\VisitorController::class, 'store']);
+        Route::post('visitors/{visitor}/cancel', [\App\Http\Controllers\Api\V1\Resident\VisitorController::class, 'cancel']);
+
+        // Đặt tiện ích nội khu (amenities/amenity_bookings).
+        Route::get('amenities', [\App\Http\Controllers\Api\V1\Resident\AmenityController::class, 'index']);
+        Route::get('amenities/{amenity}', [\App\Http\Controllers\Api\V1\Resident\AmenityController::class, 'show']);
+        Route::get('amenity-bookings', [\App\Http\Controllers\Api\V1\Resident\AmenityController::class, 'bookings']);
+        Route::post('amenity-bookings', [\App\Http\Controllers\Api\V1\Resident\AmenityController::class, 'book']);
+        Route::delete('amenity-bookings/{booking}', [\App\Http\Controllers\Api\V1\Resident\AmenityController::class, 'cancelBooking']);
+
+        // Phản ánh / yêu cầu dịch vụ (feedback_requests).
+        Route::get('feedback-categories', [\App\Http\Controllers\Api\V1\Resident\FeedbackController::class, 'categories']);
+        Route::get('feedback', [\App\Http\Controllers\Api\V1\Resident\FeedbackController::class, 'index']);
+        Route::post('feedback', [\App\Http\Controllers\Api\V1\Resident\FeedbackController::class, 'store']);
+        Route::get('feedback/{feedback}', [\App\Http\Controllers\Api\V1\Resident\FeedbackController::class, 'show']);
+
+        // Chi tiết thông báo (full body + đánh dấu đã đọc).
+        Route::get('notifications/{notification}', [\App\Http\Controllers\Api\V1\Resident\NotificationController::class, 'show']);
     });
 });
 

@@ -2,15 +2,20 @@
 
 namespace Database\Seeders;
 
+use App\Models\AmenityBooking;
 use App\Models\CommunityGroup;
 use App\Models\CommunityGroupMember;
 use App\Models\CommunityPost;
 use App\Models\Event;
+use App\Models\FeedbackCategory;
+use App\Models\FeedbackRequest;
 use App\Models\PaymentChannel;
 use App\Models\LoyaltyAccount;
 use App\Models\LoyaltyTransaction;
 use App\Models\Poll;
 use App\Models\PollOption;
+use App\Models\Receipt;
+use App\Models\VisitorRegistration;
 use App\Models\Voucher;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Carbon;
@@ -43,6 +48,152 @@ class ResidentDemoContentSeeder extends Seeder
         $this->seedCommunity();
         $this->seedPayments();
         $this->seedPaymentChannels();
+        $this->seedVisitors();
+        $this->seedAmenityBookings();
+        $this->seedFeedback();
+        $this->seedReceipts();
+    }
+
+    /** Đăng ký khách demo cho căn cư dân (C12 — visitor_registrations). */
+    private function seedVisitors(): void
+    {
+        $apt = DB::table('apartments')->where('id', self::DEMO_APARTMENT_ID)->first();
+        if ($apt === null) {
+            $this->command?->warn('  Visitors: bỏ qua — không thấy apartment #'.self::DEMO_APARTMENT_ID);
+
+            return;
+        }
+        $projectId = DB::table('buildings')->where('id', $apt->building_id)->value('project_id');
+
+        $rows = [
+            ['code' => 'KH-SEED-001', 'name' => 'Trần Thị Khách', 'phone' => '0912345678', 'purpose' => 'Thăm gia đình', 'plate' => '51H-123.45', 'guests' => 2, 'at' => '2026-07-26 18:00', 'leave' => '2026-07-26 21:00', 'status' => 'pending'],
+            ['code' => 'KH-SEED-002', 'name' => 'Giao hàng Shopee', 'phone' => '0987654321', 'purpose' => 'Giao hàng', 'plate' => null, 'guests' => 1, 'at' => '2026-07-25 09:30', 'leave' => null, 'status' => 'approved'],
+        ];
+        foreach ($rows as $r) {
+            VisitorRegistration::withoutGlobalScopes()->updateOrCreate(
+                ['code' => $r['code']],
+                [
+                    'tenant_id' => $apt->tenant_id,
+                    'project_id' => $projectId,
+                    'building_id' => $apt->building_id,
+                    'apartment_id' => self::DEMO_APARTMENT_ID,
+                    'resident_id' => self::DEMO_RESIDENT_ID,
+                    'host_user_id' => 6,
+                    'visitor_name' => $r['name'],
+                    'visitor_phone' => $r['phone'],
+                    'purpose' => $r['purpose'],
+                    'vehicle_plate' => $r['plate'],
+                    'num_guests' => $r['guests'],
+                    'expected_at' => Carbon::parse($r['at']),
+                    'expected_leave_at' => $r['leave'] ? Carbon::parse($r['leave']) : null,
+                    'status' => $r['status'],
+                ]
+            );
+        }
+
+        $this->command?->info('  Visitors: 2 đăng ký khách (apt '.self::DEMO_APARTMENT_ID.').');
+    }
+
+    /** Lượt đặt tiện ích demo cho cư dân (amenity_bookings). */
+    private function seedAmenityBookings(): void
+    {
+        $apt = DB::table('apartments')->where('id', self::DEMO_APARTMENT_ID)->first();
+        $amenity = DB::table('amenities')->where('project_id', self::DEMO_PROJECT_ID)->orderBy('id')->first();
+        if ($apt === null || $amenity === null) {
+            $this->command?->warn('  Amenity bookings: bỏ qua — thiếu apartment/amenity.');
+
+            return;
+        }
+
+        $rows = [
+            ['code' => 'BK-SEED-001', 'date' => '2026-07-28', 'start' => '06:00', 'end' => '08:00', 'party' => 2, 'status' => 'confirmed', 'note' => 'Tập gym buổi sáng'],
+            ['code' => 'BK-SEED-002', 'date' => '2026-08-02', 'start' => '18:00', 'end' => '20:00', 'party' => 4, 'status' => 'pending', 'note' => 'Tiệc BBQ cuối tuần'],
+        ];
+        foreach ($rows as $r) {
+            AmenityBooking::withoutGlobalScopes()->updateOrCreate(
+                ['code' => $r['code']],
+                [
+                    'tenant_id' => $apt->tenant_id,
+                    'building_id' => $apt->building_id,
+                    'amenity_id' => $amenity->id,
+                    'apartment_id' => self::DEMO_APARTMENT_ID,
+                    'resident_id' => self::DEMO_RESIDENT_ID,
+                    'user_id' => 6,
+                    'booking_date' => Carbon::parse($r['date']),
+                    'start_time' => $r['start'],
+                    'end_time' => $r['end'],
+                    'party_size' => $r['party'],
+                    'price' => $amenity->price ?? 0,
+                    'note' => $r['note'],
+                    'status' => $r['status'],
+                ]
+            );
+        }
+
+        $this->command?->info('  Amenity bookings: 2 lượt đặt (resident '.self::DEMO_RESIDENT_ID.').');
+    }
+
+    /** Phản ánh demo cho cư dân (feedback_requests). */
+    private function seedFeedback(): void
+    {
+        $apt = DB::table('apartments')->where('id', self::DEMO_APARTMENT_ID)->first();
+        if ($apt === null) {
+            $this->command?->warn('  Feedback: bỏ qua — không thấy apartment #'.self::DEMO_APARTMENT_ID);
+
+            return;
+        }
+        $projectId = DB::table('buildings')->where('id', $apt->building_id)->value('project_id');
+        $catId = FeedbackCategory::withoutGlobalScopes()->where('tenant_id', $apt->tenant_id)->orderBy('id')->value('id');
+
+        $rows = [
+            ['code' => 'PA-SEED-001', 'cat' => $catId, 'title' => 'Đèn hành lang tầng 8 bị hỏng', 'desc' => 'Đèn hành lang trước căn hộ không sáng từ tối qua.', 'priority' => 'normal', 'status' => 'in_progress'],
+            ['code' => 'PA-SEED-002', 'cat' => $catId, 'title' => 'Đề nghị tăng tần suất dọn rác', 'desc' => 'Khu vực để rác tầng 8 cần được dọn thường xuyên hơn.', 'priority' => 'low', 'status' => 'new'],
+        ];
+        foreach ($rows as $r) {
+            FeedbackRequest::withoutGlobalScopes()->updateOrCreate(
+                ['code' => $r['code']],
+                [
+                    'tenant_id' => $apt->tenant_id,
+                    'building_id' => $apt->building_id,
+                    'project_id' => $projectId,
+                    'apartment_id' => self::DEMO_APARTMENT_ID,
+                    'resident_id' => self::DEMO_RESIDENT_ID,
+                    'user_id' => 6,
+                    'feedback_category_id' => $r['cat'],
+                    'title' => $r['title'],
+                    'description' => $r['desc'],
+                    'priority' => $r['priority'],
+                    'channel' => 'app',
+                    'status' => $r['status'],
+                ]
+            );
+        }
+
+        $this->command?->info('  Feedback: 2 phản ánh (apt '.self::DEMO_APARTMENT_ID.').');
+    }
+
+    /** Biên lai demo cho 1 thanh toán của cư dân (receipts). */
+    private function seedReceipts(): void
+    {
+        $payment = DB::table('payments')->where('apartment_id', self::DEMO_APARTMENT_ID)->orderByDesc('id')->first();
+        if ($payment === null) {
+            $this->command?->warn('  Receipts: bỏ qua — không thấy payment cho apt #'.self::DEMO_APARTMENT_ID);
+
+            return;
+        }
+
+        Receipt::withoutGlobalScopes()->updateOrCreate(
+            ['payment_id' => $payment->id],
+            [
+                'tenant_id' => $payment->tenant_id,
+                'code' => 'BL-'.str_pad((string) $payment->id, 6, '0', STR_PAD_LEFT),
+                'amount' => $payment->amount,
+                'issued_at' => Carbon::parse($payment->paid_at ?? now()),
+                'issued_by_id' => null,
+            ]
+        );
+
+        $this->command?->info('  Receipts: 1 biên lai cho payment #'.$payment->id.'.');
     }
 
     /**
