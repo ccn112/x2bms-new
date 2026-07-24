@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\V1\Resident;
 
 use App\Http\Controllers\Api\V1\ApiController;
+use App\Http\Resources\Api\V1\NotificationDetailResource;
 use App\Http\Resources\Api\V1\NotificationResource;
 use App\Services\Resident\ResidentNotificationService;
 use App\Support\Api\ApiResponse;
@@ -45,6 +46,26 @@ class NotificationController extends ApiController
         $items = NotificationResource::collection($paginator->getCollection())->resolve($request);
 
         return ApiResponse::paginated($items, $paginator->nextCursor()?->encode());
+    }
+
+    /** GET /api/v1/resident/notifications/{notification} — chi tiết FULL + đánh dấu đã đọc. */
+    public function show(Request $request, int $notification): JsonResponse
+    {
+        $user = $request->user();
+        $contextId = $request->header('X-Context-Id');
+
+        $model = $this->notifications->visibleQuery($user, $contextId)
+            ->whereKey($notification)
+            ->first();
+        if ($model === null) {
+            return ApiResponse::error('not_found', 'Không tìm thấy thông báo.', 404);
+        }
+
+        // Đánh dấu đã đọc (idempotent) rồi phản ánh vào response.
+        $this->notifications->markRead($user, $model->id, $contextId);
+        $model->is_read = true;
+
+        return ApiResponse::success(NotificationDetailResource::make($model)->resolve($request));
     }
 
     /** POST /api/v1/resident/notifications/{notification}/read */
