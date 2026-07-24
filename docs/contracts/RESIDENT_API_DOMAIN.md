@@ -2,6 +2,12 @@
 
 _Ngày: 2026-07-23 · Repo: x2bms (backend) ↔ x2mobile (app + build API resident)_
 
+> **TRẠNG THÁI 2026-07-24:** Toàn bộ endpoint resident P2/P3 đã **BUILD XONG + VERIFY HTTP thật**
+> trên `x2bms.test` (24 route). Shape đầy đủ ở `docs/api/RESIDENT_API_REFERENCE.md`; vận hành/seed ở
+> `docs/api/RESIDENT_API_OPERATIONS.md`; dữ liệu demo qua `ResidentDemoContentSeeder`. Còn chờ owner:
+> cổng thanh toán (POST payments), gói AQI prod, membership nhóm cộng đồng, contract eKYC/household.
+> App x2mobile đang wire các tab theo reference doc.
+
 > **Vai trò tài liệu:** Agent x2mobile **viết code API resident** bên x2bms. Tài liệu này do
 > phía backend giữ, là **hợp đồng domain** — ánh xạ mỗi endpoint (theo
 > `x2mobile/docs/API_REQUIREMENTS_RESIDENT_TABS_20260723.md`) sang **model/bảng/cột/enum
