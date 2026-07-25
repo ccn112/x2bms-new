@@ -130,11 +130,11 @@ else
   fi
 fi
 
-# --- storage link (idempotent) ----------------------------------------------
-if [[ ! -e public/storage ]]; then
-  log "storage:link"
-  "$PHP_BIN" artisan storage:link
-fi
+# --- storage link (bắt buộc để serve /storage: avatar, ảnh public) ----------
+# Dùng --force để luôn đảm bảo symlink đúng (kể cả khi link cũ thiếu/gãy sau khi
+# clone mới) — thiếu link này thì ảnh upload trả 404.
+log "storage:link --force"
+"$PHP_BIN" artisan storage:link --force
 
 # --- cache production --------------------------------------------------------
 log "Tối ưu cache (config/route/view/event + filament)"
