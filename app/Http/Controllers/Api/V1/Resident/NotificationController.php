@@ -131,8 +131,13 @@ class NotificationController extends ApiController
         $contextId = $request->header('X-Context-Id');
         $isStaff = ! $user->hasResidentMembership() && $user->isStaffOperator();
         if ($isStaff) {
-            $authorName = 'Ban quản lý';
-            $authorSubtitle = $model->project?->name;
+            // Nhãn theo 3 tầng quản lý của THÔNG BÁO (không lộ tên/ảnh cá nhân):
+            // platform (superadmin) > tenant (công ty vận hành) > project (BQL dự án).
+            [$authorName, $authorSubtitle] = match ($model->owner_level) {
+                'platform' => ['Quản trị hệ thống', 'X2-BMS'],
+                'tenant' => ['Công ty vận hành', $model->tenant?->name],
+                default => ['Ban quản lý', $model->project?->name],
+            };
         } else {
             $authorName = $user->name;
             $apartmentIds = $this->context->apartmentIds($user, $contextId);
