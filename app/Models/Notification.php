@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\HasComments;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 use Illuminate\Database\Eloquent\Builder;
@@ -17,7 +18,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  */
 class Notification extends Model
 {
-    use SoftDeletes;
+    use HasComments, SoftDeletes;
     protected $guarded = [];
 
     protected $casts = [
@@ -67,11 +68,6 @@ class Notification extends Model
     public function reads(): HasMany
     {
         return $this->hasMany(NotificationRead::class);
-    }
-
-    public function comments(): HasMany
-    {
-        return $this->hasMany(NotificationComment::class);
     }
 
     /** Thông báo mà $user được quản lý/xem theo 3 lớp. */

@@ -65,9 +65,11 @@ Scope: `apartment_id ∈` căn của user.
 Scope theo `notification_audiences` (all|building|apartment) + `status=published` + chưa hết hạn.
 > Mỗi item trả thêm `cover_url` = ảnh demo thật (DemoImage 1200×500) nếu `cover_path` rỗng, và `comment_count` (số bình luận cư dân).
 
-**Bình luận (cư dân comment dưới thông báo):**
-- **GET `/resident/notifications/{id}/comments`** (cursor, mới nhất trước) → `data:[{id, body, author:{name, avatar_url}, is_mine, created_at}]`.
-- **POST `/resident/notifications/{id}/comments`** `{body}` (≤2000) → 201 comment vừa tạo (`is_mine:true`). Author = user hiện tại. Scope: thông báo phải visible với user (không thì 404). `notification.comment_count` +1.
+**Bình luận (module DÙNG CHUNG — polymorphic `comments`, kiểu Facebook):**
+- **GET `/resident/notifications/{id}/comments`** → `data:[{id, parent_id, body, is_staff, author:{name, subtitle, avatar_url}, is_mine, created_at}]` (toàn bộ, thứ tự thời gian; app gom parent+reply thành cây).
+- **POST `/resident/notifications/{id}/comments`** `{body≤2000, parent_id?}` → 201 comment. `parent_id` = reply (đa cấp 1 lớp — reply-của-reply gộp về cha). `comment_count` +1.
+- **Tác giả:** cư dân → `name`=tên, `subtitle`=mã căn hộ; nhân sự BQL → `name`="Ban quản lý", `subtitle`=tên dự án, `is_staff:true` (KHÔNG lộ tên/ảnh cá nhân).
+- **Tái dùng:** bảng `comments` polymorphic + trait `App\Models\Concerns\HasComments` → gắn vào bài cộng đồng / phản ánh / ticket bằng `use HasComments` + route tương tự.
 
 ## 5. Ưu đãi (tab Ưu đãi) ✅ 2026-07-24
 
