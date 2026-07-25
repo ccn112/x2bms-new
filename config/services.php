@@ -62,6 +62,13 @@ return [
         'cache_ttl' => (int) env('AQI_CACHE_TTL', 3600), // giây
     ],
 
+    'weather' => [
+        'provider' => env('WEATHER_PROVIDER', 'open-meteo'),
+        'base_url' => env('WEATHER_BASE_URL', 'https://api.open-meteo.com/v1/forecast'),
+        'api_key' => env('WEATHER_API_KEY'),
+        'cache_ttl' => (int) env('WEATHER_CACHE_TTL', 1800), // giây (30')
+    ],
+
     // Cổng thanh toán. VietQR không cần credential (chỉ số tài khoản trong
     // payment_channels.config). VNPay/MoMo cần khoá bí mật — để ở ENV (KHÔNG lưu DB).
     // Owner bật cổng qua bảng payment_channels; khoá dùng chung theo merchant.

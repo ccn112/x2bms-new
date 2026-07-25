@@ -9,6 +9,7 @@ use App\Models\Statement;
 use App\Services\Resident\AqiService;
 use App\Services\Resident\ResidentContextService;
 use App\Services\Resident\ResidentNotificationService;
+use App\Services\Resident\WeatherService;
 use App\Support\Api\ApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -25,6 +26,7 @@ class HomeController extends ApiController
         private readonly ResidentContextService $context,
         private readonly ResidentNotificationService $notifications,
         private readonly AqiService $aqi,
+        private readonly WeatherService $weather,
     ) {
     }
 
@@ -38,9 +40,23 @@ class HomeController extends ApiController
 
         return ApiResponse::success([
             'metrics' => $this->metrics($user, $contextId),
+            'weather' => $this->resolveWeather($user, $contextId),
             'tasks' => $this->tasks($apartmentIds, $residentIds),
             'notices_preview' => $this->noticesPreview($request, $user, $contextId),
         ]);
+    }
+
+    /** Thời tiết theo project đầu tiên có toạ độ (null nếu không có). */
+    private function resolveWeather($user, ?string $contextId): ?array
+    {
+        foreach ($this->context->projectIds($user, $contextId) as $projectId) {
+            $weather = $this->weather->forProject($projectId);
+            if ($weather !== null) {
+                return $weather;
+            }
+        }
+
+        return null;
     }
 
     /** @return array<int,array<string,mixed>> */
