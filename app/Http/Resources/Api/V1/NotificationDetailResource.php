@@ -31,6 +31,7 @@ class NotificationDetailResource extends JsonResource
             'priority' => $this->priority,
             'is_pinned' => (bool) $this->is_pinned,
             'is_read' => (bool) ($this->is_read ?? false),
+            'comment_count' => (int) ($this->comments_count ?? 0),
             'created_at' => ($this->published_at ?? $this->created_at)?->toIso8601String(),
         ];
     }

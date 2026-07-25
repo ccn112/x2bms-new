@@ -73,6 +73,8 @@ Route::prefix('v1')->group(function () {
         // Thông báo cư dân.
         Route::get('notifications', [\App\Http\Controllers\Api\V1\Resident\NotificationController::class, 'index']);
         Route::post('notifications/{notification}/read', [\App\Http\Controllers\Api\V1\Resident\NotificationController::class, 'read']);
+        Route::get('notifications/{notification}/comments', [\App\Http\Controllers\Api\V1\Resident\NotificationController::class, 'comments']);
+        Route::post('notifications/{notification}/comments', [\App\Http\Controllers\Api\V1\Resident\NotificationController::class, 'storeComment']);
 
         // Điểm thưởng & hạng (tab Ưu đãi — CD-LY-01).
         Route::get('loyalty', [\App\Http\Controllers\Api\V1\Resident\LoyaltyController::class, 'show']);

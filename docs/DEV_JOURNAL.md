@@ -5,6 +5,18 @@ Mỗi lần cập nhật code, ghi một entry vào đầu danh sách (mới nh�
 
 ---
 
+## 2026-07-25 — Bình luận thông báo (cư dân comment) + comment_count
+
+**Phạm vi:** cho cư dân bình luận dưới một thông báo (app hiển thị số + list + input).
+
+**File mới:** migration `notification_comments` (notification_id cascade, user_id nullOnDelete, author_name, body, timestamps+softDeletes); `Models/NotificationComment`; `Resources/NotificationCommentResource` (id, body, author{name,avatar_url}, is_mine, created_at).
+
+**File đổi:** `Notification` model +`comments()` HasMany. `NotificationController` +`comments()` (GET cursor) +`storeComment()` (POST, validate body≤2000, author=user hiện tại, scope visibleQuery→404 nếu không thấy); `index/show` +`withCount('comments')`. `NotificationResource`+`NotificationDetailResource` +`comment_count`. `routes/api.php` +GET/POST `notifications/{id}/comments`.
+
+**Verify HTTP (Herd, user #6, x2bms.test):** list trả `comment_count`; POST `{body}`→201 (author name+avatar_url person-level, is_mine:true); GET comments count=1 is_mine=true; comment_count list+detail =1. `php -l` sạch. Docs RESIDENT_API_REFERENCE §4.
+
+**Deploy live:** cần chạy `php artisan migrate` (tạo bảng notification_comments) trên x2.fino.vn — `deploy.sh` tự làm.
+
 ## 2026-07-25 — Avatar upload (person-level) cho app cư dân: POST/DELETE /me/avatar
 
 **Phạm vi:** dựng luồng ảnh đại diện còn thiếu (trước đó ProfileController ghi rõ "avatar upload multipart CHƯA làm"). Avatar là **person-level** (tài khoản global dùng chung nhiều tenant → cùng khuôn mặt), lưu disk `public` tại `avatars/users/{user_id}/…` — **KHÔNG qua TenantStorage** (đúng khuôn `Resident::avatarUrl` sẵn có; không đụng invariant cô lập tenant vì đây không phải dữ liệu tenant). Cư dân `tenant_id=NULL` + API stateless nên context tenant không khả dụng — càng khẳng định person-scope là đúng.

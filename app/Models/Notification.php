@@ -69,6 +69,11 @@ class Notification extends Model
         return $this->hasMany(NotificationRead::class);
     }
 
+    public function comments(): HasMany
+    {
+        return $this->hasMany(NotificationComment::class);
+    }
+
     /** Thông báo mà $user được quản lý/xem theo 3 lớp. */
     public function scopeVisibleTo(Builder $query, User $user): Builder
     {

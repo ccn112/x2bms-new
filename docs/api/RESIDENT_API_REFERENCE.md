@@ -63,7 +63,11 @@ Scope: `apartment_id ∈` căn của user.
 
 **GET `/resident/notifications`** (cursor) · **POST `/resident/notifications/{id}/read`**.
 Scope theo `notification_audiences` (all|building|apartment) + `status=published` + chưa hết hạn.
-> Mỗi item trả thêm `cover_url` = ảnh demo thật (DemoImage 1200×500) nếu `cover_path` rỗng — để danh sách thông báo giàu hình ảnh.
+> Mỗi item trả thêm `cover_url` = ảnh demo thật (DemoImage 1200×500) nếu `cover_path` rỗng, và `comment_count` (số bình luận cư dân).
+
+**Bình luận (cư dân comment dưới thông báo):**
+- **GET `/resident/notifications/{id}/comments`** (cursor, mới nhất trước) → `data:[{id, body, author:{name, avatar_url}, is_mine, created_at}]`.
+- **POST `/resident/notifications/{id}/comments`** `{body}` (≤2000) → 201 comment vừa tạo (`is_mine:true`). Author = user hiện tại. Scope: thông báo phải visible với user (không thì 404). `notification.comment_count` +1.
 
 ## 5. Ưu đãi (tab Ưu đãi) ✅ 2026-07-24
 
