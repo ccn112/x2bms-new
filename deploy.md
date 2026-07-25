@@ -247,6 +247,22 @@ php artisan optimize:clear           # xóa toàn bộ cache khi nghi cache cũ
 ---
 
 ## 7. Quy trình cập nhật (mỗi lần deploy code mới)
+
+> **Cách nhanh:** dùng `./deploy.sh` (ở gốc repo) — tự động hoá toàn bộ các bước dưới
+> (maintenance mode, composer, **build lại Vite**, migrate, cache, queue restart) và
+> giữ maintenance nếu lỗi giữa chừng.
+>
+> ```bash
+> cd /home/<site-user>/htdocs/<domain>
+> git pull                 # hoặc: ./deploy.sh --pull
+> ./deploy.sh              # deploy AN TOÀN: migrate --force (không mất dữ liệu)
+> # ./deploy.sh --seed     # + db:seed (DemoDataSeeder — chỉ khi DB TRỐNG)
+> # ./deploy.sh --fresh    # XOÁ SẠCH DB rồi migrate:fresh --seed (có xác nhận)
+> ```
+> `./deploy.sh --help` để xem hết cờ. ⚠️ `DemoDataSeeder` không idempotent → trên
+> DB đã có dữ liệu dùng `--fresh` (reset), đừng `--seed` (sẽ trùng/lỗi).
+
+Chi tiết các bước script chạy (tương đương làm tay):
 ```bash
 cd /home/<site-user>/htdocs/<domain>
 php artisan down || true
