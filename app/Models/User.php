@@ -10,10 +10,12 @@ use Filament\Models\Contracts\FilamentUser;
 use Filament\Panel;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Facades\Storage;
 use Laravel\Sanctum\HasApiTokens;
 use Spatie\Permission\Traits\HasRoles;
 
@@ -30,6 +32,23 @@ class User extends Authenticatable implements FilamentUser
     public function roleScopes(): HasMany
     {
         return $this->hasMany(UserRoleScope::class);
+    }
+
+    /**
+     * Person-level avatar URL: uploaded file on the public disk if present, else
+     * an initials avatar from the name. Avatars are deliberately person-scoped
+     * (same face in every tenant/company), not tenant data — mirrors Resident.
+     */
+    protected function avatarUrl(): Attribute
+    {
+        return Attribute::get(function (): string {
+            if ($this->avatar_path) {
+                return Storage::disk('public')->url($this->avatar_path);
+            }
+
+            return 'https://ui-avatars.com/api/?background=0b1b3f&color=c8a24c&name='
+                .urlencode($this->name ?: 'X2');
+        });
     }
 
     /**

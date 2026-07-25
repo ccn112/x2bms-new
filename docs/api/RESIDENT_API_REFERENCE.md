@@ -27,8 +27,12 @@ _Backend: x2bms (Laravel) · App: x2mobile (Flutter) · Cập nhật: 2026-07-24
 | POST | `/auth/login` | Đăng nhập → `data.tokens{access,refresh}` |
 | POST | `/auth/otp/request`, `/auth/otp/verify`, `/auth/register`, `/auth/refresh` | Luồng OTP/đăng ký/refresh |
 | GET | `/me/bootstrap` | Hồ sơ + module bật + contexts + `unread_notification_count` |
-| PATCH | `/me/profile` | Cập nhật `name/phone/email/gender` (partial) |
+| PATCH | `/me/profile` | Cập nhật `name/phone/email/gender` (partial) → `data.user{…,avatar_url}` |
+| POST | `/me/avatar` | Tải/đổi ảnh đại diện (multipart field `avatar`, image jpeg/png/webp ≤4MB) → `data{avatar_url, user}` |
+| DELETE | `/me/avatar` | Gỡ ảnh đại diện (về avatar chữ cái) → `data{avatar_url, user}` |
 | POST/DELETE | `/me/devices`, `/me/devices/{installationId}` | Đăng ký/huỷ thiết bị push |
+
+> `me/bootstrap` và các payload user đều trả `avatar_url` tuyệt đối (ảnh đã upload trên disk `public`, hoặc `ui-avatars` fallback theo tên). Avatar là **person-level** (cùng người → cùng ảnh mọi tenant): lưu `avatars/users/{user_id}/…`, KHÔNG qua TenantStorage; khi đổi được đồng bộ sang mọi `resident` liên kết nên list thành viên hộ (`members[].avatar_url` khi `is_me`) và tác giả bài cộng đồng cũng cập nhật.
 
 ## 2. Căn hộ (Hồ sơ)
 

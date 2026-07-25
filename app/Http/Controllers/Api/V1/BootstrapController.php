@@ -105,6 +105,7 @@ class BootstrapController extends ApiController
                 'gender' => $user->gender,
                 'nationality' => $user->nationality,
                 'kyc_status' => $user->kyc_status,
+                'avatar_url' => $user->avatar_url,
                 'abilities' => $user->tokenAbilities(),
             ],
             'available_contexts' => $contexts,

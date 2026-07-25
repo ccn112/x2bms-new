@@ -5,6 +5,21 @@ Mỗi lần cập nhật code, ghi một entry vào đầu danh sách (mới nh�
 
 ---
 
+## 2026-07-25 — Avatar upload (person-level) cho app cư dân: POST/DELETE /me/avatar
+
+**Phạm vi:** dựng luồng ảnh đại diện còn thiếu (trước đó ProfileController ghi rõ "avatar upload multipart CHƯA làm"). Avatar là **person-level** (tài khoản global dùng chung nhiều tenant → cùng khuôn mặt), lưu disk `public` tại `avatars/users/{user_id}/…` — **KHÔNG qua TenantStorage** (đúng khuôn `Resident::avatarUrl` sẵn có; không đụng invariant cô lập tenant vì đây không phải dữ liệu tenant). Cư dân `tenant_id=NULL` + API stateless nên context tenant không khả dụng — càng khẳng định person-scope là đúng.
+
+**File đổi:**
+- `app/Models/User.php` — thêm accessor `avatarUrl` (mirror Resident): có `avatar_path` → `Storage::disk('public')->url(...)`, else `ui-avatars` theo `name`. +import `Attribute`/`Storage`.
+- `app/Http/Controllers/Api/V1/ProfileController.php` — `avatar()` (POST, validate `image|mimes:jpeg,jpg,png,webp|max:4096`, `store('avatars/users/{id}','public')`, xoá file cũ, ghi `user.avatar_path` + **đồng bộ `residentMemberships()->update(avatar_path)`** trong transaction) + `removeAvatar()` (DELETE → null + xoá file) + `userPayload()` dùng chung (thêm `avatar_url`). `update()` cũng trả `avatar_url`.
+- `routes/api.php` — `POST/DELETE me/avatar` trong nhóm `auth:sanctum`.
+- `app/Http/Controllers/Api/V1/BootstrapController.php` — `me().user` thêm `avatar_url`.
+- `docs/api/RESIDENT_API_REFERENCE.md` — mục §1 + ghi chú person-level.
+
+**Đồng bộ hiển thị:** vì propagate sang `resident` liên kết, avatar hiện nhất quán ở list thành viên hộ (`members[].avatar_url` khi `is_me`) và tác giả bài cộng đồng.
+
+**Verify HTTP (Herd, token user #6, `x2bms.test`):** `me/bootstrap.user.avatar_url` = ui-avatars fallback → POST multipart PNG → trả `.../storage/avatars/users/6/xxxx.png` (GET file 200); bootstrap + `resident/apartment` member is_me phản ánh URL mới; DELETE → về ui-avatars + file cũ bị gỡ (không rác). `php -l` sạch 4 file.
+
 ## 2026-07-24 — Demo "giàu hình ảnh": ảnh thật cho mọi Resource + tăng volume seed 2-3x
 
 **Phạm vi:** làm app cư dân demo giàu hình ảnh + nhiều dữ liệu (chỉ backend). Verify HTTP thật Herd token user #6 trên `x2bms.test` — mọi item đều có `image_url`/`image_urls`/`cover_url` bắt đầu `https://`.

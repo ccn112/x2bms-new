@@ -47,6 +47,8 @@ Route::prefix('v1')->group(function () {
         Route::post('auth/logout', [AuthController::class, 'logout']);
         Route::get('me/bootstrap', [BootstrapController::class, 'me']);
         Route::patch('me/profile', [\App\Http\Controllers\Api\V1\ProfileController::class, 'update']);
+        Route::post('me/avatar', [\App\Http\Controllers\Api\V1\ProfileController::class, 'avatar']);
+        Route::delete('me/avatar', [\App\Http\Controllers\Api\V1\ProfileController::class, 'removeAvatar']);
         Route::post('me/devices', [DeviceController::class, 'store']);
         Route::delete('me/devices/{installationId}', [DeviceController::class, 'destroy']);
     });
