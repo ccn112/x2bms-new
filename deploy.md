@@ -244,6 +244,36 @@ php artisan optimize:clear           # xóa toàn bộ cache khi nghi cache cũ
 ```
 > ⚠️ **Sau khi sửa `.env` hoặc code, phải `php artisan config:cache` (hoặc `optimize:clear`) lại** — cache cũ là nguyên nhân "sửa rồi mà không đổi".
 
+### 6.4 Ảnh upload (avatar) trả 404 — `/storage/*` không load
+
+Ảnh đại diện (`POST /api/v1/me/avatar`) lưu ở disk `public` = `storage/app/public`, phục vụ web qua symlink `public/storage`. Triệu chứng: `me/bootstrap.user.avatar_url` trả URL `.../storage/avatars/users/<id>/xxx.jpg` nhưng mở ra **404**.
+
+1. **Thiếu symlink** → tạo (bắt buộc, idempotent với `--force`):
+   ```bash
+   php artisan storage:link --force        # --force để ghi đè link cũ/gãy
+   readlink -f public/storage              # phải ra .../storage/app/public
+   ```
+   > `storage:link` (không `--force`) sẽ **bỏ qua** nếu đã có link cũ (kể cả link gãy) → vẫn 404. `deploy.sh` đã dùng `--force`.
+
+2. **Nginx chặn symlink** (CloudPanel bật `disable_symlinks` trong `/etc/nginx/global_settings`).
+   Dấu hiệu: file tĩnh THẬT load được (`/build/manifest.json`, `/favicon.ico` → 200) nhưng **chỉ `/storage/*` (symlink) → 404**, và là **404 của nginx** (không phải Laravel). Kiểm tra:
+   ```bash
+   grep -n disable_symlinks /etc/nginx/global_settings
+   curl -I https://<domain>/build/manifest.json   # 200 (thư mục thật)
+   curl -I https://<domain>/storage/<file>         # 404 (symlink bị chặn)
+   ```
+   **Sửa** — thêm `disable_symlinks off;` vào đúng block `/storage/` trong Vhost (ghi đè global, chỉ cho path này):
+   ```nginx
+   location ^~ /storage/ {
+       disable_symlinks off;
+       try_files $uri =404;
+       expires 7d;
+       access_log off;
+   }
+   ```
+   > Hoặc bỏ symlink hẳn bằng `alias` tới đường dẫn thật:
+   > `alias /home/<site-user>/htdocs/<domain>/storage/app/public/;` (thay `try_files` giữ nguyên). Sau đó CloudPanel tự reload (hoặc `nginx -t && systemctl reload nginx`).
+
 ---
 
 ## 7. Quy trình cập nhật (mỗi lần deploy code mới)
