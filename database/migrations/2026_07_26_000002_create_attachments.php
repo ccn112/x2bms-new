@@ -11,6 +11,9 @@ return new class extends Migration
         // Đính kèm (ảnh…) dùng chung polymorphic — gắn cho Comment và mọi loại
         // phiếu (đăng ký khách, chuyển đồ, đặt tiện ích, thanh toán…).
         // attachable NULL = vừa upload, chưa gắn (sẽ link khi tạo phiếu/bình luận).
+        if (Schema::hasTable('attachments')) {
+            return;
+        }
         Schema::create('attachments', function (Blueprint $table) {
             $table->id();
             $table->foreignId('tenant_id')->nullable()->constrained()->nullOnDelete();
