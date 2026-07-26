@@ -136,6 +136,10 @@ Route::prefix('v1')->group(function () {
 
         // Chi tiết thông báo (full body + đánh dấu đã đọc).
         Route::get('notifications/{notification}', [\App\Http\Controllers\Api\V1\Resident\NotificationController::class, 'show']);
+
+        // Bài viết cư dân đọc (PlatformContent: quy định/cẩm nang/tin tức).
+        Route::get('articles', [\App\Http\Controllers\Api\V1\Resident\ArticleController::class, 'index']);
+        Route::get('articles/{article}', [\App\Http\Controllers\Api\V1\Resident\ArticleController::class, 'show']);
     });
 });
 
