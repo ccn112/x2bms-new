@@ -79,9 +79,16 @@ class ApartmentWalletDemoSeeder extends Seeder
             }
         });
 
-        // Ví mẫu cho tối đa 6 căn hộ có statement.
-        $apartmentIds = Statement::query()->withoutGlobalScopes()
-            ->whereNotNull('apartment_id')->distinct()->limit(6)->pluck('apartment_id');
+        // Ví mẫu cho MỌI căn có cư dân (đảm bảo tài khoản đăng nhập nào cũng thấy số),
+        // + bổ sung các căn có statement. Trước đây chỉ 6 căn statement đầu → dễ lệch
+        // căn của tài khoản login nên ví "chưa lên số".
+        $apartmentIds = \App\Models\ResidentApartmentRelation::query()->withoutGlobalScopes()
+            ->whereNotNull('apartment_id')->distinct()->pluck('apartment_id')
+            ->merge(
+                Statement::query()->withoutGlobalScopes()
+                    ->whereNotNull('apartment_id')->distinct()->pluck('apartment_id')
+            )
+            ->unique()->take(120);
 
         foreach ($apartmentIds as $i => $apartmentId) {
             $apartment = Apartment::withoutGlobalScopes()->find($apartmentId);
