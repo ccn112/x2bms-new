@@ -14,9 +14,16 @@ class StatementLine extends Model
 
     protected $casts = [
         'amount' => 'decimal:2',
+        'paid_amount' => 'decimal:2',
         'quantity' => 'decimal:2',
         'unit_price' => 'decimal:2',
     ];
+
+    /** Còn nợ của dòng phí này. */
+    public function outstanding(): string
+    {
+        return bcsub((string) $this->amount, (string) ($this->paid_amount ?? 0), 2);
+    }
 
     public function statement(): BelongsTo
     {

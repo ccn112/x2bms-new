@@ -57,6 +57,7 @@ class ResidentDemoContentSeeder extends Seeder
         $this->seedFeedback();
         $this->seedReceipts();
         $this->call(ResidentArticleSeeder::class);
+        $this->call(ApartmentWalletDemoSeeder::class);
     }
 
     /** Đăng ký khách demo cho căn cư dân (C12 — visitor_registrations). */

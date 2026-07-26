@@ -29,6 +29,8 @@ class CommentResource extends JsonResource
             ],
             'is_mine' => (bool) ($this->is_mine ?? false),
             'created_at' => $this->created_at?->toIso8601String(),
+            'attachments' =>
+                AttachmentResource::collection($this->whenLoaded('attachments')),
         ];
     }
 }

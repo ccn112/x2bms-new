@@ -29,9 +29,14 @@ class StatementController extends ApiController
 
         $perPage = min((int) $request->integer('per_page', 20), 50);
 
+        $period = $request->string('period')->trim()->value();       // mã kỳ, vd 2026-07
+        $feeCategory = $request->string('fee_category')->trim()->value(); // lọc theo nhóm phí
+
         $paginator = Statement::query()
             ->with('billingPeriod') // period label for the card title
             ->whereIn('apartment_id', $apartmentIds)
+            ->when($period !== '', fn ($q) => $q->whereHas('billingPeriod', fn ($p) => $p->where('code', $period)))
+            ->when($feeCategory !== '', fn ($q) => $q->whereHas('lines', fn ($l) => $l->where('fee_category', $feeCategory)))
             ->orderByDesc('issued_at')
             ->orderByDesc('id')
             ->cursorPaginate($perPage);

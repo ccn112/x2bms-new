@@ -6,6 +6,8 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 use App\Models\Concerns\BelongsToProject;
 
 use App\Models\Concerns\BelongsToTenant;
+use App\Models\Concerns\HasAttachments;
+use App\Models\Concerns\HasComments;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -13,7 +15,7 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class Payment extends Model
 {
-    use BelongsToTenant, SoftDeletes, BelongsToProject;
+    use BelongsToTenant, SoftDeletes, BelongsToProject, HasComments, HasAttachments;
 
     protected $guarded = [];
 

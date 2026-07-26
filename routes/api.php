@@ -70,11 +70,24 @@ Route::prefix('v1')->group(function () {
         Route::get('billing/summary', [\App\Http\Controllers\Api\V1\Resident\BillingSummaryController::class, 'show']);
         Route::get('billing/summary/trend', [\App\Http\Controllers\Api\V1\Resident\BillingSummaryController::class, 'trend']);
 
+        // Ví cư dân theo căn hộ: số dư + các ngăn + nợ per-service, và sổ ví (phiếu thu / hạch toán).
+        Route::get('wallet', [\App\Http\Controllers\Api\V1\Resident\WalletController::class, 'show']);
+        Route::get('wallet/transactions', [\App\Http\Controllers\Api\V1\Resident\WalletController::class, 'transactions']);
+
         // Thông báo cư dân.
         Route::get('notifications', [\App\Http\Controllers\Api\V1\Resident\NotificationController::class, 'index']);
         Route::post('notifications/{notification}/read', [\App\Http\Controllers\Api\V1\Resident\NotificationController::class, 'read']);
         Route::get('notifications/{notification}/comments', [\App\Http\Controllers\Api\V1\Resident\NotificationController::class, 'comments']);
         Route::post('notifications/{notification}/comments', [\App\Http\Controllers\Api\V1\Resident\NotificationController::class, 'storeComment']);
+
+        // Upload ảnh của cư dân (multipart, trả attachment id + url để gắn phiếu/bình luận).
+        Route::post('uploads', [\App\Http\Controllers\Api\V1\Resident\UploadController::class, 'store']);
+
+        // Bình luận trên các PHIẾU tương tác cư dân–BQL (đăng ký khách / thanh toán / đặt tiện ích).
+        Route::get('{resource}/{id}/comments', [\App\Http\Controllers\Api\V1\Resident\SlipCommentController::class, 'index'])
+            ->whereIn('resource', ['visitor-registrations', 'payments', 'amenity-bookings'])->whereNumber('id');
+        Route::post('{resource}/{id}/comments', [\App\Http\Controllers\Api\V1\Resident\SlipCommentController::class, 'store'])
+            ->whereIn('resource', ['visitor-registrations', 'payments', 'amenity-bookings'])->whereNumber('id');
 
         // Điểm thưởng & hạng (tab Ưu đãi — CD-LY-01).
         Route::get('loyalty', [\App\Http\Controllers\Api\V1\Resident\LoyaltyController::class, 'show']);

@@ -5,6 +5,8 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 use App\Models\Concerns\BelongsToTenant;
+use App\Models\Concerns\HasAttachments;
+use App\Models\Concerns\HasComments;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -12,7 +14,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 /** Tier 2 — Đăng ký khách (C12). Phát hành pass qua VisitorPass. */
 class VisitorRegistration extends Model
 {
-    use BelongsToTenant, SoftDeletes;
+    use BelongsToTenant, HasAttachments, HasComments, SoftDeletes;
 
     protected $guarded = [];
 

@@ -16,6 +16,8 @@ class FeeType extends Model
 
     protected $casts = [
         'is_recurring' => 'boolean',
+        'is_critical' => 'boolean',
+        'payment_priority' => 'integer',
         'is_complex' => 'boolean',
         'vat_percent' => 'decimal:2',
         'effective_from' => 'date',
