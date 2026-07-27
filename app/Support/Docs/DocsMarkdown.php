@@ -2,6 +2,7 @@
 
 namespace App\Support\Docs;
 
+use Highlight\Highlighter;
 use Illuminate\Support\Str;
 use League\CommonMark\Extension\Autolink\AutolinkExtension;
 use League\CommonMark\Extension\CommonMark\CommonMarkCoreExtension;
@@ -57,7 +58,84 @@ class DocsMarkdown
         $converter = new MarkdownConverter($environment);
         $html = (string) $converter->convert($markdown)->getContent();
 
+        $html = static::styleCodeBlocks($html);
+
         return static::injectHeadingIds($html);
+    }
+
+    /**
+     * Biến `<pre><code class="language-xxx">…</code></pre>` (do commonmark sinh)
+     * thành CARD đẹp: header (tên ngôn ngữ + nút Copy) + gutter số dòng + code tô
+     * màu cú pháp (server-side, scrivo/highlight.php — PHP port của highlight.js).
+     * Block không có ngôn ngữ → card + số dòng, không tô màu.
+     * Copy lấy đúng source qua data-code (không kèm số dòng).
+     */
+    protected static function styleCodeBlocks(string $html): string
+    {
+        return (string) preg_replace_callback(
+            '#<pre><code(?:\s+class="language-([^"]*)")?>(.*?)</code></pre>#s',
+            function (array $m): string {
+                $langHint = trim($m[1] ?? '');
+                // Code do commonmark escape (& < > ") → giải mã lấy source thật.
+                $raw = html_entity_decode($m[2], ENT_QUOTES | ENT_HTML5, 'UTF-8');
+                $raw = rtrim($raw, "\n");
+
+                [$codeHtml, $langLabel] = static::highlightCode($raw, $langHint);
+
+                $lineCount = max(1, substr_count($raw, "\n") + 1);
+                $gutter = '';
+                for ($i = 1; $i <= $lineCount; $i++) {
+                    $gutter .= '<span>'.$i.'</span>';
+                }
+
+                $label = $langLabel !== '' ? strtoupper($langLabel) : 'CODE';
+                $dataCode = htmlspecialchars($raw, ENT_QUOTES, 'UTF-8');
+
+                return '<div class="docs-code" data-code="'.$dataCode.'">'
+                    .'<div class="docs-code-head">'
+                        .'<span class="docs-code-lang">'.$label.'</span>'
+                        .'<button type="button" class="docs-copy-btn">Copy</button>'
+                    .'</div>'
+                    .'<div class="docs-code-body">'
+                        .'<span class="docs-code-gutter" aria-hidden="true">'.$gutter.'</span>'
+                        .'<pre class="docs-code-scroll"><code class="hljs">'.$codeHtml.'</code></pre>'
+                    .'</div>'
+                .'</div>';
+            },
+            $html
+        );
+    }
+
+    /**
+     * Tô màu cú pháp 1 khối code. Trả [html_đã_tô_màu, nhãn_ngôn_ngữ].
+     * Ngôn ngữ không xác định / không hỗ trợ → escape thường, nhãn rỗng.
+     *
+     * @return array{0:string,1:string}
+     */
+    protected static function highlightCode(string $raw, string $langHint): array
+    {
+        // Chuẩn hoá alias → tên highlight.js.
+        $aliases = [
+            'sh' => 'bash', 'shell' => 'bash', 'zsh' => 'bash', 'console' => 'bash',
+            'js' => 'javascript', 'ts' => 'typescript', 'yml' => 'yaml',
+            'md' => 'markdown', 'html' => 'xml', 'jsonc' => 'json',
+        ];
+        $lang = strtolower($langHint);
+        $lang = $aliases[$lang] ?? $lang;
+
+        if ($lang === '') {
+            return [htmlspecialchars($raw, ENT_QUOTES, 'UTF-8'), ''];
+        }
+
+        try {
+            $hl = new Highlighter();
+            $result = $hl->highlight($lang, $raw);
+
+            return [$result->value, $result->language ?: $langHint];
+        } catch (\Throwable) {
+            // Ngôn ngữ lạ hoặc lỗi → không tô màu, vẫn hiển thị card.
+            return [htmlspecialchars($raw, ENT_QUOTES, 'UTF-8'), $langHint];
+        }
     }
 
     /**

@@ -136,11 +136,6 @@
             background: #eef1f6; padding: 2px 6px; border-radius: 5px; font-size: 13.5px;
             font-family: ui-monospace, 'SFMono-Regular', Menlo, monospace;
         }
-        .docs-content pre {
-            background: var(--navy); color: #e6edf9; padding: 16px 18px; border-radius: 10px;
-            overflow-x: auto;
-        }
-        .docs-content pre code { background: none; color: inherit; padding: 0; }
         .docs-content table { border-collapse: collapse; width: 100%; margin: 16px 0; font-size: 14px; }
         .docs-content th, .docs-content td { border: 1px solid var(--line); padding: 8px 12px; text-align: left; }
         .docs-content th { background: #f0f3f8; }
@@ -153,17 +148,73 @@
         .docs-content ol { list-style: decimal; margin: 12px 0; padding-left: 24px; }
         .docs-content li { margin: 4px 0; }
         .docs-empty { color: var(--muted); font-style: italic; }
-        /* Copy code button (Phase 4) */
-        .docs-content pre { position: relative; }
-        .docs-copy-btn {
-            position: absolute; top: 8px; right: 8px; z-index: 2;
-            background: rgba(255,255,255,.12); color: #e6edf9; border: 1px solid rgba(255,255,255,.2);
-            border-radius: 6px; padding: 3px 10px; font-size: 12px; cursor: pointer;
-            font-family: 'Inter', sans-serif; opacity: 0; transition: opacity .15s;
+        /* ===== Code block CARD (light, header + gutter + syntax colors) ===== */
+        .docs-code {
+            --code-bg: #f6f8fa; --code-head: #eef1f6; --code-line: #e5e7eb;
+            --code-fg: #24292e; --code-num: #9aa6bd;
+            margin: 18px 0; border: 1px solid var(--code-line); border-radius: 10px;
+            overflow: hidden; background: var(--code-bg);
+            font-family: ui-monospace, 'SFMono-Regular', 'Menlo', 'Consolas', monospace;
         }
-        .docs-content pre:hover .docs-copy-btn { opacity: 1; }
-        .docs-copy-btn:hover { background: rgba(255,255,255,.22); }
-        .docs-copy-btn.copied { background: var(--gold); color: var(--navy); border-color: var(--gold); opacity: 1; }
+        .docs-code-head {
+            display: flex; align-items: center; justify-content: space-between;
+            background: var(--code-head); border-bottom: 1px solid var(--code-line);
+            padding: 6px 10px 6px 14px;
+        }
+        .docs-code-lang {
+            font-family: 'Inter', sans-serif; font-size: 11px; font-weight: 700;
+            letter-spacing: .06em; color: var(--code-num); text-transform: uppercase;
+        }
+        .docs-copy-btn {
+            background: #fff; color: #374151; border: 1px solid var(--code-line);
+            border-radius: 6px; padding: 3px 12px; font-size: 12px; cursor: pointer;
+            font-family: 'Inter', sans-serif; transition: background .15s, color .15s;
+        }
+        .docs-copy-btn:hover { background: #f0f3f8; }
+        .docs-copy-btn.copied { background: var(--gold); color: var(--navy); border-color: var(--gold); }
+        .docs-code-body { display: flex; align-items: stretch; overflow: hidden; }
+        .docs-code-gutter {
+            flex: 0 0 auto; display: flex; flex-direction: column; text-align: right;
+            padding: 12px 10px; color: var(--code-num); font-size: 13px; line-height: 1.6;
+            background: var(--code-bg); border-right: 1px solid var(--code-line);
+            user-select: none; -webkit-user-select: none;
+        }
+        .docs-code-scroll {
+            flex: 1 1 auto; min-width: 0; margin: 0; padding: 12px 14px;
+            overflow-x: auto; background: var(--code-bg);
+        }
+        .docs-code-scroll code.hljs {
+            display: block; background: none; padding: 0; border-radius: 0;
+            font-size: 13px; line-height: 1.6; color: var(--code-fg);
+            white-space: pre; font-family: inherit;
+        }
+        /* hljs light theme (github-ish) — self-contained, không CDN */
+        .hljs-comment, .hljs-quote { color: #6a737d; font-style: italic; }
+        .hljs-keyword, .hljs-selector-tag, .hljs-literal, .hljs-doctag, .hljs-name { color: #d73a49; }
+        .hljs-string, .hljs-attr, .hljs-addition, .hljs-meta-string { color: #032f62; }
+        .hljs-number, .hljs-symbol, .hljs-bullet { color: #005cc5; }
+        .hljs-title, .hljs-section, .hljs-function .hljs-title { color: #6f42c1; }
+        .hljs-attribute, .hljs-variable, .hljs-template-variable, .hljs-type, .hljs-class .hljs-title { color: #e36209; }
+        .hljs-built_in, .hljs-builtin-name { color: #005cc5; }
+        .hljs-meta { color: #6a737d; }
+        .hljs-deletion { color: #b31d28; }
+        .hljs-tag, .hljs-regexp, .hljs-link { color: #22863a; }
+        .hljs-emphasis { font-style: italic; } .hljs-strong { font-weight: 700; }
+        @media (prefers-color-scheme: dark) {
+            .docs-code {
+                --code-bg: #1e2430; --code-head: #262d3b; --code-line: #333c4d;
+                --code-fg: #d7dde8; --code-num: #6b7791;
+            }
+            .docs-copy-btn { background: #333c4d; color: #d7dde8; border-color: #45506680; }
+            .docs-copy-btn:hover { background: #3d4759; }
+            .hljs-comment, .hljs-quote, .hljs-meta { color: #8a94a6; }
+            .hljs-keyword, .hljs-selector-tag, .hljs-literal, .hljs-name { color: #ff7b72; }
+            .hljs-string, .hljs-attr, .hljs-addition { color: #a5d6ff; }
+            .hljs-number, .hljs-symbol, .hljs-bullet, .hljs-built_in { color: #79c0ff; }
+            .hljs-title, .hljs-section { color: #d2a8ff; }
+            .hljs-attribute, .hljs-variable, .hljs-type { color: #ffa657; }
+            .hljs-tag, .hljs-regexp, .hljs-link { color: #7ee787; }
+        }
         /* Search results (Phase 4) */
         .docs-results { list-style: none; margin: 8px 0 0; padding: 0; }
         .docs-results li { margin-bottom: 10px; }
@@ -280,18 +331,15 @@
         }
     </script>
 
-    {{-- Copy code (Phase 4): gắn nút "Copy" cho mọi khối <pre> trong nội dung. JS thuần. --}}
+    {{-- Copy code: nút Copy nằm ở header mỗi card; lấy đúng source qua data-code
+         (KHÔNG kèm số dòng). JS thuần, không dependency. --}}
     <script>
         (function () {
-            var pres = document.querySelectorAll('.docs-content pre');
-            pres.forEach(function (pre) {
-                var btn = document.createElement('button');
-                btn.type = 'button';
-                btn.className = 'docs-copy-btn';
-                btn.textContent = 'Copy';
+            document.querySelectorAll('.docs-code').forEach(function (card) {
+                var btn = card.querySelector('.docs-copy-btn');
+                if (!btn) return;
                 btn.addEventListener('click', function () {
-                    var code = pre.querySelector('code');
-                    var text = (code ? code.innerText : pre.innerText) || '';
+                    var text = card.getAttribute('data-code') || '';
                     var done = function () {
                         btn.textContent = 'Đã sao chép';
                         btn.classList.add('copied');
@@ -303,7 +351,6 @@
                         fallback(text, done);
                     }
                 });
-                pre.appendChild(btn);
             });
             function fallback(text, done) {
                 var ta = document.createElement('textarea');

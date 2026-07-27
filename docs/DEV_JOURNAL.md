@@ -5,6 +5,18 @@ Mỗi lần cập nhật code, ghi một entry vào đầu danh sách (mới nh�
 
 ---
 
+## 2026-07-27 — Reader: restyle code block (card xám + header + số dòng + syntax highlight)
+
+**Phạm vi:** đổi khối code trong reader `/docs` từ "nền tối tràn rộng" sang CARD đẹp giống card JSON. Chỉ đụng code block + assets liên quan; không phá layout 3 cột/version/TOC.
+
+**Highlighter:** dùng `scrivo/highlight.php` (`Highlight\Highlighter`) — ĐÃ CÓ SẴN trong vendor (transitive dep), server-side, PHP port highlight.js, 185 ngôn ngữ. **KHÔNG thêm composer package, KHÔNG CDN, KHÔNG JS highlight** → hoạt động cả cho guest.
+
+**`DocsMarkdown` (`styleCodeBlocks` + `highlightCode`):** post-process `<pre><code class="language-xxx">` do commonmark sinh → CARD: `.docs-code[data-code]` > `.docs-code-head` (tên ngôn ngữ + nút Copy) + `.docs-code-body` (`.docs-code-gutter` số dòng + `.docs-code-scroll > code.hljs`). Giải mã entity lấy source thật để highlight + nhét `data-code` (copy lấy đúng source, KHÔNG kèm số dòng). Alias sh/shell→bash, js→javascript, yml→yaml, md→markdown, html→xml. Ngôn ngữ trống/lạ → escape thường, nhãn "CODE", vẫn có card + số dòng (vd cây thư mục ASCII).
+
+**`layout.blade.php`:** bỏ CSS `.docs-content pre` nền navy + nút copy nổi cũ. Thêm CSS card nền xám nhạt (#f6f8fa, viền #e5e7eb, bo góc, chỉ rộng theo cột nội dung) + gutter số dòng (`user-select:none`) + theme hljs github-ish (light) + biến thể `@media (prefers-color-scheme: dark)` (xám đậm dịu, không đen tuyền). `.docs-code-scroll` `overflow-x:auto` + `white-space:pre` (cuộn ngang khi dài, gutter cố định). Copy JS đổi sang đọc `data-code` từ `.docs-code`.
+
+**Verify:** lint `DocsMarkdown` sạch · render block ```json/```bash/không-ngôn-ngữ → card xám, header JSON/BASH/CODE + Copy, gutter số dòng, có `hljs-attr/string/...` · `data-code` = source đúng, KHÔNG chứa số dòng · full page (mobile-api-usage) render OK, không còn rule navy `pre`, có dark-mode block · không mojibake/BOM. KHÔNG cần cài thêm gì trên server (highlight.php đã có trong vendor). CHƯA commit.
+
 ## 2026-07-27 — Docs CMS = nơi xuất bản chính thức (đa nguồn x2bms + x2mobile) + fix H1 tiêu đề
 
 **Phạm vi:** biến Docs CMS thành nơi chính thức publish tài liệu dev + hướng dẫn của CẢ 2 dự án; import đa nguồn an toàn khi thiếu repo; cập nhật quy trình (skill + CLAUDE.md); fix cỡ chữ H1 tiêu đề trang reader.
