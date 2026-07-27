@@ -26,11 +26,16 @@ Route **KHÔNG** đặt middleware `auth` — `DocsController` tự phân quyề
 | GET | `/docs/{space:key}/{path?}` | `docs.show` | Đọc trang; `path` là chuỗi slug phân cấp. |
 | GET | `/` (chỉ trên host docs) | `docs.home` | Landing site tài liệu công khai (subdomain). |
 
-- **Layout 2 cột:** sidebar trái (ô tìm kiếm + danh sách space + cây trang của space hiện tại) · nội dung phải.
-- **Breadcrumb** theo cây; **chọn version** qua `?v={n}` (banner cảnh báo khi xem bản cũ).
+- **Layout 3 cột (Phase 3):** trái = sidebar (search + danh sách space + cây trang) · giữa = nội dung · phải = **"Trong trang này"** (mục lục heading của trang).
 - **Render markdown an toàn:** `Support/Docs/DocsMarkdown` (commonmark + GFM; `html_input=strip`, `allow_unsafe_links=false` → chống XSS).
 - Blade tự chứa CSS (navy/gold theo DS-01, responsive, có nút mở mục lục ở mobile): `resources/views/docs/*`.
 - ⚠️ Route `{space:key}` có ràng buộc negative-lookahead loại `api`/`api.json` để **không nuốt** route Scramble sẵn có `/docs/api`.
+
+### 2b. Reader polish (Phase 3)
+- **Anchor heading:** `DocsMarkdown::render()` trả `['html', 'headings']`; gán `id` (slug) cho mọi `h2`/`h3` qua `Str::slug` (hỗ trợ tiếng Việt: "Cài đặt & Cấu hình" → `cai-dat-cau-hinh`), tự **dedupe** slug trùng (`van-hanh`, `van-hanh-2`). `toHtml()` cũ giữ nguyên (gọi `render()['html']`).
+- **Cột phải "Trong trang này":** liệt kê heading (h2 cấp 1, h3 thụt), link `#slug`, **sticky** khi cuộn, **scrollspy** (IntersectionObserver, JS thuần) highlight mục đang xem. Chỉ hiện khi trang có ≥2 heading. `< 1100px` ẩn cột phải → thay bằng khối `<details>` "Trong trang này" gọn ở đầu nội dung.
+- **Version rõ ràng:** ngay dưới tiêu đề hiện pill **"Phiên bản N · cập nhật dd/mm/yyyy"**; nếu >1 revision có dropdown "Xem phiên bản" (`?v={n}`). Khi xem revision cũ → banner "Đang xem phiên bản cũ vN · Về bản mới nhất →".
+- Link nội bộ dùng URL tương đối (giữ host public/subdomain — không phá chế độ guest/public của Phase 2).
 
 ## 3. Phân quyền (Phase 2 — có lớp công khai)
 Điều khiển ở `DocsController::canView()`:

@@ -60,18 +60,24 @@ class DocsController extends Controller
                 ->first();
         }
 
-        $html = $page
-            ? DocsMarkdown::toHtml($revision->body ?? $page->body)
-            : '<p class="docs-empty">Không gian này chưa có nội dung.</p>';
+        $rendered = $page
+            ? DocsMarkdown::render($revision->body ?? $page->body)
+            : ['html' => '<p class="docs-empty">Không gian này chưa có nội dung.</p>', 'headings' => []];
+
+        $revisions = $page ? $page->revisions()->get() : collect();
 
         return view('docs.show', [
             'spaces' => $spaces,
             'space' => $space,
             'tree' => $tree,
             'page' => $page,
-            'html' => $html,
+            'html' => $rendered['html'],
+            'headings' => $rendered['headings'],
             'revision' => $revision,
-            'revisions' => $page ? $page->revisions()->get() : collect(),
+            'revisions' => $revisions,
+            // Phiên bản mới nhất (số + thời điểm) để hiện gần tiêu đề.
+            'latestVersion' => $revisions->max('version'),
+            'updatedAt' => $page?->updated_at,
             'breadcrumb' => $page ? $this->breadcrumb($page) : [],
         ]);
     }

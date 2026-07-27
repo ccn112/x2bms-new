@@ -277,10 +277,11 @@
 | Migrations + Models (`doc_spaces`/`doc_pages` cây + `doc_page_revisions`) | 🟢 | Đã migrate DB thật. Observer `DocPageObserver` tự sinh version khi title/body đổi (verify 1→2). |
 | Soạn thảo Filament (`/sa` SuperAdmin, nav "Tài liệu") | 🟢 | `App\Filament\Sa\Resources\{DocSpaces,DocPages}`: `DocSpaceResource` + `DocPageResource` (MarkdownEditor + upload ảnh public) + `RevisionsRelationManager` (Xem + Khôi phục). |
 | Phân quyền `docs.view.{6 audience}` + `docs.manage` | 🟢 | `DocsPermissionSeeder` gán 14 role. Reader lọc space theo `can(docs.view.{audience})`. |
-| Reader web `/docs` (2 cột, breadcrumb, version, search) | 🟢 | `DocsController` + commonmark GFM an toàn (strip HTML). Blade tự chứa CSS, responsive. Verify render 200. |
+| Reader web `/docs` (3 cột, breadcrumb, version, search) | 🟢 | `DocsController` + commonmark GFM an toàn (strip HTML). Blade tự chứa CSS, responsive. Verify render 200. |
 | Command `docs:import` (dev/ + guide/) | 🟢 | Idempotent. Nạp 5 space / 11 trang. `is_public`: ops=công khai, dev/bql/hq/sa=nội bộ. |
 | **Phase 2 — Site công khai `doc.x2.fino.vn`** | 🟢 | Cột `is_public` + Toggle Filament. Host routing (`config/docs.php`, root `/` landing trên subdomain). Guest xem space public, space nội bộ → login. Verify HTTP giả lập đủ case. Hạ tầng CloudPanel: `docs/guide/deploy-cloudpanel-docs-subdomain.md` (chủ dự án làm DNS+domain+SSL+ENV). |
-| Phase 3 (chưa làm) | ⬜ | Inline-edit từ reader, full-text search (ngoài LIKE), ảnh trong revision, seed guide/bql\|hq\|sa, SEO/sitemap site public. |
+| **Phase 3 — Polish UI reader** | 🟢 | Layout 3 cột + mục lục "Trong trang này" (anchor h2/h3 slug tiếng Việt + scrollspy sticky), hiển thị "Phiên bản N · cập nhật …" + dropdown version + banner bản cũ. Verify render trang dev nhiều heading. |
+| Phase 4 (chưa làm) | ⬜ | Inline-edit từ reader, full-text search (ngoài LIKE), ảnh trong revision, seed guide/bql\|hq\|sa, SEO/sitemap site public. |
 
 ---
 

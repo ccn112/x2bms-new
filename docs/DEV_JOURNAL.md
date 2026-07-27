@@ -5,6 +5,20 @@ Mỗi lần cập nhật code, ghi một entry vào đầu danh sách (mới nh�
 
 ---
 
+## 2026-07-27 — Module Tài liệu Phase 3: polish UI reader (3 cột + TOC + version)
+
+**Phạm vi:** nâng cấp giao diện reader `/docs` (Blade) — bố cục 3 cột, mục lục "Trong trang này", hiển thị phiên bản rõ ràng. Không đổi backend/phân quyền; giữ nguyên chế độ public/guest của Phase 2.
+
+**`app/Support/Docs/DocsMarkdown.php`:** thêm `render()` trả `['html','headings']`; gán `id` (slug) cho `h2`/`h3` bằng regex trên HTML đã render (an toàn vì `html_input=strip`), slug qua `Str::slug` (hỗ trợ tiếng Việt) + dedupe trùng. Giữ `toHtml()` (delegate `render()['html']`) để chỗ gọi cũ không vỡ.
+
+**`DocsController@show`:** truyền thêm `headings`, `latestVersion` (max version), `updatedAt` cho view.
+
+**`resources/views/docs/layout.blade.php`:** CSS mới — `.docs-layout` (grid `minmax(0,1fr) 240px`), `.docs-toc` (sticky, scrollspy `.active`), `.docs-verline`/`.docs-verpill`, `.docs-toc-inline` (khối `<details>` cho màn nhỏ). `< 1100px` ẩn cột phải; `.docs-main` max-width 900→1180px, `.docs-article` cap 860px.
+
+**`resources/views/docs/show.blade.php`:** dựng 3 cột; head trang = tiêu đề + dòng "Phiên bản N · cập nhật dd/mm/yyyy" + dropdown chọn version; banner khi xem bản cũ; cột phải "Trong trang này" + inline `<details>`; script scrollspy (IntersectionObserver, `rootMargin -70%`) + smooth-scroll khi bấm mục lục.
+
+**Verify (DB thật, render qua controller):** lint sạch (renderer + controller) · slug tiếng Việt đúng ("Cài đặt & Cấu hình"→`cai-dat-cau-hinh`), dedupe `van-hanh`/`van-hanh-2` · trang dev: có `docs-layout`, `#docs-toc`, pill "Phiên bản N", script `IntersectionObserver`, `<h2 id=...>` · xem `?v=` bản cũ → banner "phiên bản cũ" hiện · `docs:import --fresh` khôi phục dữ liệu test (12 trang/5 space) · không BOM/mojibake (Edit/Write UTF-8). CHƯA commit theo yêu cầu.
+
 ## 2026-07-27 — Module Tài liệu Phase 2: site công khai qua subdomain (doc.x2.fino.vn)
 
 **Phạm vi:** cho phép guest xem tài liệu công khai qua subdomain phục vụ từ chính app x2bms; space nội bộ vẫn yêu cầu đăng nhập + quyền.
