@@ -35,6 +35,40 @@ chuyển thành `public static` trong service, seeder gọi lại — không l�
 - Bị chặn → notification **warning** "batdongsan chặn request server (Cloudflare)" + gợi ý
   đặt `BDS_TRANSPORT=curl` / chạy lại sau / dùng proxy. Nút vẫn hoạt động.
 
+## Làm giàu metadata từ TRANG CHI TIẾT (`enrichDetail`)
+Sau khi upsert card, với dự án MỚI hoặc chưa có detail, service fetch trang chi tiết theo
+`metadata_json.source_url` và bóc:
+- **Bảng "Thông tin dự án"** — selector thật: `table > tbody.re__project-attr > tr >
+  td.re__attr-item-label (h4)` + `td.re__attr-item-value`. Lưu NGUYÊN nhãn tiếng Việt vào
+  `metadata_json['detail'] = { nhãn: giá trị }` (vd `{"Số căn hộ":"1.281 căn","Số tòa":"3 tòa",
+  "Diện tích":"...","Chủ đầu tư":"...","Pháp lý":"..."}`) + `detail_fetched_at`.
+- **FAQ** (`re__collapse-box`: `re__collapse-label` hỏi + `re__collapse-content` đáp) →
+  `metadata_json['detail_faq']`; suy ra CĐT/giá nếu bảng thiếu.
+- **Mô tả tổng quan** (`re__detail-content`) → regex CĐT dự phòng.
+
+**Map lên cột khi có giá trị rõ hơn:** `apartments` ← "Số căn hộ/Số căn", `blocks` ←
+"Số tòa/Số block/Số tháp", `project_type` ← "Loại hình" (nếu chi tiết rõ hơn slug),
+`developer_name` ← "Chủ đầu tư" (nếu đang trống). Thêm `metadata_json['price']` (Mức giá/Giá),
+`['legal']` (Pháp lý), `['developer_unit']` (Đơn vị phát triển).
+
+- Cờ `config('bds.enrich_detail')` (default true, ENV `BDS_ENRICH_DETAIL`); command có `--no-detail`.
+- `delay_ms` giữa mỗi request chi tiết. Bị chặn/empty → bỏ qua êm, ghi `metadata_json['detail_error']`.
+- `upsertCard` GIỮ các khoá làm giàu (`detail`, `price`, `legal`…) khi upsert lại card (không xoá mất).
+- ⚠️ Trang chi tiết KHÔNG có card → `looksBlocked()` đã bỏ phụ thuộc số card; chỉ coi là bị chặn khi
+  body < 20KB + chứa token challenge thật (`_cf_chl_opt`/`challenge-error-text`/`cf-chl-`/`Just a moment`).
+  (Chuỗi `challenge-platform` xuất hiện cả trên trang hợp lệ — KHÔNG dùng làm dấu hiệu.)
+
+## Đồng bộ local → server (export → seed, KHÔNG gọi batdongsan trên server)
+Vì server (Linux) có thể bị Cloudflare chặn, thu thập chạy ở **local**, rồi commit JSON, server chỉ seed.
+- **`php artisan projects:export-json [--path=...]`** — dump TẤT CẢ rows nguồn batdongsan
+  (`metadata_json->source='batdongsan.com.vn'`) ra `database/seeders/data/public_projects_export.json`
+  (đủ cột: code, name, developer_name, address, province, project_type, status, blocks, apartments,
+  amenities_json, description, is_public, metadata_json). UTF-8, không BOM.
+- **`PublicProjectImportSeeder`** — đọc file đó, `updateOrCreate(['code'=>...], [...])` theo cột (idempotent).
+- **Quy trình:** `[local]` fetch-more (+enrich) → `projects:export-json` → commit. `[server]`
+  `git pull` → `php artisan db:seed --class=PublicProjectImportSeeder`. KHÔNG chạm batdongsan.
+- `PublicProjectBdsSeeder` cũ vẫn giữ (cho file thu thập trình duyệt `bds_projects.json`); export mới là nguồn chính.
+
 ## Chống bot (KIỂM CHỨNG THẬT — 2026-07-27, DB thật)
 batdongsan.com.vn đứng sau **Cloudflare managed challenge** (lọc theo TLS/JA3 fingerprint):
 - **PHP Guzzle / ext-curl (OpenSSL 3.0.18)** → **403 + trang challenge** (bị chặn chắc chắn, kể cả gắn đủ header trình duyệt).
@@ -59,6 +93,12 @@ Do đó `fetchHtml()` có 3 chế độ (`config('bds.transport')`):
   chạy tiếp trang 2 → +10 nữa, `bds_import_states.ha-noi` `last_page=2 status=ok` (con trỏ tiến đúng) ✅.
 - Data mẫu upsert đúng: `BDS-PJ6746 | JSC 34 | dev="Công ty Cổ phần Đầu tư và Xây dựng Số 34" | Hà Nội | handover | area=3.341,8 m²` ✅.
 - Guzzle trực tiếp = 403 challenge; curl binary = 200/10 card (đã kiểm chứng cả hai) ✅.
+- **Enrich detail:** `fetch-more --pages=1 --city=da-nang` → 9/10 dự án mới có `metadata_json.detail`
+  (1 lỗi transient blocked). Mẫu `BDS-PJ6639 FourS Tower`:
+  `detail={Pháp lý:"Sở hữu lâu dài", Số tòa:"3 tòa", Số căn hộ:"1.281 căn", Chủ đầu tư:"Tập đoàn Sun Group"}`
+  → map cột `apartments=1281, blocks=3, project_type="Căn hộ chung cư"` ✅.
+- **Export/seed:** `projects:export-json` → 30 dự án (9 có detail) ra JSON (no BOM, UTF-8, tiếng Việt đúng
+  "Ecohome Hòa Hiệp/Đà Nẵng") ✅; `db:seed --class=PublicProjectImportSeeder` upsert 30 (idempotent) ✅.
 - `php -l` toàn bộ file mới sạch, không mojibake/BOM ✅.
 
 ## Việc còn lại / cần quyết

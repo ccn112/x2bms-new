@@ -35,12 +35,14 @@ class BdsProjectImporter
      * Lấy tiếp `pages` trang cho mỗi khu vực trong `$cityKeys`.
      *
      * @param  array<int,string>  $cityKeys  key trong config('bds.cities')
+     * @param  ?bool  $enrich  làm giàu từ trang chi tiết (null = theo config bds.enrich_detail)
      * @return array<string,array{label:string,added:int,updated:int,pagesFetched:int,stoppedReason:?string}>
      */
-    public function fetchMore(array $cityKeys, int $pages): array
+    public function fetchMore(array $cityKeys, int $pages, ?bool $enrich = null): array
     {
         $cities  = config('bds.cities', []);
         $delay   = (int) config('bds.delay_ms', 400);
+        $enrich  = $enrich ?? (bool) config('bds.enrich_detail', true);
         $results = [];
 
         foreach ($cityKeys as $key) {
@@ -89,8 +91,16 @@ class BdsProjectImporter
 
                 foreach ($cards as $card) {
                     $card['city'] = $key;
-                    [$isNew] = $this->upsertCard($card, $city);
+                    [$isNew, $model] = $this->upsertCard($card, $city);
                     $isNew ? $added++ : $updated++;
+
+                    // Làm giàu từ trang chi tiết cho dự án MỚI hoặc CHƯA có detail.
+                    if ($enrich && ($isNew || empty($model->metadata_json['detail']))) {
+                        $this->enrichDetail($model);
+                        if ($delay > 0) {
+                            usleep($delay * 1000);
+                        }
+                    }
                 }
 
                 $pagesFetched++;
@@ -203,10 +213,11 @@ class BdsProjectImporter
         if ($body === '') {
             return true;
         }
-        // Trang Cloudflare challenge (không có card thật).
-        if ($this->countCards($body) === 0
-            && (Str::contains($body, ['challenge-platform', '_cf_chl_opt', 'Just a moment', 'cf-chl'])
-                || strlen($body) < 20000)) {
+        // Trang Cloudflare challenge THẬT: ngắn + chứa token challenge.
+        // (Lưu ý: chuỗi 'challenge-platform' xuất hiện cả trên trang HỢP LỆ — KHÔNG dùng làm dấu hiệu.
+        //  Trang chi tiết hợp lệ không có card nên KHÔNG dựa vào số card để phán bị chặn.)
+        if (strlen($body) < 20000
+            && Str::contains($body, ['_cf_chl_opt', 'challenge-error-text', 'cf-chl-', 'Just a moment'])) {
             return true;
         }
 
@@ -328,7 +339,25 @@ class BdsProjectImporter
         $location = $card['location'] ?? null;
         $province = static::province((string) ($location ?? '')) ?? ($cityCfg['province'] ?? null);
 
-        $existing = PublicProject::where('code', $code)->exists();
+        $prev = PublicProject::where('code', $code)->first();
+        $existing = (bool) $prev;
+
+        // Giữ lại các khoá làm giàu từ trang chi tiết (đừng ghi đè mất khi upsert lại card).
+        $meta = [
+            'source'      => 'batdongsan.com.vn',
+            'city'        => $card['city'] ?? null,
+            'source_url'  => $url ? 'https://batdongsan.com.vn'.$url : null,
+            'image'       => $card['img'] ?? null,
+            'area'        => $area,
+            'configs_raw' => $card['configs'] ?? [],
+            'status_raw'  => $card['status'] ?? null,
+            'imported_at' => now()->toDateString(),
+        ];
+        foreach (['detail', 'detail_fetched_at', 'detail_error', 'price', 'legal', 'developer_unit'] as $k) {
+            if ($prev && array_key_exists($k, (array) $prev->metadata_json)) {
+                $meta[$k] = $prev->metadata_json[$k];
+            }
+        }
 
         $model = PublicProject::updateOrCreate(
             ['code' => $code],
@@ -343,20 +372,194 @@ class BdsProjectImporter
                 'apartments'     => $apartments,
                 'description'    => $card['summary'] ?? null,
                 'is_public'      => true,
-                'metadata_json'  => [
-                    'source'      => 'batdongsan.com.vn',
-                    'city'        => $card['city'] ?? null,
-                    'source_url'  => $url ? 'https://batdongsan.com.vn'.$url : null,
-                    'image'       => $card['img'] ?? null,
-                    'area'        => $area,
-                    'configs_raw' => $card['configs'] ?? [],
-                    'status_raw'  => $card['status'] ?? null,
-                    'imported_at' => now()->toDateString(),
-                ],
+                'metadata_json'  => $meta,
             ],
         );
 
         return [! $existing, $model];
+    }
+
+    // ---------------------------------------------------------------------
+    // LÀM GIÀU TỪ TRANG CHI TIẾT
+    // ---------------------------------------------------------------------
+
+    /**
+     * Fetch trang chi tiết dự án (theo metadata_json.source_url), parse bảng thông tin
+     * (re__project-attr) + CĐT/giá/pháp lý từ mô tả & FAQ; lưu vào metadata_json['detail'].
+     * Map lên cột khi có: project_type / blocks / apartments / developer_name.
+     * Bỏ qua êm nếu bị chặn/empty (ghi metadata_json['detail_error']).
+     */
+    public function enrichDetail(PublicProject $p): bool
+    {
+        $meta = (array) $p->metadata_json;
+        $url = $meta['source_url'] ?? null;
+        if (! $url) {
+            return false;
+        }
+
+        $res = $this->fetchHtml($url);
+        if ($res['blocked'] || $res['status'] !== 200 || strlen($res['body']) < 20000) {
+            $meta['detail_error'] = $res['blocked'] ? 'blocked' : ('http_'.$res['status']);
+            $p->update(['metadata_json' => $meta]);
+
+            return false;
+        }
+
+        $parsed = $this->parseDetail($res['body']);
+
+        $meta['detail'] = $parsed['attrs'];
+        $meta['detail_fetched_at'] = now()->toIso8601String();
+        unset($meta['detail_error']);
+        if (! empty($parsed['faq'])) {
+            $meta['detail_faq'] = $parsed['faq'];
+        }
+        if ($parsed['price'] !== null) {
+            $meta['price'] = $parsed['price'];
+        }
+        if ($parsed['legal'] !== null) {
+            $meta['legal'] = $parsed['legal'];
+        }
+        if ($parsed['developer_unit'] !== null) {
+            $meta['developer_unit'] = $parsed['developer_unit'];
+        }
+
+        $update = ['metadata_json' => $meta];
+
+        // Map bảng thông tin lên cột (chỉ khi có giá trị rõ hơn).
+        $attrs = $parsed['attrs'];
+        if (($aps = $this->intFromLabel($attrs, ['Số căn hộ', 'Số căn', 'Số lượng căn hộ'])) > 0) {
+            $update['apartments'] = $aps;
+        }
+        if (($blk = $this->intFromLabel($attrs, ['Số tòa', 'Số block', 'Số tháp', 'Số khối'])) > 0) {
+            $update['blocks'] = $blk;
+        }
+        if ($parsed['project_type'] !== null) {
+            $update['project_type'] = $parsed['project_type'];
+        }
+        if (($p->developer_name === null || $p->developer_name === '') && $parsed['developer'] !== null) {
+            $update['developer_name'] = $parsed['developer'];
+        }
+
+        $p->update($update);
+
+        return true;
+    }
+
+    /** Lấy số nguyên đầu tiên từ giá trị nhãn khớp (vd "280 căn" -> 280). */
+    private function intFromLabel(array $attrs, array $labels): int
+    {
+        foreach ($labels as $l) {
+            if (isset($attrs[$l]) && preg_match('/([\d.]+)/', str_replace('.', '', (string) $attrs[$l]), $m)) {
+                return (int) $m[1];
+            }
+        }
+
+        return 0;
+    }
+
+    /**
+     * Parse trang chi tiết → ['attrs'=>{nhãn:giá trị}, 'faq'=>{hỏi:đáp}, 'price','legal',
+     * 'developer','developer_unit','project_type'].
+     *
+     * @return array<string,mixed>
+     */
+    public function parseDetail(string $html): array
+    {
+        $out = ['attrs' => [], 'faq' => [], 'price' => null, 'legal' => null,
+            'developer' => null, 'developer_unit' => null, 'project_type' => null];
+
+        if (trim($html) === '') {
+            return $out;
+        }
+
+        $doc = new DOMDocument();
+        libxml_use_internal_errors(true);
+        $doc->loadHTML('<?xml encoding="utf-8"?>'.$html);
+        libxml_clear_errors();
+        $xp = new DOMXPath($doc);
+
+        // Bảng thông tin: tbody.re__project-attr > tr > td.re__attr-item-label + td.re__attr-item-value
+        foreach ($xp->query("//*[contains(concat(' ', normalize-space(@class), ' '), ' re__project-attr ')]") as $row) {
+            $lbl = $xp->query(".//*[contains(concat(' ', normalize-space(@class), ' '), ' re__attr-item-label ')]", $row);
+            $val = $xp->query(".//*[contains(concat(' ', normalize-space(@class), ' '), ' re__attr-item-value ')]", $row);
+            if ($lbl->length === 0 || $val->length === 0) {
+                continue;
+            }
+            $l = trim(preg_replace('/\s+/u', ' ', $lbl->item(0)->textContent));
+            $v = trim(preg_replace('/\s+/u', ' ', $val->item(0)->textContent));
+            if ($l !== '' && $v !== '') {
+                $out['attrs'][$l] = $v;
+            }
+        }
+
+        // Map một số nhãn trực tiếp.
+        foreach (['Loại hình', 'Loại dự án'] as $k) {
+            if (! empty($out['attrs'][$k])) {
+                $out['project_type'] = $out['attrs'][$k];
+                break;
+            }
+        }
+        foreach (['Chủ đầu tư'] as $k) {
+            if (! empty($out['attrs'][$k])) {
+                $out['developer'] = static::tidy($out['attrs'][$k]);
+                break;
+            }
+        }
+        foreach (['Đơn vị phát triển', 'Nhà phát triển'] as $k) {
+            if (! empty($out['attrs'][$k])) {
+                $out['developer_unit'] = static::tidy($out['attrs'][$k]);
+                break;
+            }
+        }
+        foreach (['Mức giá', 'Giá bán', 'Giá'] as $k) {
+            if (! empty($out['attrs'][$k])) {
+                $out['price'] = $out['attrs'][$k];
+                break;
+            }
+        }
+        foreach (['Pháp lý', 'Tình trạng pháp lý'] as $k) {
+            if (! empty($out['attrs'][$k])) {
+                $out['legal'] = $out['attrs'][$k];
+                break;
+            }
+        }
+
+        // FAQ: re__collapse-box (label = hỏi, content = đáp).
+        foreach ($xp->query("//*[contains(concat(' ', normalize-space(@class), ' '), ' re__collapse-box ')]") as $box) {
+            $qN = $xp->query(".//*[contains(concat(' ', normalize-space(@class), ' '), ' re__collapse-label ')]", $box);
+            $aN = $xp->query(".//*[contains(concat(' ', normalize-space(@class), ' '), ' re__collapse-content ')]", $box);
+            if ($qN->length === 0 || $aN->length === 0) {
+                continue;
+            }
+            $q = trim(preg_replace('/\s+/u', ' ', $qN->item(0)->textContent));
+            $a = trim(preg_replace('/\s+/u', ' ', $aN->item(0)->textContent));
+            if ($q === '' || $a === '') {
+                continue;
+            }
+            $out['faq'][Str::limit($q, 200, '')] = Str::limit($a, 500, '');
+
+            // Suy ra CĐT / giá từ FAQ nếu bảng thông tin thiếu.
+            if ($out['developer'] === null && preg_match('/Chủ đầu tư[^:]*:\s*(.+)$/iu', $a, $m)) {
+                $d = static::tidy(trim($m[1], " .\u{00A0}"));
+                if ($d !== '' && mb_strlen($d) > 2) {
+                    $out['developer'] = $d;
+                }
+            }
+            if ($out['price'] === null && Str::contains(mb_strtolower($q, 'UTF-8'), 'giá')
+                && preg_match('/([\d.,]+\s*(?:triệu|tỷ)[^.\n]*)/u', $a, $m)) {
+                $out['price'] = static::tidy($m[1]);
+            }
+        }
+
+        // CĐT từ mô tả tổng quan nếu vẫn thiếu.
+        if ($out['developer'] === null) {
+            $ov = $xp->query("//*[contains(concat(' ', normalize-space(@class), ' '), ' re__detail-content ')]");
+            if ($ov->length > 0) {
+                $out['developer'] = static::developer(['summary' => $ov->item(0)->textContent]);
+            }
+        }
+
+        return $out;
     }
 
     // ---------------------------------------------------------------------

@@ -24,6 +24,10 @@ return [
     'pages_per_run' => 3,
     'delay_ms'      => 400,
 
+    // Làm giàu metadata từ TRANG CHI TIẾT dự án (bảng "Thông tin dự án" + FAQ).
+    // Tắt bằng --no-detail (command) hoặc BDS_ENRICH_DETAIL=false.
+    'enrich_detail' => env('BDS_ENRICH_DETAIL', true),
+
     // Header giả trình duyệt.
     'user_agent'      => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
     'accept_language' => 'vi,en;q=0.9',

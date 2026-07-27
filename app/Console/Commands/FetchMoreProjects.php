@@ -14,7 +14,7 @@ use Illuminate\Console\Command;
  */
 class FetchMoreProjects extends Command
 {
-    protected $signature = 'projects:fetch-more {--pages=3 : Số trang lấy mỗi khu vực} {--city=* : Key khu vực (bỏ trống = tất cả)}';
+    protected $signature = 'projects:fetch-more {--pages=3 : Số trang lấy mỗi khu vực} {--city=* : Key khu vực (bỏ trống = tất cả)} {--no-detail : Không làm giàu từ trang chi tiết}';
 
     protected $description = 'Thu thập tiếp dự án batdongsan.com.vn (upsert public_projects)';
 
@@ -25,10 +25,11 @@ class FetchMoreProjects extends Command
         if (empty($cities)) {
             $cities = array_keys(config('bds.cities', []));
         }
+        $enrich = ! $this->option('no-detail');
 
-        $this->info('Lấy tiếp '.$pages.' trang cho: '.implode(', ', $cities));
+        $this->info('Lấy tiếp '.$pages.' trang cho: '.implode(', ', $cities).($enrich ? ' (kèm chi tiết)' : ' (không chi tiết)'));
 
-        $results = $importer->fetchMore($cities, $pages);
+        $results = $importer->fetchMore($cities, $pages, $enrich);
 
         $blocked = false;
         foreach ($results as $key => $r) {

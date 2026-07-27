@@ -1,0 +1,933 @@
+[
+    {
+        "code": "BDS-PJ6612",
+        "name": "Ecohome Hòa Hiệp",
+        "developer_name": "Công ty Cổ phần Đầu tư và Thương mại Thủ Đô",
+        "address": "Phường Hòa Hiệp Nam, Quận Liên Chiểu, Đà Nẵng",
+        "province": "Đà Nẵng",
+        "project_type": "Khu phức hợp",
+        "status": "selling",
+        "blocks": 3,
+        "apartments": 1852,
+        "amenities_json": null,
+        "description": "Ecohome Hòa Hiệp là dự án Nhà ở xã hội tại khu đất B4-1, B4-2 thuộc Khu tái định cư Hòa Hiệp 4, phường Liên Chiểu và phường Hải Vân, thành phố Đà Nẵng, do Công ty Cổ phần Đầu tư và Thương mại Thủ Đô làm chủ đầu tư. Dự án có quy mô khoảng 4,27ha gồm 03 công trình nhà ở (02 chung cư NOXH và 01 chung cư thương mại) với tổng số lượng 1.852 căn hộ, trong đó có 1.476 căn hộ xã hội và 376 căn hộ thương mại",
+        "is_public": true,
+        "metadata_json": {
+            "area": "4,28 ha",
+            "city": "da-nang",
+            "image": "https://file4.batdongsan.com.vn/crop/240x180/2026/03/06/20260306095700-b6f3_wm.jpg",
+            "detail": {
+                "Diện tích": "4,28 ha",
+                "Chủ đầu tư": "Công ty CP Đầu tư và Thương mại Thủ Đô"
+            },
+            "source": "batdongsan.com.vn",
+            "detail_faq": {
+                "Chủ đầu tư dự án khu phức hợp Ecohome Hòa Hiệp?": "Chủ đầu tư dự án khu phức hợp Ecohome Hòa Hiệp: Công ty CP Đầu tư và Thương mại Thủ Đô.",
+                "Mật độ xây dựng của dự án khu phức hợp Ecohome Hòa Hiệp?": "Mật độ xây dựng: Gồm 03 công trình nhà ở (02 chung cư NOXH và 01 chung cư thương mại) với tổng số lượng 1.852 căn hộ, trong đó có 1.476 căn hộ xã hội và 376 căn hộ thương mại.",
+                "Các loại hình bất động sản thuộc dự án khu phức hợp Ecohome Hòa Hiệp?": "Dự án khu phức hợp Ecohome Hòa Hiệp bao gồm các loại hình: Bán căn hộ chung cư, Bán nhà riêng, Bán nhà biệt thự, liền kề."
+            },
+            "source_url": "https://batdongsan.com.vn/du-an-khu-phuc-hop-lien-chieu-ddn/ecohome-hoa-hiep-pj6612",
+            "status_raw": "Đang mở bán",
+            "configs_raw": [
+                "4,28 ha",
+                "1.852",
+                "3"
+            ],
+            "imported_at": "2026-07-27",
+            "detail_fetched_at": "2026-07-27T10:09:58+00:00"
+        }
+    },
+    {
+        "code": "BDS-PJ6639",
+        "name": "FourS Tower",
+        "developer_name": "Tập đoàn Sun Group",
+        "address": "Phường Hòa Quý, Quận Ngũ Hành Sơn, Đà Nẵng",
+        "province": "Đà Nẵng",
+        "project_type": "Căn hộ chung cư",
+        "status": "planning",
+        "blocks": 3,
+        "apartments": 1281,
+        "amenities_json": null,
+        "description": "Vừa qua, Sun Property đã công bố ra mắt phân khu căn hộ FourS Tower (Tháp Bốn Mùa) tọa lạc tại ngã tư huyết mạch Nguyễn Phước Lan - Minh Mạng, khu vực Hòa Quý - Trung tâm đô thị mới phía Nam Đà Nẵng. Dự án gồm 4 tòa tháp căn hộ cao 20 tầng nổi và 02 tầng hầm, được thiết kế lấy cảm hứng từ bộ tứ Mai - Cúc - Trúc - Tùng, tương ứng với bốn mùa.",
+        "is_public": true,
+        "metadata_json": {
+            "area": null,
+            "city": "da-nang",
+            "image": "https://file4.batdongsan.com.vn/crop/240x180/2026/03/20/20260320145054-c5f1_wm.jpg",
+            "legal": "Sở hữu lâu dài",
+            "detail": {
+                "Pháp lý": "Sở hữu lâu dài",
+                "Số tòa": "3 tòa",
+                "Số căn hộ": "1.281 căn",
+                "Chủ đầu tư": "Tập đoàn Sun Group"
+            },
+            "source": "batdongsan.com.vn",
+            "detail_faq": {
+                "Giá bán chung cư FourS Tower?": "Giá bán căn hộ FourS Tower: .",
+                "Địa chỉ căn hộ FourS Tower?": "Địa chỉ căn hộ FourS Tower: Phường Hòa Quý, Quận Ngũ Hành Sơn, Đà Nẵng.",
+                "Quy mô của chung cư FourS Tower?": "Số lượng căn hộ tại dự án FourS Tower: 1281.",
+                "Chủ đầu tư của dự án căn hộ chung cư FourS Tower?": "Chủ đầu tư: Tập đoàn Sun Group.",
+                "Các loại hình bất động sản thuộc dự án FourS Tower?": "Dự án FourS Tower bao gồm các loại hình: Bán căn hộ chung cư."
+            },
+            "source_url": "https://batdongsan.com.vn/du-an-can-ho-chung-cu-ngu-hanh-son-ddn/fours-tower-pj6639",
+            "status_raw": "Sắp mở bán",
+            "configs_raw": [
+                "1.281",
+                "3"
+            ],
+            "imported_at": "2026-07-27",
+            "detail_fetched_at": "2026-07-27T10:09:57+00:00"
+        }
+    },
+    {
+        "code": "BDS-PJ6677",
+        "name": "Futa Kim An",
+        "developer_name": "Công ty Cổ phần Đầu tư Bất động sản H&A",
+        "address": "Lô 05-A19 Đường Võ Văn Kiệt, Phường Phước Mỹ, Quận Sơn Trà, Đà Nẵng",
+        "province": "Đà Nẵng",
+        "project_type": "Căn hộ chung cư",
+        "status": "planning",
+        "blocks": 1,
+        "apartments": 133,
+        "amenities_json": null,
+        "description": "Futa Kim An là Tổ hợp thương mại dịch vụ và căn hộ cao cấp, tọa lạc ngay mặt tiền đường Võ Văn Kiệt, thuộc phường An Hải, thành phố Đà Nẵng (Quận Sơn Trà cũ), do Công ty Cổ phần Đầu tư Bất động sản H&A làm chủ đầu tư và Công ty Cổ phần Bất động sản FUTA Land làm đơn vị phát triển. Dự án gồm tòa tháp cao 25 tầng nổi và 02 tầng hầm được kiến tạo theo chuẩn mực “Boutique Luxury” với số lượng giới hạn chỉ 133 căn hộ.",
+        "is_public": true,
+        "metadata_json": {
+            "area": "1.200 m²",
+            "city": "da-nang",
+            "image": "https://file4.batdongsan.com.vn/crop/240x180/2026/04/08/20260408172533-dff1_wm.jpg",
+            "legal": "Sở hữu lâu dài",
+            "detail": {
+                "Pháp lý": "Sở hữu lâu dài",
+                "Số tòa": "1 tòa",
+                "Diện tích": "1.200 m²",
+                "Số căn hộ": "133 căn",
+                "Đơn vị phát triển": "Công ty Cổ phần Bất động sản FUTA Land"
+            },
+            "source": "batdongsan.com.vn",
+            "detail_faq": {
+                "Giá bán chung cư Futa Kim An?": "Giá bán căn hộ Futa Kim An: .",
+                "Địa chỉ căn hộ Futa Kim An?": "Địa chỉ căn hộ Futa Kim An: Lô 05-A19 Đường Võ Văn Kiệt, Phường Phước Mỹ, Quận Sơn Trà, Đà Nẵng.",
+                "Quy mô của chung cư Futa Kim An?": "Số lượng căn hộ tại dự án Futa Kim An: 133.",
+                "Chủ đầu tư của dự án căn hộ chung cư Futa Kim An?": "Chủ đầu tư: .",
+                "Các loại hình bất động sản thuộc dự án Futa Kim An?": "Dự án Futa Kim An bao gồm các loại hình: Bán căn hộ chung cư."
+            },
+            "source_url": "https://batdongsan.com.vn/du-an-can-ho-chung-cu-son-tra-ddn/futa-kim-an-pj6677",
+            "status_raw": "Đang cập nhật",
+            "configs_raw": [
+                "1.200 m²",
+                "133",
+                "1"
+            ],
+            "imported_at": "2026-07-27",
+            "developer_unit": "Công ty Cổ phần Bất động sản FUTA Land",
+            "detail_fetched_at": "2026-07-27T10:09:56+00:00"
+        }
+    },
+    {
+        "code": "BDS-PJ6679",
+        "name": "Ecolife Signature",
+        "developer_name": "Công ty Cổ phần Đầu tư và Thương mại Thủ Đô",
+        "address": "Đường Mê Linh, Phường Hòa Hiệp Nam, Quận Liên Chiểu, Đà Nẵng",
+        "province": "Đà Nẵng",
+        "project_type": "Căn hộ chung cư",
+        "status": "selling",
+        "blocks": 1,
+        "apartments": 376,
+        "amenities_json": null,
+        "description": "Ecolife Signature là tòa chung cư thương mại nằm trong dự án Nhà ở xã hội tại khu đất B4-1, B4-2 thuộc Khu tái định cư Hòa Hiệp 4 - Ecohome Hòa Hiệp, do Công ty Cổ phần Đầu tư và Thương mại Thủ Đô làm chủ đầu tư - Dự án tọa lạc tại trung tâm khu Tây Bắc Đà Nẵng, ngay mặt tiền đường Mê Linh giao với đường Lê Thương.",
+        "is_public": true,
+        "metadata_json": {
+            "area": null,
+            "city": "da-nang",
+            "image": "https://file4.batdongsan.com.vn/crop/240x180/2026/04/10/20260410135337-1ef8_wm.jpg",
+            "legal": "Sở hữu lâu dài",
+            "detail": {
+                "Pháp lý": "Sở hữu lâu dài",
+                "Số tòa": "1 tòa",
+                "Số căn hộ": "376 căn",
+                "Chủ đầu tư": "Công ty CP Đầu tư và Thương mại Thủ Đô"
+            },
+            "source": "batdongsan.com.vn",
+            "detail_faq": {
+                "Giá bán chung cư Ecolife Signature?": "Giá bán căn hộ Ecolife Signature: .",
+                "Địa chỉ căn hộ Ecolife Signature?": "Địa chỉ căn hộ Ecolife Signature: Đường Mê Linh, Phường Hòa Hiệp Nam, Quận Liên Chiểu, Đà Nẵng.",
+                "Quy mô của chung cư Ecolife Signature?": "Số lượng căn hộ tại dự án Ecolife Signature: 376.",
+                "Chủ đầu tư của dự án căn hộ chung cư Ecolife Signature?": "Chủ đầu tư: Công ty CP Đầu tư và Thương mại Thủ Đô.",
+                "Các loại hình bất động sản thuộc dự án Ecolife Signature?": "Dự án Ecolife Signature bao gồm các loại hình: Bán căn hộ chung cư."
+            },
+            "source_url": "https://batdongsan.com.vn/du-an-can-ho-chung-cu-lien-chieu-ddn/ecolife-signature-pj6679",
+            "status_raw": "Đang mở bán",
+            "configs_raw": [
+                "376",
+                "1"
+            ],
+            "imported_at": "2026-07-27",
+            "detail_fetched_at": "2026-07-27T10:09:54+00:00"
+        }
+    },
+    {
+        "code": "BDS-PJ6698",
+        "name": "Khu nhà ở xã hội Him Lam Phúc Lợi",
+        "developer_name": "Công ty cổ phần Him Lam đã tổ chức Lễ động thổ dự án Khu nhà ở xã hội Him Lam Phúc Lợi",
+        "address": "Đường Hội Xá, Phường Phúc Lợi, Quận Long Biên, Hà Nội",
+        "province": "Hà Nội",
+        "project_type": "Nhà ở xã hội",
+        "status": "planning",
+        "blocks": 12,
+        "apartments": 4643,
+        "amenities_json": null,
+        "description": "Ngày 26/01/2026 vừa qua, Chủ đầu tư Công ty cổ phần Him Lam đã tổ chức Lễ động thổ dự án Khu nhà ở xã hội Him Lam Phúc Lợi, thuộc phường Phúc Lợi, Thành phố Hà Nội (quận Long Biên cũ). Dự án có quy mô 13.4ha và tổng mức vốn đầu tư gần 9.000 tỷ đồng, gồm 12 tòa tháp cao 21 tầng với tổng số lượng 4.643 căn hộ.",
+        "is_public": true,
+        "metadata_json": {
+            "area": "13,44 ha",
+            "city": "ha-noi",
+            "image": "https://file4.batdongsan.com.vn/crop/240x180/2026/05/05/20260505103229-95f8_wm.jpg",
+            "source": "batdongsan.com.vn",
+            "source_url": "https://batdongsan.com.vn/du-an-nha-o-xa-hoi-long-bien/khu-nha-o-xa-hoi-him-lam-phuc-loi-pj6698",
+            "status_raw": "Đang cập nhật Khởi công ngày 26/1/2026",
+            "configs_raw": [
+                "13,44 ha",
+                "4.643",
+                "12"
+            ],
+            "imported_at": "2026-07-27"
+        }
+    },
+    {
+        "code": "BDS-PJ6703",
+        "name": "Vista Serena",
+        "developer_name": "Công ty cổ phần SJ Group",
+        "address": "Xã An Khánh, Huyện Hoài Đức, Hà Nội",
+        "province": "Hà Nội",
+        "project_type": "Biệt thự / Liền kề",
+        "status": "planning",
+        "blocks": 0,
+        "apartments": 160,
+        "amenities_json": null,
+        "description": "Vista Serena là phân khu compound khép kín tọa lạc tại lõi trung tâm Khu đô thị Vista Nam An Khánh, thuộc xã An Khánh, Thành phố Hà Nội, do Công ty cổ phần SJ Group làm chủ đầu tư. Vista Serena được thiết kế theo kiến trúc Địa Trung Hải phóng khoáng và tinh tế với tổng số lượng 160 căn nhà ở, gồm 03 căn biệt thự đơn lập, 32 căn biệt thự song lập, 48 căn nhà vườn liền kề và 77 căn shophouse.",
+        "is_public": true,
+        "metadata_json": {
+            "area": null,
+            "city": "ha-noi",
+            "image": "https://file4.batdongsan.com.vn/crop/240x180/2026/05/07/20260507101616-76bb_wm.jpg",
+            "source": "batdongsan.com.vn",
+            "source_url": "https://batdongsan.com.vn/du-an-biet-thu-lien-ke-hoai-duc/vista-serena-pj6703",
+            "status_raw": "Đang cập nhật",
+            "configs_raw": [
+                "160"
+            ],
+            "imported_at": "2026-07-27"
+        }
+    },
+    {
+        "code": "BDS-PJ6704",
+        "name": "Vista Palma",
+        "developer_name": "Công ty cổ phần SJ Group",
+        "address": "Xã An Khánh, Huyện Hoài Đức, Hà Nội",
+        "province": "Hà Nội",
+        "project_type": "Biệt thự / Liền kề",
+        "status": "selling",
+        "blocks": 0,
+        "apartments": 41,
+        "amenities_json": null,
+        "description": "Vista Palma là phân khu thương mại thấp tầng tọa lạc tại trung tâm Khu đô thị Vista Nam An Khánh, thuộc xã An Khánh, Hà Nội, do Công ty cổ phần SJ Group phát triển. Vista Palma gồm 41 căn shophouse và liền kề vườn, được thiết kế theo phong cách Địa Trung Hải phóng khoáng và sang trọng.",
+        "is_public": true,
+        "metadata_json": {
+            "area": null,
+            "city": "ha-noi",
+            "image": "https://file4.batdongsan.com.vn/crop/240x180/2026/05/07/20260507150039-ef43_wm.jpg",
+            "source": "batdongsan.com.vn",
+            "source_url": "https://batdongsan.com.vn/du-an-biet-thu-lien-ke-hoai-duc/vista-palma-pj6704",
+            "status_raw": "Đang mở bán",
+            "configs_raw": [
+                "41"
+            ],
+            "imported_at": "2026-07-27"
+        }
+    },
+    {
+        "code": "BDS-PJ6705",
+        "name": "Metro Tower An Khánh",
+        "developer_name": "Công ty cổ phần Confitech Tây Hà Nội",
+        "address": "Xã An Khánh, Huyện Hoài Đức, Hà Nội",
+        "province": "Hà Nội",
+        "project_type": "Căn hộ chung cư",
+        "status": "planning",
+        "blocks": 1,
+        "apartments": 207,
+        "amenities_json": null,
+        "description": "Metro Tower An Khánh là Tòa thương mại thuộc Dự án Xây dựng Nhà ở cho lực lượng vũ trang công an nhân dân tại khu đất C3 thuộc quy hoạch phân khu đô thị S3, xã Sơn Đồng, Thành phố Hà Nội, do Công ty cổ phần Confitech Tây Hà Nội làm chủ đầu tư. Metro Tower An Khánh - Biểu tượng kiến trúc nổi bật của toàn khu, cao 27 tầng nổi và 02 tầng hầm, được thiết kế theo phong cách hiện đại, tối ưu ánh sáng tự nhiên và công năng sử dụng.",
+        "is_public": true,
+        "metadata_json": {
+            "area": "2.862 m²",
+            "city": "ha-noi",
+            "image": "https://file4.batdongsan.com.vn/crop/240x180/2026/05/08/20260508134357-a516_wm.jpg",
+            "source": "batdongsan.com.vn",
+            "source_url": "https://batdongsan.com.vn/du-an-can-ho-chung-cu-hoai-duc/metro-tower-an-khanh-pj6705",
+            "status_raw": "Đang cập nhật",
+            "configs_raw": [
+                "2.862 m²",
+                "207",
+                "1"
+            ],
+            "imported_at": "2026-07-27"
+        }
+    },
+    {
+        "code": "BDS-PJ6707",
+        "name": "Symphony 5",
+        "developer_name": "Công ty TNHH Mặt Trời Sông Hàn (thành viên Sun Group)",
+        "address": "Đường Lê Văn Duyệt, Phường Nại Hiên Đông , Quận Sơn Trà, Đà Nẵng",
+        "province": "Đà Nẵng",
+        "project_type": null,
+        "status": "planning",
+        "blocks": 1,
+        "apartments": 1228,
+        "amenities_json": null,
+        "description": "Symphony 5 là mảnh ghép cuối cùng nằm trong tổ hợp dự án “Bản giao hưởng\" - Sun Symphony Residence, sở hữu ba mặt tiền đường Lê Văn Duyệt - Bùi Dương Lịch - Hồ Hán Thương, sát sông Hàn, thuộc phường Sơn Trà, TP Đà Nẵng, do Công ty TNHH Mặt Trời Sông Hàn (thành viên Sun Group) làm chủ đầu tư.",
+        "is_public": true,
+        "metadata_json": {
+            "area": "1,14 ha",
+            "city": "da-nang",
+            "image": "https://file4.batdongsan.com.vn/crop/240x180/2026/05/11/20260511123142-9533_wm.jpg",
+            "detail": {
+                "Diện tích": "1,14 ha",
+                "Chủ đầu tư": "Tập đoàn Sun Group"
+            },
+            "source": "batdongsan.com.vn",
+            "source_url": "https://batdongsan.com.vn/du-an-khac-son-tra-ddn/symphony-5-pj6707",
+            "status_raw": "Đang cập nhật",
+            "configs_raw": [
+                "1,14 ha",
+                "1.228",
+                "1"
+            ],
+            "imported_at": "2026-07-27",
+            "detail_fetched_at": "2026-07-27T10:09:53+00:00"
+        }
+    },
+    {
+        "code": "BDS-PJ6713",
+        "name": "Khu nhà ở Thương mại tại Tổ 6 phường Xuân Phương",
+        "developer_name": "Công ty Cổ phần Đầu tư Đô thị và Khu công nghiệp Sông Đà 7",
+        "address": "Tổ 6 Phường Xuân Phương, Quận Nam Từ Liêm, Hà Nội",
+        "province": "Hà Nội",
+        "project_type": "Shophouse / Nhà phố",
+        "status": "selling",
+        "blocks": 0,
+        "apartments": 41,
+        "amenities_json": null,
+        "description": "Khu nhà ở Thương mại tại Tổ 6 phường Xuân Phương do Công ty Cổ phần Đầu tư Đô thị và Khu công nghiệp Sông Đà 7 làm chủ đầu tư, tọa lạc ngay mặt tiền Văn Tiến Dũng kéo dài, Phường Xuân Phương, Thành phố Hà Nội (Quận Nam Từ Liêm cũ). Dự án gồm 41 căn liền kề shophouse, cao 4 tầng + 1 tum, bàn giao thô hoàn thiện mặt ngoài.",
+        "is_public": true,
+        "metadata_json": {
+            "area": "8.385 m²",
+            "city": "ha-noi",
+            "image": "https://file4.batdongsan.com.vn/crop/240x180/2026/05/15/20260515101126-f913_wm.jpg",
+            "source": "batdongsan.com.vn",
+            "source_url": "https://batdongsan.com.vn/du-an-shophouse-nam-tu-liem/khu-nha-o-thuong-mai-tai-to-6-phuong-xuan-phuong-pj6713",
+            "status_raw": "Đang mở bán",
+            "configs_raw": [
+                "8.385 m²",
+                "41"
+            ],
+            "imported_at": "2026-07-27"
+        }
+    },
+    {
+        "code": "BDS-PJ6723",
+        "name": "Chung cư A1, A2 Kim Giang",
+        "developer_name": null,
+        "address": "Ngõ 80 Đường Hoàng Đạo Thành, Phường Hạ Đình, Quận Thanh Xuân, Hà Nội",
+        "province": "Hà Nội",
+        "project_type": "Căn hộ chung cư",
+        "status": "handover",
+        "blocks": 0,
+        "apartments": 2,
+        "amenities_json": null,
+        "description": "Chung cư A1, A2 Kim Giang gồm 02 tòa tháp cao 15 tầng nổi + 01 tầng hầm tọa lạc trên đường Hoàng Đạo Thành, liền kề dự án Five Star Kim Giang, thuộc địa bàn quận Thanh Xuân, Hà Nội. Dự án đã đưa vào sử dụng.",
+        "is_public": true,
+        "metadata_json": {
+            "area": "3.422 m²",
+            "city": "ha-noi",
+            "image": "https://file4.batdongsan.com.vn/crop/240x180/2026/05/19/20260519155423-26a3_wm.jpg",
+            "source": "batdongsan.com.vn",
+            "source_url": "https://batdongsan.com.vn/du-an-can-ho-chung-cu-thanh-xuan/chung-cu-a1-a2-kim-giang-pj6723",
+            "status_raw": "Đã bàn giao",
+            "configs_raw": [
+                "3.422 m²",
+                "2"
+            ],
+            "imported_at": "2026-07-27"
+        }
+    },
+    {
+        "code": "BDS-PJ6728",
+        "name": "IFC Hanoi",
+        "developer_name": "Công ty TNHH Phát triển THT (thành viên Tập đoàn Daewoo E&C)",
+        "address": "Đường Hoàng Minh Thảo, Phường Xuân Tảo, Quận Bắc Từ Liêm, Hà Nội",
+        "province": "Hà Nội",
+        "project_type": null,
+        "status": "selling",
+        "blocks": 0,
+        "apartments": 0,
+        "amenities_json": null,
+        "description": "IFC Hanoi là Tòa văn phòng và thương mại bán lẻ nằm trong tổ hợp TTTM - Văn phòng - Khách sạn - Căn hộ dịch vụ lô B3CC1 - Khu đô thị Tây Hồ Tây, thuộc phường Xuân Đỉnh, Thành phố Hà Nội, do Công ty TNHH Phát triển THT (thành viên Tập đoàn Daewoo E&C) làm chủ đầu tư. Dự án đã chính thức khánh thành vào ngày 22/04/2026.",
+        "is_public": true,
+        "metadata_json": {
+            "area": null,
+            "city": "ha-noi",
+            "image": "https://file4.batdongsan.com.vn/crop/240x180/2026/05/21/20260521144810-4cb7_wm.jpg",
+            "source": "batdongsan.com.vn",
+            "source_url": "https://batdongsan.com.vn/du-an-cao-oc-van-phong-bac-tu-liem/ifc-hanoi-pj6728",
+            "status_raw": "Đang mở bán",
+            "configs_raw": [],
+            "imported_at": "2026-07-27"
+        }
+    },
+    {
+        "code": "BDS-PJ6732",
+        "name": "D’. Diamant Bleu",
+        "developer_name": "Công ty Cổ phần Đầu tư phát triển và Thương mại Việt Tiến",
+        "address": "Phường Việt Hưng, Quận Long Biên, Hà Nội",
+        "province": "Hà Nội",
+        "project_type": "Khu phức hợp",
+        "status": "planning",
+        "blocks": 0,
+        "apartments": 0,
+        "amenities_json": null,
+        "description": "D’. Diamant Bleu là Tổ hợp căn hộ, văn phòng thương mại và shophouse tọa lạc tại lô đất C4.HH-1; C4.CCKO (CCKO-Lô A) thuộc Khu đô thị mới Việt Hưng, do Công ty Cổ phần Đầu tư phát triển và Thương mại Việt Tiến làm chủ đầu tư và Tân Hoàng Minh Group làm đơn vị phát triển. Với quy mô khoảng 3ha, D’. Diamant Bleu gồm 01 tòa tháp căn hộ, 02 tòa tháp văn phòng và 21 căn shophouse thương mại thấp tầng.",
+        "is_public": true,
+        "metadata_json": {
+            "area": "3 ha",
+            "city": "ha-noi",
+            "image": "https://file4.batdongsan.com.vn/crop/240x180/2026/05/25/20260525152719-c17e_wm.jpg",
+            "source": "batdongsan.com.vn",
+            "source_url": "https://batdongsan.com.vn/du-an-khu-phuc-hop-long-bien/d-diamant-bleu-pj6732",
+            "status_raw": "Đang cập nhật",
+            "configs_raw": [
+                "3 ha"
+            ],
+            "imported_at": "2026-07-27"
+        }
+    },
+    {
+        "code": "BDS-PJ6741",
+        "name": "Ngọc Tín Garden",
+        "developer_name": null,
+        "address": "Thôn Từ Vân, Xã Lê Lợi, Huyện Thường Tín, Hà Nội",
+        "province": "Hà Nội",
+        "project_type": "Shophouse / Nhà phố",
+        "status": "planning",
+        "blocks": 0,
+        "apartments": 65,
+        "amenities_json": null,
+        "description": "Ngọc Tín Garden là dự án liền kề và shophouse thương mại được phát triển bởi Ngọc Tín Holdings, kiến tạo theo định hướng một không gian sống bền vững dành cho cộng đồng cư dân văn minh và thành đạt. Tọa lạc tại thôn Từ Vân, xã Chương Dương, Hà Nội, Ngọc Tín Garden có quy mô giới hạn chỉ 65 căn nhà phố được thiết kế đồng bộ 5 tầng hiện đại, hài hòa giữa nhu cầu an cư và giá trị kinh doanh thương mại.",
+        "is_public": true,
+        "metadata_json": {
+            "area": "1,51 ha",
+            "city": "ha-noi",
+            "image": "https://file4.batdongsan.com.vn/crop/240x180/2026/06/01/20260601153756-89ea_wm.jpg",
+            "source": "batdongsan.com.vn",
+            "source_url": "https://batdongsan.com.vn/du-an-shophouse-thuong-tin/ngoc-tin-garden-pj6741",
+            "status_raw": "Đang cập nhật",
+            "configs_raw": [
+                "1,51 ha",
+                "65"
+            ],
+            "imported_at": "2026-07-27"
+        }
+    },
+    {
+        "code": "BDS-PJ6744",
+        "name": "IA25 Ciputra",
+        "developer_name": "Liên danh Công ty cổ phần Thái Nam Land (đại diện) và Tổng Công ty đầu tư phát triển hạ tầng đô thị UDIC - Công ty TNHH",
+        "address": "Phường Đông Ngạc, Quận Bắc Từ Liêm, Hà Nội",
+        "province": "Hà Nội",
+        "project_type": "Căn hộ chung cư",
+        "status": "planning",
+        "blocks": 3,
+        "apartments": 1262,
+        "amenities_json": null,
+        "description": "IA25 Ciputra là Dự án Nhà ở cho lực lượng vũ trang công an nhân dân (nhà ở xã hội cho cán bộ, chiến sỹ công an) tại ô đất ký hiệu IA25 thuộc quỹ đất 20% dự án Khu đô thị Nam Thăng Long, do Liên danh Công ty cổ phần Thái Nam Land (đại diện) và Tổng Công ty đầu tư phát triển hạ tầng đô thị UDIC - Công ty TNHH làm chủ đầu tư. Với quy mô 03 tòa tháp cao từ 27 - 40 tầng, bao gồm 02 tòa nhà ở xã hội cao 27 tầng và 01 tòa thương mại cao 40 tầng, IA25 Ciputra cung cấp 1.262 căn hộ nhằm chăm lo đời sống cán bộ chiến sĩ lực lượng vũ trang CAND.",
+        "is_public": true,
+        "metadata_json": {
+            "area": "1,81 ha",
+            "city": "ha-noi",
+            "image": "https://file4.batdongsan.com.vn/crop/240x180/2026/06/02/20260602141808-26f0_wm.jpg",
+            "source": "batdongsan.com.vn",
+            "source_url": "https://batdongsan.com.vn/du-an-can-ho-chung-cu-bac-tu-liem/ia25-ciputra-pj6744",
+            "status_raw": "Đang cập nhật",
+            "configs_raw": [
+                "1,81 ha",
+                "1.262",
+                "3"
+            ],
+            "imported_at": "2026-07-27"
+        }
+    },
+    {
+        "code": "BDS-PJ6745",
+        "name": "C13 Khuyến Lương",
+        "developer_name": null,
+        "address": "Đường Khuyến Lương, Phường Trần Phú, Quận Hoàng Mai, Hà Nội",
+        "province": "Hà Nội",
+        "project_type": "Căn hộ chung cư",
+        "status": "handover",
+        "blocks": 2,
+        "apartments": 196,
+        "amenities_json": null,
+        "description": "C13 Khuyến Lương (CT13 Khuyến Lương) là dự án nhà tái định cư cho các hộ dân thuộc diện giải phóng mặt bằng dự án mở rộng đường Lĩnh Nam, tọa lạc trên đường Khuyến Lương thuộc phường Lĩnh Nam, Hà Nội (quận Hoàng Mai cũ). Dự án gồm 2 tòa nhà chung cư cao 15 tầng nổi và 01 tầng hầm với số lượng 196 căn hộ.",
+        "is_public": true,
+        "metadata_json": {
+            "area": "3.434 m²",
+            "city": "ha-noi",
+            "image": "https://file4.batdongsan.com.vn/crop/240x180/2026/06/03/20260603112201-d4e8_wm.jpg",
+            "source": "batdongsan.com.vn",
+            "source_url": "https://batdongsan.com.vn/du-an-can-ho-chung-cu-hoang-mai/c13-khuyen-luong-pj6745",
+            "status_raw": "Đã bàn giao",
+            "configs_raw": [
+                "3.434 m²",
+                "196",
+                "2"
+            ],
+            "imported_at": "2026-07-27"
+        }
+    },
+    {
+        "code": "BDS-PJ6746",
+        "name": "JSC 34",
+        "developer_name": "Công ty Cổ phần Đầu tư và Xây dựng Số 34",
+        "address": "Ngõ 164 Đường Khuất Duy Tiến, Phường Nhân Chính, Quận Thanh Xuân, Hà Nội",
+        "province": "Hà Nội",
+        "project_type": "Căn hộ chung cư",
+        "status": "handover",
+        "blocks": 2,
+        "apartments": 196,
+        "amenities_json": null,
+        "description": "JSC 34 là Tòa nhà chung cư kết hợp văn phòng tọa lạc tại Ngõ 164 Khuất Duy Tiến, phường Thanh Xuân, Hà Nội (quận Thanh Xuân cũ), do Công ty Cổ phần Đầu tư và Xây dựng Số 34 làm chủ đầu tư. Dự án gồm 2 khối nhà A, B cao 18 tầng và 01 tầng hầm với số lượng 196 căn hộ.",
+        "is_public": true,
+        "metadata_json": {
+            "area": "3.341,8 m²",
+            "city": "ha-noi",
+            "image": "https://file4.batdongsan.com.vn/crop/240x180/2026/06/03/20260603140448-b3cf_wm.jpg",
+            "source": "batdongsan.com.vn",
+            "source_url": "https://batdongsan.com.vn/du-an-can-ho-chung-cu-thanh-xuan/jsc-34-pj6746",
+            "status_raw": "Đã bàn giao",
+            "configs_raw": [
+                "3.341,8 m²",
+                "196",
+                "2"
+            ],
+            "imported_at": "2026-07-27"
+        }
+    },
+    {
+        "code": "BDS-PJ6756",
+        "name": "Malibu Walk",
+        "developer_name": null,
+        "address": "Xã Đa Tốn, Huyện Gia Lâm, Hà Nội",
+        "province": "Hà Nội",
+        "project_type": "Shophouse / Nhà phố",
+        "status": "selling",
+        "blocks": 0,
+        "apartments": 60,
+        "amenities_json": null,
+        "description": "Malibu Walk là tuyến phố đi bộ và shophouse thương mại cao cấp nằm tại tâm điểm phân khu Masteri Waterfront thuộc Khu đô thị Vinhomes Ocean Park 1 (Gia Lâm, Hà Nội) được phát triển bởi Masterise Homes. Lấy cảm hứng từ phong cách Châu Âu với lối kiến trúc cổ điển pha trộn hơi thở hiện đại, Malibu Walk là điểm đến mua sắm, giải trí sôi động với 3 dãy shophouse 5 tầng, liền kề 06 tòa tháp căn hộ cao cấp và kết nối trực tiếp với các tiện ích chính của đô thị.",
+        "is_public": true,
+        "metadata_json": {
+            "area": "7,3 ha",
+            "city": "ha-noi",
+            "image": "https://file4.batdongsan.com.vn/crop/240x180/2026/06/11/20260611145752-68de_wm.jpg",
+            "source": "batdongsan.com.vn",
+            "source_url": "https://batdongsan.com.vn/du-an-shophouse-gia-lam/malibu-walk-pj6756",
+            "status_raw": "Đang mở bán",
+            "configs_raw": [
+                "7,3 ha",
+                "60"
+            ],
+            "imported_at": "2026-07-27"
+        }
+    },
+    {
+        "code": "BDS-PJ6762",
+        "name": "Valenta Nguyễn Xiển",
+        "developer_name": "Công ty Cổ phần Đầu tư Videc - Trường Thành",
+        "address": "Đường Nguyễn Xiển, Xã Thanh Liệt, Huyện Thanh Trì, Hà Nội",
+        "province": "Hà Nội",
+        "project_type": "Nhà ở xã hội",
+        "status": "selling",
+        "blocks": 1,
+        "apartments": 390,
+        "amenities_json": null,
+        "description": "Valenta Nguyễn Xiển là Dự án xây dựng nhà ở cho lực lượng vũ trang Công an nhân dân tại phường Thanh Liệt, Hà Nội, do Công ty Cổ phần Đầu tư Videc - Trường Thành làm chủ đầu tư. Được xây dựng trên quỹ đất rộng khoảng 3.500m2, Valenta Nguyễn Xiển gồm 01 tòa tháp cao 30 tầng nổi, 1 tum thang và 3 tầng hầm, với tổng số lượng 390 căn hộ, diện tích từ 45m2 đến 77m2.",
+        "is_public": true,
+        "metadata_json": {
+            "area": "3.500 m²",
+            "city": "ha-noi",
+            "image": "https://file4.batdongsan.com.vn/crop/240x180/2026/06/15/20260615160752-4c42_wm.jpg",
+            "source": "batdongsan.com.vn",
+            "source_url": "https://batdongsan.com.vn/du-an-nha-o-xa-hoi-thanh-tri/valenta-nguyen-xien-pj6762",
+            "status_raw": "Đang mở bán",
+            "configs_raw": [
+                "3.500 m²",
+                "390",
+                "1"
+            ],
+            "imported_at": "2026-07-27"
+        }
+    },
+    {
+        "code": "BDS-PJ6764",
+        "name": "Bamboo Garden",
+        "developer_name": "Tập đoàn CEO đầu tư và",
+        "address": "Xã Sài Sơn, Huyện Quốc Oai, Hà Nội",
+        "province": "Hà Nội",
+        "project_type": "Nhà ở xã hội",
+        "status": "handover",
+        "blocks": 2,
+        "apartments": 432,
+        "amenities_json": null,
+        "description": "Bamboo Garden là dự án nhà ở xã hội tọa lạc trong khu đô thị Sunny Garden City, thuộc xã Quốc Oai, Hà Nội, do Tập đoàn CEO đầu tư và phát triển. Được xây dựng trên khu đất rộng 10.528m2, Bamboo Garden gồm 2 tòa chung cư CT9A, CT9B cao 09 tầng với số lượng 432 căn hộ (trong đó 346 căn hộ để bán và 86 căn hộ cho thuê). Dự án đã được bàn giao đưa vào sử dụng từ 2015-2016.",
+        "is_public": true,
+        "metadata_json": {
+            "area": "1,05 ha",
+            "city": "ha-noi",
+            "image": "https://file4.batdongsan.com.vn/crop/240x180/2026/06/22/20260622105536-ff75_wm.jpg",
+            "source": "batdongsan.com.vn",
+            "source_url": "https://batdongsan.com.vn/du-an-nha-o-xa-hoi-quoc-oai/bamboo-garden-pj6764",
+            "status_raw": "Đã bàn giao",
+            "configs_raw": [
+                "1,05 ha",
+                "432",
+                "2"
+            ],
+            "imported_at": "2026-07-27"
+        }
+    },
+    {
+        "code": "BDS-PJ6765",
+        "name": "S-Light Tower",
+        "developer_name": "Sun Property (thành viên Tập đoàn Sun Group) đầu tư",
+        "address": "Phường Hòa Xuân, Quận Cẩm Lệ, Đà Nẵng",
+        "province": "Đà Nẵng",
+        "project_type": "Căn hộ chung cư",
+        "status": "planning",
+        "blocks": 2,
+        "apartments": 792,
+        "amenities_json": null,
+        "description": "S-Light Tower là tổ hợp căn hộ tọa lạc ngay ngã tư đường Nguyễn Đình Thi-29/3 - Cửa ngõ huyết mạch của Khu đô thị Sun Neo City, thuộc phường Hòa Xuân, Đà Nẵng, do Sun Property (thành viên Tập đoàn Sun Group) đầu tư phát triển. Được xây dựng trên khu đất rộng 4.165m2, S-Light Tower gồm 2 tòa tháp cao 22 tầng, 3 tầng hầm với tổng số gần 800 căn hộ, được thiết kế tối ưu để trở thành nơi an cư lý tưởng của tầng lớp cư dân mới.",
+        "is_public": true,
+        "metadata_json": {
+            "area": "4.165 m²",
+            "city": "da-nang",
+            "image": "https://file4.batdongsan.com.vn/crop/240x180/2026/06/22/20260622134749-2b55_wm.jpg",
+            "source": "batdongsan.com.vn",
+            "source_url": "https://batdongsan.com.vn/du-an-can-ho-chung-cu-cam-le-ddn/s-light-tower-pj6765",
+            "status_raw": "Đang cập nhật",
+            "configs_raw": [
+                "4.165 m²",
+                "792",
+                "2"
+            ],
+            "imported_at": "2026-07-27",
+            "detail_error": "blocked"
+        }
+    },
+    {
+        "code": "BDS-PJ6770",
+        "name": "The Keisho",
+        "developer_name": "Công ty CP đầu tư Bất động sản CT2",
+        "address": "Ngõ 17 Đường Cổ Linh, Phường Long Biên, Quận Long Biên, Hà Nội",
+        "province": "Hà Nội",
+        "project_type": "Căn hộ chung cư",
+        "status": "selling",
+        "blocks": 1,
+        "apartments": 280,
+        "amenities_json": null,
+        "description": "The Keisho là Công trình Nhà ở cao tầng CT2 thuộc dự án Khu nhà ở và Khu thể thao vui chơi giải trí Tư Đình, tọa lạc tại Ngõ 17 Cổ Linh, Long Biên, Hà Nội, do Công ty CP đầu tư Bất động sản CT2 làm chủ đầu tư và Công ty TNHH Haseko Nhật Bản làm đơn vị phát triển. Được xây dựng trên quỹ đất rộng hơn 4.200m2 với tổng vốn đầu tư khoảng 1,450 tỷ đồng, The Keisho gồm 01 tòa căn hộ thiết kế cao 18 tầng nổi + 03 tầng hầm, cung cấp ra thị trường 280 căn hộ.",
+        "is_public": true,
+        "metadata_json": {
+            "area": "4.271 m²",
+            "city": "ha-noi",
+            "image": "https://file4.batdongsan.com.vn/crop/240x180/2026/06/30/20260630151440-fb78_wm.jpg",
+            "source": "batdongsan.com.vn",
+            "source_url": "https://batdongsan.com.vn/du-an-can-ho-chung-cu-long-bien/the-keisho-pj6770",
+            "status_raw": "Đang mở bán",
+            "configs_raw": [
+                "4.271 m²",
+                "280",
+                "1"
+            ],
+            "imported_at": "2026-07-27"
+        }
+    },
+    {
+        "code": "BDS-PJ6771",
+        "name": "Tòa nhà Licogi 19",
+        "developer_name": "Công ty Cổ phần Licogi 19",
+        "address": "25 Đường Tân Mai, Phường Tân Mai, Quận Hoàng Mai, Hà Nội",
+        "province": "Hà Nội",
+        "project_type": "Căn hộ chung cư",
+        "status": "handover",
+        "blocks": 1,
+        "apartments": 76,
+        "amenities_json": null,
+        "description": "Tòa nhà Licogi 19 là dự án căn hộ kết hợp văn phòng tọa lạc tại Số 25 Tân Mai, Hoàng Mai, Hà Nội do Công ty Cổ phần Licogi 19 làm chủ đầu tư. Được xây dựng trên diện tích đất 1.900m2, Tòa nhà Licogi 19 cao 15 tầng nổi + 01 tầng hầm, trong đó tầng 1 đến tầng 4 có chức năng dịch vụ và văn phòng cho thuê, tầng 5 đến tầng 14 là căn hộ ở, tầng 15 bố trí dịch vụ đa chức năng, phục vụ cộng đồng.",
+        "is_public": true,
+        "metadata_json": {
+            "area": "1.900 m²",
+            "city": "ha-noi",
+            "image": "https://file4.batdongsan.com.vn/crop/240x180/2026/06/26/20260626154043-c178_wm.jpg",
+            "source": "batdongsan.com.vn",
+            "source_url": "https://batdongsan.com.vn/du-an-can-ho-chung-cu-hoang-mai/toa-nha-licogi-19-pj6771",
+            "status_raw": "Đã bàn giao",
+            "configs_raw": [
+                "1.900 m²",
+                "76",
+                "1"
+            ],
+            "imported_at": "2026-07-27"
+        }
+    },
+    {
+        "code": "BDS-PJ6773",
+        "name": "Le Parc Place",
+        "developer_name": "Công ty cổ phần",
+        "address": "Phường La Khê, Quận Hà Đông, Hà Nội",
+        "province": "Hà Nội",
+        "project_type": "Căn hộ chung cư",
+        "status": "planning",
+        "blocks": 4,
+        "apartments": 802,
+        "amenities_json": null,
+        "description": "Le Parc Place là phân khu căn hộ cao cấp được phát triển theo mô hình “Parkfront Living” sở hữu tầm nhìn trực diện công viên và hồ nước, nằm tại trung tâm Khu đô thị ParkCity Hanoi, do Công ty cổ phần phát triển đô thị quốc tế Việt Nam đầu tư phát triển. Với quy mô gần 1,7ha, Le Parc Place gồm 04 tòa tháp cao 29-35 tầng với tổng số lượng 802 căn hộ và sky villa.",
+        "is_public": true,
+        "metadata_json": {
+            "area": "1,62 ha",
+            "city": "ha-noi",
+            "image": "https://file4.batdongsan.com.vn/crop/240x180/2026/06/30/20260630114426-376f_wm.jpg",
+            "source": "batdongsan.com.vn",
+            "source_url": "https://batdongsan.com.vn/du-an-can-ho-chung-cu-ha-dong/le-parc-place-pj6773",
+            "status_raw": "Sắp mở bán",
+            "configs_raw": [
+                "1,62 ha",
+                "802",
+                "4"
+            ],
+            "imported_at": "2026-07-27"
+        }
+    },
+    {
+        "code": "BDS-PJ6774",
+        "name": "Khu nhà ở xã hội Tây Nam Kim Giang",
+        "developer_name": "Liên danh Công ty Cổ phần Tập đoàn Bắc Hà và Công ty Cổ phần ETC Gold",
+        "address": "Phường Đại Kim, Quận Hoàng Mai, Hà Nội",
+        "province": "Hà Nội",
+        "project_type": "Nhà ở xã hội",
+        "status": "planning",
+        "blocks": 0,
+        "apartments": 0,
+        "amenities_json": null,
+        "description": "Khu nhà ở xã hội Tây Nam Kim Giang tọa lạc tại các ô đất CT6B, CT7 và CT8 thuộc Khu đô thị mới Tây Nam Kim Giang I, phường Định Công, thành phố Hà Nội, do Liên danh Công ty Cổ phần Tập đoàn Bắc Hà và Công ty Cổ phần ETC Gold làm chủ đầu tư. Với tổng diện tích quy hoạch 4,97ha và tổng mức đầu tư gần 3.478 tỷ đồng, Khu nhà ở xã hội Tây Nam Kim Giang dự kiến triển khai từ năm 2025 đến năm 2028, thời hạn hoạt động là 50 năm kể từ ngày nhà đầu tư được quyết định giao đất, cho thuê đất.",
+        "is_public": true,
+        "metadata_json": {
+            "area": "4,97 ha",
+            "city": "ha-noi",
+            "image": "https://file4.batdongsan.com.vn/crop/240x180/2026/06/30/20260630145126-3fd5_wm.jpg",
+            "source": "batdongsan.com.vn",
+            "source_url": "https://batdongsan.com.vn/du-an-nha-o-xa-hoi-hoang-mai/khu-nha-o-xa-hoi-tay-nam-kim-giang-pj6774",
+            "status_raw": "Đang cập nhật",
+            "configs_raw": [
+                "4,97 ha"
+            ],
+            "imported_at": "2026-07-27"
+        }
+    },
+    {
+        "code": "BDS-PJ6778",
+        "name": "Khu nhà ở thấp tầng Licogi 13",
+        "developer_name": "Công ty Cổ phần Licogi 13",
+        "address": "Ngõ 164 Đường Khuất Duy Tiến, Phường Nhân Chính, Quận Thanh Xuân, Hà Nội",
+        "province": "Hà Nội",
+        "project_type": "Biệt thự / Liền kề",
+        "status": "handover",
+        "blocks": 0,
+        "apartments": 14,
+        "amenities_json": null,
+        "description": "Khu nhà ở thấp tầng Licogi 13 là dự án do Công ty Cổ phần Licogi 13 làm chủ đầu tư, tọa lạc tại ngõ 164 Khuất Duy Tiến, Phường Nhân Chính, Quận Thanh Xuân (Nay là Phường Thanh Xuân), Hà Nội,. Được xây dựng trên quỹ đất rộng 1.368m2 với tổng mức vốn đầu tư khoảng 100 tỷ đồng, Khu nhà ở thấp tầng Licogi 13 gồm 14 căn nhà cao 4 tầng (trong đó có 2 căn nhà vườn và 12 căn liền kề), diện tích sàn mỗi căn từ 232.7m2 đến 342.7m2. Dự án đã bàn giao đưa vào sử dụng từ năm 2012.",
+        "is_public": true,
+        "metadata_json": {
+            "area": "1.368 m²",
+            "city": "ha-noi",
+            "image": "https://file4.batdongsan.com.vn/crop/240x180/2026/07/02/20260702083153-4028_wm.jpg",
+            "source": "batdongsan.com.vn",
+            "source_url": "https://batdongsan.com.vn/du-an-biet-thu-lien-ke-thanh-xuan/khu-nha-o-thap-tang-licogi-13-pj6778",
+            "status_raw": "Đã bàn giao",
+            "configs_raw": [
+                "1.368 m²",
+                "14"
+            ],
+            "imported_at": "2026-07-27"
+        }
+    },
+    {
+        "code": "BDS-PJ6784",
+        "name": "Peninsula Private",
+        "developer_name": "Công ty TNHH Kreves Halla Land",
+        "address": "Đường Doãn Khuê, Phường Hòa Cường Bắc, Quận Hải Châu, Đà Nẵng",
+        "province": "Đà Nẵng",
+        "project_type": "Căn hộ chung cư",
+        "status": "planning",
+        "blocks": 1,
+        "apartments": 631,
+        "amenities_json": null,
+        "description": "Peninsula Private là Dự án căn hộ hạng sang tọa lạc ngay lõi trung tâm Thành phố Đà Nẵng, sở hữu ba mặt tiền tiếp giáp đường Doãn Khuê - Vũ Duy Thanh - Nại Nam 7, do Công ty TNHH Kreves Halla Land làm chủ đầu tư và Công ty TNHH Peninsula Private Đà Nẵng làm đơn vị phát triển. Với quy mô 03 tầng hầm, 39 tầng nổi, 1 tầng tum và chiều cao ấn tượng gần 150m, Peninsula Private được phát triển theo những tiêu chuẩn cao cấp về kiến trúc, không gian sống và trải nghiệm cư dân, sở hữu tầm nhìn hướng sông Hàn và toàn cảnh đô thị, hướng tới trở thành một dấu ấn kiến trúc mới của thành phố.",
+        "is_public": true,
+        "metadata_json": {
+            "area": "4.585,86 m²",
+            "city": "da-nang",
+            "image": "https://file4.batdongsan.com.vn/crop/240x180/2026/07/13/20260713132710-77bf_wm.jpg",
+            "detail": {
+                "Số tòa": "1 tòa",
+                "Diện tích": "4.585,86 m²",
+                "Số căn hộ": "631 căn"
+            },
+            "source": "batdongsan.com.vn",
+            "detail_faq": {
+                "Giá bán chung cư Peninsula Private?": "Giá bán căn hộ Peninsula Private: .",
+                "Địa chỉ căn hộ Peninsula Private?": "Địa chỉ căn hộ Peninsula Private: Đường Doãn Khuê, Phường Hòa Cường Bắc, Quận Hải Châu, Đà Nẵng.",
+                "Quy mô của chung cư Peninsula Private?": "Số lượng căn hộ tại dự án Peninsula Private: 631.",
+                "Chủ đầu tư của dự án căn hộ chung cư Peninsula Private?": "Chủ đầu tư: .",
+                "Các loại hình bất động sản thuộc dự án Peninsula Private?": "Dự án Peninsula Private bao gồm các loại hình: Bán căn hộ chung cư."
+            },
+            "source_url": "https://batdongsan.com.vn/du-an-can-ho-chung-cu-hai-chau-ddn/peninsula-private-pj6784",
+            "status_raw": "Đang cập nhật",
+            "configs_raw": [
+                "4.585,86 m²",
+                "631",
+                "1"
+            ],
+            "imported_at": "2026-07-27",
+            "detail_fetched_at": "2026-07-27T10:09:51+00:00"
+        }
+    },
+    {
+        "code": "BDS-PJ6798",
+        "name": "The Camellia Sơn Trà",
+        "developer_name": "Công ty TNHH Địa ốc Thành Lâm",
+        "address": "Giao lộ Lê Văn Lương - Lê Đức Thọ, Phường Thọ Quang, Quận Sơn Trà, Đà Nẵng",
+        "province": "Đà Nẵng",
+        "project_type": "Căn hộ chung cư",
+        "status": "planning",
+        "blocks": 1,
+        "apartments": 478,
+        "amenities_json": null,
+        "description": "The Camellia Sơn Trà là dự án Trung tâm thương mại, Văn phòng cho thuê và Nhà ở cao tầng, tọa lạc tại lô 2.1 Khu Tái định cư đầu tuyến Sơn Trà - Điện Ngọc, Thành phố Đà Nẵng, do Công ty TNHH Địa ốc Thành Lâm làm chủ đầu tư và MBLand Holding làm đơn vị phát triển. Nằm ngay giao lộ Lê Văn Lương - Lê Đức Thọ, The Camellia Sơn Trà cao 25 tầng nổi, 01 tum và 02 tầng hầm, cung cấp ra thị trường 469 căn hộ cao cấp và 09 căn shop khối đế.",
+        "is_public": true,
+        "metadata_json": {
+            "area": "4.299,9 m²",
+            "city": "da-nang",
+            "image": "https://file4.batdongsan.com.vn/crop/240x180/2026/07/20/20260720163343-090d_wm.jpg",
+            "legal": "Sở hữu lâu dài",
+            "detail": {
+                "Pháp lý": "Sở hữu lâu dài",
+                "Số tòa": "1 tòa",
+                "Diện tích": "4.299,9 m²",
+                "Số căn hộ": "478 căn"
+            },
+            "source": "batdongsan.com.vn",
+            "detail_faq": {
+                "Giá bán chung cư The Camellia Sơn Trà?": "Giá bán căn hộ The Camellia Sơn Trà: .",
+                "Địa chỉ căn hộ The Camellia Sơn Trà?": "Địa chỉ căn hộ The Camellia Sơn Trà: Giao lộ Lê Văn Lương - Lê Đức Thọ, Phường Thọ Quang, Quận Sơn Trà, Đà Nẵng.",
+                "Quy mô của chung cư The Camellia Sơn Trà?": "Số lượng căn hộ tại dự án The Camellia Sơn Trà: 478.",
+                "Chủ đầu tư của dự án căn hộ chung cư The Camellia Sơn Trà?": "Chủ đầu tư: .",
+                "Các loại hình bất động sản thuộc dự án The Camellia Sơn Trà?": "Dự án The Camellia Sơn Trà bao gồm các loại hình: Bán căn hộ chung cư."
+            },
+            "source_url": "https://batdongsan.com.vn/du-an-can-ho-chung-cu-son-tra-ddn/the-camellia-son-tra-pj6798",
+            "status_raw": "Sắp mở bán",
+            "configs_raw": [
+                "4.299,9 m²",
+                "478",
+                "1"
+            ],
+            "imported_at": "2026-07-27",
+            "detail_fetched_at": "2026-07-27T10:09:50+00:00"
+        }
+    },
+    {
+        "code": "BDS-PJ6800",
+        "name": "Nhà ở xã hội An Trung 2",
+        "developer_name": "Liên doanh Công ty Cổ phần Đức Mạnh và Công ty CP đầu tư & xây dựng 579",
+        "address": "Đường Vũ Văn Dũng - Trần Quang Diệu - An Trung 1 - Ngô Quyền, Phường An Hải Nam, Quận Sơn Trà, Đà Nẵng",
+        "province": "Đà Nẵng",
+        "project_type": "Nhà ở xã hội",
+        "status": "selling",
+        "blocks": 3,
+        "apartments": 957,
+        "amenities_json": null,
+        "description": "Nhà ở xã hội An Trung 2 là dự án chung cư cho người thu nhập thấp tại Khu dân cư An Trung 2, Phường An Hải, Thành phố Đà Nẵng (Quận Sơn Trà cũ), do Liên doanh Công ty Cổ phần Đức Mạnh và Công ty CP đầu tư & xây dựng 579 làm chủ đầu tư. Dự án gồm 03 khối chung cư với tổng số 957 căn hộ (khối A cao 18 tầng, khối B cao 15 tầng và khối C cao 12 tầng). Hiện tại, khối A, B đang thi công xây dựng, khối C đã đưa vào sử dụng từ đầu năm 2019.",
+        "is_public": true,
+        "metadata_json": {
+            "area": null,
+            "city": "da-nang",
+            "image": "https://file4.batdongsan.com.vn/crop/240x180/2026/07/21/20260721141243-972d_wm.jpg",
+            "detail": {
+                "Số căn hộ": "957 căn",
+                "Chủ đầu tư": "Công ty CP Đức Mạnh"
+            },
+            "source": "batdongsan.com.vn",
+            "detail_faq": {
+                "Quy mô dự án nhà ở xã hội Nhà ở xã hội An Trung 2?": "Số lượng căn hộ thuộc dự án nhà ở xã hội Nhà ở xã hội An Trung 2: 957.",
+                "Vị trí dự án nhà ở xã hội Nhà ở xã hội An Trung 2?": "Vị trí: Đường Vũ Văn Dũng - Trần Quang Diệu - An Trung 1 - Ngô Quyền, Phường An Hải Nam, Quận Sơn Trà, Đà Nẵng.",
+                "Chủ đầu tư dự án nhà ở xã hội Nhà ở xã hội An Trung 2?": "Chủ đầu tư dự án nhà ở xã hội Nhà ở xã hội An Trung 2: Công ty CP Đức Mạnh.",
+                "Giá mua bán dự án nhà ở xã hội Nhà ở xã hội An Trung 2 hiện nay?": "Tham khảo giá mua bán dự án nhà ở xã hội Nhà ở xã hội An Trung 2: ."
+            },
+            "source_url": "https://batdongsan.com.vn/du-an-nha-o-xa-hoi-son-tra-ddn/nha-o-xa-hoi-an-trung-2-pj6800",
+            "status_raw": "Đang mở bán",
+            "configs_raw": [
+                "957",
+                "3"
+            ],
+            "imported_at": "2026-07-27",
+            "detail_fetched_at": "2026-07-27T10:09:48+00:00"
+        }
+    },
+    {
+        "code": "BDS-PJ6806",
+        "name": "Sun Galaxy Complex",
+        "developer_name": "Công ty TNHH Công viên Châu Á (thành viên Sun Group)",
+        "address": "Phường Mỹ An, Quận Ngũ Hành Sơn, Đà Nẵng",
+        "province": "Đà Nẵng",
+        "project_type": "Khu phức hợp",
+        "status": "planning",
+        "blocks": 0,
+        "apartments": 1,
+        "amenities_json": null,
+        "description": "Sun Galaxy Complex - Mảnh ghép đầu tiên được giới thiệu trong đại đô thị Da Nang Downtown, thuộc tổ hợp công trình phục vụ Lễ hội pháo hoa Quốc tế Đà Nẵng, do Công ty TNHH Công viên Châu Á (thành viên Sun Group) làm chủ đầu tư. Nằm trên quỹ đất rộng hơn 21.000m2, Sun Galaxy Complex cao 47 tầng nổi, 04 tầng hầm, được định vị trở thành biểu tượng mới của trung tâm Đà Nẵng, nơi hội tụ kiến trúc, thương mại, du lịch, giải trí và lưu trú quốc tế.",
+        "is_public": true,
+        "metadata_json": {
+            "area": "2,16 ha",
+            "city": "da-nang",
+            "image": "https://file4.batdongsan.com.vn/crop/240x180/2026/07/23/20260723164218-d25d_wm.jpg",
+            "detail": {
+                "Diện tích": "2,16 ha",
+                "Chủ đầu tư": "Tập đoàn Sun Group"
+            },
+            "source": "batdongsan.com.vn",
+            "detail_faq": {
+                "Chủ đầu tư dự án khu phức hợp Sun Galaxy Complex?": "Chủ đầu tư dự án khu phức hợp Sun Galaxy Complex: Tập đoàn Sun Group.",
+                "Mật độ xây dựng của dự án khu phức hợp Sun Galaxy Complex?": "Mật độ xây dựng: Tòa tháp cao 47 tầng nổi, 04 tầng hầm.",
+                "Các loại hình bất động sản thuộc dự án khu phức hợp Sun Galaxy Complex?": "Dự án khu phức hợp Sun Galaxy Complex bao gồm các loại hình: Bán căn hộ chung cư, Bán condotel."
+            },
+            "source_url": "https://batdongsan.com.vn/du-an-khu-phuc-hop-ngu-hanh-son-ddn/sun-galaxy-complex-pj6806",
+            "status_raw": "Đang cập nhật",
+            "configs_raw": [
+                "2,16 ha",
+                "1"
+            ],
+            "imported_at": "2026-07-27",
+            "detail_fetched_at": "2026-07-27T10:09:47+00:00"
+        }
+    }
+]

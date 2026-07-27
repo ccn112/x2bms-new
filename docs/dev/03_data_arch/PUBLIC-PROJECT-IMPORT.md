@@ -21,6 +21,19 @@ Upsert theo `code` (`updateOrCreate`). `code = BDS-PJ<id>` (từ href chứa `pj
 Gán `metadata_json`: `source`, `city`, `source_url`, `image`, `area`, `configs_raw`, `status_raw`, `imported_at`.
 `status` map về enum planning|selling|handover (mặc định planning). `is_public=true`.
 
+### `metadata_json` bổ sung từ trang chi tiết (`enrichDetail`)
+- `detail` = `{nhãn tiếng Việt: giá trị}` từ bảng `re__project-attr` (Số căn hộ, Diện tích, Số tòa,
+  Chủ đầu tư, Loại hình, Pháp lý, Mức giá…). `detail_fetched_at` (ISO8601). `detail_error` (blocked/http_x) khi lỗi.
+- `detail_faq` = `{hỏi: đáp}` từ `re__collapse-box`. `price`, `legal`, `developer_unit` (khi có).
+- Map cột: `apartments` ← "Số căn hộ", `blocks` ← "Số tòa", `project_type` ← "Loại hình",
+  `developer_name` ← "Chủ đầu tư" (nếu trống). `upsertCard` GIỮ các khoá này khi upsert lại card.
+
+## Đồng bộ local → server (export/seed)
+- `projects:export-json` dump rows `metadata_json->source='batdongsan.com.vn'` → JSON đủ 13 cột
+  (`database/seeders/data/public_projects_export.json`, UTF-8 no BOM).
+- `PublicProjectImportSeeder` đọc file → `updateOrCreate` theo `code` (idempotent), ghi thẳng cột kể cả
+  `metadata_json` — server KHÔNG gọi batdongsan. Giữ `PublicProjectBdsSeeder` cũ cho `bds_projects.json`.
+
 ## Tái dùng logic chuẩn hoá (DRY)
 Các hàm chuẩn hoá chuyển từ `PublicProjectBdsSeeder` (private) → `BdsProjectImporter` (**public static**):
 `codeFrom`, `parseConfigs`, `developer`, `tidy`, `province`, `projectType`, `status`.

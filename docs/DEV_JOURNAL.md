@@ -1986,3 +1986,14 @@ Xây tính năng thu thập metadata dự án BĐS NGAY TRONG APP, upsert vào `
 **KIỂM CHỨNG CHỐNG BOT (thật, DB `x2bms`):** batdongsan sau Cloudflare managed challenge (lọc TLS/JA3). PHP Guzzle/ext-curl (OpenSSL) → **403 challenge** kể cả đủ header. Binary curl.exe **Schannel** (System32 8.21.0 / Git 8.16.0) → **200 + 10 card/trang** ổn định. Nên mặc định `transport=curl` (shell qua `Process`), có `auto` (fallback) và `http`. `looksBlocked()` xử lý duyên dáng + notification cảnh báo. ⚠️ Trên Linux prod curl thường OpenSSL → có thể lại bị chặn: cần chốt proxy/scraping API/curl-impersonate.
 
 **Verify:** migrate ✅; `projects:fetch-more --pages=1 --city=ha-noi` → public_projects 5→15 (+10), chạy tiếp trang 2 → +10, cursor `last_page=2 status=ok` ✅; data mẫu `BDS-PJ6746 | JSC 34 | Hà Nội | handover` ✅; `php -l` sạch, không mojibake. CHƯA commit (chủ dự án commit).
+
+---
+
+## 2026-07-27 (bổ sung) — Enrich detail + export→seed đồng bộ
+
+Nâng cấp `BdsProjectImporter`:
+- **`enrichDetail(PublicProject)`**: fetch trang chi tiết theo `source_url`, parse bảng "Thông tin dự án" (selector THẬT `tbody.re__project-attr > tr > td.re__attr-item-label + td.re__attr-item-value`) → `metadata_json['detail']={nhãn tiếng Việt:giá trị}` + `detail_fetched_at`; thêm FAQ (`re__collapse-box`) → `detail_faq`, và `price`/`legal`/`developer_unit`. Map cột: apartments←"Số căn hộ", blocks←"Số tòa", project_type←"Loại hình", developer_name←"Chủ đầu tư" (nếu trống). Tích hợp vào `fetchMore` (cờ `bds.enrich_detail` default true, command `--no-detail`, delay giữa request, lỗi→`detail_error` bỏ qua êm). `upsertCard` giữ khoá làm giàu khi upsert lại.
+- **Sửa `looksBlocked`**: bỏ phụ thuộc số card (trang chi tiết không có card → bị false-positive). Chỉ coi bị chặn khi body<20KB + token challenge thật (`_cf_chl_opt`/`challenge-error-text`/`cf-chl-`/`Just a moment`). Lưu ý `challenge-platform` có cả trên trang hợp lệ.
+- **`projects:export-json`** + **`PublicProjectImportSeeder`**: dump rows nguồn batdongsan ra JSON đủ 13 cột → server chỉ `git pull` + `db:seed --class=PublicProjectImportSeeder` (KHÔNG gọi batdongsan). Giữ `PublicProjectBdsSeeder` cũ.
+
+**Verify (DB thật):** `fetch-more --city=da-nang --pages=1` → 9/10 dự án mới có detail; mẫu `FourS Tower` detail={Pháp lý, Số tòa:"3 tòa", Số căn hộ:"1.281 căn", Chủ đầu tư:"Tập đoàn Sun Group"} → apartments=1281/blocks=3/project_type="Căn hộ chung cư" ✅. `export-json` → 30 dự án (9 detail) JSON no-BOM UTF-8 ✅; `db:seed PublicProjectImportSeeder` upsert 30 idempotent ✅. `php -l` sạch, không mojibake. CHƯA commit.
