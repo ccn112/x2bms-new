@@ -98,6 +98,18 @@ Route::prefix('v1')->group(function () {
         Route::get('offers', [\App\Http\Controllers\Api\V1\Resident\OfferController::class, 'index']);
 
         // Cộng đồng (CD-CM-*) — scope theo dự án.
+        // Lớp GHI: đăng bài (published NGAY, không duyệt trước), cảm xúc, bình
+        // luận, báo cáo. Kiểm duyệt tách xuống nhóm `ability:resident,staff` bên
+        // dưới. Hợp đồng: x2mobile/docs/API_REQUIREMENTS_COMMUNITY_WRITE_20260727.md
+        Route::post('community/posts', [\App\Http\Controllers\Api\V1\Resident\CommunityPostController::class, 'store']);
+        Route::get('community/posts/{post}', [\App\Http\Controllers\Api\V1\Resident\CommunityPostController::class, 'show'])->whereNumber('post');
+        Route::delete('community/posts/{post}', [\App\Http\Controllers\Api\V1\Resident\CommunityPostController::class, 'destroy'])->whereNumber('post');
+        Route::post('community/posts/{post}/reactions', [\App\Http\Controllers\Api\V1\Resident\CommunityPostController::class, 'react'])->whereNumber('post');
+        Route::delete('community/posts/{post}/reactions', [\App\Http\Controllers\Api\V1\Resident\CommunityPostController::class, 'unreact'])->whereNumber('post');
+        Route::get('community/posts/{post}/comments', [\App\Http\Controllers\Api\V1\Resident\CommunityPostController::class, 'comments'])->whereNumber('post');
+        Route::post('community/posts/{post}/comments', [\App\Http\Controllers\Api\V1\Resident\CommunityPostController::class, 'storeComment'])->whereNumber('post');
+        Route::post('community/posts/{post}/report', [\App\Http\Controllers\Api\V1\Resident\CommunityPostController::class, 'report'])->whereNumber('post');
+
         Route::get('community/posts', [\App\Http\Controllers\Api\V1\Resident\CommunityController::class, 'posts']);
         Route::get('community/events', [\App\Http\Controllers\Api\V1\Resident\CommunityController::class, 'events']);
         Route::get('community/polls', [\App\Http\Controllers\Api\V1\Resident\CommunityController::class, 'polls']);
@@ -154,6 +166,21 @@ Route::prefix('v1')->group(function () {
         Route::get('articles', [\App\Http\Controllers\Api\V1\Resident\ArticleController::class, 'index']);
         Route::get('articles/{article}', [\App\Http\Controllers\Api\V1\Resident\ArticleController::class, 'show']);
     });
+
+    /*
+     * Kiểm duyệt cộng đồng NGAY TRÊN APP (BQL).
+     *
+     * Nhóm riêng vì alias `ability` = CheckForAnyAbility (OR): `resident,staff`
+     * cho phép cả cư dân-kiêm-BQL lẫn nhân sự thuần (không có membership cư dân)
+     * gọi được. Nhóm `ability:resident` phía trên sẽ chặn nhân sự thuần.
+     * Quyền THẬT kiểm trong controller theo phạm vi dự án (accessibleProjectIds).
+     */
+    Route::middleware(['auth:sanctum', 'ability:resident,staff', 'throttle:api'])
+        ->prefix('resident')
+        ->group(function () {
+            Route::post('community/posts/{post}/moderate', [\App\Http\Controllers\Api\V1\Resident\CommunityPostController::class, 'moderate'])
+                ->whereNumber('post');
+        });
 });
 
 /*

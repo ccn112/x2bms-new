@@ -27,8 +27,10 @@ use Illuminate\Support\Facades\DB;
  */
 class CommunityController extends ApiController
 {
-    public function __construct(private readonly ResidentContextService $context)
-    {
+    public function __construct(
+        private readonly ResidentContextService $context,
+        private readonly \App\Services\Resident\CommunityModerationService $moderation,
+    ) {
     }
 
     /** @return array<int> */
@@ -52,17 +54,35 @@ class CommunityController extends ApiController
         }
 
         $perPage = min((int) $request->integer('per_page', 15), 50);
+        $user = $request->user();
 
         $paginator = CommunityPost::query()
-            ->with('author.apartmentRelations')
+            ->with(['author.apartmentRelations.apartment', 'attachments'])
+            ->withCount('comments')
             ->whereIn('project_id', $projectIds)
-            ->where('status', 'published')
+            // Bài ẩn không vào feed của người khác; tác giả vẫn thấy bài mình
+            // (kèm banner lý do) để không tưởng app lỗi rồi đăng lại.
+            ->where(function ($q) use ($user) {
+                $q->where('status', 'published')
+                    ->orWhere(fn ($q2) => $q2->where('status', 'hidden')
+                        ->where('author_user_id', $user?->id));
+            })
             ->orderByDesc('is_pinned')
             ->orderByDesc('created_at')
             ->orderByDesc('id')
             ->cursorPaginate($perPage);
 
-        $items = CommunityPostResource::collection($paginator->getCollection())->resolve($request);
+        // Cảm xúc + quyền gộp MỘT lượt cho cả trang (tránh N+1 trên feed).
+        $posts = $paginator->getCollection();
+        $tallies = $this->moderation->tallyMany($posts->pluck('id')->all(), $user);
+        foreach ($posts as $p) {
+            $p->post_meta = [
+                'reactions' => $tallies[$p->id] ?? ['summary' => [], 'total' => 0, 'mine' => null],
+                'can' => $this->moderation->abilities($user, $p),
+            ];
+        }
+
+        $items = CommunityPostResource::collection($posts)->resolve($request);
 
         return ApiResponse::paginated($items, $paginator->nextCursor()?->encode());
     }
