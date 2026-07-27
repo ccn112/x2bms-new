@@ -18,5 +18,7 @@ Khi hoàn tất/sửa một module/màn/endpoint, **dùng skill `cap-nhat-tai-li
 
 Tài liệu là **1 GitBook** (`docs/guide/SUMMARY.md`) phân quyền theo chương; nhật ký phát triển ghi độc lập.
 
+**Tài liệu CHÍNH THỨC nằm ở Docs CMS** — reader `/docs`, publish tại `doc.x2.fino.vn` — gom tài liệu dev + hướng dẫn của CẢ 2 dự án (x2bms + x2mobile). Quy trình khi chốt/hoàn tất: cập nhật markdown track 1–4 → `php artisan docs:import` (đồng bộ đa nguồn theo `config/docs.php`) hoặc soạn trực tiếp Filament `/sa` nhóm "Tài liệu" → thêm 1 mục **backlog** vào phiên bản hiện hành (DocVersion) → gán trang đúng space + version. Chi tiết ở skill `cap-nhat-tai-lieu`.
+
 ## Trạng thái tiến độ
 `docs/PROGRESS_TRACKER.md` là nguồn theo dõi chính thức. Ký hiệu: ✅/🟢/🟡/⬜/❓.

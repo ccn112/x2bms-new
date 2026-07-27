@@ -80,6 +80,16 @@
         .docs-article { min-width: 0; width: 100%; }
         /* Page head — title + version line near the top */
         .docs-pagehead { margin-bottom: 6px; }
+        /* Tiêu đề trang — H1 nổi bật (không phụ thuộc reset của app.css khi bật X2AI) */
+        .docs-pagetitle {
+            font-family: 'Plus Jakarta Sans', sans-serif; color: var(--navy);
+            font-size: 2.1rem; font-weight: 700; line-height: 1.25; margin: 0 0 4px;
+            letter-spacing: -.01em;
+        }
+        .docs-pagetitle code {
+            font-size: .9em; background: #eef1f6; padding: 2px 8px; border-radius: 6px;
+            font-family: ui-monospace, 'SFMono-Regular', Menlo, monospace; color: var(--navy);
+        }
         .docs-verline {
             display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
             font-size: 13px; color: var(--muted); margin: 6px 0 22px;

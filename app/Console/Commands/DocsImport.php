@@ -10,49 +10,67 @@ use Illuminate\Support\Str;
 use Symfony\Component\Finder\Finder;
 
 /**
- * Seed các không gian/trang tài liệu từ file .md trong repo (idempotent).
- * Đọc docs/dev/**\/*.md và docs/guide/**\/*.md. Map audience theo thư mục:
- *   dev/*        → dev
- *   guide/bql/*  → bql
- *   guide/hq/*   → hq
- *   guide/sa/*   → sa
- *   guide (gốc)  → ops
- * Một space mỗi (audience). Trang import phẳng theo thư mục con; slug từ path.
+ * Nạp tài liệu vào Docs CMS — NƠI CHÍNH THỨC xuất bản tài liệu dev + hướng dẫn
+ * của CẢ 2 dự án (x2bms + x2mobile). Idempotent.
+ *
+ * Space + nguồn import khai báo ở config/docs.php ('spaces' + 'import_paths').
+ * Mỗi nguồn:
+ *   - 'space'                    : gom mọi .md của path vào 1 space.
+ *   - 'mode' => 'guide_audience' : map thư mục con (bql/hq/sa → space cùng tên,
+ *                                  còn lại → 'ops'). Dùng cho docs/guide của x2bms.
+ * AN TOÀN: path không tồn tại (vd server không có x2mobile) → skip êm.
  */
 class DocsImport extends Command
 {
     protected $signature = 'docs:import {--fresh : Xóa trang cũ của các space import trước khi nạp lại}';
 
-    protected $description = 'Nạp tài liệu từ docs/dev và docs/guide vào module Tài liệu (idempotent)';
-
-    /**
-     * `public` = mặc định is_public khi TẠO MỚI space (không ghi đè nếu admin đã
-     * chỉnh tay trên Filament). ops = hướng dẫn vận hành → công khai; dev + guide
-     * theo vai trò (bql/hq/sa) = nội bộ, yêu cầu đăng nhập.
-     *
-     * @var array<string, array{title:string, key:string, desc:string, sort:int, public:bool}>
-     */
-    private array $spaceDefs = [
-        'dev' => ['title' => 'Tài liệu phát triển (Dev)', 'key' => 'dev', 'desc' => 'UI/UX, tính năng, kiến trúc & DB — nội bộ dev.', 'sort' => 10, 'public' => false],
-        'ops' => ['title' => 'Vận hành & Tích hợp', 'key' => 'ops', 'desc' => 'Chạy backend, mobile API, triển khai & mở rộng.', 'sort' => 20, 'public' => true],
-        'bql' => ['title' => 'Hướng dẫn Ban Quản Lý (BQL)', 'key' => 'bql', 'desc' => 'Hướng dẫn nghiệp vụ cho Ban Quản lý dự án.', 'sort' => 30, 'public' => false],
-        'hq' => ['title' => 'Hướng dẫn Cổng Công ty (HQ)', 'key' => 'hq', 'desc' => 'Hướng dẫn cho cổng công ty vận hành.', 'sort' => 40, 'public' => false],
-        'sa' => ['title' => 'Hướng dẫn SuperAdmin', 'key' => 'sa', 'desc' => 'Hướng dẫn cho nhà cung cấp nền tảng.', 'sort' => 50, 'public' => false],
-    ];
+    protected $description = 'Nạp tài liệu (x2bms + x2mobile) vào Docs CMS (idempotent, đa nguồn)';
 
     /** Phiên bản sản phẩm mặc định gán cho trang import (v1.0). */
     private ?DocVersion $defaultVersion = null;
 
+    /** @var array<string, DocSpace> space theo key */
+    private array $spaces = [];
+
     public function handle(): int
     {
-        $base = base_path('docs');
-        if (! is_dir($base)) {
-            $this->error("Không tìm thấy thư mục docs tại {$base}");
+        $this->ensureDefaultVersion();
+        $this->ensureSpaces();
 
-            return self::FAILURE;
+        $imported = 0;
+        $touchedSpaceIds = [];
+
+        foreach ((array) config('docs.import_paths', []) as $entry) {
+            $abs = $this->resolvePath($entry['path'] ?? '');
+            if (! $abs || ! is_dir($abs)) {
+                $this->warn("  skip (không tồn tại): {$entry['path']}");
+
+                continue;
+            }
+
+            if (($entry['mode'] ?? null) === 'guide_audience') {
+                $imported += $this->importGuideByAudience($abs, $touchedSpaceIds);
+            } else {
+                $spaceKey = $entry['space'] ?? null;
+                if (! $spaceKey || ! isset($this->spaces[$spaceKey])) {
+                    $this->warn("  skip (space '{$spaceKey}' chưa khai báo): {$entry['path']}");
+
+                    continue;
+                }
+                $space = $this->spaces[$spaceKey];
+                $touchedSpaceIds[$space->id] = true;
+                $imported += $this->importDir($abs, $space, $abs);
+            }
         }
 
-        // Phiên bản sản phẩm mặc định v1.0 (idempotent). Đặt hiện hành nếu chưa có version nào.
+        $this->info("docs:import xong. Đã nạp/cập nhật {$imported} trang; ".count($touchedSpaceIds)." space có nội dung / ".count($this->spaces)." space khai báo.");
+
+        return self::SUCCESS;
+    }
+
+    /** Tạo phiên bản sản phẩm mặc định v1.0 (idempotent). */
+    private function ensureDefaultVersion(): void
+    {
         $this->defaultVersion = DocVersion::firstOrNew(['label' => 'v1.0']);
         if (! $this->defaultVersion->exists) {
             $this->defaultVersion->fill([
@@ -64,67 +82,81 @@ class DocsImport extends Command
                 'summary' => 'Phiên bản đầu tiên của bộ tài liệu X2-BMS.',
             ])->save();
         }
+    }
 
-        $spaces = [];
-        foreach ($this->spaceDefs as $aud => $def) {
-            $space = DocSpace::firstOrNew(['key' => $def['key']]);
+    /** Tạo/đồng bộ mọi space khai báo trong config (idempotent). --fresh: xóa trang cũ + reset is_public. */
+    private function ensureSpaces(): void
+    {
+        foreach ((array) config('docs.spaces', []) as $key => $def) {
+            $space = DocSpace::firstOrNew(['key' => $key]);
             $isNew = ! $space->exists;
 
             $space->fill([
-                'title' => $def['title'],
-                'description' => $def['desc'],
-                'audience' => $aud,
-                'sort' => $def['sort'],
+                'title' => $def['title'] ?? $key,
+                'description' => $def['desc'] ?? null,
+                'audience' => $def['audience'] ?? 'dev',
+                'sort' => $def['sort'] ?? 0,
                 'is_published' => true,
             ]);
-            // is_public: đặt mặc định khi tạo mới HOẶC khi chạy --fresh (reset) →
-            // không ghi đè chỉnh tay của admin ở lần import thường.
+            // is_public: đặt mặc định khi tạo mới HOẶC khi --fresh → không ghi đè chỉnh tay.
             if ($isNew || $this->option('fresh')) {
-                $space->is_public = $def['public'];
+                $space->is_public = (bool) ($def['is_public'] ?? false);
             }
             $space->save();
 
             if ($this->option('fresh')) {
                 DocPage::where('space_id', $space->id)->forceDelete();
             }
-            $spaces[$aud] = $space;
+            $this->spaces[$key] = $space;
         }
+    }
 
-        $imported = 0;
+    /** Giải path tương đối base_path() → tuyệt đối chuẩn hóa; null nếu không hợp lệ. */
+    private function resolvePath(string $path): ?string
+    {
+        if ($path === '') {
+            return null;
+        }
+        $abs = base_path($path);
+        $real = realpath($abs);
 
-        // 1) docs/dev/**/*.md → space dev.
-        $imported += $this->importDir($base.'/dev', $spaces['dev'], $base.'/dev');
+        return $real !== false ? $real : $abs;
+    }
 
-        // 2) docs/guide/**/*.md → audience theo thư mục con.
-        $guide = $base.'/guide';
-        if (is_dir($guide)) {
-            $finder = (new Finder())->files()->in($guide)->name('*.md')->sortByName();
-            foreach ($finder as $file) {
-                $rel = str_replace('\\', '/', $file->getRelativePathname());
-                if (Str::endsWith(strtoupper($rel), 'SUMMARY.MD')) {
-                    continue; // mục lục — không import thành trang.
-                }
-                $top = Str::before($rel, '/');
-                $aud = in_array($top, ['bql', 'hq', 'sa'], true) ? $top : 'ops';
-                $imported += $this->importFile($file->getRealPath(), $spaces[$aud], $rel);
+    /** docs/guide của x2bms — map thư mục con (bql/hq/sa) → space cùng tên, còn lại → ops. */
+    private function importGuideByAudience(string $guideDir, array &$touchedSpaceIds): int
+    {
+        $count = 0;
+        $finder = (new Finder())->files()->in($guideDir)->name('*.md')->sortByName();
+        foreach ($finder as $file) {
+            $rel = str_replace('\\', '/', $file->getRelativePathname());
+            if (Str::endsWith(strtoupper($rel), 'SUMMARY.MD')) {
+                continue; // mục lục — không import thành trang.
             }
+            $top = Str::before($rel, '/');
+            $key = in_array($top, ['bql', 'hq', 'sa'], true) ? $top : 'ops';
+            if (! isset($this->spaces[$key])) {
+                continue;
+            }
+            $space = $this->spaces[$key];
+            $touchedSpaceIds[$space->id] = true;
+            $count += $this->importFile($file->getRealPath(), $space, $rel);
         }
 
-        $this->info("docs:import xong. Đã nạp/cập nhật {$imported} trang trên ".count($spaces)." không gian.");
-
-        return self::SUCCESS;
+        return $count;
     }
 
     /** Import mọi *.md trong 1 thư mục (đệ quy) vào 1 space. */
     private function importDir(string $dir, DocSpace $space, string $root): int
     {
-        if (! is_dir($dir)) {
-            return 0;
-        }
         $count = 0;
         $finder = (new Finder())->files()->in($dir)->name('*.md')->sortByName();
         foreach ($finder as $file) {
-            $rel = str_replace('\\', '/', ltrim(str_replace(str_replace('\\', '/', $root), '', str_replace('\\', '/', $file->getRealPath())), '/'));
+            $rootNorm = str_replace('\\', '/', $root);
+            $rel = ltrim(str_replace($rootNorm, '', str_replace('\\', '/', $file->getRealPath())), '/');
+            if (Str::endsWith(strtoupper($rel), 'SUMMARY.MD')) {
+                continue;
+            }
             $count += $this->importFile($file->getRealPath(), $space, $rel);
         }
 

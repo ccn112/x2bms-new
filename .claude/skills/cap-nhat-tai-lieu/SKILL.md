@@ -38,7 +38,11 @@ KHÔNG theo track. Ghi theo phiên (ngày + việc đã làm + quyết định +
 5. **Tiến độ**: `docs/PROGRESS_TRACKER.md` (🟡→🟢) + đồng bộ dòng ở `handoff/x2bms/_BUSINESS_MAP_20260725/PROGRESS_TRACKER.md`, kèm ngày.
 6. **Test** (test/HTTP/thủ công). Đạt → PROGRESS 🟢→✅, ghi bằng chứng vào track 2.
 7. **Track 4 (chỉ khi ✅)**: viết/refresh chương hướng dẫn sử dụng trong `docs/guide/{bql|hq|sa}/` + chụp ảnh giao diện tại panel `/admin` `/hq` `/sa`, lưu `docs/guide/images/<module>/`. Thêm trang vào `SUMMARY.md`.
-8. **Cuối phiên**: ghi `docs/DEV_JOURNAL.md` (độc lập).
+8. **XUẤT BẢN vào Docs CMS (BẮT BUỘC sau khi chốt)** — Docs CMS (`/docs`, publish `doc.x2.fino.vn`) là **nơi chính thức** đăng tài liệu của CẢ x2bms + x2mobile:
+   - **Đồng bộ markdown → CMS**: chạy `php artisan docs:import` (idempotent, đa nguồn theo `config/docs.php`). Trang mới trong `docs/dev` `docs/guide` (và `../x2mobile/docs/*` nếu có) tự vào đúng space. Hoặc **soạn trực tiếp** trong Filament panel `/sa` → nhóm **"Tài liệu"** (DocSpace/DocPage).
+   - **Gán space + version**: đặt trang đúng space (dev / mobile-dev / ops / cu-dan / bql / hq / sa) và `version_id` = phiên bản hiện hành (hoặc để trống = chung).
+   - **Thêm 1 mục BACKLOG**: vào phiên bản sản phẩm hiện hành (`/sa` → "Phiên bản & Backlog" → DocVersion đang `is_current`), tạo `DocVersionItem` mô tả thay đổi (category feature/improvement/fix/change + status), trỏ `ref_page` tới trang liên quan nếu có.
+9. **Cuối phiên**: ghi `docs/DEV_JOURNAL.md` (độc lập).
 
 ## Quy ước
 - Trạng thái: ✅ xong&verify · 🟢 xong chưa verify · 🟡 đang làm · ⬜ chưa làm · ❓ chưa rõ scope.

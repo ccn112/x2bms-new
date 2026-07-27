@@ -28,7 +28,12 @@
         <div class="docs-article">
             @if ($page)
                 <div class="docs-pagehead">
-                    <h1 style="font-family:'Plus Jakarta Sans',sans-serif;color:var(--navy);margin:0;">{{ $page->title }}</h1>
+                    @php
+                        // Escape trước (an toàn), rồi biến `...` trong tiêu đề thành <code> để
+                        // đoạn code hiển thị đúng kiểu code mà vẫn to tương ứng với H1.
+                        $titleHtml = preg_replace('/`([^`]+)`/', '<code>$1</code>', e($page->title));
+                    @endphp
+                    <h1 class="docs-pagetitle">{!! $titleHtml !!}</h1>
                 </div>
 
                 {{-- Dòng thông tin: "Lịch sử sửa trang" (revision) + cập nhật + nút Sửa (nếu có quyền).

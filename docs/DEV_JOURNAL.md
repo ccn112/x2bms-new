@@ -5,6 +5,20 @@ Mỗi lần cập nhật code, ghi một entry vào đầu danh sách (mới nh�
 
 ---
 
+## 2026-07-27 — Docs CMS = nơi xuất bản chính thức (đa nguồn x2bms + x2mobile) + fix H1 tiêu đề
+
+**Phạm vi:** biến Docs CMS thành nơi chính thức publish tài liệu dev + hướng dẫn của CẢ 2 dự án; import đa nguồn an toàn khi thiếu repo; cập nhật quy trình (skill + CLAUDE.md); fix cỡ chữ H1 tiêu đề trang reader.
+
+**Config-driven import (`config/docs.php`):** thêm `spaces` (7 space: dev, mobile-dev, ops, cu-dan, bql, hq, sa — title/audience/is_public/sort) + `import_paths` (danh sách nguồn: `docs/dev`→dev, `docs/guide`→`guide_audience`, `../x2mobile/docs/guide/cu-dan`→cu-dan, `../x2mobile/docs/dev`→mobile-dev).
+
+**`DocsImport` viết lại theo config:** `ensureDefaultVersion()` + `ensureSpaces()` (tạo mọi space khai báo dù nguồn trống) + lặp `import_paths`: `is_dir()` false → `warn("skip (không tồn tại)")` KHÔNG lỗi; entry `space` → gom 1 space; entry `mode=guide_audience` → map thư mục con (bql/hq/sa/ops). `resolvePath()` dùng `base_path()` + `realpath` (trỏ được repo cạnh `../x2mobile`). Bỏ SUMMARY.md. Vẫn gán `version_id=v1.0`, idempotent.
+
+**Fix UI H1 tiêu đề trang** (`show.blade.php` + `layout.blade.php`): tiêu đề trang trước đây `<h1>` không có font-size → nhỏ (nhất là khi bật X2AI kéo theo preflight app.css). Thêm class `.docs-pagetitle` (font 2.1rem, weight 700, line-height 1.25). Tiêu đề chứa `` `code` `` → escape rồi biến `` `...` `` thành `<code>` (`.docs-pagetitle code` cỡ .9em, không bị nhỏ).
+
+**Skill `cap-nhat-tai-lieu/SKILL.md`:** thêm bước 8 "XUẤT BẢN vào Docs CMS" (chạy `docs:import` hoặc soạn `/sa` → gán space+version → thêm 1 mục backlog vào DocVersion hiện hành). **`CLAUDE.md`:** thêm dòng Docs CMS là nơi tài liệu chính thức + quy trình chốt.
+
+**Verify:** lint `DocsImport` sạch · `docs:import` (có x2mobile): 16 trang, dev/ops/mobile-dev có nội dung, cu-dan skip êm · giả lập server KHÔNG có x2mobile (path bịa `../KHONG_TON_TAI/...`): exit 0, skip 2 nguồn, không lỗi · 2 space mới cu-dan (resident/public) + mobile-dev (dev/nội bộ) tạo OK, mobile-dev=4 trang · H1: class `docs-pagetitle` 2.1rem, `/api/v1`→`<code>` · không mojibake/BOM (Edit/Write UTF-8). CHƯA commit.
+
 ## 2026-07-27 — Module Tài liệu Phase 5: PHIÊN BẢN SẢN PHẨM (v1.0/v2.0) + Backlog
 
 **Phạm vi:** thêm khái niệm "phiên bản sản phẩm" toàn site (v1.0/v2.0) + backlog hạng mục, gắn version cho từng trang. TÁCH BẠCH với "revision từng trang" (Phase 3/4): reader đổi nhãn control revision thành **"Lịch sử sửa trang"**, control mới là **"Phiên bản"** (`?ver=`).

@@ -88,6 +88,13 @@ Route **KHÔNG** đặt middleware `auth` — `DocsController` tự phân quyề
 
 **Import:** `docs:import` tạo `v1.0` (released, is_current) idempotent + gán trang import `version_id=v1.0`.
 
+## 3f. Docs CMS = nơi xuất bản chính thức (đa nguồn: x2bms + x2mobile)
+Docs CMS là **nơi chính thức** đăng tài liệu dev + hướng dẫn của CẢ 2 dự án.
+- **Cấu hình `config/docs.php`:** `spaces` (7 space: dev, mobile-dev, ops, cu-dan, bql, hq, sa — mỗi space có title/audience/is_public/sort) + `import_paths` (danh sách nguồn, path tương đối `base_path()`).
+- **`docs:import` đa nguồn (idempotent):** mỗi entry → 1 space (`space`) hoặc map theo thư mục con (`mode: guide_audience` cho `docs/guide` x2bms → bql/hq/sa/ops). Nguồn mặc định: `docs/dev`→dev, `docs/guide`→theo audience, `../x2mobile/docs/guide/cu-dan`→cu-dan, `../x2mobile/docs/dev`→mobile-dev.
+- **AN TOÀN path thiếu:** entry có `is_dir()` false (vd server không có x2mobile) → log `skip (không tồn tại)`, KHÔNG lỗi, exit 0. Space vẫn được tạo dù nguồn trống (để soạn tay trên Filament).
+- **Quy trình xuất bản khi chốt** (skill `cap-nhat-tai-lieu` bước 8): cập nhật markdown → `docs:import` (hoặc soạn trực tiếp `/sa` nhóm "Tài liệu") → thêm 1 mục backlog vào DocVersion hiện hành → gán trang đúng space + version.
+
 ## Verify (2026-07-27, DB thật)
 - migrate 3 bảng ✅ · seeder 7 quyền/14 role ✅ · import 5 space/9 trang ✅.
 - Observer sinh version (1→2 sau khi sửa body) ✅ · markdown strip `<script>` ✅.
@@ -96,6 +103,7 @@ Route **KHÔNG** đặt middleware `auth` — `DocsController` tự phân quyề
 - (2026-07-27, Phase 2 public site) migrate `is_public` ✅ · import `--fresh` set ops=public, dev=private ✅ · giả lập HTTP: guest `/docs` chỉ thấy ops (ẩn dev), `/docs/ops`=200, `/docs/dev`→302 login, host `doc.x2.fino.vn` `/`=landing 200 (ẩn dev), host chính `/`→redirect `/admin` ✅ · guest search không rò trang dev (0 rows) · admin thấy cả 5 space ✅ · lint 8 file sạch.
 - (2026-07-27, Phase 4) FULLTEXT migrate ✅ · search 'Coolify' (guest) ra ops + snippet + `<mark>` ✅ · 'Seeding' guest 0 rows (không rò dev), admin 2 rows ✅ · guest page: KHÔNG có AI/livewire/nút sửa ✅ · admin: AI fab + `@livewireScripts` + `@vite` + deep-link `/sa/doc-pages/{id}/edit` ✅ · technician (ai.use, không docs.manage): AI có, nút sửa ẩn ✅ · content `<h1>`=0 (H1 body đã strip), `<h2 id>` còn (TOC) ✅ · dropdown version luôn hiện ✅ · copy-code script ✅ · lint sạch, không mojibake/BOM.
 - (2026-07-27, Phase 5) migrate 3 (doc_versions/doc_version_items/version_id) ✅ · import tạo v1.0 gán 12 trang ✅ · active version: guest→v1.0, admin `?ver=v2.0`→v2.0, guest `?ver=v2.0`(planned)→v1.0 ✅ · lọc cây: guest default ẩn trang v2.0, admin `?ver=v2.0` hiện ✅ · banner mismatch khi mở trang khác version ✅ · `/docs/versions`: guest chỉ v1.0(released), admin thấy v2.0+backlog(2 item) ✅ · is_current độc nhất ✅ · lint 13 file sạch, không mojibake/BOM.
+- (2026-07-27, Đa nguồn) `config/docs.php` `spaces`+`import_paths` ✅ · `docs:import` (có x2mobile): 16 trang, dev/ops/mobile-dev có nội dung, `../x2mobile/docs/guide/cu-dan` skip êm ✅ · giả lập server KHÔNG có x2mobile (path bịa): exit 0, skip 2 nguồn, KHÔNG lỗi ✅ · 2 space mới cu-dan (resident/public) + mobile-dev (dev/nội bộ) tạo, mobile-dev=4 trang ✅ · H1 tiêu đề trang: class `docs-pagetitle` font 2.1rem, `/api/v1` render `<code>` ✅ · lint sạch, không mojibake/BOM.
 
 ## Việc còn lại (Phase 6+)
 Ảnh gắn theo revision · seed `guide/bql|hq|sa` khi có file · dark mode reader · SEO/meta + sitemap cho site public · (tùy chọn) so sánh diff giữa 2 phiên bản sản phẩm.
