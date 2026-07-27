@@ -8,8 +8,10 @@ use App\Models\ProjectMedia;
 use App\Models\PublicProject;
 use App\Models\Tenant;
 use App\Models\TenantProjectLink;
+use App\Services\Projects\BdsProjectImporter;
 use BackedEnum;
 use Filament\Actions\Action;
+use Filament\Forms\Components\CheckboxList;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Textarea;
@@ -116,6 +118,49 @@ class PublicProjectLibrary extends Page implements HasTable
                     ->options(['apartment' => 'Chung cư', 'villa' => 'Biệt thự', 'mixed' => 'Phức hợp', 'office' => 'Văn phòng']),
             ])
             ->headerActions([
+                Action::make('fetchMore')->label('Lấy tiếp')->icon('heroicon-o-arrow-down-tray')->color('primary')
+                    ->visible(fn () => (bool) Auth::user()?->isPlatformAdmin())
+                    ->modalHeading('Lấy tiếp dự án từ batdongsan.com.vn')
+                    ->modalDescription('Mỗi khu vực nhớ trang đã lấy; lần bấm này sẽ lấy các trang KẾ TIẾP. Nếu bị Cloudflare chặn sẽ báo lại.')
+                    ->modalSubmitActionLabel('Lấy tiếp')
+                    ->schema([
+                        CheckboxList::make('cities')->label('Khu vực')
+                            ->options(collect(config('bds.cities', []))->map(fn ($c) => $c['label'])->all())
+                            ->default(array_keys(config('bds.cities', [])))
+                            ->columns(2)->required(),
+                        TextInput::make('pages')->label('Số trang / lần')->numeric()
+                            ->default((int) config('bds.pages_per_run', 3))->minValue(1)->maxValue(20)->required(),
+                    ])
+                    ->action(function (array $data): void {
+                        $cities = (array) ($data['cities'] ?? []);
+                        $pages  = max(1, (int) ($data['pages'] ?? 3));
+                        $results = app(BdsProjectImporter::class)->fetchMore($cities, $pages);
+
+                        $totalAdded = 0;
+                        $totalUpdated = 0;
+                        $lines = [];
+                        $blocked = false;
+                        foreach ($results as $r) {
+                            $totalAdded += $r['added'];
+                            $totalUpdated += $r['updated'];
+                            $note = $r['stoppedReason'] ? ' (dừng: '.$r['stoppedReason'].')' : '';
+                            if ($r['stoppedReason'] === 'blocked') {
+                                $blocked = true;
+                            }
+                            $lines[] = $r['label'].': +'.$r['added'].' mới, ~'.$r['updated'].' cập nhật'.$note;
+                        }
+
+                        $this->audit('public_project.fetch', 'Lấy tiếp dự án batdongsan: +'.$totalAdded.'/~'.$totalUpdated, PublicProject::class);
+
+                        $notif = Notification::make()
+                            ->title('Đã lấy: +'.$totalAdded.' mới, ~'.$totalUpdated.' cập nhật')
+                            ->body(implode("\n", $lines));
+                        $blocked
+                            ? $notif->warning()->title('batdongsan chặn request server (Cloudflare)')
+                                ->body("Một số khu vực bị chặn. Cân nhắc đặt BDS_TRANSPORT=curl, chạy lại sau, hoặc dùng proxy.\n".implode("\n", $lines))
+                            : $notif->success();
+                        $notif->persistent()->send();
+                    }),
                 Action::make('create')->label('Thêm dự án')->icon('heroicon-m-plus')->color('primary')
                     ->schema($this->formSchema())
                     ->action(function (array $data): void {

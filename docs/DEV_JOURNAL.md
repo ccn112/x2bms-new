@@ -1970,3 +1970,19 @@ Dựng `PaymentChannelResource` (panel **fila**, `/fila/payment-channels`, disco
 - **Tenancy**: panel fila không bật Filament tenancy → chọn tenant thủ công; global scope `BelongsToTenant` vẫn tự lọc theo tenant của user đăng nhập (nếu có), không phá scope.
 
 **Verify:** `filament:optimize-clear` OK; `route:list --path=fila` thấy 3 route (index/create/edit); `php -l` sạch; class autoload + `project()` OK; `artisan about` chạy không lỗi.
+
+---
+
+## 2026-07-27 — Nhập dự án từ batdongsan.com.vn ("Lấy tiếp") + kiểm chứng chống bot
+
+Xây tính năng thu thập metadata dự án BĐS NGAY TRONG APP, upsert vào `public_projects`.
+
+- **Service `App\Services\Projects\BdsProjectImporter`**: `fetchMore(cityKeys, pages)` đọc con trỏ trang từ `bds_import_states`, lấy N trang kế tiếp mỗi khu vực, `parseCards()` (DOMDocument/DOMXPath — KHÔNG thêm package), `upsertCard()` theo `code`. Logic chuẩn hoá của `PublicProjectBdsSeeder` chuyển thành `public static` (codeFrom/parseConfigs/developer/tidy/province/projectType/status) — seeder gọi lại (DRY).
+- **Migration + Model** `bds_import_states` (city unique, last_page, last_status, last_run_at).
+- **Config `config/bds.php`** (cities ha-noi/tp-hcm/da-nang/phu-quoc + slug_fallback kien-giang, pages_per_run=3, delay_ms=400, transport, curl_binary).
+- **Nút "Lấy tiếp"** header action trên `Sa/Pages/PublicProjectLibrary` (chỉ SuperAdmin): CheckboxList khu vực + số trang → `fetchMore()` đồng bộ → Notification tổng theo khu vực + audit `public_project.fetch`.
+- **Command** `projects:fetch-more {--pages=3} {--city=*}` (cron/CLI).
+
+**KIỂM CHỨNG CHỐNG BOT (thật, DB `x2bms`):** batdongsan sau Cloudflare managed challenge (lọc TLS/JA3). PHP Guzzle/ext-curl (OpenSSL) → **403 challenge** kể cả đủ header. Binary curl.exe **Schannel** (System32 8.21.0 / Git 8.16.0) → **200 + 10 card/trang** ổn định. Nên mặc định `transport=curl` (shell qua `Process`), có `auto` (fallback) và `http`. `looksBlocked()` xử lý duyên dáng + notification cảnh báo. ⚠️ Trên Linux prod curl thường OpenSSL → có thể lại bị chặn: cần chốt proxy/scraping API/curl-impersonate.
+
+**Verify:** migrate ✅; `projects:fetch-more --pages=1 --city=ha-noi` → public_projects 5→15 (+10), chạy tiếp trang 2 → +10, cursor `last_page=2 status=ok` ✅; data mẫu `BDS-PJ6746 | JSC 34 | Hà Nội | handover` ✅; `php -l` sạch, không mojibake. CHƯA commit (chủ dự án commit).
