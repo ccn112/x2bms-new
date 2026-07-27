@@ -49,6 +49,7 @@ class PublicProjectBdsSeeder extends Seeder
                     'is_public'      => true,
                     'metadata_json'  => [
                         'source'      => 'batdongsan.com.vn',
+                        'city'        => $r['city'] ?? null,
                         'source_url'  => $url ? 'https://batdongsan.com.vn'.$url : null,
                         'image'       => $r['img'] ?? null,
                         'area'        => $area,
