@@ -16,5 +16,6 @@ class DatabaseSeeder extends Seeder
     public function run(): void
     {
         $this->call(DemoDataSeeder::class);
+        $this->call(DocsPermissionSeeder::class); // quyền module Tài liệu (sau khi role đã có)
     }
 }

@@ -5,6 +5,59 @@ Mỗi lần cập nhật code, ghi một entry vào đầu danh sách (mới nh�
 
 ---
 
+## 2026-07-27 (chiều) — Cộng đồng: lớp GHI + kiểm duyệt (9 route, verify HTTP thật)
+
+**Bối cảnh:** app cư dân đã dựng xong UI tab Cộng đồng kiểu FB/Zalo nhưng backend chỉ có route ĐỌC, app phải giữ bài trong RAM. Slice này khép luồng. Chủ dự án chốt: **KHÔNG duyệt trước**, đăng là hiện ngay, hậu kiểm; BQL có thể khóa/ẩn/xóa cả trên web lẫn ngay trên app.
+
+**⚠️ Máy dev CHẠY ĐƯỢC PHP** — Herd có sẵn `C:\Users\ADMIN\.config\herd\bin\php84\php.exe` (8.4.15). Ghi chú cũ "máy này không chạy được PHP" đã lỗi thời. Nhân tiện chạy luôn 2 migration treo từ phiên trước (`apartment_wallets`, `attachments`) — sạch, hết nợ verify.
+
+**1. Ba hành động kiểm duyệt TÁCH BẠCH** (đừng gộp — đây là chỗ dễ sai nhất):
+`locked_at` = bài CÒN hiện, cấm tương tác (423) · `status=hidden` = gỡ khỏi feed nhưng **tác giả vẫn thấy kèm lý do** (không thì họ tưởng app lỗi rồi đăng lại) · `deleted_at` = xóa mềm, tác giả tự xóa bài mình được.
+
+**2. Migration `2026_07_27_100001`:** `community_posts` +`author_user_id`/`author_kind`/`locked_at`/`locked_by_user_id`/`moderated_at`/`moderated_by_user_id`/`moderation_reason`/`report_count`; bảng mới `community_post_reactions` (unique post+user → đổi emoji là UPDATE, không cộng dồn) và `community_post_reports` (unique post+user, idempotent).
+**BẪY:** tên unique tự sinh của `community_post_reports` dài **66 ký tự**, vượt giới hạn 64 của MySQL → phải đặt tên tay (`cp_reports_post_user_unique`).
+
+**3. Lưu MÃ cảm xúc, không lưu ký tự emoji** (`like|love|haha|wow|sad|angry`) — đổi bộ icon ở app không phải migrate data.
+
+**4. `can{}` do SERVER tính** (`CommunityModerationService`): app không suy vai trò từ `abilities` để bật/tắt nút. Kèm `tallyMany()` gộp cảm xúc cả trang feed — query từng bài là N+1.
+
+**5. BẪY MIDDLEWARE:** nhóm resident dùng `ability:resident` sẽ **chặn chính nhân sự BQL** khỏi route kiểm duyệt. Alias `ability` = `CheckForAnyAbility` (**OR**, không phải AND) → tách nhóm riêng `ability:resident,staff`. Verify bằng `nv1@x2bms.vn` (ability chỉ có `staff`, `hasResidentMembership=false`) — gọi được, và bị chặn 403 khi bài ngoài `accessibleProjectIds`.
+
+**6. BẪY RESOURCE:** `Resource::collection(...)->additional([...])` **KHÔNG xuống tới từng item con** — feed trả `can:{}` cho mọi bài. Chuyển sang gắn meta thẳng lên model (`$post->post_meta = [...]`), đúng lối `is_mine` module bình luận đang dùng.
+
+**7. Sửa bug ảnh:** `CommunityPostResource` fallback ảnh demo cho MỌI bài không ảnh → bài cư dân đăng chay bằng chữ tự mọc ảnh lạ. Nay chỉ fallback cho bài seeder (`author_user_id === null`); bài thật đọc từ attachment, không có thì trả `[]`.
+
+**8. Siết `report`:** trả `can.report=false` cho bài của chính mình nhưng endpoint vẫn nhận → cờ kia thành trang trí. Nay chặn 403.
+
+**9. Seeder `CommunityFeedDemoSeeder`:** +14 bài **nhiều tác giả** + 52 cảm xúc trộn emoji + bình luận mẫu. Feed cũ 10 bài cùng một người nên vừa thưa vừa đơn điệu. Idempotent (`title = FEED-<key>`), chạy 2 lần vẫn 27 bài.
+
+**Verify (HTTP thật `https://x2bms.test`, token Sanctum của cư dân/staff/cư-dân-khác):**
+201 đăng bài (UTF-8 OK) · 200 upsert cảm xúc (đổi emoji → total vẫn 1) · 422 emoji ngoài whitelist · 201/200 bình luận · 403 báo cáo bài mình · 403 kiểm duyệt khi không phải BQL · 422 kiểm duyệt thiếu lý do · **423** tương tác vào bài đang khóa · bài ẩn: tác giả 200 (kèm lý do) / người khác **404** / không lọt vào feed · xóa mềm 200. Đã dọn dữ liệu test + thu hồi toàn bộ token CLI.
+
+**Còn lại:** màn kiểm duyệt trên Web BQL (BQL-07-08) — Resource `CommunityPosts` vẫn là scaffold sinh tự động.
+
+---
+
+## 2026-07-27 — Module Tài liệu (docs CMS kiểu GitBook, tự code)
+
+**Phạm vi:** trung tâm tài liệu nội bộ có soạn thảo (Filament) + reader (web) + phân quyền theo đối tượng + quản lý version.
+
+**Migrations mới:** `2026_07_27_000001_create_doc_spaces_table` (key unique, title, description, audience enum[dev/ops/bql/hq/sa/resident], icon, sort, is_published) · `000002_create_doc_pages_table` (space_id, parent_id tự tham chiếu cây, slug, title, sort, body longText markdown, status enum, updated_by, timestamps+softDeletes, unique[space_id,parent_id,slug]) · `000003_create_doc_page_revisions_table` (page_id, version, title, body, note, editor_id, created_at; unique[page_id,version]).
+
+**Models mới:** `DocSpace` (hasMany pages/rootPages, routeKey=key) · `DocPage` (belongsTo space/parent, hasMany children/revisions, `#[ObservedBy(DocPageObserver)]`, `pathSegments()`) · `DocPageRevision`. **Observer** `DocPageObserver`: `created`+`updated` (khi `wasChanged('title'|'body')`) → tạo revision version tăng dần.
+
+**Filament (panel `/sa` SuperAdmin, nav group "Tài liệu"):** `DocSpaceResource` (CRUD, reorderable sort, auto-slug từ title) · `DocPageResource` (Select space/parent lọc theo space, auto-slug, `MarkdownEditor` body có `fileAttachmentsDisk('public')` để chèn ảnh, status) + `RevisionsRelationManager` (bảng version chỉ đọc + action **Xem** modal + **Khôi phục** → ghi lại body cũ, sinh version mới). `updated_by` set ở `mutateFormDataBeforeCreate/Save`.
+
+**Phân quyền:** `DocsPermissionSeeder` tạo `docs.view.{dev,ops,bql,hq,sa,resident}` + `docs.manage`, gán cho 14 role theo 3-tier (super_admin/platform_support = tất cả; company_admin/operations_director = hq+ops+bql; building_manager = bql+ops+resident; …). Reader lọc space bằng `$user->can("docs.view.{audience}")`.
+
+**Reader (web `/docs`):** `Http/Controllers/Docs/DocsController` (index/show/search) + `Support/Docs/DocsMarkdown` (commonmark GFM, `html_input=strip` + `allow_unsafe_links=false` chống XSS). Route `/docs`, `/docs/search`, `/docs/{space:key}/{path?}` (where path `.*`, where space negative-lookahead loại `api`/`api.json` để KHÔNG nuốt route Scramble `/docs/api`). Blade tự chứa CSS (2 cột sidebar navy + content, breadcrumb, chọn version `?v=`, tìm kiếm LIKE, responsive): `views/docs/{layout,index,show,search,_spaces,_tree}.blade.php`.
+
+**Command:** `docs:import` (`Console/Commands/DocsImport.php`, idempotent, `--fresh`): nạp `docs/dev/**` → space dev; `docs/guide/**` → audience theo thư mục (bql/hq/sa, còn lại ops); bỏ SUMMARY.md; slug phẳng từ relative path; title từ heading `#` đầu.
+
+**Verify (DB thật x2bms, PHP 8.4 Herd):** `migrate` OK (3 bảng) · `db:seed DocsPermissionSeeder` OK (7 quyền / 14 role) · `docs:import` OK (5 space, 9 trang từ dev+ops — guide/bql|hq|sa chưa có file nên trống) · observer test: sửa body → revisions 1→2 · markdown sanitize: `<script>` bị strip, bảng GFM render · reader show/search render 200 (len ~11–12KB) · `route:list` đủ 3 route docs.* · `/docs/api` vẫn về Scramble (không bị nuốt).
+
+**Panel — CHỐT `/sa` (SuperAdmin):** chủ dự án quyết định 2026-07-27 đưa module vào `/sa` thay vì `/fila`. Đã dời `app/Filament/Resources/{DocSpaces,DocPages}` → `app/Filament/Sa/Resources/...`, đổi namespace `App\Filament\Resources\Doc*` → `App\Filament\Sa\Resources\Doc*` (13 file: Resource + Schemas + Tables + Pages + RelationManager), đổi `navigationGroup` 'Hệ thống' → 'Tài liệu'. `SaPanelProvider`: thêm `->discoverResources(App\Filament\Sa\Resources)` + `NavigationGroup::make('Tài liệu')->icon('heroicon-o-book-open')`. Verify: `route:list --path=sa` thấy 6 route `sa/doc-spaces|doc-pages`; `/fila` không còn doc-; lint 13 file sạch; reader `/docs` không đổi.
+
 ## 2026-07-25 — Bình luận thông báo (cư dân comment) + comment_count
 
 **Phạm vi:** cho cư dân bình luận dưới một thông báo (app hiển thị số + list + input).

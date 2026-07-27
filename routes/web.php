@@ -86,6 +86,18 @@ Route::middleware(['auth'])->group(function () {
     })->name('context.hq_tenant');
 });
 
+// MODULE TÀI LIỆU — reader kiểu GitBook. Soạn thảo ở /fila (DocSpace/DocPage
+// resources); đây là giao diện đọc, lọc space theo quyền docs.view.{audience}.
+Route::middleware(['auth'])->prefix('docs')->name('docs.')->group(function () {
+    Route::get('/', [\App\Http\Controllers\Docs\DocsController::class, 'index'])->name('index');
+    Route::get('/search', [\App\Http\Controllers\Docs\DocsController::class, 'search'])->name('search');
+    // Chặn nuốt các route sẵn có dưới /docs (Scramble: /docs/api, /docs/api.json).
+    Route::get('/{space:key}/{path?}', [\App\Http\Controllers\Docs\DocsController::class, 'show'])
+        ->where('space', '(?!api$|api\.json$)[A-Za-z0-9._-]+')
+        ->where('path', '.*')
+        ->name('show');
+});
+
 // Legacy standalone routes (pre-Filament-unification) now resolve inside /admin.
 Route::redirect('/dashboard', '/admin/dashboard');
 Route::redirect('/residents', '/admin/residents');
