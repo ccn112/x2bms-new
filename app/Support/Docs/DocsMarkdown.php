@@ -30,12 +30,18 @@ class DocsMarkdown
     /**
      * Render + trích mục lục.
      *
+     * @param  bool  $stripLeadingH1  Bỏ heading cấp 1 (# ...) ĐẦU TIÊN của body —
+     *   tránh trùng với tiêu đề trang do template hiển thị. Các heading khác giữ nguyên.
      * @return array{html:string, headings:array<int,array{level:int,text:string,slug:string}>}
      */
-    public static function render(?string $markdown): array
+    public static function render(?string $markdown, bool $stripLeadingH1 = false): array
     {
         if (blank($markdown)) {
             return ['html' => '', 'headings' => []];
+        }
+
+        if ($stripLeadingH1) {
+            $markdown = static::stripLeadingH1($markdown);
         }
 
         $environment = new Environment([
@@ -52,6 +58,27 @@ class DocsMarkdown
         $html = (string) $converter->convert($markdown)->getContent();
 
         return static::injectHeadingIds($html);
+    }
+
+    /**
+     * Bỏ heading cấp 1 (`# ...`) ĐẦU TIÊN của markdown (dòng nội dung đầu tiên).
+     * Không đụng `##`/`###` hay các `#` xuất hiện sau đó. Bỏ qua dòng trống ở đầu.
+     */
+    protected static function stripLeadingH1(string $markdown): string
+    {
+        $lines = preg_split('/\r?\n/', $markdown);
+        foreach ($lines as $i => $line) {
+            if (trim($line) === '') {
+                continue; // bỏ qua dòng trống đầu file
+            }
+            // Dòng nội dung đầu tiên: nếu là H1 (# ...) thì loại bỏ.
+            if (preg_match('/^#\s+\S/', $line)) {
+                unset($lines[$i]);
+            }
+            break; // chỉ xét dòng nội dung đầu tiên
+        }
+
+        return ltrim(implode("\n", $lines), "\n");
     }
 
     /**

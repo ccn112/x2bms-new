@@ -5,6 +5,26 @@ Mỗi lần cập nhật code, ghi một entry vào đầu danh sách (mới nh�
 
 ---
 
+## 2026-07-27 — Module Tài liệu Phase 4: search full-text + X2AI + copy code + sửa nhanh (+3 chỉnh UI)
+
+**Phạm vi:** 4 tính năng reader + 3 tinh chỉnh giao diện. Không đổi backend phân quyền/public của Phase 1–3.
+
+**1. Tìm kiếm full-text.** Migration `..._000005_add_fulltext_to_doc_pages` (FULLTEXT `(title, body)`, InnoDB; guard mysql, có `down`). `DocsController@search`: `MATCH…AGAINST … IN BOOLEAN MODE` (`+từ*` mỗi từ) + order relevance; fallback LIKE (driver ≠ mysql hoặc rỗng kết quả). Tôn trọng quyền (space được xem + published). Thêm `buildSnippet()` (bỏ markdown, ~40 từ quanh match, escape rồi `<mark>` — chống XSS) + `matchHeadingAnchor()` (khớp heading → `#slug`). `search.blade.php` render thẻ kết quả (snippet, badge "khớp tiêu đề mục", link + anchor).
+
+**2. X2AI trong reader.** Tái dùng NGUYÊN `<x-x2.ai-fab>` + Livewire `x2ai-chat` (không dựng AI mới). Ngữ cảnh: `view()->share('x2aiContext', ['title'=>...])` trong `show()`; nội dung trang bắt qua `window.x2aiCaptureScreen()` (đọc `<main>` — reader có `<main class="docs-main">`). **Chỉ nạp cho `@auth` + `X2aiPolicyGate::canUse()`** (`ai.use`); guest KHÔNG có chat/asset/endpoint AI. Asset trong nhánh điều kiện: `@livewireStyles` + `@vite('resources/css/app.css')` + `@livewireScripts` (Alpine đi kèm Livewire 3). Hardened `.docs-content ul/ol` list-style tường minh để preflight của app.css không xoá bullet.
+
+**3. Copy code.** JS thuần trong `layout.blade.php`: gắn nút "Copy"→"Đã sao chép" vào mọi `.docs-content pre`; `navigator.clipboard` + fallback `execCommand`. CSS `.docs-copy-btn` (hiện khi hover pre).
+
+**4. Sửa nhanh từ reader.** `@auth @can('docs.manage')` → nút "✎ Sửa trang" deep-link `/sa/doc-pages/{id}/edit` (tab mới). Ẩn hoàn toàn với guest/không quyền.
+
+**Chỉnh UI (theo chủ dự án):** (1) `DocsMarkdown::render($md, stripLeadingH1:true)` bỏ H1 đầu body trùng tiêu đề (h2/h3 giữ) — `show()` gọi với cờ này. (2) Dòng version thành `<select>` LUÔN hiện (disabled khi 1 version), giữ banner bản cũ — ghi chú "version = revision từng trang" chờ chủ dự án xác nhận nếu muốn version toàn bộ. (3) Bỏ `max-width` `.docs-article`/`.docs-main` → content full-width giữa sidebar và TOC.
+
+**Files:** `database/migrations/..._000005…php` · `app/Support/Docs/DocsMarkdown.php` (render `$stripLeadingH1` + `stripLeadingH1()`) · `app/Http/Controllers/Docs/DocsController.php` (search full-text + snippet/anchor + share x2aiContext + stripLeadingH1) · `resources/views/docs/{layout,show,search}.blade.php`.
+
+**Verify (DB thật, HttpKernel + controller render):** lint sạch 3 file PHP · FULLTEXT migrate OK · guest 'Coolify'→ops + snippet + `<mark>`; 'Seeding' guest 0 rows (không rò dev), admin 2 rows · guest page KHÔNG AI/livewire/nút sửa; admin có AI fab + livewireScripts + @vite + deep-link đúng id; technician (ai.use, không docs.manage): AI có, nút sửa ẩn · content `<h1>`=0 (đã strip) + `<h2 id>` còn (TOC) · dropdown version luôn hiện · copy-code script có · full-width (không cap 860 ngoài media-query). Không mojibake/BOM (Edit/Write UTF-8). CHƯA commit.
+
+**⚠️ Điểm chờ chủ dự án quyết:** X2AI cho GUEST — hiện **tắt** (chỉ user login + `ai.use`) để tránh chi phí token/abuse trên site public. Nếu muốn bật cho guest phải cân nhắc rate-limit/chi phí + tách endpoint an toàn.
+
 ## 2026-07-27 — Module Tài liệu Phase 3: polish UI reader (3 cột + TOC + version)
 
 **Phạm vi:** nâng cấp giao diện reader `/docs` (Blade) — bố cục 3 cột, mục lục "Trong trang này", hiển thị phiên bản rõ ràng. Không đổi backend/phân quyền; giữ nguyên chế độ public/guest của Phase 2.

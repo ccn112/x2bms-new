@@ -31,29 +31,35 @@
                     <h1 style="font-family:'Plus Jakarta Sans',sans-serif;color:var(--navy);margin:0;">{{ $page->title }}</h1>
                 </div>
 
-                {{-- Phiên bản + bộ chọn version, ngay dưới tiêu đề --}}
+                {{-- Dòng phiên bản: bộ chọn version (dropdown) + cập nhật + nút Sửa (nếu có quyền) --}}
                 <div class="docs-verline">
-                    @if ($latestVersion)
-                        <span class="docs-verpill">Phiên bản {{ $revision->version ?? $latestVersion }}</span>
-                    @endif
+                    {{-- Dropdown chọn phiên bản — LUÔN hiển thị (disabled nếu chỉ 1 version) --}}
+                    <label class="docs-verselect">
+                        <span class="docs-verlabel">Phiên bản:</span>
+                        <select
+                            @if ($revisions->count() <= 1) disabled @endif
+                            onchange="if(this.value){location.search='?v='+this.value}else{location.search=''}">
+                            <option value="">Mới nhất (v{{ $latestVersion ?? 1 }})</option>
+                            @foreach ($revisions as $rev)
+                                <option value="{{ $rev->version }}" {{ ($revision && $revision->version === $rev->version) ? 'selected' : '' }}>
+                                    v{{ $rev->version }} — {{ $rev->created_at?->format('d/m/Y H:i') }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </label>
                     @if ($updatedAt)
                         <span>· cập nhật {{ $updatedAt->format('d/m/Y') }}</span>
                     @endif
 
-                    @if ($revisions->count() > 1)
-                        <span style="margin-left:auto;">
-                            <label>Xem phiên bản:
-                                <select onchange="if(this.value){location.search='?v='+this.value}else{location.search=''}">
-                                    <option value="">Mới nhất (v{{ $latestVersion }})</option>
-                                    @foreach ($revisions as $rev)
-                                        <option value="{{ $rev->version }}" {{ ($revision && $revision->version === $rev->version) ? 'selected' : '' }}>
-                                            v{{ $rev->version }} — {{ $rev->created_at?->format('d/m/Y H:i') }}
-                                        </option>
-                                    @endforeach
-                                </select>
-                            </label>
-                        </span>
-                    @endif
+                    {{-- Feature 4: Sửa nhanh từ reader — deep link tới edit Filament /sa (ẩn với guest/không quyền) --}}
+                    @auth
+                        @can('docs.manage')
+                            <a class="docs-edit-btn" style="margin-left:auto;"
+                               href="{{ url('/sa/doc-pages/'.$page->id.'/edit') }}" target="_blank" rel="noopener">
+                                ✎ Sửa trang
+                            </a>
+                        @endcan
+                    @endauth
                 </div>
 
                 @if ($revision && $revision->version !== $latestVersion)

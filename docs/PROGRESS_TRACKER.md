@@ -281,7 +281,8 @@
 | Command `docs:import` (dev/ + guide/) | 🟢 | Idempotent. Nạp 5 space / 11 trang. `is_public`: ops=công khai, dev/bql/hq/sa=nội bộ. |
 | **Phase 2 — Site công khai `doc.x2.fino.vn`** | 🟢 | Cột `is_public` + Toggle Filament. Host routing (`config/docs.php`, root `/` landing trên subdomain). Guest xem space public, space nội bộ → login. Verify HTTP giả lập đủ case. Hạ tầng CloudPanel: `docs/guide/deploy-cloudpanel-docs-subdomain.md` (chủ dự án làm DNS+domain+SSL+ENV). |
 | **Phase 3 — Polish UI reader** | 🟢 | Layout 3 cột + mục lục "Trong trang này" (anchor h2/h3 slug tiếng Việt + scrollspy sticky), hiển thị "Phiên bản N · cập nhật …" + dropdown version + banner bản cũ. Verify render trang dev nhiều heading. |
-| Phase 4 (chưa làm) | ⬜ | Inline-edit từ reader, full-text search (ngoài LIKE), ảnh trong revision, seed guide/bql\|hq\|sa, SEO/sitemap site public. |
+| **Phase 4 — Reader nâng cao** | 🟢 | (1) Tìm kiếm FULLTEXT (MATCH…AGAINST boolean + fallback LIKE) + snippet/highlight/anchor, tôn trọng quyền. (2) X2AI chat trong reader (tái dùng `<x-x2.ai-fab>`, CHỈ user login + `ai.use`; guest tắt — tránh chi phí). (3) Copy code (JS thuần). (4) Nút "Sửa trang" deep-link `/sa/doc-pages/{id}/edit` cho `docs.manage`. +3 chỉnh UI: bỏ H1 body trùng tiêu đề, version=dropdown luôn hiện, content full-width. |
+| Phase 5 (chưa làm) | ⬜ | Ảnh theo revision, seed guide/bql\|hq\|sa, dark mode, SEO/sitemap site public. **Chờ chủ dự án:** X2AI cho guest? "version toàn tài liệu" vs revision từng trang? |
 
 ---
 

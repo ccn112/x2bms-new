@@ -57,6 +57,17 @@ Route **KHÔNG** đặt middleware `auth` — `DocsController` tự phân quyề
 - Link nội bộ trong reader dùng **URL tương đối** (`route(..., absolute: false)`) → giữ nguyên host đang duyệt (host chính hoặc subdomain), không nhảy chéo domain.
 - Cột `doc_spaces.is_public` (bool, default false) + Toggle "Công khai" trong `DocSpaceResource`.
 
+## 3c. Reader nâng cao (Phase 4)
+- **Tìm kiếm full-text:** MySQL `FULLTEXT(title, body)` (migration `..._000005`) + `MATCH…AGAINST … IN BOOLEAN MODE` (mỗi từ khoá `+từ*`), order theo relevance (natural mode). Fallback LIKE khi: driver ≠ mysql, hoặc boolean mode rỗng kết quả (từ ngắn/stopword). Tôn trọng quyền y hệt reader (chỉ space được xem + `status=published`). Kết quả có **snippet ngữ cảnh** (~40 từ quanh match, bỏ markdown) + **highlight `<mark>`** (escape trước, chèn mark sau — chống XSS) + link tới trang; nếu từ khoá khớp một heading `##`/`###` thì link kèm **anchor** `#slug` (badge "khớp tiêu đề mục").
+- **X2AI trong reader:** tái dùng **nguyên** hạ tầng `<x-x2.ai-fab>` + Livewire `x2ai-chat` (KHÔNG dựng AI mới). Ngữ cảnh trang share qua `$x2aiContext` (`title` = "Tài liệu · {space} · {page}"); nội dung trang tự bắt qua `window.x2aiCaptureScreen()` (đọc `<main>`). **Chỉ bật cho user đã đăng nhập + `X2aiPolicyGate::canUse()`** → guest/public KHÔNG thấy chat, KHÔNG nạp asset/endpoint AI (tránh chi phí token + abuse). Asset (`@vite('resources/css/app.css')` + `@livewireScripts`, Alpine đi kèm Livewire 3) chỉ nạp trong nhánh điều kiện này.
+- **Copy code:** JS thuần trong layout gắn nút "Copy" (→ "Đã sao chép") vào mọi `<pre>` trong `.docs-content`; copy plaintext (`navigator.clipboard`, fallback `execCommand`). Không thêm dependency.
+- **Sửa nhanh từ reader:** user có quyền `docs.manage` (đã đăng nhập) thấy nút **"✎ Sửa trang"** deep-link `/sa/doc-pages/{id}/edit` (mở tab mới). Ẩn hoàn toàn với guest/user không quyền (`@auth @can('docs.manage')`).
+
+### 3d. Tinh chỉnh giao diện (Phase 4)
+- **Bỏ H1 trùng:** `DocsMarkdown::render($md, stripLeadingH1: true)` loại heading `#` cấp 1 ĐẦU body (trùng tiêu đề template); h2/h3 giữ nguyên → TOC không đổi.
+- **Version = dropdown:** dòng dưới tiêu đề luôn hiển thị `<select>` liệt kê mọi revision (disabled khi chỉ 1 version) + "· cập nhật dd/mm/yyyy"; giữ banner "phiên bản cũ". *Ghi chú: "version" ở đây là **revision từng trang** (mỗi lần sửa title/body). Nếu chủ dự án muốn "version toàn tài liệu" (đánh số cả bộ) thì là khái niệm khác — cần xác nhận.*
+- **Content full-width:** bỏ `max-width` ở `.docs-article`/`.docs-main` → nội dung chạy hết chiều rộng giữa sidebar trái và cột TOC phải (chỉ chừa padding); vẫn responsive.
+
 ## 4. Import tài liệu có sẵn
 `php artisan docs:import [--fresh]` — nạp `.md` từ `docs/dev` + `docs/guide` (idempotent). Xem chi tiết mapping ở Track 3.
 
@@ -66,6 +77,7 @@ Route **KHÔNG** đặt middleware `auth` — `DocsController` tự phân quyề
 - reader show/search render 200 ✅ · `/docs/api` vẫn về Scramble ✅.
 - (2026-07-27, dời panel) Resource dời `App\Filament\Resources` → `App\Filament\Sa\Resources`; `SaPanelProvider` thêm `discoverResources` + nav group "Tài liệu"; `route:list --path=sa` thấy `sa/doc-spaces` + `sa/doc-pages`, `/fila` không còn doc- ✅.
 - (2026-07-27, Phase 2 public site) migrate `is_public` ✅ · import `--fresh` set ops=public, dev=private ✅ · giả lập HTTP: guest `/docs` chỉ thấy ops (ẩn dev), `/docs/ops`=200, `/docs/dev`→302 login, host `doc.x2.fino.vn` `/`=landing 200 (ẩn dev), host chính `/`→redirect `/admin` ✅ · guest search không rò trang dev (0 rows) · admin thấy cả 5 space ✅ · lint 8 file sạch.
+- (2026-07-27, Phase 4) FULLTEXT migrate ✅ · search 'Coolify' (guest) ra ops + snippet + `<mark>` ✅ · 'Seeding' guest 0 rows (không rò dev), admin 2 rows ✅ · guest page: KHÔNG có AI/livewire/nút sửa ✅ · admin: AI fab + `@livewireScripts` + `@vite` + deep-link `/sa/doc-pages/{id}/edit` ✅ · technician (ai.use, không docs.manage): AI có, nút sửa ẩn ✅ · content `<h1>`=0 (H1 body đã strip), `<h2 id>` còn (TOC) ✅ · dropdown version luôn hiện ✅ · copy-code script ✅ · lint sạch, không mojibake/BOM.
 
-## Việc còn lại (Phase 3+)
-Inline-edit từ reader · full-text search (thay LIKE) · ảnh gắn theo revision · seed `guide/bql|hq|sa` khi có file · polish UI reader (dark mode, anchor heading, copy code) · SEO/meta cho site public · sitemap.
+## Việc còn lại (Phase 5+)
+Ảnh gắn theo revision · seed `guide/bql|hq|sa` khi có file · dark mode reader · SEO/meta + sitemap cho site public · (chờ chủ dự án xác nhận) khái niệm "version toàn tài liệu" nếu khác revision từng trang.

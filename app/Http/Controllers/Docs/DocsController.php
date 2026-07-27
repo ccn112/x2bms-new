@@ -9,6 +9,7 @@ use App\Models\DocSpace;
 use App\Support\Docs\DocsMarkdown;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Str;
 use Symfony\Component\HttpFoundation\Response;
 
 /**
@@ -60,11 +61,20 @@ class DocsController extends Controller
                 ->first();
         }
 
+        // stripLeadingH1: bỏ H1 đầu body (trùng tiêu đề trang) — TOC h2/h3 giữ nguyên.
         $rendered = $page
-            ? DocsMarkdown::render($revision->body ?? $page->body)
+            ? DocsMarkdown::render($revision->body ?? $page->body, stripLeadingH1: true)
             : ['html' => '<p class="docs-empty">Không gian này chưa có nội dung.</p>', 'headings' => []];
 
         $revisions = $page ? $page->revisions()->get() : collect();
+
+        // Ngữ cảnh cho X2AI (chỉ dùng khi user đã đăng nhập + đủ quyền — xem layout).
+        if ($page) {
+            view()->share('x2aiContext', [
+                'title' => 'Tài liệu · '.$space->title.' · '.$page->title,
+                'surface' => 'docs',
+            ]);
+        }
 
         return view('docs.show', [
             'spaces' => $spaces,
@@ -82,7 +92,11 @@ class DocsController extends Controller
         ]);
     }
 
-    /** Tìm kiếm LIKE theo title/body trong các space được phép. */
+    /**
+     * Tìm kiếm full-text (MySQL FULLTEXT MATCH...AGAINST, boolean mode) trên
+     * title+body; fallback LIKE nếu engine không hỗ trợ. Tôn trọng phân quyền:
+     * chỉ trong space người dùng được xem + trang published.
+     */
     public function search(Request $request)
     {
         $q = trim((string) $request->query('q', ''));
@@ -91,16 +105,40 @@ class DocsController extends Controller
 
         $results = collect();
         if ($q !== '' && $spaceIds->isNotEmpty()) {
-            $results = DocPage::query()
+            $base = DocPage::query()
                 ->whereIn('space_id', $spaceIds)
                 ->where('status', 'published')
-                ->where(function ($query) use ($q) {
-                    $query->where('title', 'like', "%{$q}%")
-                        ->orWhere('body', 'like', "%{$q}%");
-                })
-                ->with('space')
-                ->limit(50)
-                ->get();
+                ->with('space');
+
+            $driver = DocPage::query()->getConnection()->getDriverName();
+
+            if ($driver === 'mysql') {
+                // Boolean mode: mỗi từ khoá bọc +...* để yêu cầu + prefix-match.
+                $boolean = collect(preg_split('/\s+/', $q))
+                    ->filter()
+                    ->map(fn ($t) => '+'.str_replace(['+', '-', '*', '"', '(', ')', '~', '<', '>', '@'], '', $t).'*')
+                    ->implode(' ');
+
+                $results = (clone $base)
+                    ->whereRaw('MATCH(title, body) AGAINST (? IN BOOLEAN MODE)', [$boolean !== '' ? $boolean : $q])
+                    ->orderByRaw('MATCH(title, body) AGAINST (?) DESC', [$q])
+                    ->limit(50)
+                    ->get();
+
+                // Fallback LIKE nếu boolean mode không ra kết quả (vd từ quá ngắn / stopword).
+                if ($results->isEmpty()) {
+                    $results = $this->likeSearch(clone $base, $q);
+                }
+            } else {
+                $results = $this->likeSearch($base, $q);
+            }
+
+            // Gắn snippet + highlight + anchor cho từng kết quả.
+            $terms = collect(preg_split('/\s+/', $q))->filter()->values()->all();
+            $results->each(function (DocPage $page) use ($terms) {
+                $page->setAttribute('snippet', $this->buildSnippet($page->body, $terms));
+                $page->setAttribute('match_anchor', $this->matchHeadingAnchor($page->body, $terms));
+            });
         }
 
         return view('docs.search', [
@@ -108,6 +146,93 @@ class DocsController extends Controller
             'q' => $q,
             'results' => $results,
         ]);
+    }
+
+    /** Fallback LIKE (mỗi từ khoá đều phải xuất hiện ở title HOẶC body). */
+    protected function likeSearch($query, string $q)
+    {
+        $terms = collect(preg_split('/\s+/', $q))->filter();
+
+        return $query->where(function ($outer) use ($terms, $q) {
+            if ($terms->isEmpty()) {
+                $outer->where('title', 'like', "%{$q}%")->orWhere('body', 'like', "%{$q}%");
+
+                return;
+            }
+            foreach ($terms as $t) {
+                $outer->where(fn ($w) => $w->where('title', 'like', "%{$t}%")->orWhere('body', 'like', "%{$t}%"));
+            }
+        })->limit(50)->get();
+    }
+
+    /**
+     * Snippet ngữ cảnh (~40 từ) quanh match đầu tiên, đã bỏ cú pháp markdown,
+     * và highlight từ khoá bằng <mark>. Trả HTML AN TOÀN (escape trước, chèn mark sau).
+     */
+    protected function buildSnippet(?string $body, array $terms): string
+    {
+        $text = trim(preg_replace('/\s+/', ' ', strip_tags(DocsMarkdown::toHtml((string) $body))));
+        if ($text === '') {
+            return '';
+        }
+
+        // Vị trí match đầu tiên (không phân biệt hoa/thường, hỗ trợ tiếng Việt).
+        $pos = null;
+        foreach ($terms as $t) {
+            $p = mb_stripos($text, $t);
+            if ($p !== false) {
+                $pos = ($pos === null) ? $p : min($pos, $p);
+            }
+        }
+        $pos = $pos ?? 0;
+
+        $start = max(0, $pos - 120);
+        $snippet = mb_substr($text, $start, 300);
+        if ($start > 0) {
+            $snippet = '…'.$snippet;
+        }
+        if (mb_strlen($text) > $start + 300) {
+            $snippet .= '…';
+        }
+
+        // Escape rồi highlight (case-insensitive) — tránh XSS.
+        $safe = e($snippet);
+        foreach ($terms as $t) {
+            if ($t === '') {
+                continue;
+            }
+            $safe = preg_replace_callback(
+                '/'.preg_quote(e($t), '/').'/iu',
+                fn ($m) => '<mark>'.$m[0].'</mark>',
+                $safe
+            );
+        }
+
+        return $safe;
+    }
+
+    /**
+     * Nếu một từ khoá xuất hiện trong heading (## / ###) của trang → trả slug
+     * heading đó để link thẳng tới anchor. Null nếu không có.
+     */
+    protected function matchHeadingAnchor(?string $body, array $terms): ?string
+    {
+        if (blank($body) || empty($terms)) {
+            return null;
+        }
+
+        foreach (preg_split('/\r?\n/', $body) as $line) {
+            if (preg_match('/^#{2,3}\s+(.+?)\s*$/u', $line, $m)) {
+                $heading = $m[1];
+                foreach ($terms as $t) {
+                    if ($t !== '' && mb_stripos($heading, $t) !== false) {
+                        return Str::slug($heading) ?: null;
+                    }
+                }
+            }
+        }
+
+        return null;
     }
 
     // --- Helpers -----------------------------------------------------------

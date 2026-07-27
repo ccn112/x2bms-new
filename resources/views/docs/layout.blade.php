@@ -55,7 +55,7 @@
             color: var(--gold); text-transform: uppercase; letter-spacing: .04em;
         }
         /* Content */
-        .docs-main { padding: 34px 48px 80px; max-width: 1180px; }
+        .docs-main { padding: 34px 48px 80px; width: 100%; }
         .docs-crumb { font-size: 13px; color: var(--muted); margin-bottom: 14px; }
         .docs-crumb a { color: var(--muted); }
         .docs-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 8px; flex-wrap: wrap; }
@@ -67,7 +67,8 @@
         }
         /* 3-column show layout: content + right "On this page" rail */
         .docs-layout { display: grid; grid-template-columns: minmax(0, 1fr) 240px; gap: 44px; align-items: start; }
-        .docs-article { min-width: 0; max-width: 860px; }
+        /* Nội dung chạy full chiều rộng còn lại giữa sidebar trái và cột TOC phải */
+        .docs-article { min-width: 0; width: 100%; }
         /* Page head — title + version line near the top */
         .docs-pagehead { margin-bottom: 6px; }
         .docs-verline {
@@ -80,6 +81,9 @@
             padding: 2px 10px; border-radius: 999px; font-size: 12px;
         }
         .docs-verline select { padding: 5px 9px; border-radius: 8px; border: 1px solid var(--line); background: #fff; font-size: 12.5px; }
+        .docs-verline select:disabled { color: var(--muted); background: #f4f6fb; cursor: default; }
+        .docs-verselect { display: inline-flex; align-items: center; gap: 6px; }
+        .docs-verlabel { font-weight: 600; color: var(--navy); }
         /* Right TOC rail */
         .docs-toc {
             position: sticky; top: 24px; align-self: start; font-size: 13px;
@@ -125,7 +129,43 @@
             border-left: 4px solid var(--gold); margin: 16px 0; padding: 4px 16px; color: var(--muted); background: #fffdf6;
         }
         .docs-content img { max-width: 100%; border-radius: 8px; }
+        /* Danh sách — khai báo tường minh (bền vững cả khi trang nạp CSS reset của app cho X2AI) */
+        .docs-content ul { list-style: disc; margin: 12px 0; padding-left: 24px; }
+        .docs-content ol { list-style: decimal; margin: 12px 0; padding-left: 24px; }
+        .docs-content li { margin: 4px 0; }
         .docs-empty { color: var(--muted); font-style: italic; }
+        /* Copy code button (Phase 4) */
+        .docs-content pre { position: relative; }
+        .docs-copy-btn {
+            position: absolute; top: 8px; right: 8px; z-index: 2;
+            background: rgba(255,255,255,.12); color: #e6edf9; border: 1px solid rgba(255,255,255,.2);
+            border-radius: 6px; padding: 3px 10px; font-size: 12px; cursor: pointer;
+            font-family: 'Inter', sans-serif; opacity: 0; transition: opacity .15s;
+        }
+        .docs-content pre:hover .docs-copy-btn { opacity: 1; }
+        .docs-copy-btn:hover { background: rgba(255,255,255,.22); }
+        .docs-copy-btn.copied { background: var(--gold); color: var(--navy); border-color: var(--gold); opacity: 1; }
+        /* Search results (Phase 4) */
+        .docs-results { list-style: none; margin: 8px 0 0; padding: 0; }
+        .docs-results li { margin-bottom: 10px; }
+        .docs-result {
+            display: block; background: var(--card); border: 1px solid var(--line); border-radius: 12px;
+            padding: 14px 16px; color: var(--ink); transition: box-shadow .15s, border-color .15s;
+        }
+        .docs-result:hover { text-decoration: none; box-shadow: 0 6px 18px rgba(11,27,63,.08); border-color: #c7d2e6; }
+        .docs-result-head { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 4px; }
+        .docs-result-head strong { color: var(--navy); font-family: 'Plus Jakarta Sans', sans-serif; }
+        .docs-snippet { color: var(--muted); font-size: 13.5px; line-height: 1.55; }
+        .docs-snippet mark { background: #fff2ac; color: inherit; padding: 0 2px; border-radius: 3px; }
+        .docs-result-path { color: #9aa6bd; font-size: 12px; margin-top: 6px; }
+        /* Edit-from-reader button (Phase 4) */
+        .docs-edit-btn {
+            display: inline-flex; align-items: center; gap: 6px; font-size: 13px;
+            background: var(--gold); color: var(--navy); font-weight: 600; padding: 6px 14px;
+            border-radius: 8px; text-decoration: none;
+        }
+        .docs-edit-btn:hover { text-decoration: none; filter: brightness(.96); }
+        [x-cloak] { display: none !important; }
         /* Cards (index) */
         .docs-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 16px; }
         .docs-card {
@@ -187,5 +227,56 @@
             @yield('content')
         </main>
     </div>
+
+    {{-- Copy code (Phase 4): gắn nút "Copy" cho mọi khối <pre> trong nội dung. JS thuần. --}}
+    <script>
+        (function () {
+            var pres = document.querySelectorAll('.docs-content pre');
+            pres.forEach(function (pre) {
+                var btn = document.createElement('button');
+                btn.type = 'button';
+                btn.className = 'docs-copy-btn';
+                btn.textContent = 'Copy';
+                btn.addEventListener('click', function () {
+                    var code = pre.querySelector('code');
+                    var text = (code ? code.innerText : pre.innerText) || '';
+                    var done = function () {
+                        btn.textContent = 'Đã sao chép';
+                        btn.classList.add('copied');
+                        setTimeout(function () { btn.textContent = 'Copy'; btn.classList.remove('copied'); }, 1600);
+                    };
+                    if (navigator.clipboard && navigator.clipboard.writeText) {
+                        navigator.clipboard.writeText(text).then(done, function () { fallback(text, done); });
+                    } else {
+                        fallback(text, done);
+                    }
+                });
+                pre.appendChild(btn);
+            });
+            function fallback(text, done) {
+                var ta = document.createElement('textarea');
+                ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
+                document.body.appendChild(ta); ta.select();
+                try { document.execCommand('copy'); done(); } catch (e) {}
+                document.body.removeChild(ta);
+            }
+        })();
+    </script>
+
+    {{--
+        X2AI chat trong reader (Phase 4) — CHỈ cho user đã đăng nhập + có quyền dùng
+        (X2aiPolicyGate::canUse). GUEST/public KHÔNG bao giờ thấy chat và KHÔNG nạp
+        endpoint/asset AI (tránh chi phí token + abuse). Tái dùng nguyên hạ tầng
+        <x-x2.ai-fab> + Livewire x2ai-chat; ngữ cảnh trang được share qua $x2aiContext,
+        nội dung trang tự bắt qua window.x2aiCaptureScreen (querySelector('main')).
+    --}}
+    @auth
+        @if (app(\App\Support\X2AI\X2aiPolicyGate::class)->canUse(auth()->user()))
+            @livewireStyles
+            @vite('resources/css/app.css')
+            <x-x2.ai-fab greeting="Xin chào! Hỏi tôi bất cứ điều gì về trang tài liệu bạn đang đọc." />
+            @livewireScripts
+        @endif
+    @endauth
 </body>
 </html>
