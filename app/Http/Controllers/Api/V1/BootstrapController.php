@@ -29,7 +29,9 @@ class BootstrapController extends ApiController
             'slug' => $p->code ?: (string) $p->id,
             'name' => $p->name,
             'location' => collect([$p->district, $p->city])->filter()->implode(', ') ?: ($p->address ?? ''),
-            'status' => $p->status,
+            // Trạng thái BÁN HÀNG (chip trên khuôn M01-PUB-02) — KHÔNG phải
+            // `$p->status` (trạng thái vận hành SaaS: active/trial/suspended).
+            'status' => self::salesStatus($p),
             'image' => \App\Support\DemoImage::url('building,residential,skyline', $p->id, 1200, 700),
             'summary' => $p->description,
         ])->all();
@@ -126,6 +128,29 @@ class BootstrapController extends ApiController
         // A pending application (ResidentApprovalRequest) would flip this to resident_applicant
         // once that slice is wired; for now an authenticated person with no active relation = member.
         return 'member';
+    }
+
+    /**
+     * Trạng thái bán hàng cho chip công khai. Ưu tiên cột `sales_status`; chưa
+     * đặt thì suy ra từ `handover_date` để dự án cũ vẫn có nhãn đúng:
+     * đã qua ngày bàn giao → đã bàn giao · còn ≤ 12 tháng → sắp bàn giao ·
+     * còn lại → đang mở bán.
+     */
+    private static function salesStatus(\App\Models\Project $p): string
+    {
+        if (! empty($p->sales_status)) {
+            return $p->sales_status;
+        }
+        $handover = $p->handover_date ? \Illuminate\Support\Carbon::parse($p->handover_date) : null;
+        if ($handover === null) {
+            return 'open_for_sale';
+        }
+
+        return match (true) {
+            $handover->isPast() => 'handed_over',
+            $handover->diffInMonths(now()) <= 12 => 'handover_soon',
+            default => 'open_for_sale',
+        };
     }
 
     private function defaultBranding(): array
