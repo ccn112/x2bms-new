@@ -38,8 +38,15 @@ curl -sS https://getcomposer.org/installer | php && sudo mv composer.phar /usr/l
 
 # PHP 8.4 extensions cho Laravel/Filament (CloudPanel thường có sẵn phần lớn)
 sudo apt install -y php8.4-mysql php8.4-mbstring php8.4-xml php8.4-curl \
-  php8.4-zip php8.4-gd php8.4-intl php8.4-bcmath php8.4-redis
+  php8.4-zip php8.4-gd php8.4-intl php8.4-bcmath php8.4-redis php8.4-exif
 ```
+> **`php8.4-gd` (kèm WebP) và `php8.4-exif` là BẮT BUỘC** cho pipeline ảnh cư dân
+> (`ImageVariantService`): gd sinh bản `thumb/feed/original` WebP, exif đọc cờ xoay
+> để ảnh chụp dọc không hiển thị nằm ngang. Thiếu → upload vẫn chạy nhưng app tải
+> ảnh gốc vài MB cho mỗi ô lưới. `deploy.sh` có preflight cảnh báo. Kiểm nhanh:
+> ```bash
+> php -r 'var_dump(gd_info()["WebP Support"] ?? false, function_exists("exif_read_data"));'
+> ```
 > Redis: cài server nếu muốn dùng cache/queue Redis: `sudo apt install -y redis-server`. Nếu chưa có, tạm để cache/queue/session = `database` (xem §4).
 
 ### 1.2 Tạo Site trong CloudPanel (UI)
@@ -291,6 +298,29 @@ php artisan optimize:clear           # xóa toàn bộ cache khi nghi cache cũ
 > ```
 > `./deploy.sh --help` để xem hết cờ. ⚠️ `DemoDataSeeder` không idempotent → trên
 > DB đã có dữ liệu dùng `--fresh` (reset), đừng `--seed` (sẽ trùng/lỗi).
+
+### 7.1 Seeder chạy TAY (idempotent — an toàn trên DB đã có dữ liệu)
+
+`deploy.sh` cố tình **không** tự chạy seeder. Ba seeder dưới đây là idempotent
+(`updateOrCreate`), chạy lại nhiều lần không nhân bản dữ liệu — khác hẳn
+`DemoDataSeeder` (dùng `create()`, chỉ hợp DB trống):
+
+```bash
+php artisan db:seed --class=CommunityFeedDemoSeeder  --force   # +14 bài cộng đồng nhiều tác giả + cảm xúc
+php artisan db:seed --class=ApartmentWalletDemoSeeder --force   # nạp số dư ví cho mọi căn có cư dân
+php artisan db:seed --class=ResidentArticleSeeder     --force   # bài Quy định / Cẩm nang / Tin tức
+```
+
+### 7.2 Lần deploy 2026-07-27 — cần lưu ý
+
+- **5 migration mới** sẽ chạy qua `migrate --force`: ví căn hộ, attachments,
+  cộng đồng lớp ghi (`2026_07_27_100001`), biến thể ảnh (`2026_07_27_110001`),
+  và 3 bảng module Tài liệu. Tất cả ADD-ONLY, có guard `hasColumn`/`hasTable`.
+- **Bắt buộc `php8.4-gd` (WebP) + `php8.4-exif`** — xem §1.1. Không có thì ảnh
+  cư dân đăng sẽ không có bản thu nhỏ.
+- **`storage:link`** phải có, nếu không ảnh upload trả 404 (script đã làm sẵn với `--force`).
+- Sau deploy, kiểm nhanh lớp ghi cộng đồng bằng tài khoản cư dân thật:
+  `POST /api/v1/resident/community/posts` phải trả **201** kèm `can{}` và `reactions{}`.
 
 Chi tiết các bước script chạy (tương đương làm tay):
 ```bash

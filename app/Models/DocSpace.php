@@ -15,6 +15,7 @@ class DocSpace extends Model
 
     protected $casts = [
         'is_published' => 'boolean',
+        'is_public' => 'boolean',
         'sort' => 'integer',
     ];
 

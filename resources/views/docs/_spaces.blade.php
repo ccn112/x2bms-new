@@ -3,7 +3,7 @@
 <ul class="docs-nav">
     @forelse ($spaces as $s)
         <li>
-            <a href="{{ route('docs.show', ['space' => $s->key]) }}"
+            <a href="{{ route('docs.show', ['space' => $s->key], false) }}"
                class="docs-space-link {{ (isset($space) && $space->id === $s->id) ? 'active' : '' }}">
                 <span>{{ $s->title }}</span>
                 <span class="docs-badge">{{ $s->audience }}</span>

@@ -12,7 +12,7 @@
     <ul class="docs-nav" style="padding-left:0;">
         @forelse ($results as $r)
             <li style="margin-bottom:6px;">
-                <a href="{{ route('docs.show', ['space' => $r->space->key, 'path' => implode('/', $r->pathSegments())]) }}"
+                <a href="{{ route('docs.show', ['space' => $r->space->key, 'path' => implode('/', $r->pathSegments())], false) }}"
                    style="background:var(--card);border:1px solid var(--line);color:var(--ink);">
                     <strong>{{ $r->title }}</strong>
                     <span class="docs-badge">{{ $r->space->audience }}</span>

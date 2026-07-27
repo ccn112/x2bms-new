@@ -55,6 +55,10 @@ class DocSpaceForm
                 Toggle::make('is_published')
                     ->label('Đã xuất bản')
                     ->default(true),
+                Toggle::make('is_public')
+                    ->label('Công khai (cho xem không cần đăng nhập)')
+                    ->helperText('Bật = hiển thị trên site tài liệu công khai doc.x2.fino.vn cho khách chưa đăng nhập.')
+                    ->default(false),
             ]);
     }
 }

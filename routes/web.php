@@ -8,7 +8,15 @@ use App\Support\Context\CurrentContext;
 use Illuminate\Support\Facades\Route;
 
 // Designed UI lives on the themed Filament panel at /admin; stock CRUD at /fila.
-Route::get('/', fn () => redirect('/admin'));
+// Trên subdomain tài liệu (DOCS_HOST) root '/' là landing site tài liệu; host
+// chính thì redirect vào /admin như cũ.
+Route::get('/', function (\Illuminate\Http\Request $request) {
+    if ($request->getHost() === config('docs.host')) {
+        return app(\App\Http\Controllers\Docs\DocsController::class)->index($request);
+    }
+
+    return redirect('/admin');
+})->name('docs.home');
 
 // Đặt lại mật khẩu (guest) — tiêu thụ token BQL sinh ở màn cư dân.
 Route::get('/reset-password/{token}', [ResidentPasswordResetController::class, 'show'])->name('password.reset');
@@ -86,9 +94,12 @@ Route::middleware(['auth'])->group(function () {
     })->name('context.hq_tenant');
 });
 
-// MODULE TÀI LIỆU — reader kiểu GitBook. Soạn thảo ở /fila (DocSpace/DocPage
-// resources); đây là giao diện đọc, lọc space theo quyền docs.view.{audience}.
-Route::middleware(['auth'])->prefix('docs')->name('docs.')->group(function () {
+// MODULE TÀI LIỆU — reader kiểu GitBook (Phase 2: site công khai doc.x2.fino.vn).
+// KHÔNG đặt middleware 'auth' ở đây: DocsController tự phân quyền — space public cho
+// guest xem, space nội bộ mới yêu cầu đăng nhập + quyền docs.view.{audience}.
+// Chạy trên MỌI host dưới prefix '/docs' (host chính + subdomain docs); subdomain
+// docs thêm landing tại root '/' (xem route 'docs.home' phía trên).
+Route::prefix('docs')->name('docs.')->group(function () {
     Route::get('/', [\App\Http\Controllers\Docs\DocsController::class, 'index'])->name('index');
     Route::get('/search', [\App\Http\Controllers\Docs\DocsController::class, 'search'])->name('search');
     // Chặn nuốt các route sẵn có dưới /docs (Scramble: /docs/api, /docs/api.json).

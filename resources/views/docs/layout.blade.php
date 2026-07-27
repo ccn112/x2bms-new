@@ -121,11 +121,18 @@
     <button class="docs-menu-btn" onclick="document.documentElement.classList.toggle('nav-open')">☰ Mục lục</button>
     <div class="docs-shell">
         <aside class="docs-side">
-            <div class="docs-brand"><span class="dot"></span> Tài liệu X2-BMS</div>
-            <form class="docs-search" action="{{ route('docs.search') }}" method="get">
+            <a class="docs-brand" href="{{ route('docs.index', [], false) }}" style="color:#fff;text-decoration:none;"><span class="dot"></span> Tài liệu X2-BMS</a>
+            <form class="docs-search" action="{{ route('docs.search', [], false) }}" method="get">
                 <input type="search" name="q" placeholder="Tìm kiếm tài liệu…" value="{{ $q ?? '' }}">
             </form>
             @yield('sidebar')
+            <div style="padding:14px 20px 28px;border-top:1px solid rgba(255,255,255,.08);margin-top:12px;font-size:13px;">
+                @auth
+                    <span style="color:#8ea0c0;">Xin chào, {{ auth()->user()->name }}</span>
+                @else
+                    <a href="{{ route('filament.admin.auth.login') }}" style="color:var(--gold);">Đăng nhập để xem tài liệu nội bộ →</a>
+                @endauth
+            </div>
         </aside>
         <main class="docs-main">
             @yield('content')

@@ -12,12 +12,14 @@ use Illuminate\Support\Collection;
 use Symfony\Component\HttpFoundation\Response;
 
 /**
- * Reader tài liệu kiểu GitBook. Lọc space theo quyền docs.view.{audience}.
+ * Reader tài liệu kiểu GitBook.
+ * - Space `is_public=true`: khách CHƯA đăng nhập vẫn xem được (chỉ trang published).
+ * - Space nội bộ: yêu cầu login + quyền docs.view.{audience}.
  * super_admin bypass qua Gate::before nên thấy tất cả.
  */
 class DocsController extends Controller
 {
-    /** Trang chủ /docs — danh sách space (đã lọc quyền). */
+    /** Trang chủ /docs (hoặc landing site docs) — danh sách space guest/user được xem. */
     public function index(Request $request)
     {
         $spaces = $this->visibleSpaces($request);
@@ -30,7 +32,15 @@ class DocsController extends Controller
     /** /docs/{space:key}/{path?} — hiển thị một trang trong space. */
     public function show(Request $request, DocSpace $space, ?string $path = null)
     {
-        abort_unless($this->canView($request, $space), Response::HTTP_FORBIDDEN);
+        if (! $this->canView($request, $space)) {
+            // Khách chưa đăng nhập gặp space nội bộ → điều hướng đăng nhập.
+            if (! $request->user()) {
+                return redirect()->guest(route('filament.admin.auth.login'));
+            }
+
+            // Đã đăng nhập nhưng không đủ quyền → 403.
+            abort(Response::HTTP_FORBIDDEN);
+        }
 
         $spaces = $this->visibleSpaces($request);
         $tree = $this->pageTree($space);
@@ -96,7 +106,10 @@ class DocsController extends Controller
 
     // --- Helpers -----------------------------------------------------------
 
-    /** Danh sách space người dùng được xem (published + đúng quyền), sắp xếp. */
+    /**
+     * Space được xem: published + (public HOẶC user có quyền docs.view.{audience}).
+     * Guest chỉ thấy space public; user thấy public + space theo quyền.
+     */
     protected function visibleSpaces(Request $request): Collection
     {
         return DocSpace::query()
@@ -110,6 +123,16 @@ class DocsController extends Controller
 
     protected function canView(Request $request, DocSpace $space): bool
     {
+        if (! $space->is_published) {
+            return false;
+        }
+
+        // Space công khai: ai cũng xem được (kể cả guest).
+        if ($space->is_public) {
+            return true;
+        }
+
+        // Space nội bộ: cần đăng nhập + quyền theo audience.
         $user = $request->user();
 
         return $user !== null && $user->can("docs.view.{$space->audience}");
@@ -173,10 +196,12 @@ class DocsController extends Controller
             $accumulated[] = $node->slug;
             $chain[] = [
                 'title' => $node->title,
+                // Relative URL (absolute:false) để giữ nguyên host đang duyệt
+                // (host chính hoặc subdomain docs).
                 'url' => route('docs.show', [
                     'space' => $page->space->key,
                     'path' => implode('/', $accumulated),
-                ]),
+                ], false),
             ];
         }
 

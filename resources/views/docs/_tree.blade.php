@@ -3,7 +3,7 @@
     @foreach ($nodes as $node)
         @php $segs = implode('/', $node->pathSegments()); @endphp
         <li>
-            <a href="{{ route('docs.show', ['space' => $space->key, 'path' => $segs]) }}"
+            <a href="{{ route('docs.show', ['space' => $space->key, 'path' => $segs], false) }}"
                class="{{ (isset($current) && $current && $current->id === $node->id) ? 'active' : '' }}">
                 {{ $node->title }}
             </a>

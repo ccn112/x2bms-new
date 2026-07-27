@@ -35,6 +35,9 @@ class DocSpacesTable
                 IconColumn::make('is_published')
                     ->label('Xuất bản')
                     ->boolean(),
+                IconColumn::make('is_public')
+                    ->label('Công khai')
+                    ->boolean(),
                 TextColumn::make('updated_at')
                     ->label('Cập nhật')
                     ->dateTime('d/m/Y H:i')

@@ -24,13 +24,19 @@ class DocsImport extends Command
 
     protected $description = 'Nạp tài liệu từ docs/dev và docs/guide vào module Tài liệu (idempotent)';
 
-    /** @var array<string, array{title:string, key:string, desc:string, sort:int}> */
+    /**
+     * `public` = mặc định is_public khi TẠO MỚI space (không ghi đè nếu admin đã
+     * chỉnh tay trên Filament). ops = hướng dẫn vận hành → công khai; dev + guide
+     * theo vai trò (bql/hq/sa) = nội bộ, yêu cầu đăng nhập.
+     *
+     * @var array<string, array{title:string, key:string, desc:string, sort:int, public:bool}>
+     */
     private array $spaceDefs = [
-        'dev' => ['title' => 'Tài liệu phát triển (Dev)', 'key' => 'dev', 'desc' => 'UI/UX, tính năng, kiến trúc & DB — nội bộ dev.', 'sort' => 10],
-        'ops' => ['title' => 'Vận hành & Tích hợp', 'key' => 'ops', 'desc' => 'Chạy backend, mobile API, triển khai & mở rộng.', 'sort' => 20],
-        'bql' => ['title' => 'Hướng dẫn Ban Quản Lý (BQL)', 'key' => 'bql', 'desc' => 'Hướng dẫn nghiệp vụ cho Ban Quản lý dự án.', 'sort' => 30],
-        'hq' => ['title' => 'Hướng dẫn Cổng Công ty (HQ)', 'key' => 'hq', 'desc' => 'Hướng dẫn cho cổng công ty vận hành.', 'sort' => 40],
-        'sa' => ['title' => 'Hướng dẫn SuperAdmin', 'key' => 'sa', 'desc' => 'Hướng dẫn cho nhà cung cấp nền tảng.', 'sort' => 50],
+        'dev' => ['title' => 'Tài liệu phát triển (Dev)', 'key' => 'dev', 'desc' => 'UI/UX, tính năng, kiến trúc & DB — nội bộ dev.', 'sort' => 10, 'public' => false],
+        'ops' => ['title' => 'Vận hành & Tích hợp', 'key' => 'ops', 'desc' => 'Chạy backend, mobile API, triển khai & mở rộng.', 'sort' => 20, 'public' => true],
+        'bql' => ['title' => 'Hướng dẫn Ban Quản Lý (BQL)', 'key' => 'bql', 'desc' => 'Hướng dẫn nghiệp vụ cho Ban Quản lý dự án.', 'sort' => 30, 'public' => false],
+        'hq' => ['title' => 'Hướng dẫn Cổng Công ty (HQ)', 'key' => 'hq', 'desc' => 'Hướng dẫn cho cổng công ty vận hành.', 'sort' => 40, 'public' => false],
+        'sa' => ['title' => 'Hướng dẫn SuperAdmin', 'key' => 'sa', 'desc' => 'Hướng dẫn cho nhà cung cấp nền tảng.', 'sort' => 50, 'public' => false],
     ];
 
     public function handle(): int
@@ -44,11 +50,23 @@ class DocsImport extends Command
 
         $spaces = [];
         foreach ($this->spaceDefs as $aud => $def) {
-            $space = DocSpace::updateOrCreate(
-                ['key' => $def['key']],
-                ['title' => $def['title'], 'description' => $def['desc'], 'audience' => $aud,
-                 'sort' => $def['sort'], 'is_published' => true],
-            );
+            $space = DocSpace::firstOrNew(['key' => $def['key']]);
+            $isNew = ! $space->exists;
+
+            $space->fill([
+                'title' => $def['title'],
+                'description' => $def['desc'],
+                'audience' => $aud,
+                'sort' => $def['sort'],
+                'is_published' => true,
+            ]);
+            // is_public: đặt mặc định khi tạo mới HOẶC khi chạy --fresh (reset) →
+            // không ghi đè chỉnh tay của admin ở lần import thường.
+            if ($isNew || $this->option('fresh')) {
+                $space->is_public = $def['public'];
+            }
+            $space->save();
+
             if ($this->option('fresh')) {
                 DocPage::where('space_id', $space->id)->forceDelete();
             }

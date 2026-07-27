@@ -14,6 +14,7 @@
 * [Sử dụng Mobile API /api/v1](mobile-api-usage.md)
 * [Chạy & kiểm thử backend cục bộ](backend-run-local.md)
 * [Triển khai Coolify](deploy-coolify.md)
+* [Site tài liệu công khai qua subdomain (CloudPanel)](deploy-cloudpanel-docs-subdomain.md)
 * [Vận hành & mở rộng](scale-ops.md)
 
 ## 🏢 C. Hướng dẫn Ban Quản Lý (BQL)

@@ -67,6 +67,18 @@ command -v "$PHP_BIN" >/dev/null 2>&1 || die "Không thấy PHP ('$PHP_BIN'). Đ
 [[ -f artisan ]] || die "Không thấy 'artisan' — hãy chạy script trong thư mục gốc x2bms."
 [[ -f .env ]]    || die "Chưa có file .env. Tạo .env (từ .env.example) + APP_KEY trước khi deploy."
 
+# Pipeline ảnh (ImageVariantService) cần GD kèm WebP, và exif để xoay ảnh chụp
+# dọc. THIẾU thì upload vẫn chạy nhưng KHÔNG sinh thumb/feed → app tải ảnh gốc
+# vài MB cho mỗi ô lưới. Cảnh báo chứ không chặn deploy.
+if ! "$PHP_BIN" -r 'exit(function_exists("gd_info") && (gd_info()["WebP Support"] ?? false) ? 0 : 1);' 2>/dev/null; then
+  warn "PHP thiếu GD hoặc GD không hỗ trợ WebP → ảnh upload sẽ KHÔNG có bản thu nhỏ."
+  warn "Cài: apt install php8.4-gd  (rồi restart php-fpm)."
+fi
+if ! "$PHP_BIN" -r 'exit(function_exists("exif_read_data") ? 0 : 1);' 2>/dev/null; then
+  warn "PHP thiếu ext-exif → ảnh chụp DỌC bằng điện thoại sẽ hiển thị NẰM NGANG."
+  warn "Cài: apt install php8.4-exif  (rồi restart php-fpm)."
+fi
+
 # --- maintenance mode: bật ngay, chỉ gỡ khi THÀNH CÔNG -----------------------
 # Nếu lỗi giữa chừng → giữ maintenance để không phục vụ app hỏng.
 DOWN=false

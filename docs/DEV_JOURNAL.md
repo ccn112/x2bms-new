@@ -5,6 +5,30 @@ Mỗi lần cập nhật code, ghi một entry vào đầu danh sách (mới nh�
 
 ---
 
+## 2026-07-27 — Module Tài liệu Phase 2: site công khai qua subdomain (doc.x2.fino.vn)
+
+**Phạm vi:** cho phép guest xem tài liệu công khai qua subdomain phục vụ từ chính app x2bms; space nội bộ vẫn yêu cầu đăng nhập + quyền.
+
+**Migration:** `2026_07_27_000004_add_is_public_to_doc_spaces` — thêm `is_public` (bool, default false) sau `is_published`. Model `DocSpace`: thêm cast `is_public=>boolean` (đã `$guarded=[]` nên mass-assignable).
+
+**Filament:** `DocSpaceForm` +Toggle `is_public` ("Công khai (cho xem không cần đăng nhập)", helper trỏ doc.x2.fino.vn). `DocSpacesTable` +IconColumn `is_public`.
+
+**Config:** `config/docs.php` mới — key `host` = `env('DOCS_HOST', 'doc.x2.fino.vn')`.
+
+**Định tuyến theo host (`routes/web.php`):**
+- Root `/` (named `docs.home`): host == `config('docs.host')` → `DocsController@index` (landing); host khác → redirect `/admin`.
+- Nhóm `/docs` (`docs.index/search/show`) **BỎ middleware `auth`** (controller tự phân quyền), domain-agnostic → chạy trên cả host chính lẫn subdomain. Giữ ràng buộc negative-lookahead loại `api`/`api.json` (Scramble).
+
+**Phân quyền (`DocsController::canView`):** (1) chưa published → ẩn; (2) `is_public` → guest xem được (chỉ trang published); (3) nội bộ → cần login + `docs.view.{audience}`. Guest gặp space nội bộ → redirect `filament.admin.auth.login`; login mà thiếu quyền → 403. `visibleSpaces()` lọc sidebar/landing/search theo cùng luật; guest không thấy draft.
+
+**Reader (Blade):** link nội bộ chuyển sang **URL tương đối** (`route(..., absolute:false)`) để giữ nguyên host đang duyệt (không nhảy chéo domain). `index` thêm badge "công khai" + text/CTA đăng nhập cho guest; layout thêm khối "Đăng nhập để xem tài liệu nội bộ".
+
+**Import (`docs:import`):** `spaceDefs` thêm `public` (ops=true, dev/bql/hq/sa=false). Set is_public khi TẠO MỚI hoặc `--fresh` (không ghi đè chỉnh tay ở import thường). Đổi `updateOrCreate` → `firstOrNew`+`fill`.
+
+**Verify (DB thật, giả lập HTTP qua HttpKernel):** migrate ✅ · `docs:import --fresh` (ops public, dev private, 11 trang/5 space) ✅ · guest `/docs`=200 chỉ ops (ẩn dev) · guest `/docs/ops`=200 · guest `/docs/dev`=302→`/admin/login` · host `doc.x2.fino.vn` `/`=landing 200 chỉ ops · host chính `/`=302→`/admin` · guest search 'Seeding' rò 0 trang dev · admin thấy cả 5 space · lint 8 file sạch.
+
+**Hạ tầng (chủ dự án làm — CloudPanel):** `docs/guide/deploy-cloudpanel-docs-subdomain.md` (DNS A → thêm domain vào site x2bms dùng chung `public/` → Let's Encrypt → `DOCS_HOST` + `config:cache`; phương án 2 nếu không add được nhiều domain/1 site). CHƯA commit theo yêu cầu.
+
 ## 2026-07-27 (chiều) — Cộng đồng: lớp GHI + kiểm duyệt (9 route, verify HTTP thật)
 
 **Bối cảnh:** app cư dân đã dựng xong UI tab Cộng đồng kiểu FB/Zalo nhưng backend chỉ có route ĐỌC, app phải giữ bài trong RAM. Slice này khép luồng. Chủ dự án chốt: **KHÔNG duyệt trước**, đăng là hiện ngay, hậu kiểm; BQL có thể khóa/ẩn/xóa cả trên web lẫn ngay trên app.

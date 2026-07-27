@@ -11,9 +11,9 @@
 
 @section('content')
     <nav class="docs-crumb">
-        <a href="{{ route('docs.index') }}">Tài liệu</a>
+        <a href="{{ route('docs.index', [], false) }}">Tài liệu</a>
         <span>/</span>
-        <a href="{{ route('docs.show', ['space' => $space->key]) }}">{{ $space->title }}</a>
+        <a href="{{ route('docs.show', ['space' => $space->key], false) }}">{{ $space->title }}</a>
         @foreach ($breadcrumb as $b)
             <span>/</span>
             @if ($loop->last)
@@ -47,7 +47,7 @@
             <div class="docs-flag">
                 Đang xem <strong>phiên bản cũ v{{ $revision->version }}</strong>
                 ({{ $revision->created_at?->format('d/m/Y H:i') }}).
-                <a href="{{ route('docs.show', ['space' => $space->key, 'path' => implode('/', $page->pathSegments())]) }}">Về bản mới nhất</a>
+                <a href="{{ route('docs.show', ['space' => $space->key, 'path' => implode('/', $page->pathSegments())], false) }}">Về bản mới nhất</a>
             </div>
         @endif
     @endif
