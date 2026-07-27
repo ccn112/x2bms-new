@@ -29,6 +29,12 @@ class DocPage extends Model
         return $this->belongsTo(DocSpace::class, 'space_id');
     }
 
+    /** Phiên bản sản phẩm trang thuộc về; null = trang chung (mọi version). */
+    public function version(): BelongsTo
+    {
+        return $this->belongsTo(DocVersion::class, 'version_id');
+    }
+
     public function parent(): BelongsTo
     {
         return $this->belongsTo(self::class, 'parent_id');

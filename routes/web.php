@@ -102,9 +102,11 @@ Route::middleware(['auth'])->group(function () {
 Route::prefix('docs')->name('docs.')->group(function () {
     Route::get('/', [\App\Http\Controllers\Docs\DocsController::class, 'index'])->name('index');
     Route::get('/search', [\App\Http\Controllers\Docs\DocsController::class, 'search'])->name('search');
-    // Chặn nuốt các route sẵn có dưới /docs (Scramble: /docs/api, /docs/api.json).
+    // Lịch sử phiên bản sản phẩm + backlog (Phase 5).
+    Route::get('/versions', [\App\Http\Controllers\Docs\DocsController::class, 'versions'])->name('versions');
+    // Chặn nuốt các route sẵn có dưới /docs (Scramble: /docs/api, /docs/api.json) + /docs/versions.
     Route::get('/{space:key}/{path?}', [\App\Http\Controllers\Docs\DocsController::class, 'show'])
-        ->where('space', '(?!api$|api\.json$)[A-Za-z0-9._-]+')
+        ->where('space', '(?!api$|api\.json$|versions$)[A-Za-z0-9._-]+')
         ->where('path', '.*')
         ->name('show');
 });

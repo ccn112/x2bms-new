@@ -282,7 +282,8 @@
 | **Phase 2 — Site công khai `doc.x2.fino.vn`** | 🟢 | Cột `is_public` + Toggle Filament. Host routing (`config/docs.php`, root `/` landing trên subdomain). Guest xem space public, space nội bộ → login. Verify HTTP giả lập đủ case. Hạ tầng CloudPanel: `docs/guide/deploy-cloudpanel-docs-subdomain.md` (chủ dự án làm DNS+domain+SSL+ENV). |
 | **Phase 3 — Polish UI reader** | 🟢 | Layout 3 cột + mục lục "Trong trang này" (anchor h2/h3 slug tiếng Việt + scrollspy sticky), hiển thị "Phiên bản N · cập nhật …" + dropdown version + banner bản cũ. Verify render trang dev nhiều heading. |
 | **Phase 4 — Reader nâng cao** | 🟢 | (1) Tìm kiếm FULLTEXT (MATCH…AGAINST boolean + fallback LIKE) + snippet/highlight/anchor, tôn trọng quyền. (2) X2AI chat trong reader (tái dùng `<x-x2.ai-fab>`, CHỈ user login + `ai.use`; guest tắt — tránh chi phí). (3) Copy code (JS thuần). (4) Nút "Sửa trang" deep-link `/sa/doc-pages/{id}/edit` cho `docs.manage`. +3 chỉnh UI: bỏ H1 body trùng tiêu đề, version=dropdown luôn hiện, content full-width. |
-| Phase 5 (chưa làm) | ⬜ | Ảnh theo revision, seed guide/bql\|hq\|sa, dark mode, SEO/sitemap site public. **Chờ chủ dự án:** X2AI cho guest? "version toàn tài liệu" vs revision từng trang? |
+| **Phase 5 — Phiên bản sản phẩm + Backlog** | 🟢 | `doc_versions` (v1.0/v2.0, is_current độc nhất) + `doc_version_items` (backlog) + `doc_pages.version_id` (null=chung). Filament `DocVersionResource` + backlog RM; reader có bộ chọn phiên bản (lọc cây/nội dung theo `?ver=`) + trang `/docs/versions` (timeline + backlog); phân biệt "Lịch sử sửa trang" (revision) vs "Phiên bản" (sản phẩm). Guest chỉ thấy version released. Verify đầy đủ. |
+| Phase 6 (chưa làm) | ⬜ | Ảnh theo revision, seed guide/bql\|hq\|sa, dark mode, SEO/sitemap site public. **Chờ chủ dự án:** (Phase 4) X2AI cho guest? · (Phase 5) chính sách gán version khi ra v2.0 (clone/chuyển trang) + có cần diff giữa 2 phiên bản? |
 
 ---
 

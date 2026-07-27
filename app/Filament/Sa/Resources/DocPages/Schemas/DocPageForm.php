@@ -43,6 +43,13 @@ class DocPageForm
                                     ->orderBy('title')
                                     ->pluck('title', 'id');
                             }),
+                        Select::make('version_id')
+                            ->label('Phiên bản')
+                            ->relationship('version', 'label')
+                            ->searchable()
+                            ->preload()
+                            ->placeholder('— Chung (mọi phiên bản) —')
+                            ->helperText('Để trống = trang chung, hiện ở mọi phiên bản.'),
                         TextInput::make('sort')
                             ->label('Thứ tự')
                             ->numeric()

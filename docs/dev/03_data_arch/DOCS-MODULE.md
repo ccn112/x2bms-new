@@ -59,11 +59,46 @@ DocPage.updated_by ─→ User      DocPageRevision.editor_id ─→ User
 - `DocPage belongsTo space, parent`; `hasMany children, revisions`; `belongsTo editor(updated_by)`.
 - `DocPageRevision belongsTo page, editor`.
 
-## Version — cơ chế
+## Version — 2 KHÁI NIỆM (đừng lẫn)
+**A. Revision từng trang** (`doc_page_revisions`, Phase 3/4): lịch sử sửa 1 trang.
 `DocPageObserver` (`#[ObservedBy]` trên `DocPage`):
 - `created` → snapshot version 1 (note "Tạo trang").
 - `updated` → chỉ snapshot khi `wasChanged('title')` hoặc `wasChanged('body')`; version = max+1.
 - **Khôi phục** (RelationManager) = ghi title/body của revision cũ trở lại page → observer tạo thêm version mới (lịch sử không bị xóa).
+- Reader gọi là **"Lịch sử sửa trang"** (control `?v=`).
+
+**B. Phiên bản sản phẩm** (`doc_versions` + `doc_version_items`, Phase 5): v1.0/v2.0 toàn site, mỗi version có backlog. Reader gọi là **"Phiên bản"** (control `?ver=<label>`).
+
+### `doc_versions` — phiên bản sản phẩm
+| Cột | Kiểu | Ghi chú |
+|---|---|---|
+| id | bigint PK | |
+| label | string unique | 'v1.0', 'v2.0' … (routeKey) |
+| name | string nullable | tên đợt |
+| released_at | date nullable | |
+| status | enum | planned / in_progress / released |
+| is_current | bool | version mặc định hiển thị (chỉ 1 — enforce ở Filament Create/Edit hook) |
+| sort | uint | |
+| summary | text nullable | |
+| timestamps | | |
+
+### `doc_version_items` — backlog
+| Cột | Kiểu | Ghi chú |
+|---|---|---|
+| id | bigint PK | |
+| doc_version_id | FK → doc_versions | cascade on delete |
+| category | enum | feature / improvement / fix / change |
+| title | string | |
+| detail | text nullable | |
+| status | enum | done / in_progress / planned |
+| ref_page_id | FK → doc_pages nullable | nullOnDelete — trang liên quan |
+| sort | uint | |
+| timestamps | | |
+
+### `doc_pages.version_id` (cột mới)
+FK → `doc_versions` nullable (nullOnDelete). **null = trang CHUNG** (hiện ở mọi version); có version_id = chỉ hiện khi đang xem đúng version đó.
+
+Quan hệ: `DocVersion hasMany items, pages`; `DocVersionItem belongsTo version, refPage`; `DocPage belongsTo version`.
 
 ## Phân quyền (spatie, guard `web`)
 - Permissions: `docs.view.dev|ops|bql|hq|sa|resident` + `docs.manage`.
@@ -75,5 +110,6 @@ DocPage.updated_by ─→ User      DocPageRevision.editor_id ─→ User
 - `docs/dev/**/*.md` → space `dev`.
 - `docs/guide/**/*.md` → audience theo thư mục con (`bql`/`hq`/`sa`, còn lại `ops`); bỏ `SUMMARY.md`.
 - slug phẳng từ relative path; title lấy heading `#` đầu tiên (fallback tên file).
+- **Phase 5:** tạo version mặc định `v1.0` (released, is_current nếu chưa có version nào) và gán mọi trang import `version_id = v1.0`. Idempotent (`firstOrNew`).
 
 Ảnh chèn trong nội dung: `MarkdownEditor` upload vào disk `public` (`docs/attachments`), cần `php artisan storage:link`.

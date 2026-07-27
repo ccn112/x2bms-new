@@ -71,6 +71,23 @@ Route **KHÔNG** đặt middleware `auth` — `DocsController` tự phân quyề
 ## 4. Import tài liệu có sẵn
 `php artisan docs:import [--fresh]` — nạp `.md` từ `docs/dev` + `docs/guide` (idempotent). Xem chi tiết mapping ở Track 3.
 
+## 3e. Phiên bản sản phẩm + Backlog (Phase 5)
+**Phân biệt rõ 2 khái niệm** (xem chi tiết ở Track 3):
+- **Lịch sử sửa trang** = revision từng trang (`doc_page_revisions`, control `?v=`). Đã đổi nhãn reader thành "Lịch sử sửa trang" để khỏi lẫn.
+- **Phiên bản sản phẩm** = v1.0/v2.0 toàn site (`doc_versions`, control `?ver=<label>`), mỗi version có **backlog** (`doc_version_items`).
+
+**Filament (/sa, nav "Tài liệu"):**
+- `DocVersionResource` — CRUD version (label/name/released_at/status/is_current/sort/summary) + `ItemsRelationManager` (backlog: category/title/detail/status/ref_page/sort, reorderable). `is_current` độc nhất: Create/Edit page hook `afterCreate/afterSave` bỏ current ở các version khác.
+- `DocPageForm` — thêm Select "Phiên bản" (`version_id`, trống = chung).
+
+**Reader:**
+- **Bộ chọn phiên bản** ở sidebar (dropdown `doc_versions`, mặc định `is_current`). Đổi → `?ver=<label>` (JS `docsSetVersion`, xoá `?v` revision). Lọc cây + nội dung: hiện trang `version_id = active` HOẶC `null` (chung). Trang thuộc version khác bị ẩn khỏi cây; mở trực tiếp URL → banner gợi ý "Chuyển sang {label}".
+- **Trang `/docs/versions`** — timeline (mới nhất trên cùng): mỗi version có label/name/ngày/status/summary + backlog nhóm theo category (badge status, link `ref_page` nếu có).
+- Guest: bộ chọn + `/docs/versions` chỉ thấy version `released`; item backlog trỏ trang không được xem thì ẩn. Không chọn được version chưa phát hành (fallback về hiện hành).
+- Giữ "Lịch sử sửa trang" (revision) — JS `docsSetRevision` giữ nguyên `?ver` khi đổi bản sửa.
+
+**Import:** `docs:import` tạo `v1.0` (released, is_current) idempotent + gán trang import `version_id=v1.0`.
+
 ## Verify (2026-07-27, DB thật)
 - migrate 3 bảng ✅ · seeder 7 quyền/14 role ✅ · import 5 space/9 trang ✅.
 - Observer sinh version (1→2 sau khi sửa body) ✅ · markdown strip `<script>` ✅.
@@ -78,6 +95,7 @@ Route **KHÔNG** đặt middleware `auth` — `DocsController` tự phân quyề
 - (2026-07-27, dời panel) Resource dời `App\Filament\Resources` → `App\Filament\Sa\Resources`; `SaPanelProvider` thêm `discoverResources` + nav group "Tài liệu"; `route:list --path=sa` thấy `sa/doc-spaces` + `sa/doc-pages`, `/fila` không còn doc- ✅.
 - (2026-07-27, Phase 2 public site) migrate `is_public` ✅ · import `--fresh` set ops=public, dev=private ✅ · giả lập HTTP: guest `/docs` chỉ thấy ops (ẩn dev), `/docs/ops`=200, `/docs/dev`→302 login, host `doc.x2.fino.vn` `/`=landing 200 (ẩn dev), host chính `/`→redirect `/admin` ✅ · guest search không rò trang dev (0 rows) · admin thấy cả 5 space ✅ · lint 8 file sạch.
 - (2026-07-27, Phase 4) FULLTEXT migrate ✅ · search 'Coolify' (guest) ra ops + snippet + `<mark>` ✅ · 'Seeding' guest 0 rows (không rò dev), admin 2 rows ✅ · guest page: KHÔNG có AI/livewire/nút sửa ✅ · admin: AI fab + `@livewireScripts` + `@vite` + deep-link `/sa/doc-pages/{id}/edit` ✅ · technician (ai.use, không docs.manage): AI có, nút sửa ẩn ✅ · content `<h1>`=0 (H1 body đã strip), `<h2 id>` còn (TOC) ✅ · dropdown version luôn hiện ✅ · copy-code script ✅ · lint sạch, không mojibake/BOM.
+- (2026-07-27, Phase 5) migrate 3 (doc_versions/doc_version_items/version_id) ✅ · import tạo v1.0 gán 12 trang ✅ · active version: guest→v1.0, admin `?ver=v2.0`→v2.0, guest `?ver=v2.0`(planned)→v1.0 ✅ · lọc cây: guest default ẩn trang v2.0, admin `?ver=v2.0` hiện ✅ · banner mismatch khi mở trang khác version ✅ · `/docs/versions`: guest chỉ v1.0(released), admin thấy v2.0+backlog(2 item) ✅ · is_current độc nhất ✅ · lint 13 file sạch, không mojibake/BOM.
 
-## Việc còn lại (Phase 5+)
-Ảnh gắn theo revision · seed `guide/bql|hq|sa` khi có file · dark mode reader · SEO/meta + sitemap cho site public · (chờ chủ dự án xác nhận) khái niệm "version toàn tài liệu" nếu khác revision từng trang.
+## Việc còn lại (Phase 6+)
+Ảnh gắn theo revision · seed `guide/bql|hq|sa` khi có file · dark mode reader · SEO/meta + sitemap cho site public · (tùy chọn) so sánh diff giữa 2 phiên bản sản phẩm.

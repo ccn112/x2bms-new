@@ -31,18 +31,22 @@
                     <h1 style="font-family:'Plus Jakarta Sans',sans-serif;color:var(--navy);margin:0;">{{ $page->title }}</h1>
                 </div>
 
-                {{-- Dòng phiên bản: bộ chọn version (dropdown) + cập nhật + nút Sửa (nếu có quyền) --}}
+                {{-- Dòng thông tin: "Lịch sử sửa trang" (revision) + cập nhật + nút Sửa (nếu có quyền).
+                     Đây là REVISION TỪNG TRANG — khác với "Phiên bản sản phẩm" ở sidebar. --}}
                 <div class="docs-verline">
-                    {{-- Dropdown chọn phiên bản — LUÔN hiển thị (disabled nếu chỉ 1 version) --}}
+                    @if ($page->version)
+                        <span class="docs-verpill">{{ $page->version->label }}</span>
+                    @endif
+                    {{-- Dropdown chọn bản sửa của trang — LUÔN hiển thị (disabled nếu chỉ 1 bản) --}}
                     <label class="docs-verselect">
-                        <span class="docs-verlabel">Phiên bản:</span>
+                        <span class="docs-verlabel">Lịch sử sửa trang:</span>
                         <select
                             @if ($revisions->count() <= 1) disabled @endif
-                            onchange="if(this.value){location.search='?v='+this.value}else{location.search=''}">
-                            <option value="">Mới nhất (v{{ $latestVersion ?? 1 }})</option>
+                            onchange="docsSetRevision(this.value)">
+                            <option value="">Bản mới nhất (sửa lần {{ $latestVersion ?? 1 }})</option>
                             @foreach ($revisions as $rev)
                                 <option value="{{ $rev->version }}" {{ ($revision && $revision->version === $rev->version) ? 'selected' : '' }}>
-                                    v{{ $rev->version }} — {{ $rev->created_at?->format('d/m/Y H:i') }}
+                                    Sửa lần {{ $rev->version }} — {{ $rev->created_at?->format('d/m/Y H:i') }}
                                 </option>
                             @endforeach
                         </select>
@@ -62,9 +66,18 @@
                     @endauth
                 </div>
 
+                {{-- Gợi ý chuyển phiên bản sản phẩm khi mở trực tiếp trang thuộc version khác --}}
+                @if (!empty($versionMismatch))
+                    <div class="docs-flag" style="background:#eaf1ff;border-color:#b9cdf5;color:#1e3a8a;">
+                        Trang này thuộc phiên bản <strong>{{ $versionMismatch->label }}</strong>
+                        (bạn đang xem {{ $activeVersion?->label ?? '—' }}).
+                        <a href="?ver={{ $versionMismatch->label }}">Chuyển sang {{ $versionMismatch->label }} →</a>
+                    </div>
+                @endif
+
                 @if ($revision && $revision->version !== $latestVersion)
                     <div class="docs-flag">
-                        Đang xem <strong>phiên bản cũ v{{ $revision->version }}</strong>
+                        Đang xem <strong>bản sửa cũ (lần {{ $revision->version }})</strong>
                         ({{ $revision->created_at?->format('d/m/Y H:i') }}).
                         <a href="{{ route('docs.show', ['space' => $space->key, 'path' => implode('/', $page->pathSegments())], false) }}">Về bản mới nhất →</a>
                     </div>

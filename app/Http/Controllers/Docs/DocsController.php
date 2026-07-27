@@ -6,6 +6,8 @@ use App\Http\Controllers\Controller;
 use App\Models\DocPage;
 use App\Models\DocPageRevision;
 use App\Models\DocSpace;
+use App\Models\DocVersion;
+use App\Models\DocVersionItem;
 use App\Support\Docs\DocsMarkdown;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
@@ -23,6 +25,7 @@ class DocsController extends Controller
     /** Trang chủ /docs (hoặc landing site docs) — danh sách space guest/user được xem. */
     public function index(Request $request)
     {
+        $this->shareVersionContext($request);
         $spaces = $this->visibleSpaces($request);
 
         return view('docs.index', [
@@ -43,15 +46,22 @@ class DocsController extends Controller
             abort(Response::HTTP_FORBIDDEN);
         }
 
+        $active = $this->shareVersionContext($request);
         $spaces = $this->visibleSpaces($request);
-        $tree = $this->pageTree($space);
+        $tree = $this->pageTree($space, $active);
 
         // Resolve trang theo chuỗi slug (path phân cấp). Nếu không có path → trang đầu.
         $page = $path
             ? $this->resolvePageByPath($space, $path)
-            : $this->firstPage($space);
+            : $this->firstPage($space, $active);
 
         abort_if($path && ! $page, Response::HTTP_NOT_FOUND);
+
+        // Trang thuộc phiên bản khác phiên bản đang chọn → gợi ý chuyển version.
+        $versionMismatch = null;
+        if ($page && $active && $page->version_id && $page->version_id !== $active->id) {
+            $versionMismatch = $page->version; // DocVersion trang thực sự thuộc về
+        }
 
         // Xem version cũ nếu có ?v=
         $revision = null;
@@ -89,6 +99,44 @@ class DocsController extends Controller
             'latestVersion' => $revisions->max('version'),
             'updatedAt' => $page?->updated_at,
             'breadcrumb' => $page ? $this->breadcrumb($page) : [],
+            'versionMismatch' => $versionMismatch,
+        ]);
+    }
+
+    /**
+     * /docs/versions — timeline phiên bản sản phẩm + backlog.
+     * Guest chỉ thấy version đã phát hành + item trỏ trang public (hoặc không trỏ trang).
+     */
+    public function versions(Request $request)
+    {
+        $this->shareVersionContext($request);
+
+        $query = DocVersion::query()->with(['items.refPage.space'])
+            ->orderByDesc('sort')->orderByDesc('id');
+
+        // Guest: chỉ version đã phát hành.
+        if (! $request->user()) {
+            $query->where('status', 'released');
+        }
+
+        $versions = $query->get();
+
+        // Với mỗi item, ẩn nếu trỏ tới trang người dùng không được xem.
+        $spaceIds = $this->visibleSpaces($request)->pluck('id');
+        $versions->each(function (DocVersion $v) use ($spaceIds) {
+            $v->setRelation('items', $v->items->filter(function (DocVersionItem $it) use ($spaceIds) {
+                if (! $it->ref_page_id || ! $it->refPage) {
+                    return true; // item không gắn trang → luôn hiển thị
+                }
+
+                return $spaceIds->contains($it->refPage->space_id)
+                    && $it->refPage->status === 'published';
+            })->values());
+        });
+
+        return view('docs.versions', [
+            'versions' => $versions,
+            'spaces' => $this->visibleSpaces($request),
         ]);
     }
 
@@ -99,6 +147,7 @@ class DocsController extends Controller
      */
     public function search(Request $request)
     {
+        $active = $this->shareVersionContext($request);
         $q = trim((string) $request->query('q', ''));
         $spaces = $this->visibleSpaces($request);
         $spaceIds = $spaces->pluck('id');
@@ -108,6 +157,7 @@ class DocsController extends Controller
             $base = DocPage::query()
                 ->whereIn('space_id', $spaceIds)
                 ->where('status', 'published')
+                ->tap(fn ($qq) => $this->applyVersionScope($qq, $active))
                 ->with('space');
 
             $driver = DocPage::query()->getConnection()->getDriverName();
@@ -269,23 +319,85 @@ class DocsController extends Controller
         return $user !== null && $user->can("docs.view.{$space->audience}");
     }
 
-    /** Cây trang gốc → children (published). */
-    protected function pageTree(DocSpace $space): Collection
+    /** Cây trang gốc → children (published), lọc theo phiên bản đang chọn. */
+    protected function pageTree(DocSpace $space, ?DocVersion $active = null): Collection
     {
         return $space->rootPages()
             ->where('status', 'published')
-            ->with(['children' => fn ($q) => $q->where('status', 'published')])
+            ->tap(fn ($q) => $this->applyVersionScope($q, $active))
+            ->with(['children' => function ($q) use ($active) {
+                $q->where('status', 'published');
+                $this->applyVersionScope($q, $active);
+            }])
             ->get();
     }
 
-    protected function firstPage(DocSpace $space): ?DocPage
+    protected function firstPage(DocSpace $space, ?DocVersion $active = null): ?DocPage
     {
         return $space->pages()
             ->where('status', 'published')
             ->whereNull('parent_id')
+            ->tap(fn ($q) => $this->applyVersionScope($q, $active))
             ->orderBy('sort')
             ->orderBy('title')
             ->first();
+    }
+
+    /**
+     * Lọc trang theo phiên bản đang chọn: version_id = active HOẶC null (trang chung).
+     * $active null (chưa có version nào) → không lọc.
+     */
+    protected function applyVersionScope($query, ?DocVersion $active): void
+    {
+        if (! $active) {
+            return;
+        }
+
+        $query->where(function ($q) use ($active) {
+            $q->whereNull('version_id')->orWhere('version_id', $active->id);
+        });
+    }
+
+    /** Danh sách phiên bản người dùng thấy: guest chỉ released; user thấy tất cả. */
+    protected function visibleVersions(Request $request): Collection
+    {
+        return DocVersion::query()
+            ->when(! $request->user(), fn ($q) => $q->where('status', 'released'))
+            ->orderByDesc('sort')
+            ->orderByDesc('id')
+            ->get();
+    }
+
+    /** Phiên bản đang chọn: từ ?ver=<label> (nếu hợp lệ & được xem), else hiện hành. */
+    protected function activeVersion(Request $request): ?DocVersion
+    {
+        $versions = $this->visibleVersions($request);
+        if ($versions->isEmpty()) {
+            return null;
+        }
+
+        $label = $request->query('ver');
+        if ($label) {
+            $picked = $versions->firstWhere('label', $label);
+            if ($picked) {
+                return $picked;
+            }
+        }
+
+        return $versions->firstWhere('is_current', true)
+            ?? DocVersion::current()
+            ?? $versions->first();
+    }
+
+    /** Chia sẻ danh sách version + version đang chọn cho mọi view reader. Trả về active. */
+    protected function shareVersionContext(Request $request): ?DocVersion
+    {
+        $versions = $this->visibleVersions($request);
+        $active = $this->activeVersion($request);
+        view()->share('docVersions', $versions);
+        view()->share('activeVersion', $active);
+
+        return $active;
     }
 
     /** Đi theo chuỗi slug phân cấp để tìm đúng trang. */

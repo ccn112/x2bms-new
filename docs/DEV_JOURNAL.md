@@ -5,6 +5,24 @@ Mỗi lần cập nhật code, ghi một entry vào đầu danh sách (mới nh�
 
 ---
 
+## 2026-07-27 — Module Tài liệu Phase 5: PHIÊN BẢN SẢN PHẨM (v1.0/v2.0) + Backlog
+
+**Phạm vi:** thêm khái niệm "phiên bản sản phẩm" toàn site (v1.0/v2.0) + backlog hạng mục, gắn version cho từng trang. TÁCH BẠCH với "revision từng trang" (Phase 3/4): reader đổi nhãn control revision thành **"Lịch sử sửa trang"**, control mới là **"Phiên bản"** (`?ver=`).
+
+**DB (3 migration):** `..._000006_create_doc_versions_table` (label unique, name, released_at, status enum planned/in_progress/released, is_current bool, sort, summary) · `..._000007_create_doc_version_items_table` (doc_version_id cascade, category enum feature/improvement/fix/change, title, detail, status enum done/in_progress/planned, ref_page_id nullOnDelete, sort) · `..._000008_add_version_id_to_doc_pages` (nullable FK nullOnDelete; null = trang chung).
+
+**Models:** `DocVersion` (hasMany items/pages, routeKey label, `current()`), `DocVersionItem` (belongsTo version/refPage), `DocPage`+`version()`.
+
+**Filament (/sa, nav "Tài liệu"):** `DocVersionResource` (CRUD + `ItemsRelationManager` backlog reorderable) — `is_current` độc nhất qua hook `afterCreate/afterSave` (bỏ current các version khác). `DocPageForm` +Select `version_id` (trống = chung).
+
+**Reader (`DocsController`):** helpers `visibleVersions` (guest chỉ released), `activeVersion` (`?ver=` hợp lệ else current), `applyVersionScope` (version_id = active OR null), `shareVersionContext` (share `docVersions`+`activeVersion`). `pageTree`/`firstPage`/`search` lọc theo version. `show()` set `versionMismatch` khi trang thuộc version khác. Action `versions()` + route `/docs/versions` (loại khỏi catch-all bằng `versions$` trong regex). Blade: `layout` (bộ chọn phiên bản sidebar + JS `docsSetVersion`/`docsSetRevision`), `show` (nhãn "Lịch sử sửa trang" + banner mismatch), `versions.blade.php` (timeline + backlog nhóm category).
+
+**Import:** `docs:import` tạo `v1.0` (released, is_current nếu chưa có) idempotent + gán trang import `version_id=v1.0`.
+
+**Verify (DB thật, controller + reflection):** migrate 3 bảng ✅ · import v1.0 gán 12 trang ✅ · activeVersion: guest→v1.0, admin `?ver=v2.0`→v2.0, guest `?ver=v2.0`(planned)→v1.0 ✅ · lọc cây guest ẩn trang v2.0 / admin `?ver=v2.0` hiện ✅ · banner mismatch ✅ · `/docs/versions` guest chỉ v1.0(released) / admin v2.0+2 backlog item, render OK (đã bổ sung `$spaces` cho sidebar) ✅ · is_current độc nhất ✅ · lint 13 file sạch, không mojibake/BOM. Dọn data test, DB về v1.0.
+
+**Điểm chờ chủ dự án:** (1) chính sách gán version cho trang khi ra v2.0 — clone trang hay chuyển; (2) có cần diff nội dung giữa 2 phiên bản sản phẩm không.
+
 ## 2026-07-27 — Module Tài liệu Phase 4: search full-text + X2AI + copy code + sửa nhanh (+3 chỉnh UI)
 
 **Phạm vi:** 4 tính năng reader + 3 tinh chỉnh giao diện. Không đổi backend phân quyền/public của Phase 1–3.

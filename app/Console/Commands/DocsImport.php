@@ -4,6 +4,7 @@ namespace App\Console\Commands;
 
 use App\Models\DocPage;
 use App\Models\DocSpace;
+use App\Models\DocVersion;
 use Illuminate\Console\Command;
 use Illuminate\Support\Str;
 use Symfony\Component\Finder\Finder;
@@ -39,6 +40,9 @@ class DocsImport extends Command
         'sa' => ['title' => 'Hướng dẫn SuperAdmin', 'key' => 'sa', 'desc' => 'Hướng dẫn cho nhà cung cấp nền tảng.', 'sort' => 50, 'public' => false],
     ];
 
+    /** Phiên bản sản phẩm mặc định gán cho trang import (v1.0). */
+    private ?DocVersion $defaultVersion = null;
+
     public function handle(): int
     {
         $base = base_path('docs');
@@ -46,6 +50,19 @@ class DocsImport extends Command
             $this->error("Không tìm thấy thư mục docs tại {$base}");
 
             return self::FAILURE;
+        }
+
+        // Phiên bản sản phẩm mặc định v1.0 (idempotent). Đặt hiện hành nếu chưa có version nào.
+        $this->defaultVersion = DocVersion::firstOrNew(['label' => 'v1.0']);
+        if (! $this->defaultVersion->exists) {
+            $this->defaultVersion->fill([
+                'name' => 'Ra mắt',
+                'status' => 'released',
+                'released_at' => now()->toDateString(),
+                'is_current' => DocVersion::where('is_current', true)->doesntExist(),
+                'sort' => 10,
+                'summary' => 'Phiên bản đầu tiên của bộ tài liệu X2-BMS.',
+            ])->save();
         }
 
         $spaces = [];
@@ -128,7 +145,8 @@ class DocsImport extends Command
 
         DocPage::updateOrCreate(
             ['space_id' => $space->id, 'parent_id' => null, 'slug' => $slug],
-            ['title' => (string) $title, 'body' => $body, 'status' => 'published', 'sort' => 0],
+            ['title' => (string) $title, 'body' => $body, 'status' => 'published', 'sort' => 0,
+             'version_id' => $this->defaultVersion?->id],
         );
 
         $this->line("  + [{$space->key}] {$slug}  ({$title})");

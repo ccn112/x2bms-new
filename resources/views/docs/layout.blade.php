@@ -37,6 +37,15 @@
             background: rgba(255,255,255,.06); color: #fff; font-size: 14px;
         }
         .docs-search input::placeholder { color: #8ea0c0; }
+        /* Bộ chọn phiên bản sản phẩm (sidebar) */
+        .docs-verpicker { padding: 0 16px 12px; font-size: 13px; }
+        .docs-verpicker label { display: block; color: #8ea0c0; font-size: 11px; text-transform: uppercase; letter-spacing: .06em; margin-bottom: 4px; }
+        .docs-verpicker select {
+            width: 100%; padding: 8px 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,.14);
+            background: rgba(255,255,255,.06); color: #fff; font-size: 13px;
+        }
+        .docs-verpicker select option { color: #0b1b3f; }
+        .docs-verlink { display: inline-block; margin-top: 8px; color: var(--gold); font-size: 12px; }
         .docs-side h4 {
             font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: #7f92b5;
             margin: 18px 20px 6px; font-weight: 700;
@@ -214,6 +223,23 @@
             <form class="docs-search" action="{{ route('docs.search', [], false) }}" method="get">
                 <input type="search" name="q" placeholder="Tìm kiếm tài liệu…" value="{{ $q ?? '' }}">
             </form>
+
+            {{-- Bộ chọn PHIÊN BẢN SẢN PHẨM (v1.0/v2.0) — lọc cây + nội dung theo version --}}
+            @if (($docVersions ?? collect())->isNotEmpty())
+                <div class="docs-verpicker">
+                    <label>Phiên bản
+                        <select onchange="docsSetVersion(this.value)">
+                            @foreach ($docVersions as $dv)
+                                <option value="{{ $dv->label }}" {{ (isset($activeVersion) && $activeVersion && $activeVersion->id === $dv->id) ? 'selected' : '' }}>
+                                    {{ $dv->label }}{{ $dv->name ? ' — '.$dv->name : '' }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </label>
+                    <a href="{{ route('docs.versions', [], false) }}" class="docs-verlink">Lịch sử phiên bản & backlog →</a>
+                </div>
+            @endif
+
             @yield('sidebar')
             <div style="padding:14px 20px 28px;border-top:1px solid rgba(255,255,255,.08);margin-top:12px;font-size:13px;">
                 @auth
@@ -227,6 +253,22 @@
             @yield('content')
         </main>
     </div>
+
+    {{-- Đổi phiên bản sản phẩm: set ?ver=<label> giữ nguyên đường dẫn hiện tại. --}}
+    <script>
+        function docsSetVersion(label) {
+            var url = new URL(window.location.href);
+            if (label) { url.searchParams.set('ver', label); } else { url.searchParams.delete('ver'); }
+            url.searchParams.delete('v'); // bỏ tham số revision trang khi đổi version sản phẩm
+            window.location.href = url.toString();
+        }
+        // Đổi bản sửa trang (revision) nhưng GIỮ nguyên phiên bản sản phẩm (?ver).
+        function docsSetRevision(v) {
+            var url = new URL(window.location.href);
+            if (v) { url.searchParams.set('v', v); } else { url.searchParams.delete('v'); }
+            window.location.href = url.toString();
+        }
+    </script>
 
     {{-- Copy code (Phase 4): gắn nút "Copy" cho mọi khối <pre> trong nội dung. JS thuần. --}}
     <script>
