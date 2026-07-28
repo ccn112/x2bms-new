@@ -170,12 +170,99 @@ class PublicProjectController extends ApiController
             ? $p->media->pluck('file_url')->filter()->values()->all()
             : array_values(array_filter((array) data_get($p->metadata_json, 'images', [])));
 
+        $detail = (array) data_get($p->metadata_json, 'detail', []);
+
         return $this->card($p) + [
             'highlights' => $this->highlights($p),
             'amenities' => $this->amenities($p),
             'gallery_count' => count($images),
             'gallery' => array_slice($images, 0, 12),
+            // Bài giới thiệu ĐẦY ĐỦ. `summary` ở thẻ là cùng nguồn nhưng app chỉ
+            // hiện 3 dòng trên hero; trước đây bản đầy đủ không có đường nào ra
+            // app, tức 5.992/6.005 dự án có bài giới thiệu mà người dùng không
+            // đọc được.
+            'description' => $p->description,
+            // Bảng thông số: nhãn do nguồn nhập nên trả nguyên cặp nhãn–giá trị,
+            // app chỉ việc kẻ bảng, không phải đoán nhãn nào ứng với cột nào.
+            'specs' => $this->specs($p, $detail),
+            'faq' => $this->faq($p),
+            'address' => $this->fullAddress($p),
+            // Toạ độ cho nút "Xem trên bản đồ"; thiếu thì app tự ẩn nút.
+            'latitude' => $p->latitude !== null ? (float) $p->latitude : null,
+            'longitude' => $p->longitude !== null ? (float) $p->longitude : null,
         ];
+    }
+
+    /**
+     * Bảng thông số dự án — cặp nhãn/giá trị, giữ đúng thứ tự đọc từ trên xuống.
+     *
+     * @return array<int,array{label:string,value:string}>
+     */
+    private function specs(PublicProject $p, array $detail): array
+    {
+        $rows = [
+            'Loại hình' => $p->project_type ?: ($detail['Loại hình'] ?? null),
+            'Chủ đầu tư' => $p->developer_name ?: ($detail['Chủ đầu tư'] ?? null),
+            'Diện tích' => $detail['Diện tích'] ?? (data_get($p->metadata_json, 'area') ?: null),
+            'Pháp lý' => $detail['Pháp lý'] ?? (data_get($p->metadata_json, 'legal') ?: null),
+            'Số toà' => (int) $p->blocks > 0 ? (string) $p->blocks : null,
+            'Số căn hộ' => (int) $p->apartments > 1 ? number_format((int) $p->apartments, 0, ',', '.') : null,
+        ];
+
+        $out = [];
+        foreach ($rows as $label => $value) {
+            $value = is_string($value) ? trim($value) : $value;
+            if ($value === null || $value === '') {
+                continue;
+            }
+            $out[] = ['label' => $label, 'value' => (string) $value];
+        }
+
+        return $out;
+    }
+
+    /**
+     * Câu hỏi thường gặp lấy từ `metadata_json.detail_faq`.
+     *
+     * Nguồn có những câu TRẢ LỜI RỖNG kiểu "Tham khảo giá mua bán dự án X: ."
+     * — hiện lên chỉ làm người đọc mất thời gian bấm vào rồi không có gì. Bỏ mọi
+     * câu mà phần trả lời sau dấu hai chấm cuối cùng không còn chữ nào.
+     *
+     * @return array<int,array{question:string,answer:string}>
+     */
+    private function faq(PublicProject $p): array
+    {
+        $raw = (array) data_get($p->metadata_json, 'detail_faq', []);
+        $out = [];
+
+        foreach ($raw as $question => $answer) {
+            $question = trim((string) $question);
+            $answer = trim((string) $answer);
+            if ($question === '' || $answer === '') {
+                continue;
+            }
+
+            // Phần nội dung thực sau dấu hai chấm cuối: bỏ dấu câu và khoảng
+            // trắng, còn rỗng thì câu này không mang thông tin.
+            $tail = str_contains($answer, ':')
+                ? mb_substr($answer, mb_strrpos($answer, ':') + 1)
+                : $answer;
+            if (preg_replace('/[\s\.\,\-–—;]+/u', '', $tail) === '') {
+                continue;
+            }
+
+            $out[] = ['question' => $question, 'answer' => $answer];
+        }
+
+        return $out;
+    }
+
+    /** Địa chỉ đầy đủ: số nhà/đường → phường → quận → tỉnh, bỏ phần trống. */
+    private function fullAddress(PublicProject $p): ?string
+    {
+        $parts = array_filter([$p->address, $p->ward, $p->district, $p->province]);
+
+        return $parts ? implode(', ', $parts) : null;
     }
 
     private function location(PublicProject $p): string
