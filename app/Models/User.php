@@ -99,6 +99,19 @@ class User extends Authenticatable implements FilamentUser
         return $this->hasMany(Resident::class)->withoutGlobalScope('tenant');
     }
 
+    /**
+     * Dự án QUAN TÂM (chọn khi đăng ký ở app cư dân).
+     *
+     * Chỉ là mối quan tâm, KHÔNG phải quyền cư dân — quyền nằm ở
+     * [residentMemberships]. Trỏ sang thư viện `public_projects` dùng chung.
+     */
+    public function interestedProjects(): \Illuminate\Database\Eloquent\Relations\BelongsToMany
+    {
+        return $this->belongsToMany(PublicProject::class, 'user_public_projects')
+            ->withPivot('source')
+            ->withTimestamps();
+    }
+
     /** Platform-level operator — sees the whole system (Gate::before also bypasses for super_admin). */
     public function isPlatformAdmin(): bool
     {

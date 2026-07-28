@@ -2050,3 +2050,13 @@ Nâng cấp thư viện dự án public:
 - Files mới (để chủ dự án commit): `app/Console/Commands/SyncProjectMedia.php`, `app/Services/Projects/ProjectMediaSync.php`, `app/Filament/Resources/PublicProjects/RelationManagers/MediaRelationManager.php`, migration `..._000013`, + command `EnrichMissingProjects.php` (phiên trước).
 
 **Verify (DB thật):** migrate ✅. sync-media The Keisho → 6 ProjectMedia, đúng 1 is_cover, source=batdongsan, is_watermarked=true, sort 1-6 ✅. RelationManager + Edit page render assertOk; "Đặt làm ảnh bìa" → đúng 1 cover, coverUrl() dùng media ✅. sync-media toàn bộ: **+20992 media, 1917 dự án có ảnh**. Tổng sau: total_projects=2242, total_media=21005, projects_with_media=1922, ~10.9 ảnh/dự án, covers=1917 ✅. `php -l` sạch, không mojibake/BOM. fetch-more(HN/HCM 30tr) + enrich-missing(500) đang chạy NỀN. CHƯA commit.
+
+---
+
+## 2026-07-27 (bổ sung 7) — Mở rộng 10 tỉnh + giãn nhịp chống rate-limit
+
+- **`config/bds.php`** (thay đổi CODE — cần commit): thêm 10 tỉnh/TP (đã verify slug ra 10 card thật): hai-phong, can-tho, dong-nai, khanh-hoa (Nha Trang), quang-ninh (Hạ Long), lam-dong (Đà Lạt), ba-ria-vung-tau, binh-duong, hung-yen, bac-ninh. (Lưu ý: slug bare `vung-tau` KHÔNG có card → dùng `ba-ria-vung-tau`.) Tổng cities = 14.
+- **`delay_ms` 400 → 800** giãn nhịp giảm bị Cloudflare rate-limit (quan sát: cào nặng bắt đầu bị chặn giữa chừng — ha-noi/tp-hcm dừng 'blocked' ở vòng trước).
+- Chạy nền: fetch-more --pages=20 (10 tỉnh mới + tp-hcm) → enrich-missing --limit=800 → sync-media.
+
+**Số liệu (trước vòng này):** total=3137, with_images=3130, ProjectMedia=34455.

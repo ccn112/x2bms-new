@@ -29,6 +29,9 @@ class PublicProjectController extends ApiController
 
         $query = PublicProject::query()
             ->where('is_public', true)
+            // Ảnh bìa đọc từ thư viện ProjectMedia (ưu tiên ảnh chính thống hơn
+            // ảnh batdongsan có watermark) — nạp sẵn để khỏi N+1.
+            ->with(['media' => fn ($m) => $m->where('is_active', true)->orderBy('sort_order')])
             // Dự án có ảnh + có số căn lên trước: danh sách đầu tiên người lạ
             // nhìn thấy không nên toàn thẻ thiếu ảnh.
             ->orderByRaw("CASE WHEN json_extract(metadata_json, '$.cover_image') IS NULL THEN 1 ELSE 0 END")
@@ -56,6 +59,7 @@ class PublicProjectController extends ApiController
     {
         $project = PublicProject::query()
             ->where('is_public', true)
+            ->with(['media' => fn ($m) => $m->where('is_active', true)->orderBy('sort_order')])
             ->where(fn (Builder $q) => $q->where('code', $slug)->orWhere('id', $slug))
             ->first();
 
@@ -108,6 +112,13 @@ class PublicProjectController extends ApiController
         };
     }
 
+    /**
+     * Tìm theo TÊN · CHỦ ĐẦU TƯ · ĐỊA CHỈ.
+     *
+     * Địa chỉ dò cả `address` lẫn 3 cột đã tách (`ward`/`district`/`province`):
+     * dữ liệu nhập từ nhiều nguồn, có bản ghi chỉ có chuỗi địa chỉ đầy đủ, có
+     * bản ghi ngược lại chỉ có cột tách. Thêm `code` để tra nhanh mã dự án.
+     */
     private function applySearch(Builder $query, ?string $q): void
     {
         $q = trim((string) $q);
@@ -115,10 +126,13 @@ class PublicProjectController extends ApiController
             return;
         }
 
-        $query->where(fn (Builder $sub) => $sub
-            ->where('name', 'like', "%{$q}%")
-            ->orWhere('address', 'like', "%{$q}%")
-            ->orWhere('developer_name', 'like', "%{$q}%"));
+        $columns = ['name', 'developer_name', 'address', 'ward', 'district', 'province', 'code'];
+
+        $query->where(function (Builder $sub) use ($columns, $q) {
+            foreach ($columns as $column) {
+                $sub->orWhere($column, 'like', "%{$q}%");
+            }
+        });
     }
 
     // ---------------------------------------------------------------- mapping
@@ -140,20 +154,27 @@ class PublicProjectController extends ApiController
             'area_range' => $this->areaRange($detail),
             'towers' => $this->towers($p, $detail),
             'handover_year' => $this->handoverYear($p),
+            // Trả ngay ở thẻ danh sách: tìm được theo chủ đầu tư thì phải NHÌN
+            // thấy chủ đầu tư, không thì người dùng không hiểu vì sao ra kết quả.
+            'developer_name' => $p->developer_name,
         ];
     }
 
     /** Chi tiết (M01-PUB-04) = thẻ + điểm nổi bật/tiện ích/thư viện ảnh. */
     private function detail(PublicProject $p): array
     {
-        $images = array_values(array_filter((array) data_get($p->metadata_json, 'images', [])));
+        // Thư viện ảnh: ưu tiên ProjectMedia (đã dedup, có cờ watermark và sắp
+        // xếp ảnh chính thống lên trước); dự án chưa sync media thì lấy tạm
+        // danh sách thô trong metadata.
+        $images = $p->media->isNotEmpty()
+            ? $p->media->pluck('file_url')->filter()->values()->all()
+            : array_values(array_filter((array) data_get($p->metadata_json, 'images', [])));
 
         return $this->card($p) + [
             'highlights' => $this->highlights($p),
             'amenities' => $this->amenities($p),
             'gallery_count' => count($images),
             'gallery' => array_slice($images, 0, 12),
-            'developer_name' => $p->developer_name,
         ];
     }
 
@@ -179,11 +200,11 @@ class PublicProjectController extends ApiController
         };
     }
 
+    /// Ảnh bìa: `coverUrl()` đã ưu tiên ProjectMedia is_cover (official/manual
+    /// trước batdongsan) rồi mới rơi về metadata.
     private function cover(PublicProject $p): ?string
     {
-        return data_get($p->metadata_json, 'cover_image')
-            ?? data_get($p->metadata_json, 'images.0')
-            ?? data_get($p->metadata_json, 'image');
+        return $p->coverUrl() ?? data_get($p->metadata_json, 'images.0');
     }
 
     /** "1.200" — giữ nguyên cách viết của nguồn, chỉ bỏ chữ "căn". */

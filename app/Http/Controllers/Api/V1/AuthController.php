@@ -55,6 +55,10 @@ class AuthController extends ApiController
             'password' => ['required', 'string', 'min:8'],
             'code' => ['required', 'string'],
             'phone' => ['nullable', 'string', 'max:20'],
+            // Dự án quan tâm chọn ở màn đăng ký (mã `public_projects.code`).
+            // Không bắt buộc và KHÔNG cấp quyền gì — xem User::interestedProjects.
+            'project_codes' => ['sometimes', 'array', 'max:10'],
+            'project_codes.*' => ['string', 'max:64'],
         ]);
 
         // Xác thực OTP đã gửi qua otp/request(purpose=register) tới email.
@@ -80,9 +84,29 @@ class AuthController extends ApiController
             'account_type' => 'public_user',
         ]);
 
+        // Mã lạ/không còn public thì BỎ QUA lặng lẽ chứ không chặn đăng ký:
+        // danh mục dự án thay đổi liên tục, không đáng để hỏng cả luồng tạo
+        // tài khoản chỉ vì một mã cũ.
+        $projectIds = collect($data['project_codes'] ?? [])
+            ->filter()
+            ->unique()
+            ->pipe(fn ($codes) => $codes->isEmpty()
+                ? collect()
+                : \App\Models\PublicProject::query()
+                    ->where('is_public', true)
+                    ->whereIn('code', $codes->all())
+                    ->pluck('id'));
+
+        if ($projectIds->isNotEmpty()) {
+            $user->interestedProjects()->syncWithoutDetaching(
+                $projectIds->mapWithKeys(fn ($id) => [$id => ['source' => 'register']])->all()
+            );
+        }
+
         return ApiResponse::success([
             'tokens' => $this->tokens->issuePair($user, $this->deviceId($request)),
             'user' => $this->publicUser($user),
+            'interested_project_count' => $projectIds->count(),
         ], status: 201);
     }
 
