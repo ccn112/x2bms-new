@@ -485,6 +485,51 @@ class BdsProjectImporter
         return true;
     }
 
+    /**
+     * Backfill CHỦ ĐẦU TƯ từ metadata SẴN CÓ (KHÔNG fetch lại) — nhanh, không đụng Cloudflare.
+     * Nguồn: detail['Chủ đầu tư'] → detail_faq ("Chủ đầu tư ...: X") → regex description.
+     * Trả true nếu gán được developer.
+     */
+    public function backfillDeveloperFromMeta(PublicProject $p): bool
+    {
+        if ($p->developer_id) {
+            return false;
+        }
+        $meta = (array) $p->metadata_json;
+        $name = null;
+
+        $detail = (array) ($meta['detail'] ?? []);
+        if (! empty($detail['Chủ đầu tư'])) {
+            $name = $detail['Chủ đầu tư'];
+        }
+        if (! $name) {
+            foreach ((array) ($meta['detail_faq'] ?? []) as $a) {
+                if (preg_match('/Chủ đầu tư[^:]*:\s*(.+)$/iu', (string) $a, $m)) {
+                    $cand = static::tidy(trim($m[1], " .\u{00A0}"));
+                    if (mb_strlen($cand) > 2) {
+                        $name = $cand;
+                        break;
+                    }
+                }
+            }
+        }
+        if (! $name && ! empty($p->description)) {
+            $name = static::developer(['summary' => $p->description]);
+        }
+        if (! $name) {
+            return false;
+        }
+
+        $name = static::tidy($name);
+        $dev = \App\Models\Developer::upsertByName($name, ['source' => 'batdongsan.com.vn']);
+        if (! $dev) {
+            return false;
+        }
+        $p->update(['developer_name' => $name, 'developer_id' => $dev->id]);
+
+        return true;
+    }
+
     /** Địa chỉ mới "tốt hơn" nếu có nhiều đoạn (dấu phẩy) hơn hoặc dài hơn rõ rệt. */
     private function addressIsBetter(string $candidate, string $current): bool
     {
@@ -757,7 +802,60 @@ class BdsProjectImporter
         }
         $parts = array_map('trim', explode(',', $location));
 
-        return end($parts) ?: null;
+        return static::canonicalProvince(end($parts) ?: null);
+    }
+
+    /**
+     * Chuẩn hoá tên tỉnh/TP về 1 tên canonical thống nhất:
+     * bỏ tiền tố "Tỉnh/Thành phố/TP.", gộp biến thể HCM/Hà Nội/BR-VT..., bỏ rác.
+     * Idempotent (chạy lại trên kết quả không đổi).
+     */
+    public static function canonicalProvince(?string $s): ?string
+    {
+        if ($s === null) {
+            return null;
+        }
+        $s = trim(preg_replace('/\s+/u', ' ', $s));
+        if ($s === '') {
+            return null;
+        }
+
+        // Chuỗi rác kiểu địa chỉ dài "... - tỉnh Long An": lấy phần sau "tỉnh/thành phố" cuối.
+        if (mb_strlen($s) > 28 && preg_match('/(?:tỉnh|thành phố)\s+([^,\-)]+)\s*$/iu', $s, $m)) {
+            $s = trim($m[1]);
+        }
+
+        // Bỏ ký tự rác đầu/cuối.
+        $s = trim($s, " .)(-");
+        // Bỏ tiền tố hành chính (kể cả dạng dính "TP.HCM", "TP.Hồ Chí Minh").
+        $s = preg_replace('/^(tỉnh|thành\s*phố|tp)\.?\s*/iu', '', $s);
+        $s = trim($s, " .)(-");
+
+        $key = mb_strtolower($s, 'UTF-8');
+
+        $aliases = [
+            'hồ chí minh' => 'Hồ Chí Minh', 'hcm' => 'Hồ Chí Minh', 'tphcm' => 'Hồ Chí Minh',
+            'hcmc' => 'Hồ Chí Minh', 'sài gòn' => 'Hồ Chí Minh', 'sai gon' => 'Hồ Chí Minh',
+            'thủ đức' => 'Hồ Chí Minh', 'q.7' => 'Hồ Chí Minh', 'quận 7' => 'Hồ Chí Minh',
+            'hà nội' => 'Hà Nội', 'ha noi' => 'Hà Nội', 'hanoi' => 'Hà Nội',
+            'bà rịa vũng tàu' => 'Bà Rịa - Vũng Tàu', 'bà rịa - vũng tàu' => 'Bà Rịa - Vũng Tàu',
+            'br-vt' => 'Bà Rịa - Vũng Tàu', 'brvt' => 'Bà Rịa - Vũng Tàu',
+            'bình dươn' => 'Bình Dương',
+            'thừa thiên huế' => 'Thừa Thiên Huế', 'huế' => 'Thừa Thiên Huế',
+            'vinh' => 'Nghệ An', 'vinh cũ' => 'Nghệ An',
+            'thanh hoá' => 'Thanh Hóa',
+            'việt nam' => null, 'vietnam' => null, 'vn' => null,
+        ];
+        if (array_key_exists($key, $aliases)) {
+            return $aliases[$key];
+        }
+
+        // Không giống tên tỉnh (còn dấu địa chỉ) → coi như không xác định.
+        if (str_contains($s, ' - ') || preg_match('/(đường|số|xã|huyện|quận|phường)/iu', $s)) {
+            return null;
+        }
+
+        return $s !== '' ? $s : null;
     }
 
     /**
@@ -775,8 +873,8 @@ class BdsProjectImporter
             return $out;
         }
 
-        // Đoạn cuối = tỉnh/thành.
-        $out['province'] = array_pop($parts);
+        // Đoạn cuối = tỉnh/thành (chuẩn hoá canonical).
+        $out['province'] = static::canonicalProvince(array_pop($parts));
         if (empty($parts)) {
             return $out;
         }

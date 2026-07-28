@@ -16,9 +16,9 @@ use Illuminate\Console\Command;
  */
 class EnrichMissingProjects extends Command
 {
-    protected $signature = 'projects:enrich-missing {--limit=300 : Số dự án xử lý mỗi lần} {--only=images : images|detail|all — tiêu chí "còn thiếu"}';
+    protected $signature = 'projects:enrich-missing {--limit=300 : Số dự án xử lý mỗi lần} {--only=images : images|detail|all|developer — tiêu chí "còn thiếu"}';
 
-    protected $description = 'Bổ sung ảnh/toạ độ/chi tiết cho dự án batdongsan còn thiếu (enrichDetail)';
+    protected $description = 'Bổ sung ảnh/toạ độ/chi tiết/CĐT cho dự án batdongsan còn thiếu';
 
     public function handle(BdsProjectImporter $importer): int
     {
@@ -26,13 +26,18 @@ class EnrichMissingProjects extends Command
         $only  = (string) $this->option('only');
         $delay = (int) config('bds.delay_ms', 400);
 
+        // developer: backfill CĐT từ metadata SẴN CÓ (LOCAL, không fetch → không đụng Cloudflare).
+        $isLocal = $only === 'developer';
+
         $query = PublicProject::query()
-            ->whereNotNull('metadata_json->source_url')
+            ->when(! $isLocal, fn ($q) => $q->whereNotNull('metadata_json->source_url'))
             ->where(function ($q) use ($only) {
                 if ($only === 'detail') {
                     $q->whereNull('metadata_json->detail');
                 } elseif ($only === 'all') {
                     $q->whereNull('metadata_json->images')->orWhereNull('metadata_json->detail');
+                } elseif ($only === 'developer') {
+                    $q->whereNull('developer_id');
                 } else { // images (default)
                     $q->whereNull('metadata_json->images');
                 }
@@ -41,7 +46,7 @@ class EnrichMissingProjects extends Command
 
         $total = (clone $query)->count();
         $rows = $query->limit($limit)->get();
-        $this->info("Còn thiếu ($only): $total dự án. Xử lý ".$rows->count()." dự án lần này.");
+        $this->info("Còn thiếu ($only): $total dự án. Xử lý ".$rows->count()." dự án lần này.".($isLocal ? ' [LOCAL, không fetch]' : ''));
 
         $ok = 0;
         $blocked = 0;
@@ -50,22 +55,28 @@ class EnrichMissingProjects extends Command
 
         foreach ($rows as $p) {
             try {
-                $done = $importer->enrichDetail($p);
+                $done = $isLocal
+                    ? $importer->backfillDeveloperFromMeta($p)
+                    : $importer->enrichDetail($p);
                 $done ? $ok++ : $blocked++;
             } catch (\Throwable $e) {
                 $blocked++;
             }
             $bar->advance();
-            if ($delay > 0) {
+            if ($delay > 0 && ! $isLocal) {
                 usleep($delay * 1000);
             }
         }
 
         $bar->finish();
         $this->newLine(2);
-        $this->info("Xong: enrich OK=$ok, bỏ qua/chặn=$blocked.");
-        if ($blocked > 0) {
-            $this->warn('Có dự án bị chặn/rỗng (Cloudflare) — chạy lại lệnh sau để tiếp tục (idempotent).');
+        if ($isLocal) {
+            $this->info("Xong: gán CĐT được=$ok, không có nguồn CĐT=$blocked.");
+        } else {
+            $this->info("Xong: enrich OK=$ok, bỏ qua/chặn=$blocked.");
+            if ($blocked > 0) {
+                $this->warn('Có dự án bị chặn/rỗng (Cloudflare) — chạy lại lệnh sau để tiếp tục (idempotent).');
+            }
         }
 
         return self::SUCCESS;

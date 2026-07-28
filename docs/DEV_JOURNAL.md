@@ -2060,3 +2060,14 @@ Nâng cấp thư viện dự án public:
 - Chạy nền: fetch-more --pages=20 (10 tỉnh mới + tp-hcm) → enrich-missing --limit=800 → sync-media.
 
 **Số liệu (trước vòng này):** total=3137, with_images=3130, ProjectMedia=34455.
+
+---
+
+## 2026-07-27 (bổ sung 8) — Đạt 6005 dự án; gộp nhãn tỉnh; backfill CĐT (local)
+
+- **Vòng lặp toàn quốc** (city `toan-quoc` = slug `du-an-bat-dong-san`, thêm vào `config/bds.php`) chạy tới khi **count=6005** (≥ mục tiêu 6000). ProjectMedia=64754.
+- **Chuẩn hoá tỉnh**: `BdsProjectImporter::canonicalProvince()` (bỏ tiền tố Tỉnh/TP kể cả dạng dính "TP.HCM", gộp HCM/Hà Nội/BR-VT..., tách tỉnh từ chuỗi địa chỉ dài, bỏ rác→null); wire vào `province()`+`parseAddress`. Command **`projects:normalize-province {--dry-run}`**: distinct province **111 → 62**, gộp 49 nhãn / 469 dòng. Top: Hồ Chí Minh 1500, Hà Nội 1216, Bình Dương 373, Đồng Nai 243, Long An 235, Đà Nẵng 197, BR-VT 196, Quảng Ninh 155, Khánh Hòa 149, Quảng Nam 121, Bắc Ninh 115, Hải Phòng 114.
+- **Backfill CĐT (LOCAL, không fetch)**: thêm `BdsProjectImporter::backfillDeveloperFromMeta()` + mode `enrich-missing --only=developer` — recover CĐT từ `metadata.detail['Chủ đầu tư']`/FAQ/description sẵn có. developer_id **2954 → 4733** (+1779, tức thì, không đụng Cloudflare). Còn 1272 dự án nguồn không có CĐT. developers=3097.
+- Ghi chú: images(5995)/coords(5999)/detail(6000) đã gần đủ nên KHÔNG chạy enrich network (tránh hammer Cloudflare).
+
+**File CODE cần commit:** `app/Console/Commands/NormalizeProvince.php` (mới), `app/Console/Commands/EnrichMissingProjects.php` (thêm mode developer), `app/Services/Projects/BdsProjectImporter.php` (canonicalProvince + backfillDeveloperFromMeta), `config/bds.php` (toan-quoc + 10 tỉnh + delay 800).
