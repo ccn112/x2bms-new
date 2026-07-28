@@ -30,6 +30,9 @@ return [
         'binh-duong'      => ['label' => 'Bình Dương',           'slug' => 'du-an-bat-dong-san-binh-duong',      'province' => 'Bình Dương'],
         'hung-yen'        => ['label' => 'Hưng Yên',             'slug' => 'du-an-bat-dong-san-hung-yen',        'province' => 'Hưng Yên'],
         'bac-ninh'        => ['label' => 'Bắc Ninh',             'slug' => 'du-an-bat-dong-san-bac-ninh',        'province' => 'Bắc Ninh'],
+
+        // TOÀN QUỐC — listing tất cả dự án (~6.026, đủ 34 tỉnh). Province lấy từ địa chỉ mỗi card.
+        'toan-quoc'       => ['label' => 'Toàn quốc',            'slug' => 'du-an-bat-dong-san',                 'province' => null],
     ],
 
     // Số trang lấy mỗi lần bấm "Lấy tiếp" (mặc định) và độ trễ giữa request.
