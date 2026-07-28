@@ -17,6 +17,7 @@ use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Textarea;
 use Filament\Notifications\Notification;
 use Filament\Pages\Page;
+use Filament\Tables\Columns\ImageColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Concerns\InteractsWithTable;
 use Filament\Tables\Contracts\HasTable;
@@ -99,12 +100,24 @@ class PublicProjectLibrary extends Page implements HasTable
             ->query(PublicProject::query()->withCount('media'))
             ->defaultSort('created_at', 'desc')
             ->columns([
+                ImageColumn::make('cover_image')->label('Ảnh')
+                    ->state(fn (PublicProject $p) => $p->metadata_json['cover_image'] ?? ($p->metadata_json['image'] ?? null))
+                    ->height(40)->extraImgAttributes(['style' => 'border-radius:6px;object-fit:cover']),
                 TextColumn::make('name')->label('Dự án')->searchable()->weight('medium')
                     ->description(fn (PublicProject $p) => $p->developer_name),
                 TextColumn::make('ward')->label('Địa điểm')->placeholder('—')
                     ->searchable(['ward', 'district', 'province'])
                     ->formatStateUsing(fn (PublicProject $p) => collect([$p->ward, $p->district])->filter()->implode(' · ') ?: ($p->province ?: '—'))
                     ->description(fn (PublicProject $p) => $p->province),
+                TextColumn::make('latitude')->label('Toạ độ')->placeholder('—')->toggleable()->html()
+                    ->formatStateUsing(function (PublicProject $p): string|\Illuminate\Support\HtmlString {
+                        if ($p->latitude === null || $p->longitude === null) {
+                            return '—';
+                        }
+                        $url = 'https://www.google.com/maps?q='.$p->latitude.','.$p->longitude;
+
+                        return new \Illuminate\Support\HtmlString('<a href="'.e($url).'" target="_blank" rel="noopener" style="color:#2563eb;text-decoration:underline">📍 Maps</a>');
+                    }),
                 TextColumn::make('project_type')->label('Loại')->badge()->color('gray')->placeholder('—')->toggleable(),
                 TextColumn::make('blocks')->label('Block')->alignCenter(),
                 TextColumn::make('apartments')->label('Căn hộ')->alignCenter()->numeric(),

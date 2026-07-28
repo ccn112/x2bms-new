@@ -2010,3 +2010,14 @@ Nâng cấp thư viện dự án public:
 - **Export/import**: thêm ward/district/lat/lng + object developer; import tạo lại developers + link.
 
 **Verify (DB thật):** migrate 2 bảng ✅. Backfill 715 dự án: ward 697/district 696; **452 CĐT dedup** (Masterise/Vingroup 18, Sun Group 15 → 1 record; 56 CĐT >1 dự án); developer_id 606 ✅. parse "Phường Đại Kim/Quận Hoàng Mai/Hà Nội" ✅. enrich The Keisho → address "Ngõ 17 Đường Cổ Linh...", lat=21.0310955 lng=105.8933182 ✅. `route:list --path=sa` có `sa/developers` (index/create/edit) ✅. export 710 (617 detail) no-BOM + developer object; re-seed import 710 idempotent ✅. `php -l` 17 file sạch, không mojibake/BOM. CHƯA commit.
+
+---
+
+## 2026-07-27 (bổ sung 3) — Ảnh dự án (watermark), hiển thị toạ độ + detail trên /sa
+
+- **Ảnh**: `parseDetail`/`enrichDetail` lấy gallery từ trang chi tiết (`re__project-album__media`, quy full-size + gom ảnh cùng lô upload `YYYY/MM/DD`) → `metadata_json.images` (mảng URL), `cover_image` (baseline = ảnh card, nâng lên ảnh gallery khi enrich), `images_watermarked`. `upsertCard` giữ các khoá ảnh khi upsert lại. Chưa tải file, chỉ lưu URL.
+- **KẾT LUẬN WATERMARK (kiểm chứng thật)**: ảnh batdongsan CÓ WATERMARK — mọi ảnh hậu tố `_wm` (vd `...-fb78_wm.jpg`, HTTP 200). Bản KHÔNG `_wm` KHÔNG truy cập được (HTTP 530). Đã đặt `images_watermarked=true` để sau thay ảnh chính thống.
+- **Hiển thị**: Bảng dự án (`PublicProjectsTable` fila + `PublicProjectLibrary` sa) thêm cột **Ảnh** (ImageColumn cover) + **Toạ độ** (link "📍 Maps" `google.com/maps?q=lat,lng`, toggleable). Form sửa (`PublicProjectForm`) tách 3 Section: cơ bản / địa chỉ+vị trí (ward/district/province + lat/lng + link Google Maps) / thông tin chi tiết collapsible (Placeholder bảng `metadata_json.detail` read-only + gallery ảnh có cảnh báo watermark).
+- **fetch-more --pages=15 x4 city** (kèm enrich+ảnh) chạy NỀN để tăng phủ + có ảnh/toạ độ/detail.
+
+**Verify (DB thật):** enrich The Keisho → images=6, cover set, `images_watermarked=true`, lat/lng, detail 3 nhãn ✅. Livewire render OK: PublicProjectLibrary (sa), ListPublicProjects (fila), EditPublicProject #8 form (Placeholder detail+gallery+map), ListDevelopers (sa) — assertOk() ✅. `php -l` 4 file sạch, không mojibake/BOM. CHƯA commit.

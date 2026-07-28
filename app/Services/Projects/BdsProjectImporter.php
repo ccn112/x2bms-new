@@ -354,12 +354,14 @@ class BdsProjectImporter
             'city'        => $card['city'] ?? null,
             'source_url'  => $url ? 'https://batdongsan.com.vn'.$url : null,
             'image'       => $card['img'] ?? null,
+            'cover_image' => $card['img'] ?? null, // baseline; enrichDetail sẽ nâng lên ảnh gallery
             'area'        => $area,
             'configs_raw' => $card['configs'] ?? [],
             'status_raw'  => $card['status'] ?? null,
             'imported_at' => now()->toDateString(),
         ];
-        foreach (['detail', 'detail_fetched_at', 'detail_error', 'price', 'legal', 'developer_unit'] as $k) {
+        foreach (['detail', 'detail_fetched_at', 'detail_error', 'price', 'legal', 'developer_unit',
+            'images', 'cover_image', 'images_watermarked'] as $k) {
             if ($prev && array_key_exists($k, (array) $prev->metadata_json)) {
                 $meta[$k] = $prev->metadata_json[$k];
             }
@@ -430,6 +432,14 @@ class BdsProjectImporter
         }
         if ($parsed['developer_unit'] !== null) {
             $meta['developer_unit'] = $parsed['developer_unit'];
+        }
+        // Ảnh dự án (URL, chưa tải file). Ưu tiên gallery chi tiết; giữ ảnh card làm dự phòng cover.
+        if (! empty($parsed['images'])) {
+            $meta['images'] = $parsed['images'];
+            $meta['cover_image'] = $parsed['cover_image'] ?? ($meta['image'] ?? null);
+            $meta['images_watermarked'] = $parsed['images_watermarked'];
+        } elseif (empty($meta['cover_image']) && ! empty($meta['image'])) {
+            $meta['cover_image'] = $meta['image'];
         }
 
         $update = ['metadata_json' => $meta];
@@ -512,7 +522,8 @@ class BdsProjectImporter
     {
         $out = ['attrs' => [], 'faq' => [], 'price' => null, 'legal' => null,
             'developer' => null, 'developer_unit' => null, 'project_type' => null,
-            'address_full' => null, 'latitude' => null, 'longitude' => null];
+            'address_full' => null, 'latitude' => null, 'longitude' => null,
+            'images' => [], 'cover_image' => null, 'images_watermarked' => false];
 
         if (trim($html) === '') {
             return $out;
@@ -630,6 +641,43 @@ class BdsProjectImporter
                 $out['latitude'] = round($lat, 7);
                 $out['longitude'] = round($lng, 7);
             }
+        }
+
+        // Ảnh dự án: lấy từ album (re__project-album), quy về bản full-size (bỏ /crop/NxN/),
+        // rồi gom thêm các ảnh full-size cùng "lô upload" (cùng path YYYY/MM/DD) trong trang
+        // → tránh vơ nhầm ảnh của dự án liên quan. Ảnh batdongsan có hậu tố _wm = watermark.
+        $stripCrop = fn (string $u): string => preg_replace('#/crop/\d+x\d+/#', '/', $u);
+        $albumImgs = [];
+        foreach ($xp->query("//*[contains(@class,'re__project-album__media')]//img") as $img) {
+            $u = $img->getAttribute('data-src') ?: $img->getAttribute('src');
+            if ($u && ! Str::startsWith($u, 'data:')) {
+                $albumImgs[] = $stripCrop($u);
+            }
+        }
+        $prefixes = [];
+        foreach ($albumImgs as $u) {
+            if (preg_match('#(https://file\d+\.batdongsan\.com\.vn/\d{4}/\d{2}/\d{2}/)#', $u, $m)) {
+                $prefixes[$m[1]] = true;
+            }
+        }
+        $images = $albumImgs;
+        if ($prefixes !== [] && preg_match_all('#https://file\d+\.batdongsan\.com\.vn/(?!crop/)\d{4}/\d{2}/\d{2}/[^"\'\s\\\\]+?\.(?:jpg|jpeg|png|webp)#i', $html, $mm)) {
+            foreach ($mm[0] as $u) {
+                foreach (array_keys($prefixes) as $pre) {
+                    if (Str::startsWith($u, $pre)) {
+                        $images[] = $u;
+                        break;
+                    }
+                }
+            }
+        }
+        // Chuẩn hoá: unique, giữ thứ tự, tối đa 20.
+        $images = array_values(array_unique($images));
+        $images = array_slice($images, 0, 20);
+        if ($images !== []) {
+            $out['images'] = $images;
+            $out['cover_image'] = $images[0];
+            $out['images_watermarked'] = (bool) collect($images)->contains(fn ($u) => str_contains($u, '_wm'));
         }
 
         return $out;

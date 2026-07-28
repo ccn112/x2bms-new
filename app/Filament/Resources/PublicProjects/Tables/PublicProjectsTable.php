@@ -17,9 +17,11 @@ use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
 use App\Models\PublicProject;
 use Filament\Tables\Columns\IconColumn;
+use Filament\Tables\Columns\ImageColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
+use Illuminate\Support\HtmlString;
 
 class PublicProjectsTable
 {
@@ -27,6 +29,12 @@ class PublicProjectsTable
     {
         return $table
             ->columns([
+                ImageColumn::make('cover_image')
+                    ->label('Ảnh')
+                    ->state(fn (PublicProject $p) => $p->metadata_json['cover_image'] ?? ($p->metadata_json['image'] ?? null))
+                    ->height(40)
+                    ->extraImgAttributes(['style' => 'border-radius:6px;object-fit:cover'])
+                    ->defaultImageUrl(null),
                 TextColumn::make('code')
                     ->searchable(),
                 TextColumn::make('name')
@@ -45,6 +53,19 @@ class PublicProjectsTable
                     ->searchable(['ward', 'district', 'province'])
                     ->formatStateUsing(fn (PublicProject $p) => collect([$p->ward, $p->district])->filter()->implode(' · ') ?: ($p->province ?: '—'))
                     ->description(fn (PublicProject $p) => $p->province),
+                TextColumn::make('latitude')
+                    ->label('Toạ độ')
+                    ->placeholder('—')
+                    ->formatStateUsing(function (PublicProject $p): string|HtmlString {
+                        if ($p->latitude === null || $p->longitude === null) {
+                            return '—';
+                        }
+                        $url = 'https://www.google.com/maps?q='.$p->latitude.','.$p->longitude;
+
+                        return new HtmlString('<a href="'.e($url).'" target="_blank" rel="noopener" style="color:#2563eb;text-decoration:underline">📍 Maps</a>');
+                    })
+                    ->html()
+                    ->toggleable(),
                 TextColumn::make('project_type')
                     ->searchable(),
                 TextColumn::make('status')

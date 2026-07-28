@@ -65,6 +65,16 @@ Sau khi upsert card, với dự án MỚI hoặc chưa có detail, service fetch
   **Phường · Quận** (dòng chính) + **Tỉnh/TP** (description), searchable theo ward/district/province.
   Thêm **SelectFilter** `province` (Tỉnh/TP) và `district` (Quận/Huyện) — options distinct từ DB, searchable.
 
+## Ảnh dự án + toạ độ hiển thị trên /sa
+- **Ảnh** (`metadata_json.images`/`cover_image`): enrichDetail lấy gallery từ trang chi tiết. **Ảnh CÓ WATERMARK**
+  (hậu tố `_wm`; bản sạch trả HTTP 530 không dùng được) → lưu URL + cờ `images_watermarked=true`, chưa tải file.
+- **Bảng dự án** (resource `fila` + `PublicProjectLibrary` `sa`): thêm cột **Ảnh** (ImageColumn cover) +
+  cột **Toạ độ** (link "📍 Maps" `https://www.google.com/maps?q=lat,lng` khi có; toggleable).
+- **Form sửa dự án** (`PublicProjectForm`, panel fila): Section "Địa chỉ & vị trí" có ward/district/province +
+  latitude/longitude + Placeholder "Mở Google Maps". Section "Thông tin chi tiết" (collapsible): Placeholder
+  bảng `metadata_json.detail` (Loại hình/Số tòa/Số căn/Pháp lý/Mức giá/Đơn vị phát triển…) read-only +
+  Placeholder gallery ảnh (thumbnail có cảnh báo watermark).
+
 ## Chủ đầu tư (developers) — entity riêng, quản lý ở /sa
 - CĐT tách khỏi chuỗi thành bảng `developers` (dedup theo slug: nhiều dự án cùng CĐT → 1 record).
   `public_projects.developer_id` link, giữ `developer_name` gốc.

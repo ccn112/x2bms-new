@@ -25,8 +25,17 @@ Gán `metadata_json`: `source`, `city`, `source_url`, `image`, `area`, `configs_
 - `detail` = `{nhãn tiếng Việt: giá trị}` từ bảng `re__project-attr` (Số căn hộ, Diện tích, Số tòa,
   Chủ đầu tư, Loại hình, Pháp lý, Mức giá…). `detail_fetched_at` (ISO8601). `detail_error` (blocked/http_x) khi lỗi.
 - `detail_faq` = `{hỏi: đáp}` từ `re__collapse-box`. `price`, `legal`, `developer_unit` (khi có).
+- `images` = mảng URL ảnh dự án (full-size, bỏ `/crop/NxN/`); `cover_image` = ảnh bìa (ảnh đầu, hoặc ảnh card
+  làm baseline khi chưa enrich); `images_watermarked` = bool.
 - Map cột: `apartments` ← "Số căn hộ", `blocks` ← "Số tòa", `project_type` ← "Loại hình",
   `developer_name` ← "Chủ đầu tư" (nếu trống). `upsertCard` GIỮ các khoá này khi upsert lại card.
+
+### Ảnh dự án (watermark)
+- Nguồn: gallery `re__project-album__media` (quy về full-size) + các ảnh full-size cùng "lô upload"
+  (cùng path `YYYY/MM/DD`) để không vơ nhầm ảnh dự án liên quan. Tối đa 20 URL.
+- **KIỂM CHỨNG (2026-07-27): ẢNH CÓ WATERMARK.** Mọi ảnh có hậu tố `_wm` (vd `...-fb78_wm.jpg`).
+  Bản KHÔNG `_wm` KHÔNG truy cập được (HTTP **530**). Bản `_wm` HTTP 200. → lưu URL `_wm` +
+  `images_watermarked=true` để sau thay bằng ảnh chính thống. CHƯA tải file về (chỉ lưu URL cho ImageColumn).
 
 ## Địa chỉ có cấu trúc + toạ độ (migration `2026_07_27_000011`)
 Thêm cột `public_projects`: `ward` (phường/xã/thị trấn), `district` (quận/huyện/thành phố/thị xã),
