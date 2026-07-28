@@ -1,0 +1,3 @@
+# ADDRESS-2025 — Nhật ký (file riêng, chờ hợp nhất)
+
+- 2026-07-28: Xây pipeline ĐỊA CHỈ MỚI 2025 (63→34 tỉnh, bỏ cấp huyện). Tạo migration `2026_07_28_000001_create_admin_2025_lookup_tables` (4 bảng `admin_provinces_2025` / `admin_wards_2025` / `admin_old_provinces_2025` / `admin_old_to_new`), `Admin2025Seeder`, service `App\Services\Address\AddressResolver`, command `projects:resolve-new-address`. Nguồn: truongqv12/tinh-xa-sapnhap (đơn vị mới) + tuongnguyen913 file1 (quận/huyện cũ→xã mới) + map tỉnh cũ→mới thủ công. Verify DB `x2bms`: nạp 34 tỉnh / 3.321 xã / 3.321 dòng ánh xạ; resolve --all trên 1.023 dự án → high 868 / medium 155 / low 0. KHÔNG commit (chủ dự án commit). KHÔNG sửa file của agent khác (importer/Filament PublicProjects…).
