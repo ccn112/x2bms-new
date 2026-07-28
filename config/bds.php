@@ -18,11 +18,24 @@ return [
         // Phú Quốc: nếu slug này rỗng/404, service tự thử fallback 'du-an-bat-dong-san-kien-giang'.
         'phu-quoc' => ['label' => 'Phú Quốc',        'slug' => 'du-an-bat-dong-san-phu-quoc', 'province' => 'Kiên Giang',
             'slug_fallback' => 'du-an-bat-dong-san-kien-giang'],
+
+        // Mở rộng các tỉnh/TP lớn (đã verify slug ra card thật 2026-07-27).
+        'hai-phong'       => ['label' => 'Hải Phòng',            'slug' => 'du-an-bat-dong-san-hai-phong',       'province' => 'Hải Phòng'],
+        'can-tho'         => ['label' => 'Cần Thơ',              'slug' => 'du-an-bat-dong-san-can-tho',         'province' => 'Cần Thơ'],
+        'dong-nai'        => ['label' => 'Đồng Nai',             'slug' => 'du-an-bat-dong-san-dong-nai',        'province' => 'Đồng Nai'],
+        'khanh-hoa'       => ['label' => 'Khánh Hòa (Nha Trang)', 'slug' => 'du-an-bat-dong-san-khanh-hoa',      'province' => 'Khánh Hòa'],
+        'quang-ninh'      => ['label' => 'Quảng Ninh (Hạ Long)', 'slug' => 'du-an-bat-dong-san-quang-ninh',      'province' => 'Quảng Ninh'],
+        'lam-dong'        => ['label' => 'Lâm Đồng (Đà Lạt)',    'slug' => 'du-an-bat-dong-san-lam-dong',        'province' => 'Lâm Đồng'],
+        'ba-ria-vung-tau' => ['label' => 'Bà Rịa - Vũng Tàu',    'slug' => 'du-an-bat-dong-san-ba-ria-vung-tau', 'province' => 'Bà Rịa - Vũng Tàu'],
+        'binh-duong'      => ['label' => 'Bình Dương',           'slug' => 'du-an-bat-dong-san-binh-duong',      'province' => 'Bình Dương'],
+        'hung-yen'        => ['label' => 'Hưng Yên',             'slug' => 'du-an-bat-dong-san-hung-yen',        'province' => 'Hưng Yên'],
+        'bac-ninh'        => ['label' => 'Bắc Ninh',             'slug' => 'du-an-bat-dong-san-bac-ninh',        'province' => 'Bắc Ninh'],
     ],
 
     // Số trang lấy mỗi lần bấm "Lấy tiếp" (mặc định) và độ trễ giữa request.
+    // delay_ms tăng 400→800 để giãn nhịp, giảm bị Cloudflare rate-limit khi cào nhiều.
     'pages_per_run' => 3,
-    'delay_ms'      => 400,
+    'delay_ms'      => 800,
 
     // Làm giàu metadata từ TRANG CHI TIẾT dự án (bảng "Thông tin dự án" + FAQ).
     // Tắt bằng --no-detail (command) hoặc BDS_ENRICH_DETAIL=false.
