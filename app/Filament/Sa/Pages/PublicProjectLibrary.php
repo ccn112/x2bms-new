@@ -108,7 +108,10 @@ class PublicProjectLibrary extends Page implements HasTable
                 TextColumn::make('ward')->label('Địa điểm')->placeholder('—')
                     ->searchable(['ward', 'district', 'province'])
                     ->formatStateUsing(fn (PublicProject $p) => collect([$p->ward, $p->district])->filter()->implode(' · ') ?: ($p->province ?: '—'))
-                    ->description(fn (PublicProject $p) => $p->province),
+                    ->description(function (PublicProject $p) {
+                        $new = $p->metadata_json['address_new']['province_new'] ?? null;
+                        return $new ? $p->province.'  →  '.$new.' (2025)' : $p->province;
+                    }),
                 TextColumn::make('latitude')->label('Toạ độ')->placeholder('—')->toggleable()->html()
                     ->formatStateUsing(function (PublicProject $p): string|\Illuminate\Support\HtmlString {
                         if ($p->latitude === null || $p->longitude === null) {

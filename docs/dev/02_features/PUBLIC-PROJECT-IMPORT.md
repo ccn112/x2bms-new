@@ -75,6 +75,30 @@ Sau khi upsert card, với dự án MỚI hoặc chưa có detail, service fetch
   bảng `metadata_json.detail` (Loại hình/Số tòa/Số căn/Pháp lý/Mức giá/Đơn vị phát triển…) read-only +
   Placeholder gallery ảnh (thumbnail có cảnh báo watermark).
 
+## Hiển thị địa chỉ CŨ + MỚI (2025) trên UI
+- **Form** (`PublicProjectForm`, Section địa chỉ): Placeholder "Địa chỉ cũ (gốc) ↔ mới (2025)" hiện
+  địa chỉ cũ (ward/district/province gốc) và **địa chỉ mới** `metadata_json.address_new.full_new`
+  (+ ward_new/province_new) kèm **badge độ tin cậy** `address_new_confidence` (high=xanh, medium=vàng).
+  Chưa resolve → "Chưa xác định — chạy `projects:resolve-new-address`".
+- **Bảng**: `PublicProjectsTable` thêm cột "Tỉnh mới (2025)" (badge màu theo confidence, toggleable);
+  `PublicProjectLibrary` thêm dòng phụ "tỉnh cũ → tỉnh mới (2025)" trong cột Địa điểm.
+- (Nguồn dữ liệu `address_new` do command `projects:resolve-new-address` sinh — build riêng; UI này chỉ HIỂN THỊ.)
+
+## "Tìm ảnh & thông tin" chính thống (admin duyệt) — MOCK trước, cắm key sau
+Thay ảnh batdongsan watermark bằng ảnh chính thống do SuperAdmin duyệt.
+- **Config `config/enrichment.php`**: `provider` = mock (default, ENV `ENRICH_PROVIDER`) | google_cse | serpapi;
+  keys `GOOGLE_CSE_KEY`/`GOOGLE_CSE_CX`/`SERPAPI_KEY`; `max_images`/`max_info`.
+- **Service `ProjectEnrichmentService`** + interface `EnrichmentProvider` (3 impl: `MockProvider`,
+  `GoogleCseProvider` Custom Search JSON API, `SerpApiProvider`). `searchImages()`/`searchInfo()`
+  (query = tên dự án + chủ đầu tư + "phối cảnh"/"chủ đầu tư"). Mock trả 5 ảnh (picsum) + 3 info nguồn giả
+  → UI chạy KHÔNG cần key. `applySelection()` lưu lựa chọn.
+- **Action "Tìm ảnh & thông tin"** (header action trang Edit dự án, panel fila, CHỈ SuperAdmin):
+  `mountUsing` fetch ứng viên 1 lần → modal: lưới ảnh preview + Select **ảnh bìa** + CheckboxList
+  **ảnh gallery** (mỗi ảnh có link nguồn) + CheckboxList **thông tin** (mỗi mục có link nguồn).
+  Xác nhận → `metadata_json.official_images` + `official_cover` + `official_url` + `official_info`
+  + nối info vào `description`, ghi `metadata_json.enrichment_log` (thời điểm + provider + nguồn).
+- Ảnh chính thống (`official_images`) **ưu tiên** hiển thị thay ảnh batdongsan watermark (form gallery).
+
 ## Chủ đầu tư (developers) — entity riêng, quản lý ở /sa
 - CĐT tách khỏi chuỗi thành bảng `developers` (dedup theo slug: nhiều dự án cùng CĐT → 1 record).
   `public_projects.developer_id` link, giữ `developer_name` gốc.

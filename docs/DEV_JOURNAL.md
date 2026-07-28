@@ -2021,3 +2021,12 @@ Nâng cấp thư viện dự án public:
 - **fetch-more --pages=15 x4 city** (kèm enrich+ảnh) chạy NỀN để tăng phủ + có ảnh/toạ độ/detail.
 
 **Verify (DB thật):** enrich The Keisho → images=6, cover set, `images_watermarked=true`, lat/lng, detail 3 nhãn ✅. Livewire render OK: PublicProjectLibrary (sa), ListPublicProjects (fila), EditPublicProject #8 form (Placeholder detail+gallery+map), ListDevelopers (sa) — assertOk() ✅. `php -l` 4 file sạch, không mojibake/BOM. CHƯA commit.
+
+---
+
+## 2026-07-27 (bổ sung 4) — Hiển thị địa chỉ cũ/mới + "Tìm ảnh & thông tin" chính thống (mock)
+
+- **Địa chỉ cũ ↔ mới (2025)**: Form (`PublicProjectForm`) Placeholder hiện địa chỉ cũ (ward/district/province) + địa chỉ mới `metadata_json.address_new.full_new` + badge `address_new_confidence` (high xanh/medium vàng); chưa resolve → "Chưa xác định — chạy projects:resolve-new-address". Bảng: `PublicProjectsTable` thêm cột "Tỉnh mới (2025)" (badge, toggleable); `PublicProjectLibrary` thêm dòng "tỉnh cũ → tỉnh mới" ở cột Địa điểm. (UI chỉ HIỂN THỊ; command resolve build riêng.)
+- **"Tìm ảnh & thông tin"** (SuperAdmin, trang Edit fila): `config/enrichment.php` (provider mock|google_cse|serpapi + keys); `ProjectEnrichmentService` + interface `EnrichmentProvider` (Mock/GoogleCse/SerpApi). Action `mountUsing` fetch ứng viên → modal preview lưới ảnh + Select ảnh bìa + CheckboxList ảnh gallery + CheckboxList info (kèm link nguồn). Xác nhận → `metadata_json.official_images/official_cover/official_url/official_info` + nối info vào description + `enrichment_log`. Ảnh chính thống ưu tiên thay ảnh batdongsan watermark ở form gallery.
+
+**Verify (DB thật):** provider mock trả 5 ảnh (picsum) + 3 info không cần key ✅; applySelection ghi official_images(2)/cover/url/info(1)/enrichment_log(provider=mock) + nối description ✅. Render assertOk: Edit form (address cũ/mới + badge, cả nhánh CÓ và CHƯA resolve), List (cột Tỉnh mới), PublicProjectLibrary (sa), mount action enrichSearch (nạp ứng viên) ✅. `php -l` 10 file sạch, không mojibake/BOM. fetch-more nền đang chạy — tổng public_projects=1403 (đang tăng). CHƯA commit.

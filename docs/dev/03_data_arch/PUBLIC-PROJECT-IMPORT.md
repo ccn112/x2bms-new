@@ -30,6 +30,15 @@ Gán `metadata_json`: `source`, `city`, `source_url`, `image`, `area`, `configs_
 - Map cột: `apartments` ← "Số căn hộ", `blocks` ← "Số tòa", `project_type` ← "Loại hình",
   `developer_name` ← "Chủ đầu tư" (nếu trống). `upsertCard` GIỮ các khoá này khi upsert lại card.
 
+### `metadata_json` — địa chỉ mới + enrichment chính thống
+- `address_new` = `{full_new, ward_new, province_new}` + `address_new_confidence` (high|medium|…) —
+  sinh bởi command `projects:resolve-new-address` (build riêng). UI form/bảng hiển thị + badge.
+- **Enrichment (admin duyệt qua "Tìm ảnh & thông tin"):** `official_images` (mảng URL đã chọn),
+  `official_cover` (URL bìa), `official_url` (nguồn chính), `official_info` (mảng {snippet,source_url,title}),
+  `enrichment_log` (mảng {at, provider, images, infos, sources}). Ảnh chính thống ưu tiên hơn ảnh batdongsan.
+- Config `config/enrichment.php` (provider mock|google_cse|serpapi + keys). Service `ProjectEnrichmentService`
+  + `App\Services\Projects\Enrichment\*` (interface + 3 provider). CHƯA tải file ảnh về (chỉ lưu URL).
+
 ### Ảnh dự án (watermark)
 - Nguồn: gallery `re__project-album__media` (quy về full-size) + các ảnh full-size cùng "lô upload"
   (cùng path `YYYY/MM/DD`) để không vơ nhầm ảnh dự án liên quan. Tối đa 20 URL.

@@ -53,6 +53,15 @@ class PublicProjectsTable
                     ->searchable(['ward', 'district', 'province'])
                     ->formatStateUsing(fn (PublicProject $p) => collect([$p->ward, $p->district])->filter()->implode(' · ') ?: ($p->province ?: '—'))
                     ->description(fn (PublicProject $p) => $p->province),
+                TextColumn::make('province_new')
+                    ->label('Tỉnh mới (2025)')
+                    ->placeholder('—')
+                    ->state(fn (PublicProject $p) => $p->metadata_json['address_new']['province_new'] ?? null)
+                    ->badge()
+                    ->color(fn (PublicProject $p) => match ($p->metadata_json['address_new_confidence'] ?? null) {
+                        'high' => 'success', 'medium' => 'warning', default => 'gray',
+                    })
+                    ->toggleable(),
                 TextColumn::make('latitude')
                     ->label('Toạ độ')
                     ->placeholder('—')
