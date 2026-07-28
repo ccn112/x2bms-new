@@ -21,16 +21,25 @@ class ExportProjectsJson extends Command
     public function handle(): int
     {
         $cols = [
-            'code', 'name', 'developer_name', 'address', 'province', 'project_type',
-            'status', 'blocks', 'apartments', 'amenities_json', 'description',
-            'is_public', 'metadata_json',
+            'code', 'name', 'developer_name', 'address', 'ward', 'district', 'province',
+            'latitude', 'longitude', 'project_type', 'status', 'blocks', 'apartments',
+            'amenities_json', 'description', 'is_public', 'metadata_json',
         ];
 
         $rows = PublicProject::query()
+            ->with('developer')
             ->where('metadata_json->source', 'batdongsan.com.vn')
             ->orderBy('code')
             ->get()
-            ->map(fn (PublicProject $p) => $p->only($cols))
+            ->map(function (PublicProject $p) use ($cols) {
+                $row = $p->only($cols);
+                // Kèm developer (name/slug/website...) để server backfill developers khi seed.
+                $row['developer'] = $p->developer
+                    ? $p->developer->only(['name', 'slug', 'code', 'website', 'logo_path', 'description', 'source', 'metadata_json'])
+                    : null;
+
+                return $row;
+            })
             ->values()
             ->all();
 

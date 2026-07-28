@@ -36,14 +36,22 @@ class PublicProjectBdsSeeder extends Seeder
             $url  = $r['url'] ?? '';
             $code = BdsProjectImporter::codeFrom($url, $name);
             [$apartments, $blocks, $area] = BdsProjectImporter::parseConfigs($r['configs'] ?? []);
+            $addr = BdsProjectImporter::parseAddress($r['location'] ?? '');
+            $developerName = BdsProjectImporter::developer($r);
+            $developerId = $developerName
+                ? optional(\App\Models\Developer::upsertByName($developerName, ['source' => 'batdongsan.com.vn']))->id
+                : null;
 
             PublicProject::updateOrCreate(
                 ['code' => $code],
                 [
                     'name'           => $name,
-                    'developer_name' => BdsProjectImporter::developer($r),
+                    'developer_name' => $developerName,
+                    'developer_id'   => $developerId,
                     'address'        => $r['location'] ?? null,
-                    'province'       => BdsProjectImporter::province($r['location'] ?? ''),
+                    'ward'           => $addr['ward'],
+                    'district'       => $addr['district'],
+                    'province'       => $addr['province'],
                     'project_type'   => BdsProjectImporter::projectType($url),
                     'status'         => BdsProjectImporter::status($r['status'] ?? ''),
                     'blocks'         => $blocks,

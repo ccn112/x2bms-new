@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /** Addendum — Dự án/tòa trong thư viện public dùng chung toàn nền tảng. */
@@ -18,5 +19,10 @@ class PublicProject extends Model
     public function media(): HasMany
     {
         return $this->hasMany(ProjectMedia::class);
+    }
+
+    public function developer(): BelongsTo
+    {
+        return $this->belongsTo(Developer::class);
     }
 }

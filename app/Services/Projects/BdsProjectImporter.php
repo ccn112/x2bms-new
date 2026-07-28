@@ -337,7 +337,13 @@ class BdsProjectImporter
         [$apartments, $blocks, $area] = static::parseConfigs($card['configs'] ?? []);
 
         $location = $card['location'] ?? null;
-        $province = static::province((string) ($location ?? '')) ?? ($cityCfg['province'] ?? null);
+        $addr = static::parseAddress((string) ($location ?? ''));
+        $province = $addr['province'] ?? ($cityCfg['province'] ?? null);
+
+        $developerName = static::developer($card);
+        $developerId = $developerName
+            ? optional(\App\Models\Developer::upsertByName($developerName, ['source' => 'batdongsan.com.vn']))->id
+            : null;
 
         $prev = PublicProject::where('code', $code)->first();
         $existing = (bool) $prev;
@@ -363,8 +369,11 @@ class BdsProjectImporter
             ['code' => $code],
             [
                 'name'           => $card['name'],
-                'developer_name' => static::developer($card),
+                'developer_name' => $developerName,
+                'developer_id'   => $developerId,
                 'address'        => $location,
+                'ward'           => $addr['ward'],
+                'district'       => $addr['district'],
                 'province'       => $province,
                 'project_type'   => static::projectType($url),
                 'status'         => static::status((string) ($card['status'] ?? '')),
@@ -438,11 +447,47 @@ class BdsProjectImporter
         }
         if (($p->developer_name === null || $p->developer_name === '') && $parsed['developer'] !== null) {
             $update['developer_name'] = $parsed['developer'];
+            if ($dev = \App\Models\Developer::upsertByName($parsed['developer'], ['source' => 'batdongsan.com.vn'])) {
+                $update['developer_id'] = $dev->id;
+            }
+        }
+
+        // Địa chỉ chi tiết hơn từ trang chi tiết → cập nhật address + re-parse ward/district/province.
+        $full = $parsed['address_full'];
+        if ($full && $this->addressIsBetter($full, (string) $p->address)) {
+            $a = static::parseAddress($full);
+            $update['address'] = $full;
+            $update['ward'] = $a['ward'];
+            $update['district'] = $a['district'];
+            if ($a['province']) {
+                $update['province'] = $a['province'];
+            }
+        }
+
+        // Toạ độ bản đồ.
+        if ($parsed['latitude'] !== null && $parsed['longitude'] !== null) {
+            $update['latitude'] = $parsed['latitude'];
+            $update['longitude'] = $parsed['longitude'];
         }
 
         $p->update($update);
 
         return true;
+    }
+
+    /** Địa chỉ mới "tốt hơn" nếu có nhiều đoạn (dấu phẩy) hơn hoặc dài hơn rõ rệt. */
+    private function addressIsBetter(string $candidate, string $current): bool
+    {
+        if (trim($current) === '') {
+            return true;
+        }
+        $cn = substr_count($candidate, ',');
+        $cur = substr_count($current, ',');
+        if ($cn > $cur) {
+            return true;
+        }
+
+        return $cn === $cur && mb_strlen($candidate) > mb_strlen($current) + 3;
     }
 
     /** Lấy số nguyên đầu tiên từ giá trị nhãn khớp (vd "280 căn" -> 280). */
@@ -466,7 +511,8 @@ class BdsProjectImporter
     public function parseDetail(string $html): array
     {
         $out = ['attrs' => [], 'faq' => [], 'price' => null, 'legal' => null,
-            'developer' => null, 'developer_unit' => null, 'project_type' => null];
+            'developer' => null, 'developer_unit' => null, 'project_type' => null,
+            'address_full' => null, 'latitude' => null, 'longitude' => null];
 
         if (trim($html) === '') {
             return $out;
@@ -559,6 +605,33 @@ class BdsProjectImporter
             }
         }
 
+        // Địa chỉ đầy đủ hơn: div.re__project-address (bỏ text link "Xem bản đồ").
+        $addrN = $xp->query("//*[contains(concat(' ', normalize-space(@class), ' '), ' re__project-address ')]");
+        if ($addrN->length > 0) {
+            $node = $addrN->item(0)->cloneNode(true);
+            // gỡ các <a> (link "Xem bản đồ") khỏi bản sao trước khi lấy text
+            foreach (iterator_to_array($node->getElementsByTagName('a')) as $a) {
+                $a->parentNode?->removeChild($a);
+            }
+            $full = trim(preg_replace('/\s+/u', ' ', $node->textContent));
+            $full = rtrim($full, " .\u{00A0}");
+            if ($full !== '') {
+                $out['address_full'] = $full;
+            }
+        }
+
+        // Toạ độ: URL Google Maps ...q=<lat>,<lng> hoặc LatLng(lat,lng).
+        if (preg_match('#[?&]q=(-?\d{1,2}\.\d+),(-?\d{2,3}\.\d+)#', $html, $m)
+            || preg_match('#LatLng\(\s*(-?\d{1,2}\.\d+)\s*,\s*(-?\d{2,3}\.\d+)#i', $html, $m)) {
+            $lat = (float) $m[1];
+            $lng = (float) $m[2];
+            // Sơ bộ trong khung Việt Nam.
+            if ($lat >= 7 && $lat <= 24 && $lng >= 100 && $lng <= 115) {
+                $out['latitude'] = round($lat, 7);
+                $out['longitude'] = round($lng, 7);
+            }
+        }
+
         return $out;
     }
 
@@ -637,6 +710,65 @@ class BdsProjectImporter
         $parts = array_map('trim', explode(',', $location));
 
         return end($parts) ?: null;
+    }
+
+    /**
+     * Tách chuỗi địa chỉ "[số/đường,] Phường/Xã, Quận/Huyện, Tỉnh/Thành" thành cấu trúc.
+     * Phân loại theo TIỀN TỐ; quận/huyện có thể KHÔNG có tiền tố (dạng bare "Bình Tân",
+     * "Sơn Trà") khi đứng sau phường. Lưu VERBATIM (không đổi tên hành chính cũ/mới).
+     *
+     * @return array{ward:?string,district:?string,province:?string,street:?string}
+     */
+    public static function parseAddress(string $address): array
+    {
+        $out = ['ward' => null, 'district' => null, 'province' => null, 'street' => null];
+        $parts = array_values(array_filter(array_map('trim', explode(',', $address)), fn ($p) => $p !== ''));
+        if (empty($parts)) {
+            return $out;
+        }
+
+        // Đoạn cuối = tỉnh/thành.
+        $out['province'] = array_pop($parts);
+        if (empty($parts)) {
+            return $out;
+        }
+
+        $wardRe     = '/^(phường|xã|thị\s*trấn)([\s\d]|$)/iu';
+        $districtRe = '/^(quận|huyện|thành\s*phố|thị\s*xã)([\s\d]|$)/iu';
+
+        $wardIdx = null;
+        $districtIdx = null;
+        foreach ($parts as $i => $seg) {
+            if ($out['ward'] === null && preg_match($wardRe, $seg)) {
+                $out['ward'] = $seg;
+                $wardIdx = $i;
+            } elseif ($out['district'] === null && preg_match($districtRe, $seg)) {
+                $out['district'] = $seg;
+                $districtIdx = $i;
+            }
+        }
+
+        // Quận/huyện dạng bare (không tiền tố): chỉ nhận khi có phường đứng trước
+        // (tránh nhầm số nhà/đường thành quận). Lấy đoạn đầu tiên sau phường.
+        if ($out['district'] === null && $wardIdx !== null) {
+            for ($i = $wardIdx + 1; $i < count($parts); $i++) {
+                if ($parts[$i] !== $out['ward']) {
+                    $out['district'] = $parts[$i];
+                    $districtIdx = $i;
+                    break;
+                }
+            }
+        }
+
+        // Street = các đoạn đầu trước cấp hành chính đầu tiên (phường/quận).
+        $adminIdxs = array_filter([$wardIdx, $districtIdx], fn ($x) => $x !== null);
+        $firstAdmin = $adminIdxs === [] ? null : min($adminIdxs);
+        $street = $firstAdmin === null
+            ? implode(', ', $parts)
+            : implode(', ', array_slice($parts, 0, $firstAdmin));
+        $out['street'] = $street !== '' ? $street : null;
+
+        return $out;
     }
 
     public static function projectType(string $url): ?string

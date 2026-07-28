@@ -28,11 +28,44 @@ Gán `metadata_json`: `source`, `city`, `source_url`, `image`, `area`, `configs_
 - Map cột: `apartments` ← "Số căn hộ", `blocks` ← "Số tòa", `project_type` ← "Loại hình",
   `developer_name` ← "Chủ đầu tư" (nếu trống). `upsertCard` GIỮ các khoá này khi upsert lại card.
 
+## Địa chỉ có cấu trúc + toạ độ (migration `2026_07_27_000011`)
+Thêm cột `public_projects`: `ward` (phường/xã/thị trấn), `district` (quận/huyện/thành phố/thị xã),
+`latitude`/`longitude` decimal(10,7). `province` (đã có) giữ nguyên. Idempotent (hasColumn guard).
+- **`BdsProjectImporter::parseAddress(string): {ward,district,province,street}`** — tách theo dấu phẩy,
+  phân loại theo TIỀN TỐ (Phường/Xã/Thị trấn → ward; Quận/Huyện/Thành phố/Thị xã → district; đoạn cuối →
+  province; phần đầu → street). Quận/huyện có thể KHÔNG tiền tố (bare "Bình Tân", "Sơn Trà", "Đông Anh") —
+  chỉ nhận khi có phường đứng trước (tránh nhầm số nhà/đường). Lưu VERBATIM (không đổi tên hành chính cũ/mới).
+- Áp trong `upsertCard` + 2 seeder. `province()` cũ giữ nguyên (tương thích).
+- **Toạ độ**: `enrichDetail`/`parseDetail` lấy `latitude`/`longitude` từ URL Google Maps `?q=<lat>,<lng>`
+  (hoặc `LatLng(lat,lng)`), lọc trong khung VN (lat 7–24, lng 100–115).
+- **Địa chỉ chi tiết hơn**: `parseDetail` bóc `div.re__project-address` (gỡ link "Xem bản đồ"); `enrichDetail`
+  thay `address` nếu bản chi tiết "tốt hơn" (nhiều đoạn phẩy hơn / dài hơn) rồi re-parse ward/district/province.
+
+## Bảng `developers` (migration `2026_07_27_000012`) — CHỦ ĐẦU TƯ là entity riêng
+| Cột | Kiểu | Ghi chú |
+|---|---|---|
+| id | bigint PK | |
+| name | string | tên CĐT (chuẩn hoá gọn) |
+| slug | string **unique** | định danh dedup (Str::slug) |
+| code, website, logo_path | string nullable | |
+| description | text nullable | |
+| source, metadata_json | | nguồn + meta |
+| timestamps + softDeletes | | |
+
+- `public_projects.developer_id` (nullable FK → developers, nullOnDelete). GIỮ `developer_name` (chuỗi gốc đối chiếu).
+- Model `App\Models\Developer` (`hasMany PublicProject`) có `upsertByName(name, extra)` — dedup theo slug
+  (nhiều dự án cùng CĐT → 1 record). `PublicProject::developer()` belongsTo.
+- Importer + 2 seeder: sau khi có developer_name → `Developer::upsertByName()` → set `developer_id`.
+  "Đơn vị phát triển" lưu riêng ở `metadata_json.developer_unit` (KHÔNG nhầm với chủ đầu tư).
+- Filament `DeveloperResource` (/sa, nhóm "Dự án"): CRUD + cột "Số dự án" (withCount) + RelationManager dự án.
+
 ## Đồng bộ local → server (export/seed)
-- `projects:export-json` dump rows `metadata_json->source='batdongsan.com.vn'` → JSON đủ 13 cột
+- `projects:export-json` dump rows `metadata_json->source='batdongsan.com.vn'` → JSON đủ cột (thêm
+  `ward`,`district`,`latitude`,`longitude` + object `developer` name/slug/website…)
   (`database/seeders/data/public_projects_export.json`, UTF-8 no BOM).
-- `PublicProjectImportSeeder` đọc file → `updateOrCreate` theo `code` (idempotent), ghi thẳng cột kể cả
-  `metadata_json` — server KHÔNG gọi batdongsan. Giữ `PublicProjectBdsSeeder` cũ cho `bds_projects.json`.
+- `PublicProjectImportSeeder` đọc file → tạo lại `developers` (`upsertByName` dedup) + link `developer_id`,
+  rồi `updateOrCreate` PublicProject theo `code` (idempotent, ghi cả ward/district/lat/lng/metadata_json) —
+  server KHÔNG gọi batdongsan. Giữ `PublicProjectBdsSeeder` cũ cho `bds_projects.json`.
 
 ## Tái dùng logic chuẩn hoá (DRY)
 Các hàm chuẩn hoá chuyển từ `PublicProjectBdsSeeder` (private) → `BdsProjectImporter` (**public static**):

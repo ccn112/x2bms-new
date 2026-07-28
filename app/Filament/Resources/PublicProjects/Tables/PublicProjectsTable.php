@@ -15,8 +15,10 @@ use Filament\Tables\Filters\TrashedFilter;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
+use App\Models\PublicProject;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 
 class PublicProjectsTable
@@ -29,12 +31,20 @@ class PublicProjectsTable
                     ->searchable(),
                 TextColumn::make('name')
                     ->searchable(),
-                TextColumn::make('developer_name')
-                    ->searchable(),
+                TextColumn::make('developer.name')
+                    ->label('Chủ đầu tư')
+                    ->placeholder('—')
+                    ->description(fn (PublicProject $p) => $p->developer_id ? null : $p->developer_name)
+                    ->searchable(['developer_name']),
                 TextColumn::make('address')
-                    ->searchable(),
-                TextColumn::make('province')
-                    ->searchable(),
+                    ->searchable()
+                    ->toggleable(isToggledHiddenByDefault: true),
+                TextColumn::make('ward')
+                    ->label('Địa điểm')
+                    ->placeholder('—')
+                    ->searchable(['ward', 'district', 'province'])
+                    ->formatStateUsing(fn (PublicProject $p) => collect([$p->ward, $p->district])->filter()->implode(' · ') ?: ($p->province ?: '—'))
+                    ->description(fn (PublicProject $p) => $p->province),
                 TextColumn::make('project_type')
                     ->searchable(),
                 TextColumn::make('status')
@@ -57,8 +67,13 @@ class PublicProjectsTable
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
+                SelectFilter::make('province')->label('Tỉnh/TP')
+                    ->options(fn () => PublicProject::query()->whereNotNull('province')->distinct()->orderBy('province')->pluck('province', 'province')->all())
+                    ->searchable(),
+                SelectFilter::make('district')->label('Quận/Huyện')
+                    ->options(fn () => PublicProject::query()->whereNotNull('district')->distinct()->orderBy('district')->pluck('district', 'district')->all())
+                    ->searchable(),
                 TrashedFilter::make(),
-                //
             ])
             ->recordActions([
                 RestoreAction::make(),

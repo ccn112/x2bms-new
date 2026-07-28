@@ -24,20 +24,21 @@ class DemoImage
      * @var array<string,array<int,string>>
      */
     private const TOPICS = [
-        // Toà nhà / dự án bất động sản
+        // Toà nhà / dự án bất động sản — CHỈ ảnh ngoại thất cao tầng (đã soi
+        // từng ảnh). Bộ đầu lẫn nội thất, mô hình nhà đồ chơi, nhà vườn thấp
+        // tầng nên thẻ "dự án" nhìn sai hẳn so với thiết kế.
         'building' => [
-            'photo-1545324418-cc1a3fa10c00',
-            'photo-1486406146926-c627a92ad1ab',
-            'photo-1512917774080-9991f1c4c750',
-            'photo-1560518883-ce09059eeffa',
-            'photo-1502672260266-1c1ef2d93688',
-            'photo-1493809842364-78817add7ffb',
+            'photo-1545324418-cc1a3fa10c00', // chung cư nhìn lên
+            'photo-1486406146926-c627a92ad1ab', // cao ốc kính nhìn lên
+            'photo-1470723710355-95304d8aece4', // skyline đêm
+            'photo-1480714378408-67cf0d13bc1b', // skyline hoàng hôn
         ],
         // Tiện ích nội khu: bể bơi, gym, spa
         'amenity' => [
             'photo-1571902943202-507ec2618e8f',
             'photo-1534438327276-14e5300c3a48',
             'photo-1540555700478-4be289fbecef',
+            'photo-1512917774080-9991f1c4c750', // nhà có bể bơi
         ],
         // Cộng đồng / hàng xóm / sự kiện cư dân
         'community' => [

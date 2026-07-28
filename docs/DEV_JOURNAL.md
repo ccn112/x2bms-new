@@ -1997,3 +1997,16 @@ Nâng cấp `BdsProjectImporter`:
 - **`projects:export-json`** + **`PublicProjectImportSeeder`**: dump rows nguồn batdongsan ra JSON đủ 13 cột → server chỉ `git pull` + `db:seed --class=PublicProjectImportSeeder` (KHÔNG gọi batdongsan). Giữ `PublicProjectBdsSeeder` cũ.
 
 **Verify (DB thật):** `fetch-more --city=da-nang --pages=1` → 9/10 dự án mới có detail; mẫu `FourS Tower` detail={Pháp lý, Số tòa:"3 tòa", Số căn hộ:"1.281 căn", Chủ đầu tư:"Tập đoàn Sun Group"} → apartments=1281/blocks=3/project_type="Căn hộ chung cư" ✅. `export-json` → 30 dự án (9 detail) JSON no-BOM UTF-8 ✅; `db:seed PublicProjectImportSeeder` upsert 30 idempotent ✅. `php -l` sạch, không mojibake. CHƯA commit.
+
+---
+
+## 2026-07-27 (bổ sung 2) — Địa chỉ phường/quận, toạ độ, entity Chủ đầu tư
+
+Nâng cấp thư viện dự án public:
+- **parseAddress** (`BdsProjectImporter`, public static): tách `address` → ward/district/province/street theo tiền tố (Phường/Xã/Thị trấn; Quận/Huyện/Thành phố/Thị xã); quận/huyện dạng bare (không tiền tố "Bình Tân"/"Sơn Trà") nhận khi có phường trước. Lưu verbatim. Migration `000011` thêm cột `ward`,`district`,`latitude`,`longitude`(decimal 10,7). Áp vào upsertCard + 2 seeder + backfill.
+- **enrichDetail mở rộng**: lấy địa chỉ chi tiết hơn từ `div.re__project-address` (bỏ link "Xem bản đồ") → thay address nếu tốt hơn + re-parse; lấy toạ độ từ URL Google Maps `?q=lat,lng` (lọc khung VN). Kiểm chứng THẬT: trang chi tiết CÓ cả địa chỉ số nhà/đường lẫn lat/lng.
+- **Entity Chủ đầu tư** (`developers`, migration `000012`): dedup theo slug, `public_projects.developer_id` FK (giữ `developer_name`). Model `Developer::upsertByName()`. Importer + 2 seeder upsert Developer + link. `DeveloperResource` /sa (nhóm "Dự án") CRUD + logo upload + cột "Số dự án" + RelationManager dự án.
+- **Bảng dự án** (`PublicProjectLibrary` + `PublicProjectsTable`): cột "Địa điểm" = Phường·Quận + Tỉnh (description), searchable ward/district/province; SelectFilter province + district (distinct DB). Cột "Chủ đầu tư" link `developer.name`.
+- **Export/import**: thêm ward/district/lat/lng + object developer; import tạo lại developers + link.
+
+**Verify (DB thật):** migrate 2 bảng ✅. Backfill 715 dự án: ward 697/district 696; **452 CĐT dedup** (Masterise/Vingroup 18, Sun Group 15 → 1 record; 56 CĐT >1 dự án); developer_id 606 ✅. parse "Phường Đại Kim/Quận Hoàng Mai/Hà Nội" ✅. enrich The Keisho → address "Ngõ 17 Đường Cổ Linh...", lat=21.0310955 lng=105.8933182 ✅. `route:list --path=sa` có `sa/developers` (index/create/edit) ✅. export 710 (617 detail) no-BOM + developer object; re-seed import 710 idempotent ✅. `php -l` 17 file sạch, không mojibake/BOM. CHƯA commit.

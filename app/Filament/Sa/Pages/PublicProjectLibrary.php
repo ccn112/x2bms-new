@@ -101,7 +101,10 @@ class PublicProjectLibrary extends Page implements HasTable
             ->columns([
                 TextColumn::make('name')->label('Dự án')->searchable()->weight('medium')
                     ->description(fn (PublicProject $p) => $p->developer_name),
-                TextColumn::make('province')->label('Địa điểm')->placeholder('—'),
+                TextColumn::make('ward')->label('Địa điểm')->placeholder('—')
+                    ->searchable(['ward', 'district', 'province'])
+                    ->formatStateUsing(fn (PublicProject $p) => collect([$p->ward, $p->district])->filter()->implode(' · ') ?: ($p->province ?: '—'))
+                    ->description(fn (PublicProject $p) => $p->province),
                 TextColumn::make('project_type')->label('Loại')->badge()->color('gray')->placeholder('—')->toggleable(),
                 TextColumn::make('blocks')->label('Block')->alignCenter(),
                 TextColumn::make('apartments')->label('Căn hộ')->alignCenter()->numeric(),
@@ -116,6 +119,12 @@ class PublicProjectLibrary extends Page implements HasTable
                 SelectFilter::make('status')->label('Trạng thái')->options(collect(self::STATUS)->map(fn ($v) => $v[0])->all()),
                 SelectFilter::make('project_type')->label('Loại hình')
                     ->options(['apartment' => 'Chung cư', 'villa' => 'Biệt thự', 'mixed' => 'Phức hợp', 'office' => 'Văn phòng']),
+                SelectFilter::make('province')->label('Tỉnh/TP')
+                    ->options(fn () => PublicProject::query()->whereNotNull('province')->distinct()->orderBy('province')->pluck('province', 'province')->all())
+                    ->searchable(),
+                SelectFilter::make('district')->label('Quận/Huyện')
+                    ->options(fn () => PublicProject::query()->whereNotNull('district')->distinct()->orderBy('district')->pluck('district', 'district')->all())
+                    ->searchable(),
             ])
             ->headerActions([
                 Action::make('fetchMore')->label('Lấy tiếp')->icon('heroicon-o-arrow-down-tray')->color('primary')

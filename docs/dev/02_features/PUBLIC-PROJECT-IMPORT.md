@@ -58,6 +58,20 @@ Sau khi upsert card, với dự án MỚI hoặc chưa có detail, service fetch
   body < 20KB + chứa token challenge thật (`_cf_chl_opt`/`challenge-error-text`/`cf-chl-`/`Just a moment`).
   (Chuỗi `challenge-platform` xuất hiện cả trên trang hợp lệ — KHÔNG dùng làm dấu hiệu.)
 
+## Địa chỉ có cấu trúc + lọc theo địa bàn (bảng /sa)
+- `address` (chuỗi đầy đủ) được tách thành `ward` (phường/xã), `district` (quận/huyện), `province` qua
+  `parseAddress()`. Trang chi tiết cho địa chỉ chính xác hơn (số nhà/đường) + toạ độ `latitude`/`longitude`.
+- **Bảng dự án** (`PublicProjectLibrary` /sa + `PublicProjectsTable` resource): cột "Địa điểm" hiển thị
+  **Phường · Quận** (dòng chính) + **Tỉnh/TP** (description), searchable theo ward/district/province.
+  Thêm **SelectFilter** `province` (Tỉnh/TP) và `district` (Quận/Huyện) — options distinct từ DB, searchable.
+
+## Chủ đầu tư (developers) — entity riêng, quản lý ở /sa
+- CĐT tách khỏi chuỗi thành bảng `developers` (dedup theo slug: nhiều dự án cùng CĐT → 1 record).
+  `public_projects.developer_id` link, giữ `developer_name` gốc.
+- **`DeveloperResource`** (/sa, nhóm "Dự án"): CRUD (name, website, logo upload, mô tả) + cột **"Số dự án"**
+  (đếm quan hệ) + **RelationManager** liệt kê dự án của CĐT. Bảng dự án hiển thị cột "Chủ đầu tư" = `developer.name`.
+- "Đơn vị phát triển" (nếu detail có) lưu riêng `metadata_json.developer_unit`, KHÔNG nhầm chủ đầu tư.
+
 ## Đồng bộ local → server (export → seed, KHÔNG gọi batdongsan trên server)
 Vì server (Linux) có thể bị Cloudflare chặn, thu thập chạy ở **local**, rồi commit JSON, server chỉ seed.
 - **`php artisan projects:export-json [--path=...]`** — dump TẤT CẢ rows nguồn batdongsan
@@ -99,6 +113,14 @@ Do đó `fetchHtml()` có 3 chế độ (`config('bds.transport')`):
   → map cột `apartments=1281, blocks=3, project_type="Căn hộ chung cư"` ✅.
 - **Export/seed:** `projects:export-json` → 30 dự án (9 có detail) ra JSON (no BOM, UTF-8, tiếng Việt đúng
   "Ecohome Hòa Hiệp/Đà Nẵng") ✅; `db:seed --class=PublicProjectImportSeeder` upsert 30 (idempotent) ✅.
+- **Địa chỉ/CĐT (backfill 715 dự án):** parse "Phường Đại Kim, Quận Hoàng Mai, Hà Nội" →
+  ward/district/province đúng ✅; ward 697/district 696; **452 CĐT** (dedup từ 606 dự án có tên),
+  Masterise Homes 18 / Vingroup 18 / Sun Group 15 dự án gom đúng 1 record (56 CĐT có >1 dự án) ✅.
+- **Địa chỉ chi tiết + toạ độ:** enrich `The Keisho` → `address` nâng cấp thành
+  "Ngõ 17 Đường Cổ Linh, Phường Long Biên, Quận Long Biên, Hà Nội" (chi tiết hơn card),
+  `lat=21.0310955 lng=105.8933182` ✅. `DeveloperResource` render (route `sa/developers`) ✅.
+- **Export/import mở rộng:** export 710 dự án kèm ward/district/lat + object developer; import tạo lại
+  developers + link, idempotent ✅.
 - `php -l` toàn bộ file mới sạch, không mojibake/BOM ✅.
 
 ## Việc còn lại / cần quyết
