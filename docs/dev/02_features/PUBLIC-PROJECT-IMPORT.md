@@ -26,6 +26,9 @@ chuyển thành `public static` trong service, seeder gọi lại — không l�
   `transport`, `curl_binary`.
 - **Command** `php artisan projects:fetch-more {--pages=3} {--city=*}` — cùng service (cho cron/CLI).
   Bỏ trống `--city` = tất cả khu vực.
+- **Command** `php artisan projects:enrich-missing {--limit=300} {--only=images|detail|all}` — backfill
+  ảnh/toạ độ/chi tiết cho dự án CŨ còn thiếu (có `source_url` mà thiếu `images`/`detail`), gọi lại
+  `enrichDetail()`. Idempotent, có delay, bỏ qua êm khi bị chặn — chạy lại để tiếp tục.
 
 ## Nút "Lấy tiếp" (Filament header action, `/sa`)
 - Chỉ hiện với SuperAdmin (`->visible(fn () => Auth::user()?->isPlatformAdmin())`).

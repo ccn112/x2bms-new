@@ -2030,3 +2030,10 @@ Nâng cấp thư viện dự án public:
 - **"Tìm ảnh & thông tin"** (SuperAdmin, trang Edit fila): `config/enrichment.php` (provider mock|google_cse|serpapi + keys); `ProjectEnrichmentService` + interface `EnrichmentProvider` (Mock/GoogleCse/SerpApi). Action `mountUsing` fetch ứng viên → modal preview lưới ảnh + Select ảnh bìa + CheckboxList ảnh gallery + CheckboxList info (kèm link nguồn). Xác nhận → `metadata_json.official_images/official_cover/official_url/official_info` + nối info vào description + `enrichment_log`. Ảnh chính thống ưu tiên thay ảnh batdongsan watermark ở form gallery.
 
 **Verify (DB thật):** provider mock trả 5 ảnh (picsum) + 3 info không cần key ✅; applySelection ghi official_images(2)/cover/url/info(1)/enrichment_log(provider=mock) + nối description ✅. Render assertOk: Edit form (address cũ/mới + badge, cả nhánh CÓ và CHƯA resolve), List (cột Tỉnh mới), PublicProjectLibrary (sa), mount action enrichSearch (nạp ứng viên) ✅. `php -l` 10 file sạch, không mojibake/BOM. fetch-more nền đang chạy — tổng public_projects=1403 (đang tăng). CHƯA commit.
+
+---
+
+## 2026-07-27 (bổ sung 5) — Command backfill enrich-missing + lấy thêm dự án
+
+- **Command mới `projects:enrich-missing {--limit=300} {--only=images|detail|all}`** (`app/Console/Commands/EnrichMissingProjects.php`): lặp public_projects có `source_url` mà thiếu `metadata_json.images` (hoặc `detail`), gọi lại `BdsProjectImporter::enrichDetail()` để bổ sung ảnh + toạ độ + detail. Idempotent, có progress bar + delay, bỏ qua êm khi bị chặn (chạy lại để tiếp tục).
+- Chạy `fetch-more --pages=30` (4 TP) + `enrich-missing --limit=400 --only=images` (nền) để tăng phủ + backfill ảnh. Ảnh batdongsan VẪN watermark (tham chiếu) — ảnh sạch chờ tính năng "Tìm ảnh" có key.
