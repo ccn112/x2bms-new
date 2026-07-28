@@ -5,6 +5,32 @@ Mỗi lần cập nhật code, ghi một entry vào đầu danh sách (mới nh�
 
 ---
 
+## 2026-07-28 — Danh mục dự án PUBLIC: import batdongsan 6.000 dự án + thư viện ảnh + CĐT + địa chỉ 2025 + enrichment
+
+**Phạm vi:** dựng trọn pipeline danh mục dự án công khai (`public_projects`) cho SuperAdmin `/sa`, phục vụ trang public cư dân.
+
+**Import batdongsan (chống Cloudflare):** Guzzle bị 403 → dùng transport `curl.exe` Schannel (chạy ở LOCAL Windows; Linux server có thể bị chặn nên chốt hướng fetch local → export → seed server). `BdsProjectImporter` + nút "Lấy tiếp" `/sa` + command `projects:fetch-more` (cursor `bds_import_states`). URL khu vực `/du-an-bat-dong-san-{ha-noi|tp-hcm|da-nang|phu-quoc}` + 10 tỉnh + `toan-quoc` (national ~6026). `delay_ms` 800 chống rate-limit; backoff khi bị chặn.
+
+**Dữ liệu (6.005 → export 6.000):** name, address + tách `ward/district/province` (parseAddress), `latitude/longitude` (từ Google Maps link trang chi tiết), `blocks/apartments/project_type`, `metadata_json.detail` (Loại hình/Số tòa/Số căn/Pháp lý/Giá), `metadata_json.images` (URL, ⚠️ watermark `_wm`, chỉ lưu URL + cờ). enrichDetail đọc trang chi tiết. `projects:enrich-missing` (kèm `--only=developer` LOCAL, không network).
+
+**Entity Chủ đầu tư (`developers`):** dedup theo slug (3.097 CĐT), `public_projects.developer_id`, `DeveloperResource` /sa. Backfill từ `detail['Chủ đầu tư']` → 4.733/6.000 dự án có CĐT (~79%); 1.272 nguồn không có.
+
+**Chuẩn hoá tỉnh:** `canonicalProvince()` + `projects:normalize-province` → gộp 111→62 nhãn (TP.HCM→Hồ Chí Minh...).
+
+**Địa chỉ mới 2025:** bảng `admin_2025` + `Admin2025Seeder` + `AddressResolver` + `projects:resolve-new-address` → `metadata_json.address_new` (high/medium/low). Nguồn truongqv12 + tuongnguyen913 + NQ202.
+
+**Thư viện ảnh (`project_media`):** +cột source/is_cover/is_watermarked; `ProjectMediaSync` + `projects:sync-media` materialize ảnh từ metadata (KHÔNG tải file — chỉ bản ghi URL hotlink); RelationManager "Thư viện ảnh" (đặt bìa, reorder, thêm tay). ~64.7k bản ghi ảnh, ~10.8 ảnh/dự án.
+
+**Tìm ảnh & thông tin chính thống:** `ProjectEnrichmentService` + provider mock|google_cse|serpapi (`config/enrichment.php`, ENV `ENRICH_PROVIDER`); Action "Tìm ảnh & thông tin" /sa (admin duyệt ảnh+info kèm nguồn → `metadata_json.official_*` + `enrichment_log`). User đã có SerpAPI key.
+
+**API public + onboarding:** `GET /api/v1/public/projects` (+`/{slug}`) đọc `public_projects` cho tab Dự án màn public cư dân (ảnh bìa eager-load, ưu tiên official > watermark; search name/CĐT/địa chỉ). Bảng `user_public_projects` (dự án quan tâm chọn khi đăng ký) + AuthController.register nhận `project_codes`. Fix `projects.sales_status` (chip màn public) + DemoImage đúng chủ đề.
+
+**Export/đồng bộ:** `projects:export-json` (STREAM chunkById 500, bỏ orderBy phá phân trang, tránh hết RAM) → `public_projects_export.json` (15MB, 6.000 dự án) đã commit. Server: `PublicProjectImportSeeder` + `Admin2025Seeder` + `sync-media` (dựng lại media từ metadata, không gọi batdongsan).
+
+**Verify:** DB thật x2bms — 6.005 dự án · 64.7k ảnh · 3.097 CĐT · ~6k toạ độ · 62 tỉnh. Tất cả command lint sạch, không mojibake/BOM. Đã commit + push toàn bộ (nhánh main).
+
+**Còn lại:** 1.272 dự án thiếu CĐT (bổ sung tay/SerpAPI); ảnh watermark (chờ SerpAPI/tải ảnh về local — làm sau); bật `ENRICH_PROVIDER=serpapi` + key trong .env để có ảnh sạch; command `projects:download-covers` (tải ảnh về kho) chưa làm.
+
 ## 2026-07-27 — Reader: restyle code block (card xám + header + số dòng + syntax highlight)
 
 **Phạm vi:** đổi khối code trong reader `/docs` từ "nền tối tràn rộng" sang CARD đẹp giống card JSON. Chỉ đụng code block + assets liên quan; không phá layout 3 cột/version/TOC.
