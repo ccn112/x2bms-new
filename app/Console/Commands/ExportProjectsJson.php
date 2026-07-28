@@ -44,11 +44,12 @@ class ExportProjectsJson extends Command
         $withDetail = 0;
         $flags = JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES;
 
+        // KHÔNG orderBy('code') ở đây — chunkById tự phân trang theo khoá `id`;
+        // thêm orderBy khác sẽ phá logic "id > lastId" → dừng sớm (bug 509/6000).
         PublicProject::query()
             ->with('developer')
             ->where('metadata_json->source', 'batdongsan.com.vn')
-            ->orderBy('code')
-            ->chunkById(200, function ($chunk) use ($fh, $cols, $flags, &$count, &$withDetail) {
+            ->chunkById(500, function ($chunk) use ($fh, $cols, $flags, &$count, &$withDetail) {
                 foreach ($chunk as $p) {
                     $row = $p->only($cols);
                     $row['developer'] = $p->developer
