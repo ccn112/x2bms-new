@@ -110,6 +110,74 @@ class AuthController extends ApiController
         ], status: 201);
     }
 
+    /**
+     * POST /api/v1/auth/password/forgot — gửi mã OTP đặt lại mật khẩu qua EMAIL.
+     *
+     * KHÔNG tiết lộ email có tồn tại hay không: luôn trả 200 với cùng một thông
+     * điệp. Nói "email không tồn tại" là biến endpoint này thành công cụ dò danh
+     * sách người dùng.
+     */
+    public function forgotPassword(Request $request): JsonResponse
+    {
+        $data = $request->validate([
+            'email' => ['required', 'email:rfc', 'max:255'],
+        ]);
+
+        $exists = User::where('email', $data['email'])->exists();
+        $result = ['sent' => false, 'expires_in' => 0, 'dev_code' => null];
+
+        if ($exists) {
+            $result = app(OtpService::class)->request('email', $data['email'], 'password_reset');
+        }
+
+        return ApiResponse::success([
+            // `sent` chỉ phản ánh việc đã gửi được email hay chưa khi email tồn
+            // tại; app không dùng nó để suy ra tài khoản có tồn tại.
+            'sent' => true,
+            'expires_in' => $result['expires_in'] ?: config('mobile.otp.ttl_seconds'),
+            'message' => 'Nếu email đã đăng ký, mã đặt lại mật khẩu sẽ được gửi tới hộp thư.',
+        ] + ($result['dev_code'] !== null ? ['dev_code' => $result['dev_code']] : []));
+    }
+
+    /**
+     * POST /api/v1/auth/password/reset — đổi mật khẩu bằng mã OTP.
+     *
+     * Đổi mật khẩu xong **thu hồi toàn bộ token cũ** rồi cấp cặp token mới: nếu
+     * ai đó đang đăng nhập bằng mật khẩu cũ (kịch bản mất tài khoản) thì họ phải
+     * bị đẩy ra ngay, đó chính là mục đích của việc đặt lại mật khẩu.
+     */
+    public function resetPassword(Request $request): JsonResponse
+    {
+        $data = $request->validate([
+            'email' => ['required', 'email:rfc', 'max:255'],
+            'code' => ['required', 'string'],
+            'password' => ['required', 'string', 'min:8'],
+        ]);
+
+        $check = app(OtpService::class)->verify('email', $data['email'], 'password_reset', $data['code']);
+        if (! $check['valid']) {
+            return ApiResponse::error(
+                'OTP_'.strtoupper($check['reason'] ?? 'INVALID'),
+                __('Mã OTP không hợp lệ.'),
+                422,
+                retryable: ($check['reason'] ?? '') === 'mismatch',
+            );
+        }
+
+        $user = User::where('email', $data['email'])->first();
+        if (! $user) {
+            return ApiResponse::error('AUTH_USER_NOT_FOUND', __('Không tìm thấy tài khoản.'), 404);
+        }
+
+        $user->forceFill(['password' => $data['password']])->save(); // cast 'hashed'
+        $user->tokens()->delete();
+
+        return ApiResponse::success([
+            'tokens' => $this->tokens->issuePair($user, $this->deviceId($request)),
+            'user' => $this->publicUser($user),
+        ]);
+    }
+
     /** POST /api/v1/auth/refresh — Bearer <refresh_token> with ability token:refresh → new pair. */
     public function refresh(Request $request): JsonResponse
     {

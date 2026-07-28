@@ -2,15 +2,21 @@
 
 namespace App\Services\Auth;
 
+use App\Mail\OtpCodeMail;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
 
 /**
- * OTP issue/verify skeleton. Codes live in the cache with a TTL and an attempt counter.
+ * Phát hành / kiểm tra mã OTP. Mã nằm ở cache kèm TTL và bộ đếm số lần sai.
  *
- * NOTE: no SMS/Zalo gateway is wired yet (Phase 0). In non-production the generated code
- * is surfaced to the caller (config mobile.otp.expose_code_in_dev) so the flow is testable;
- * in production, sending must be delegated to a queued notification channel.
+ * 🚨 GỬI THẬT (bổ sung 2026-07-28): trước đây hàm [request] chỉ cache mã rồi để
+ * lại `TODO dispatch SendOtpNotification` — nghĩa là **không gửi đi đâu cả**. Ở
+ * dev vẫn test được nhờ `dev_code`, nhưng lên production `dev_code` là null nên
+ * đăng ký / đăng nhập OTP / đặt lại mật khẩu sẽ chết hoàn toàn. Nay kênh `email`
+ * gửi thật qua [OtpCodeMail]; kênh `phone` vẫn chưa có gateway SMS (ghi log rõ
+ * để không tưởng là đã gửi).
  */
 class OtpService
 {
@@ -25,13 +31,43 @@ class OtpService
             'attempts' => 0,
         ], $cfg['ttl_seconds']);
 
-        // TODO(Phase 0.x): dispatch SendOtpNotification($channel, $destination, $code) on queue.
+        $sent = $this->deliver($channel, $destination, $code, $purpose, (int) $cfg['ttl_seconds']);
 
         return [
-            'sent' => true,
+            'sent' => $sent,
             'expires_in' => $cfg['ttl_seconds'],
             'dev_code' => (! app()->isProduction() && $cfg['expose_code_in_dev']) ? $code : null,
         ];
+    }
+
+    /**
+     * Gửi mã. Lỗi SMTP KHÔNG được làm sập request: mã vẫn nằm trong cache, người
+     * dùng bấm "Gửi lại mã" là xong; đổi lại ta trả `sent=false` để app nói thật
+     * là chưa gửi được thay vì bắt họ ngồi chờ một email không tới.
+     */
+    private function deliver(string $channel, string $destination, string $code, string $purpose, int $ttl): bool
+    {
+        if ($channel !== 'email') {
+            // Chưa có gateway SMS/Zalo — ghi log để vận hành thấy ngay.
+            Log::warning('OTP channel chưa hỗ trợ gửi thật', [
+                'channel' => $channel, 'purpose' => $purpose,
+            ]);
+
+            return false;
+        }
+
+        try {
+            Mail::to($destination)->send(new OtpCodeMail($code, $purpose, $ttl));
+
+            return true;
+        } catch (\Throwable $e) {
+            Log::error('Gửi email OTP thất bại', [
+                'purpose' => $purpose,
+                'error' => $e->getMessage(),
+            ]);
+
+            return false;
+        }
     }
 
     /** @return array{valid:bool, reason:?string} */

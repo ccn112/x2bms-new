@@ -22,7 +22,7 @@ class OtpController extends ApiController
         $data = $request->validate([
             'channel' => ['required', 'in:phone,email'],
             'destination' => ['required', 'string'],
-            'purpose' => ['required', 'in:register,login,resident_activation'],
+            'purpose' => ['required', 'in:register,login,resident_activation,password_reset'],
         ]);
 
         $result = $this->otp->request($data['channel'], $data['destination'], $data['purpose']);
@@ -41,7 +41,7 @@ class OtpController extends ApiController
         $data = $request->validate([
             'channel' => ['required', 'in:phone,email'],
             'destination' => ['required', 'string'],
-            'purpose' => ['required', 'in:register,login,resident_activation'],
+            'purpose' => ['required', 'in:register,login,resident_activation,password_reset'],
             'code' => ['required', 'string'],
         ]);
 

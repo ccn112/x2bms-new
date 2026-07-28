@@ -42,6 +42,10 @@ Route::prefix('v1')->group(function () {
     Route::post('auth/register', [AuthController::class, 'register'])->middleware('throttle:auth-login');
     Route::post('auth/otp/request', [OtpController::class, 'request'])->middleware('throttle:otp');
     Route::post('auth/otp/verify', [OtpController::class, 'verify'])->middleware('throttle:otp');
+    // Quên / đặt lại mật khẩu — dùng cùng cơ chế OTP email (purpose password_reset).
+    // Throttle theo nhóm `otp` để không thành công cụ dò email hay spam thư.
+    Route::post('auth/password/forgot', [AuthController::class, 'forgotPassword'])->middleware('throttle:otp');
+    Route::post('auth/password/reset', [AuthController::class, 'resetPassword'])->middleware('throttle:otp');
     // Refresh authenticates the refresh token itself (ability checked in controller).
     Route::post('auth/refresh', [AuthController::class, 'refresh'])->middleware('auth:sanctum');
 
