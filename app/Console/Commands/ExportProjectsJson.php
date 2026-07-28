@@ -26,23 +26,6 @@ class ExportProjectsJson extends Command
             'amenities_json', 'description', 'is_public', 'metadata_json',
         ];
 
-        $rows = PublicProject::query()
-            ->with('developer')
-            ->where('metadata_json->source', 'batdongsan.com.vn')
-            ->orderBy('code')
-            ->get()
-            ->map(function (PublicProject $p) use ($cols) {
-                $row = $p->only($cols);
-                // Kèm developer (name/slug/website...) để server backfill developers khi seed.
-                $row['developer'] = $p->developer
-                    ? $p->developer->only(['name', 'slug', 'code', 'website', 'logo_path', 'description', 'source', 'metadata_json'])
-                    : null;
-
-                return $row;
-            })
-            ->values()
-            ->all();
-
         $path = $this->option('path');
         $abs = str_starts_with($path, '/') || preg_match('/^[A-Za-z]:/', $path) ? $path : base_path($path);
 
@@ -51,10 +34,40 @@ class ExportProjectsJson extends Command
             mkdir($dir, 0775, true);
         }
 
-        file_put_contents($abs, json_encode($rows, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
+        // Ghi STREAM theo chunk để không nạp toàn bộ 6k dự án + metadata vào RAM
+        // (trước đây ->get()->map()->all() làm hết 128MB). Tự quản dấu phẩy để
+        // tạo 1 mảng JSON hợp lệ; mỗi record encode riêng.
+        $fh = fopen($abs, 'w');
+        fwrite($fh, "[\n");
 
-        $withDetail = collect($rows)->filter(fn ($r) => ! empty($r['metadata_json']['detail']))->count();
-        $this->info('Đã xuất '.count($rows).' dự án -> '.$abs.' ('.$withDetail.' có detail).');
+        $count = 0;
+        $withDetail = 0;
+        $flags = JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES;
+
+        PublicProject::query()
+            ->with('developer')
+            ->where('metadata_json->source', 'batdongsan.com.vn')
+            ->orderBy('code')
+            ->chunkById(200, function ($chunk) use ($fh, $cols, $flags, &$count, &$withDetail) {
+                foreach ($chunk as $p) {
+                    $row = $p->only($cols);
+                    $row['developer'] = $p->developer
+                        ? $p->developer->only(['name', 'slug', 'code', 'website', 'logo_path', 'description', 'source', 'metadata_json'])
+                        : null;
+
+                    if (! empty($row['metadata_json']['detail'])) {
+                        $withDetail++;
+                    }
+
+                    fwrite($fh, ($count > 0 ? ",\n" : '').'  '.json_encode($row, $flags));
+                    $count++;
+                }
+            });
+
+        fwrite($fh, "\n]\n");
+        fclose($fh);
+
+        $this->info('Đã xuất '.$count.' dự án -> '.$abs.' ('.$withDetail.' có detail).');
 
         return self::SUCCESS;
     }
