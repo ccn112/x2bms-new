@@ -35,6 +35,8 @@ Route::prefix('v1')->group(function () {
         // Danh mục dự án công khai (bảng public_projects) cho tab "Dự án".
         Route::get('public/projects', [\App\Http\Controllers\Api\V1\PublicProjectController::class, 'index']);
         Route::get('public/projects/{slug}', [\App\Http\Controllers\Api\V1\PublicProjectController::class, 'show']);
+        // Ưu đãi công khai (tab "Ưu đãi") — chỉ voucher platform đã bật is_public.
+        Route::get('public/offers', [\App\Http\Controllers\Api\V1\PublicOfferController::class, 'index']);
     });
 
     // Auth.

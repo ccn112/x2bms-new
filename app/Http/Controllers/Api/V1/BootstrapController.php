@@ -51,6 +51,17 @@ class BootstrapController extends ApiController
                 'title' => $n->title,
                 'published_at' => optional($n->published_at ?? $n->created_at)->toIso8601String(),
                 'body' => $n->body ?? $n->summary,
+                // Thẻ tin/sự kiện ở app cần ẢNH và MÔ TẢ NGẮN. Thiếu hai trường
+                // này app phải tự sinh ảnh placeholder theo slug và cắt tạm phần
+                // đầu body làm mô tả — nhìn nghèo và không đúng ý người đăng.
+                'summary' => $n->summary,
+                'image' => $n->cover_path
+                    ? (str_starts_with($n->cover_path, 'http')
+                        ? $n->cover_path
+                        : \Illuminate\Support\Facades\Storage::disk('public')->url($n->cover_path))
+                    : \App\Support\DemoImage::url(
+                        $n->type === 'event' ? 'community,event' : 'building,residential',
+                        $n->id, 800, 500),
             ])->all();
 
         return ApiResponse::success([
