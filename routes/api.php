@@ -32,6 +32,9 @@ Route::prefix('v1')->group(function () {
     // Public — no auth, cache-friendly.
     Route::middleware('throttle:public-read')->group(function () {
         Route::get('public/bootstrap', [BootstrapController::class, 'public']);
+        // Danh mục dự án công khai (bảng public_projects) cho tab "Dự án".
+        Route::get('public/projects', [\App\Http\Controllers\Api\V1\PublicProjectController::class, 'index']);
+        Route::get('public/projects/{slug}', [\App\Http\Controllers\Api\V1\PublicProjectController::class, 'show']);
     });
 
     // Auth.
