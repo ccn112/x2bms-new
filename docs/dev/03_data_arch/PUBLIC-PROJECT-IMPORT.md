@@ -39,6 +39,17 @@ Gán `metadata_json`: `source`, `city`, `source_url`, `image`, `area`, `configs_
 - Config `config/enrichment.php` (provider mock|google_cse|serpapi + keys). Service `ProjectEnrichmentService`
   + `App\Services\Projects\Enrichment\*` (interface + 3 provider). CHƯA tải file ảnh về (chỉ lưu URL).
 
+### Thư viện ảnh `project_media` (migration `2026_07_27_000013`)
+Cột thêm: `source` (batdongsan|official|manual), `is_cover` (bool), `is_watermarked` (bool). Guard hasColumn.
+- **Service `ProjectMediaSync::sync(project)`**: materialize ProjectMedia từ `metadata_json.official_images`
+  (source=official) + `images` (source=batdongsan, is_watermarked theo `_wm`). Dedup theo
+  (public_project_id, file_url) qua firstOrNew. `sort_order` tăng dần (official trước). Đặt 1 `is_cover`:
+  official_cover → cover_image → ảnh đầu (ưu tiên official hơn batdongsan khi có official mới). Idempotent.
+- **Command `projects:sync-media {--limit=} {--id=*}`** chạy sync hàng loạt.
+- `PublicProject::coverUrl()` = ảnh bìa từ ProjectMedia (official/manual > batdongsan theo sort) fallback metadata.
+- **RelationManager "Thư viện ảnh"** (PublicProjectResource fila): lưới ảnh + badge source + cờ watermark +
+  toggle is_active + action "Đặt làm ảnh bìa" + thêm ảnh thủ công (FileUpload disk public / URL, source=manual).
+
 ### Ảnh dự án (watermark)
 - Nguồn: gallery `re__project-album__media` (quy về full-size) + các ảnh full-size cùng "lô upload"
   (cùng path `YYYY/MM/DD`) để không vơ nhầm ảnh dự án liên quan. Tối đa 20 URL.

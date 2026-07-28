@@ -28,10 +28,11 @@ class PublicProjectsTable
     public static function configure(Table $table): Table
     {
         return $table
+            ->modifyQueryUsing(fn ($query) => $query->with('media'))
             ->columns([
                 ImageColumn::make('cover_image')
                     ->label('Ảnh')
-                    ->state(fn (PublicProject $p) => $p->metadata_json['cover_image'] ?? ($p->metadata_json['image'] ?? null))
+                    ->state(fn (PublicProject $p) => $p->coverUrl())
                     ->height(40)
                     ->extraImgAttributes(['style' => 'border-radius:6px;object-fit:cover'])
                     ->defaultImageUrl(null),

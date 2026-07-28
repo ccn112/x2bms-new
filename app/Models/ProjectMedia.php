@@ -13,7 +13,7 @@ class ProjectMedia extends Model
     use SoftDeletes;
     protected $guarded = [];
 
-    protected $casts = ['is_active' => 'boolean'];
+    protected $casts = ['is_active' => 'boolean', 'is_cover' => 'boolean', 'is_watermarked' => 'boolean'];
 
     public function publicProject(): BelongsTo
     {

@@ -2037,3 +2037,16 @@ Nâng cấp thư viện dự án public:
 
 - **Command mới `projects:enrich-missing {--limit=300} {--only=images|detail|all}`** (`app/Console/Commands/EnrichMissingProjects.php`): lặp public_projects có `source_url` mà thiếu `metadata_json.images` (hoặc `detail`), gọi lại `BdsProjectImporter::enrichDetail()` để bổ sung ảnh + toạ độ + detail. Idempotent, có progress bar + delay, bỏ qua êm khi bị chặn (chạy lại để tiếp tục).
 - Chạy `fetch-more --pages=30` (4 TP) + `enrich-missing --limit=400 --only=images` (nền) để tăng phủ + backfill ảnh. Ảnh batdongsan VẪN watermark (tham chiếu) — ảnh sạch chờ tính năng "Tìm ảnh" có key.
+
+---
+
+## 2026-07-27 (bổ sung 6) — THƯ VIỆN ẢNH dự án (ProjectMedia) + lấy nhiều ảnh hơn
+
+- **parseDetail**: nâng giới hạn ảnh gallery 20 → **40**/dự án.
+- **Migration `2026_07_27_000013`**: `project_media` thêm `source`(batdongsan|official|manual), `is_cover`(bool), `is_watermarked`(bool) — guard hasColumn.
+- **Service `ProjectMediaSync`** + **command `projects:sync-media {--limit=} {--id=*}`**: materialize ProjectMedia từ `metadata_json.images`(batdongsan, watermark)+`official_images`(official). Dedup (public_project_id,file_url), 1 ảnh bìa (official_cover→cover_image→ảnh đầu), sort_order tăng dần (official trước). Idempotent.
+- **RelationManager "Thư viện ảnh"** (PublicProjectResource fila): lưới ảnh, badge source + cờ watermark, toggle is_active, action "Đặt làm ảnh bìa", reorder, thêm ảnh thủ công (upload/URL, source=manual).
+- **`PublicProject::coverUrl()`**: ảnh bìa từ ProjectMedia is_cover (official/manual>batdongsan) fallback metadata; dùng ở form+2 bảng.
+- Files mới (để chủ dự án commit): `app/Console/Commands/SyncProjectMedia.php`, `app/Services/Projects/ProjectMediaSync.php`, `app/Filament/Resources/PublicProjects/RelationManagers/MediaRelationManager.php`, migration `..._000013`, + command `EnrichMissingProjects.php` (phiên trước).
+
+**Verify (DB thật):** migrate ✅. sync-media The Keisho → 6 ProjectMedia, đúng 1 is_cover, source=batdongsan, is_watermarked=true, sort 1-6 ✅. RelationManager + Edit page render assertOk; "Đặt làm ảnh bìa" → đúng 1 cover, coverUrl() dùng media ✅. sync-media toàn bộ: **+20992 media, 1917 dự án có ảnh**. Tổng sau: total_projects=2242, total_media=21005, projects_with_media=1922, ~10.9 ảnh/dự án, covers=1917 ✅. `php -l` sạch, không mojibake/BOM. fetch-more(HN/HCM 30tr) + enrich-missing(500) đang chạy NỀN. CHƯA commit.

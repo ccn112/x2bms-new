@@ -37,7 +37,7 @@ class PublicProjectResource extends Resource
     public static function getRelations(): array
     {
         return [
-            //
+            RelationManagers\MediaRelationManager::class,
         ];
     }
 

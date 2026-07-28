@@ -97,11 +97,11 @@ class PublicProjectLibrary extends Page implements HasTable
     public function table(Table $table): Table
     {
         return $table
-            ->query(PublicProject::query()->withCount('media'))
+            ->query(PublicProject::query()->withCount('media')->with('media'))
             ->defaultSort('created_at', 'desc')
             ->columns([
                 ImageColumn::make('cover_image')->label('Ảnh')
-                    ->state(fn (PublicProject $p) => $p->metadata_json['cover_image'] ?? ($p->metadata_json['image'] ?? null))
+                    ->state(fn (PublicProject $p) => $p->coverUrl())
                     ->height(40)->extraImgAttributes(['style' => 'border-radius:6px;object-fit:cover']),
                 TextColumn::make('name')->label('Dự án')->searchable()->weight('medium')
                     ->description(fn (PublicProject $p) => $p->developer_name),

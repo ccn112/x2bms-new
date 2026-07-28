@@ -102,6 +102,16 @@ Thay ảnh batdongsan watermark bằng ảnh chính thống do SuperAdmin duyệ
   + nối info vào `description`, ghi `metadata_json.enrichment_log` (thời điểm + provider + nguồn).
 - Ảnh chính thống (`official_images`) **ưu tiên** hiển thị thay ảnh batdongsan watermark (form gallery).
 
+## Thư viện ảnh dự án (ProjectMedia)
+- `parseDetail` lấy **tối đa 40 ảnh**/dự án (album `re__project-album__media` bỏ /crop/ + gom ảnh cùng lô upload).
+- **Command `projects:sync-media {--limit=} {--id=*}`** materialize ảnh từ metadata vào `project_media`
+  (source batdongsan/official, cờ watermark, 1 ảnh bìa/dự án). Idempotent — chạy lại an toàn.
+- **RelationManager "Thư viện ảnh"** trên trang Edit dự án (fila): lưới ảnh (ImageColumn), badge nguồn +
+  cảnh báo watermark, toggle "Hiện" (is_active), action **"Đặt làm ảnh bìa"** (set is_cover, bỏ cover cũ),
+  kéo-thả sắp xếp (sort_order), **thêm ảnh thủ công** (upload disk public hoặc URL, source=manual).
+- Ảnh bìa hiển thị (form + bảng) lấy từ ProjectMedia `is_cover` (ưu tiên official/manual > batdongsan),
+  fallback `metadata_json`. Ảnh batdongsan VẪN watermark (tham chiếu) — ảnh sạch qua "Tìm ảnh" (có key).
+
 ## Chủ đầu tư (developers) — entity riêng, quản lý ở /sa
 - CĐT tách khỏi chuỗi thành bảng `developers` (dedup theo slug: nhiều dự án cùng CĐT → 1 record).
   `public_projects.developer_id` link, giữ `developer_name` gốc.

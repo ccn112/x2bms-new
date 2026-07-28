@@ -671,9 +671,9 @@ class BdsProjectImporter
                 }
             }
         }
-        // Chuẩn hoá: unique, giữ thứ tự, tối đa 20.
+        // Chuẩn hoá: unique, giữ thứ tự, tối đa 40 (lấy nhiều ảnh hơn/dự án).
         $images = array_values(array_unique($images));
-        $images = array_slice($images, 0, 20);
+        $images = array_slice($images, 0, 40);
         if ($images !== []) {
             $out['images'] = $images;
             $out['cover_image'] = $images[0];

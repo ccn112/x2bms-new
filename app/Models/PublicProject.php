@@ -25,4 +25,17 @@ class PublicProject extends Model
     {
         return $this->belongsTo(Developer::class);
     }
+
+    /** URL ảnh bìa: ưu tiên ProjectMedia is_cover (official/manual > batdongsan), fallback metadata. */
+    public function coverUrl(): ?string
+    {
+        $cover = $this->media->firstWhere('is_cover', true)
+            ?? $this->media->sortBy('sort_order')->first();
+        if ($cover) {
+            return $cover->file_url;
+        }
+        $meta = (array) $this->metadata_json;
+
+        return $meta['official_cover'] ?? $meta['cover_image'] ?? $meta['image'] ?? null;
+    }
 }
