@@ -88,9 +88,14 @@ class CommunityController extends ApiController
         $perPage = min((int) $request->integer('per_page', 15), 50);
         $user = $request->user();
 
+        // Tab UI -> danh sách content_type. Ánh xạ ở SERVER: 'Thông báo BQL' gom
+        // cả announcement lẫn news, app không việc gì phải biết chuyện đó.
+        $types = \App\Enums\CommunityContentType::forTab((string) $request->string('tab', 'all'));
+
         $paginator = CommunityPost::withoutGlobalScopes()
             ->with(['author.apartmentRelations.apartment', 'attachments'])
             ->withCount('comments')
+            ->when($types !== null, fn ($q) => $q->whereIn('content_type', $types))
             ->when($groupId !== null,
                 fn ($q) => $q->where('community_group_id', $groupId),
                 fn ($q) => $q->whereIn('project_id', $projectIds))

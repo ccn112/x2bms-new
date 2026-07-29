@@ -28,6 +28,14 @@ class CommunityGroupResource extends JsonResource
             // Bậc thang nhóm (chốt 29/07). App xếp nhóm theo đúng thứ tự này và
             // quyết định hiện nút "Đăng bài" hay không.
             'kind' => $this->kind,          // platform|project_interest|project_resident|private
+            'verification_level' => $this->verification_level,
+            // Nhãn badge trả TỪ SERVER — app chỉ vẽ, không tự đặt chữ. Badge phải
+            // có nhãn ngữ nghĩa cho trình đọc màn hình (docs 01 §3).
+            'verification_label' => \App\Enums\CommunityVerificationLevel::tryFrom(
+                (string) $this->verification_level)?->label(),
+            'verification_badge' => \App\Enums\CommunityVerificationLevel::tryFrom(
+                (string) $this->verification_level)?->badgeKey(),
+            'join_policy' => $this->join_policy,
             'project_name' => $this->project?->name,
 
             // Cư dân có được đăng bài ở nhóm này không. Tính ở SERVER chứ không
