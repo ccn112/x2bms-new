@@ -35,4 +35,16 @@ class Project extends Model
     {
         return $this->hasMany(Block::class);
     }
+
+    /**
+     * Bản ghi tương ứng trong danh mục công khai (`public_projects`).
+     *
+     * Nullable và phần lớn đang null: hai bảng vốn không nối với nhau, phải
+     * nối tay ở màn SuperAdmin "Nối dự án ↔ danh mục". Xem
+     * `docs/COMMUNITY_DB_MAPPING.md` §4.
+     */
+    public function publicProject(): BelongsTo
+    {
+        return $this->belongsTo(PublicProject::class);
+    }
 }

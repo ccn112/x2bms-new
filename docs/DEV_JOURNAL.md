@@ -2200,3 +2200,26 @@ app chỉ vẽ. Tách `post_policy` khỏi `kind` vì nhóm riêng của cư dâ
 định của migration là `project_resident`. Sai vai trò — "Cư dân {dự án}" là bảng tin
 chung ai cũng ở trong, mấy nhóm kia là chủ đề tự chọn → phải là `private`. Seeder sửa
 lại: 1 platform · 2 interest · 2 resident · 11 private.
+
+### 29/07 (tiếp) — Màn SA nối dự án vận hành ↔ danh mục công khai
+
+Chủ dự án chốt: **SA nối, BQL phân quyền sau**. Dựng ngay công cụ để việc nối tay (22 dự
+án, việc của con người, chậm) chạy **song song** với Giai đoạn 1 của Community Domain —
+chứ không xếp hàng sau nó.
+
+`Sa/Pages/ProjectCatalogLinking` — bảng dự án vận hành, nối/đổi/gỡ liên kết tới
+`public_projects`, có audit từng thao tác.
+
+**Ba chi tiết cố ý:**
+
+- **Badge số dự án chưa nối** trên điều hướng (hiện 22). Việc đối chiếu dữ liệu nền tảng
+  không có ai nhắc thì không ai nhớ.
+- **Nhãn danh mục LUÔN kèm tỉnh/quận**, cả ở ô tìm lẫn ở cột. Chỉ có tên thì không phân
+  biệt được hai "Sunshine Garden" ở hai tỉnh — mà đó chính là cách nối nhầm.
+- **Cảnh báo đặt ngay trên bảng**, không giấu trong tooltip: nối nhầm **không tạo ra lỗi
+  nào nhìn thấy được**. Hệ thống vẫn chạy bình thường, chỉ là người theo dõi nhận nội
+  dung của dự án không phải của họ. Người nối phải đọc trước khi bấm.
+
+Kèm quan hệ `Project::publicProject()` — trước chỉ có cột `public_project_id` trần.
+
+Verify: badge 22 · stats 27/5/22 · quan hệ nạp ra "Sunshine Garden" · route đăng ký.
