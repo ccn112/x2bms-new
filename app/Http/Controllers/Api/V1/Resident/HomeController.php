@@ -3,10 +3,12 @@
 namespace App\Http\Controllers\Api\V1\Resident;
 
 use App\Http\Controllers\Api\V1\ApiController;
+use App\Http\Resources\Api\V1\EmergencyAlertResource;
 use App\Http\Resources\Api\V1\NotificationResource;
 use App\Models\Building;
 use App\Models\Statement;
 use App\Services\Resident\AqiService;
+use App\Services\Resident\EmergencyAlertService;
 use App\Services\Resident\ResidentContextService;
 use App\Services\Resident\ResidentNotificationService;
 use App\Services\Resident\WeatherService;
@@ -27,6 +29,7 @@ class HomeController extends ApiController
         private readonly ResidentNotificationService $notifications,
         private readonly AqiService $aqi,
         private readonly WeatherService $weather,
+        private readonly EmergencyAlertService $emergency,
     ) {
     }
 
@@ -38,10 +41,17 @@ class HomeController extends ApiController
         $apartmentIds = $this->context->apartmentIds($user, $contextId);
         $residentIds = $user->residentMemberships()->pluck('id')->all();
 
+        $emergency = $this->emergency->current($user, $contextId);
+
         return ApiResponse::success([
             'metrics' => $this->metrics($user, $contextId),
             'weather' => $this->resolveWeather($user, $contextId),
             'tasks' => $this->tasks($apartmentIds, $residentIds),
+            // Băng đỏ Trang chủ (CD-HOME-04): cảnh báo nặng nhất đang hiệu lực,
+            // null khi không có. App bấm vào → /resident/emergency-alerts/{id}.
+            'emergency' => $emergency === null
+                ? null
+                : EmergencyAlertResource::make($emergency)->resolve($request),
             'notices_preview' => $this->noticesPreview($request, $user, $contextId),
         ]);
     }

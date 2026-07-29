@@ -140,6 +140,10 @@ Route::prefix('v1')->group(function () {
         // SOS an ninh — cư dân bấm nút khẩn (P3).
         Route::post('sos', [\App\Http\Controllers\Api\V1\Resident\SosController::class, 'store']);
 
+        // Cảnh báo khẩn cấp BQL phát xuống (CD-HOME-04) — bảng emergency_alerts.
+        Route::get('emergency-alerts', [\App\Http\Controllers\Api\V1\Resident\EmergencyAlertController::class, 'index']);
+        Route::get('emergency-alerts/{alert}', [\App\Http\Controllers\Api\V1\Resident\EmergencyAlertController::class, 'show'])->whereNumber('alert');
+
         // Lịch sử thanh toán (CD-PAY-05).
         Route::get('payments', [\App\Http\Controllers\Api\V1\Resident\PaymentController::class, 'index']);
         // Cổng thanh toán: liệt kê cổng bật + tạo intent (VietQR/VNPay/MoMo).

@@ -56,6 +56,7 @@ class ResidentDemoContentSeeder extends Seeder
         $this->seedAmenityBookings();
         $this->seedFeedback();
         $this->seedReceipts();
+        $this->seedEmergency();
         $this->call(ResidentArticleSeeder::class);
         $this->call(ApartmentWalletDemoSeeder::class);
     }
@@ -704,5 +705,62 @@ class ResidentDemoContentSeeder extends Seeder
         }
 
         $this->command?->info('  Notifications: 4 thông báo published (audience all, có body) cho cư dân.');
+    }
+
+    /**
+     * Cảnh báo khẩn cấp (CD-HOME-04) + BQL dự án để màn chi tiết có kênh liên hệ.
+     *
+     * Vì sao phải seed BqlTeam ở đây: bộ `bql_teams` sẵn có trong DB dev thuộc
+     * danh mục HQ-01 (tenant 9, project 4+) — KHÁC dự án của cư dân demo
+     * (tenant 1, project 1). Không có bản ghi nào cho project 1 nên
+     * `contactsForProject` trả rỗng và màn chi tiết trống phần liên hệ.
+     */
+    private function seedEmergency(): void
+    {
+        DB::table('bql_teams')->updateOrInsert(
+            ['tenant_id' => 1, 'project_id' => self::DEMO_PROJECT_ID, 'deleted_at' => null],
+            [
+                'code' => 'BQL-SUNSHINE-GARDEN',
+                'name' => 'BQL Sunshine Garden',
+                'hotline' => '1900 6888',
+                'email' => 'bql.sunshinegarden@x2.fino.vn',
+                'address' => 'Sảnh A, Sunshine Garden',
+                'status' => 'active',
+                'updated_at' => now(),
+                'created_at' => now(),
+            ]
+        );
+
+        // Một cảnh báo ĐANG hiệu lực (băng đỏ Trang chủ) + một đã kết thúc (để
+        // kiểm màn chi tiết mở từ push cũ vẫn đọc được).
+        $rows = [
+            ['code' => 'EMG-DEMO-ACTIVE', 'type' => 'security', 'severity' => 'critical', 'status' => 'active',
+                'title' => 'Mất điện lưới khu vực toà A',
+                'message' => 'Điện lưới toà A mất từ 14:30. Máy phát đã chạy, chỉ cấp cho thang máy và hành lang. '
+                    .'Cư dân hạn chế dùng thang máy, không dùng bếp điện công suất lớn. BQL sẽ cập nhật sau mỗi 30 phút.',
+                'starts_at' => now()->subHour(), 'ends_at' => null, 'resolved_at' => null],
+            ['code' => 'EMG-DEMO-RESOLVED', 'type' => 'fire', 'severity' => 'critical', 'status' => 'resolved',
+                'title' => 'Báo cháy giả tầng hầm B2',
+                'message' => 'Đầu báo khói tầng hầm B2 kích hoạt lúc 03:10 do bụi thi công. Đã kiểm tra, không có cháy. '
+                    .'Hệ thống đã được đặt lại lúc 03:45.',
+                'starts_at' => now()->subDays(3), 'ends_at' => now()->subDays(3)->addMinutes(35),
+                'resolved_at' => now()->subDays(3)->addMinutes(35)],
+        ];
+
+        foreach ($rows as $r) {
+            DB::table('emergency_alerts')->updateOrInsert(
+                ['tenant_id' => 1, 'code' => $r['code']],
+                array_merge($r, [
+                    'project_id' => self::DEMO_PROJECT_ID,
+                    // building_id null = cảnh báo toàn dự án; mọi cư dân của dự
+                    // án đều thấy, không phụ thuộc toà.
+                    'building_id' => null,
+                    'updated_at' => now(),
+                    'created_at' => now(),
+                ])
+            );
+        }
+
+        $this->command?->info('  Emergency: BQL dự án '.self::DEMO_PROJECT_ID.' + 2 cảnh báo (1 active, 1 resolved).');
     }
 }

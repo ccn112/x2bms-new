@@ -180,14 +180,44 @@ Scope: `project_id ∈ projectIds` của user. Cư dân tenant_id=NULL → khôn
     {"key":"fee","title":"Công nợ","value":"13200000.00","count":1,"status":"due"},
     {"key":"guest","title":"Khách sắp đến","value":"0","count":0,"status":"none"},
     {"key":"feedback","title":"Phản ánh đang xử lý","value":"0","count":0,"status":"none"} ],
+  "emergency": null,
   "notices_preview": [ /* 2 NotificationResource mới nhất */ ] } }
 ```
+> **emergency** (bổ sung 2026-07-29): cảnh báo NẶNG NHẤT đang hiệu lực, shape giống §8b, hoặc `null`. App dùng cho băng đỏ Trang chủ, bấm vào mở `/resident/emergency-alerts/{id}`.
 > **AQI:** backend proxy Open-Meteo theo `projects.latitude/longitude` + cache theo project (TTL `AQI_CACHE_TTL`). `metrics=[]` nếu project không có toạ độ / API lỗi (app ẩn, không vỡ). `tone` ∈ good|moderate|poor|bad.
 > **tasks:** fee←công nợ, guest←`visitor_registrations` sắp tới, feedback←`feedback_requests` đang mở.
 
 **POST `/resident/sos`** — nút SOS an ninh. Body (tuỳ chọn): `{ "lat":10.787, "lng":106.751, "location":"...", "note":"..." }`.
 - Tạo `sos_alerts` (`source=app`, `status=triggered`) scope theo căn đang chọn. `location` = "lat,lng" nếu gửi toạ độ, else mô tả, else mã căn.
 - 201 → `{ "data": { "id", "status":"triggered", "triggered_at" } }`. 403 `no_apartment` nếu chưa gắn căn.
+
+## 8b. Cảnh báo khẩn cấp (CD-HOME-04) ✅ 2026-07-29
+
+Bảng `emergency_alerts` (Tier 2) đã có sẵn + Filament resource cho BQL soạn. Đây là lớp đọc phía cư dân.
+
+**GET `/resident/emergency-alerts`** — cảnh báo ĐANG hiệu lực, nặng trước (`critical` → `warning` → `info`), tối đa 20.
+
+**GET `/resident/emergency-alerts/{id}`** — chi tiết, **kể cả `status=resolved`** (mở từ push cũ vẫn phải đọc được, không trả 404). Chỉ màn này mới kèm `contacts`.
+```json
+{ "data": {
+  "id":"3", "code":"EMG-DEMO-ACTIVE",
+  "type":"security",          // fire|flood|security|health|other
+  "severity":"critical",      // info|warning|critical
+  "status":"active",          // active|resolved|cancelled
+  "title":"Mất điện lưới khu vực toà A",
+  "message":"…",
+  "building_name": null,      // null = cảnh báo toàn dự án
+  "project_name":"Sunshine Garden",
+  "starts_at":"2026-07-29T00:39:19+00:00", "ends_at":null, "resolved_at":null,
+  "contacts":[
+    {"role":"bql","label":"BQL Sunshine Garden","phone":"1900 6888"},
+    {"role":"bql_email","label":"BQL Sunshine Garden","email":"bql.sunshinegarden@x2.fino.vn"}
+  ] } }
+```
+- **Phạm vi:** `project_id` ∈ dự án của cư dân **và** (`building_id` null **hoặc** ∈ toà của cư dân). Không xác định được dự án → trả rỗng (không trả hết — rò rỉ cảnh báo dự án khác).
+- **Đang hiệu lực:** `status=active` và `starts_at` null|≤now và `ends_at` null|≥now. Null nghĩa là "hiệu lực ngay" / "chưa biết bao giờ xong".
+- **Không dùng route model binding:** cư dân `tenant_id=NULL` nên binding mặc định tìm cả bản ghi ngoài phạm vi. Resolve qua query đã scope; ngoài phạm vi → 404 `not_found`.
+- **`contacts` lấy từ `bql_teams`** (hotline + email của BQL dự án) — nguồn DUY NHẤT hiện có. Bản đồ nghiệp vụ còn muốn số **bảo vệ / kỹ thuật** riêng: schema chưa có chỗ chứa, **chưa bịa cột** (xem "Điểm chờ owner chốt").
 
 ## 9. Thanh toán (tab Hoá đơn — CD-PAY-05) ✅ 2026-07-24 (history)
 
@@ -333,6 +363,7 @@ Scope: `resident_id ∈` resident của user **HOẶC** `apartment_id ∈` căn 
 | Chợ + BĐS | **market/listings,services,categories + real-estate** | ✅ | ⏳ đang wire |
 | Home | **home** (AQI live + tasks + notices) | ✅ | ⏳ đang wire |
 | SOS | **sos** | ✅ | ⏳ đang wire |
+| Cảnh báo khẩn | **emergency-alerts** (list + detail) · `home.emergency` | ✅ 2026-07-29 | ⏳ đang wire |
 | Payments | **payments** (history+detail) · **payment-methods** · **payments/intent** (VietQR ✅, VNPay/MoMo chờ creds) | ✅ | ⏳ đang wire |
 | Cộng đồng+ | **community/groups/{id}/join** (POST/DELETE) | ✅ | ⏳ đang wire |
 | Đăng ký khách | **visitors** (list/create/cancel) | ✅ | ⏳ đang wire |
@@ -349,3 +380,4 @@ Scope: `resident_id ∈` resident của user **HOẶC** `apartment_id ∈` căn 
 - **Community groups:** `category/icon` cần thêm cột nếu muốn hiển thị (membership `joined` đã có). `image_url` nay trả ảnh demo (DemoImage) — thay bằng cột ảnh thật khi có.
 - **Ảnh demo (DemoImage):** mọi `image_url`/`image_urls`/`cover_url` hiện trả URL ảnh thật từ loremflickr khi bản ghi chưa có cột/đường dẫn ảnh riêng. Khi module upload ảnh thật hoàn thiện, Resource ưu tiên ảnh thật (đã code sẵn nhánh `image_path`/`cover_path`/`image_paths`).
 - **eKYC/household invite:** contract chưa chốt (app còn stub).
+- **Kênh liên hệ khẩn (CD-HOME-04):** hiện chỉ có hotline + email BQL từ `bql_teams`. Bản đồ nghiệp vụ muốn thêm **bảo vệ / kỹ thuật / cứu hoả** và **sơ đồ sơ tán**. Cần owner chốt: thêm bảng `project_emergency_contacts` (role, label, phone, sort) hay nhét vào `bql_teams.metadata`? Đề xuất bảng riêng — BQL sẽ tự sửa số qua Filament, metadata json không có form tử tế.

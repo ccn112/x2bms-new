@@ -2097,3 +2097,44 @@ Nâng cấp thư viện dự án public:
 - Ghi chú: images(5995)/coords(5999)/detail(6000) đã gần đủ nên KHÔNG chạy enrich network (tránh hammer Cloudflare).
 
 **File CODE cần commit:** `app/Console/Commands/NormalizeProvince.php` (mới), `app/Console/Commands/EnrichMissingProjects.php` (thêm mode developer), `app/Services/Projects/BdsProjectImporter.php` (canonicalProvince + backfillDeveloperFromMeta), `config/bds.php` (toan-quoc + 10 tỉnh + delay 800).
+
+## 2026-07-29 — Cảnh báo khẩn cấp cư dân (CD-HOME-04), lớp đọc API
+
+App cư dân có route name `emergencyAlert` từ lâu nhưng không dựng được màn vì
+backend chưa mở dữ liệu. Bảng `emergency_alerts` thì đã có sẵn từ Tier 2 kèm
+Filament resource cho BQL soạn — thiếu đúng lớp đọc phía cư dân.
+
+**Đã thêm:** `EmergencyAlertService` + `EmergencyAlertController` +
+`EmergencyAlertResource`, route `GET resident/emergency-alerts{,/{id}}`, và khối
+`emergency` trong `GET resident/home`.
+
+**Ba quyết định đáng ghi:**
+
+1. **Không dùng route model binding.** Cư dân có `tenant_id = NULL` nên global
+   scope tenant là no-op — binding mặc định sẽ nạp cả cảnh báo của dự án khác
+   rồi mới kiểm tra (hoặc không kiểm tra). Resolve qua query đã scope; ngoài
+   phạm vi trả 404.
+
+2. **Chi tiết trả cả cảnh báo đã `resolved`.** Cư dân bấm vào push từ hôm qua mà
+   nhận 404 thì không hiểu chuyện gì xảy ra. Trả nội dung + `resolved_at` để app
+   hiện "đã kết thúc".
+
+3. **`starts_at`/`ends_at` null nghĩa là gì.** null starts = hiệu lực ngay (BQL
+   không điền giờ), null ends = chưa biết bao giờ xong. Điều kiện "đang hiệu
+   lực" viết theo đúng nghĩa đó chứ không coi null là ngoài khoảng.
+
+**Kênh liên hệ khẩn:** nguồn duy nhất có trong schema là `bql_teams`
+(hotline + email BQL dự án). Bản đồ nghiệp vụ còn muốn số bảo vệ / kỹ thuật và
+sơ đồ sơ tán — **chưa bịa cột**, đã ghi vào mục chờ owner chốt của
+`RESIDENT_API_REFERENCE` (đề xuất bảng `project_emergency_contacts` riêng, vì
+BQL cần form sửa số trong Filament, json metadata không có form tử tế).
+
+**Bẫy dữ liệu dev:** bộ `bql_teams` sẵn có thuộc danh mục HQ-01 (tenant 9,
+project 4+), KHÁC dự án cư dân demo (tenant 1, project 1) — trùng tên "Sunshine
+Garden" nên rất dễ tưởng đã có. `contactsForProject(1)` vì thế trả rỗng.
+`ResidentDemoContentSeeder::seedEmergency()` seed BQL cho project 1 + 2 cảnh báo
+(1 active critical, 1 resolved).
+
+**Verify:** `php -l` sạch; chạy request qua HTTP kernel (Herd nginx không truy
+cập được từ shell phiên này) — list 200 xếp critical trước, detail 200 kèm
+`contacts`, id ngoài phạm vi 404, `home.emergency` trả đúng cảnh báo critical.
