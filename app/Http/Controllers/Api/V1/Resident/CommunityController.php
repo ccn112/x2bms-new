@@ -204,13 +204,23 @@ class CommunityController extends ApiController
     public function groups(Request $request): JsonResponse
     {
         $projectIds = $this->projectIds($request);
-        if (empty($projectIds)) {
-            return ApiResponse::success([]);
-        }
 
-        $groups = CommunityGroup::query()
-            ->whereIn('project_id', $projectIds)
+        // Bậc thang nhóm (chốt 29/07), xếp từ RỘNG tới HẸP — đúng thứ tự cư dân
+        // hình dung: cả hệ thống → dự án mình quan tâm → dự án mình ở → nhóm
+        // riêng. `platform` không gắn dự án nên vẫn trả về kể cả khi tài khoản
+        // chưa gắn căn hộ nào.
+        $groups = CommunityGroup::withoutGlobalScopes()
             ->where('status', 'active')
+            ->where(function ($q) use ($projectIds) {
+                $q->where('kind', 'platform');
+                if ($projectIds !== []) {
+                    $q->orWhere(fn ($w) => $w
+                        ->whereIn('project_id', $projectIds)
+                        ->whereIn('kind', ['project_interest', 'project_resident', 'private']));
+                }
+            })
+            ->orderByRaw("FIELD(kind, 'platform', 'project_interest', 'project_resident', 'private')")
+            ->orderByDesc('is_default')
             ->orderByDesc('member_count')
             ->orderBy('name')
             ->get();

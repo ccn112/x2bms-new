@@ -2164,3 +2164,39 @@ không có lỗi nào báo.
 | tiện ích | 4 | 5 |
 | ưu đãi | 9 | 4 |
 | quà đổi điểm | 8 | 2 |
+
+## 2026-07-29 (cuối) — Bậc thang nhóm cộng đồng
+
+Chủ dự án chốt mô hình 4 nấc, trùng với thang trải nghiệm app đã có
+(public → member → verified resident):
+
+| Nấc | `kind` | Ai thấy | Ai đăng |
+|---|---|---|---|
+| 1 | `platform` | mọi người | chỉ X2/BQL |
+| 2 | `project_interest` | user đã quan tâm dự án | chỉ CĐT/BQL |
+| 3 | `project_resident` | cư dân đã xác thực | cư dân (hậu kiểm) |
+| 4 | `private` | thành viên được duyệt | thành viên |
+
+**Vấn đề chặn phải xử lý trước:** "dự án" đang là HAI bảng không nối với nhau —
+`projects` (27 dòng, vận hành) và `public_projects` (6.005 dòng, danh mục
+batdongsan). "Dự án quan tâm" lúc đăng ký lưu vào `user_public_projects` → neo vào
+bảng danh mục; nhóm cư dân neo vào bảng vận hành. Không có khoá nối thì "khách quan
+tâm Sunshine Garden" và "cư dân Sunshine Garden" là hai chữ khác nhau — khách mua nhà
+xong thành cư dân mà hệ thống không biết đó là cùng một dự án, **bậc thang đứt ở nấc
+giữa**. Đã thêm `projects.public_project_id`.
+
+**Hai chỗ khác phải sửa theo:**
+- `community_group_members` khoá theo `resident_id`, mà thành viên nhóm "quan tâm"
+  chưa phải cư dân → thêm `user_id` nullable.
+- Thêm `left_at`: cư dân bán nhà/hết hạn thuê mất quyền nhóm nhưng **bài cũ giữ
+  nguyên** (xoá lịch sử thảo luận làm hỏng ngữ cảnh của người khác đang đọc) — đánh
+  dấu để app gắn nhãn "cư dân cũ".
+
+**`can_post` tính ở server**, không để app suy từ `kind`: quyền là chuyện của server,
+app chỉ vẽ. Tách `post_policy` khỏi `kind` vì nhóm riêng của cư dân thì thành viên
+đăng, nhóm riêng của BQL thì không — cùng `kind=private`.
+
+**Bẫy khi seed:** nhóm chủ đề cũ (Chợ nội khu, Yêu bếp, Thể thao…) rơi vào `kind` mặc
+định của migration là `project_resident`. Sai vai trò — "Cư dân {dự án}" là bảng tin
+chung ai cũng ở trong, mấy nhóm kia là chủ đề tự chọn → phải là `private`. Seeder sửa
+lại: 1 platform · 2 interest · 2 resident · 11 private.
