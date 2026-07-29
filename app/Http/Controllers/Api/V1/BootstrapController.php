@@ -81,16 +81,35 @@ class BootstrapController extends ApiController
         /** @var User $user */
         $user = $request->user();
 
+        // Nạp sẵn căn hộ → toà → dự án: bảng chọn căn hộ ở app cần NHÃN đọc
+        // được, không phải mỗi id. Thiếu nhãn thì app phải gọi thêm một vòng
+        // cho từng căn, hoặc tệ hơn là hiển thị dữ liệu bịa (bản cũ đúng như
+        // vậy — bottom sheet ghi tên ba dự án không có thật).
         $residentContexts = $user->residentMemberships()
-            ->with('apartmentRelations')
+            ->with(['apartmentRelations.apartment.building.project'])
             ->get()
-            ->flatMap(fn ($resident) => $resident->apartmentRelations->map(fn ($rel) => [
-                'context_id' => 'apartment:'.$rel->id,
-                'type' => 'resident',
-                'apartment_id' => $rel->apartment_id,
-                'role' => $rel->role,
-                'is_primary' => (bool) $rel->is_primary,
-            ]))
+            ->flatMap(fn ($resident) => $resident->apartmentRelations->map(function ($rel) {
+                $apartment = $rel->apartment;
+                $building = $apartment?->building;
+
+                return [
+                    'context_id' => 'apartment:'.$rel->id,
+                    'type' => 'resident',
+                    'apartment_id' => $rel->apartment_id,
+                    'role' => $rel->role,
+                    'role_label' => match ($rel->role) {
+                        'owner' => 'Chủ sở hữu',
+                        'tenant' => 'Người thuê',
+                        'member' => 'Thành viên hộ',
+                        default => 'Cư dân',
+                    },
+                    'is_primary' => (bool) $rel->is_primary,
+                    'apartment_code' => $apartment?->code,
+                    'building_name' => $building?->name,
+                    'project_id' => $building?->project_id,
+                    'project_name' => $building?->project?->name,
+                ];
+            }))
             ->values()
             ->all();
 
