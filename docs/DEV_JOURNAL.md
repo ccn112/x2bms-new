@@ -2138,3 +2138,29 @@ Garden" nên rất dễ tưởng đã có. `contactsForProject(1)` vì thế tr�
 **Verify:** `php -l` sạch; chạy request qua HTTP kernel (Herd nginx không truy
 cập được từ shell phiên này) — list 200 xếp critical trước, detail 200 kèm
 `contacts`, id ngoài phạm vi 404, `home.emergency` trả đúng cảnh báo critical.
+
+## 2026-07-29 (tiếp) — Ngữ cảnh căn hộ + seed dự án thứ hai
+
+**available_contexts kèm nhãn.** Bảng chọn căn hộ ở app cần tên căn/toà/dự án chứ
+không phải mỗi id; thiếu thì app hoặc phải gọi thêm một vòng cho từng căn, hoặc bịa
+dữ liệu — bản cũ đúng là bịa (ba dự án không có thật).
+
+**Seeder dự án thứ hai.** Tài khoản demo #6 có hai căn ở hai dự án khác nhau nhưng chỉ
+dự án 1 có dữ liệu, nên đổi căn hộ sang dự án 3 là mọi tab rỗng — không phân biệt được
+"scope chạy đúng" với "app hỏng". `SecondProjectDemoSeeder` seed Đại Phúc Riverside với
+nội dung **khác hẳn** (chủ đề ven sông) để nhìn phát biết ngữ cảnh đã đổi.
+
+**Bẫy tenant:** dự án 3 thuộc **tenant 2**, còn bảng `vouchers` scope theo TENANT chứ
+không theo project. Tạo ưu đãi dưới tenant 1 thì cư dân dự án 3 không thấy gì mà cũng
+không có lỗi nào báo.
+
+Đối chứng sau seed (cùng token, chỉ đổi `X-Context-Id`):
+
+| | Sunshine Garden | Đại Phúc Riverside |
+|---|---|---|
+| bài cộng đồng | 15 | 7 |
+| sự kiện | 5 | 3 |
+| nhóm | 6 | 4 |
+| tiện ích | 4 | 5 |
+| ưu đãi | 9 | 4 |
+| quà đổi điểm | 8 | 2 |
