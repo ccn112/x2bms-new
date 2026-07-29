@@ -25,6 +25,11 @@ class VisitorRegistrationResource extends JsonResource
             'expected_leave_at' => optional($this->expected_leave_at)->toIso8601String(),
             'status' => $this->status,
             'created_at' => optional($this->created_at)->toIso8601String(),
+
+            // Ảnh cư dân đính lúc tạo phiếu — màn chi tiết hiện dải ảnh này.
+            'image_urls' => $this->whenLoaded('attachments',
+                fn () => $this->attachments->pluck('url')->filter()->values()->all(),
+                []),
         ];
     }
 }

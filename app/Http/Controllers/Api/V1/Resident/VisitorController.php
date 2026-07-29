@@ -33,6 +33,9 @@ class VisitorController extends ApiController
         $perPage = min((int) $request->integer('per_page', 20), 50);
 
         $paginator = VisitorRegistration::query()
+            // Nạp sẵn ảnh: màn chi tiết mở từ danh sách nên nếu không nạp ở đây
+            // thì `image_urls` luôn rỗng (whenLoaded trả mặc định).
+            ->with('attachments')
             ->whereIn('apartment_id', $apartmentIds)
             ->orderByDesc('created_at')
             ->orderByDesc('id')
@@ -54,6 +57,11 @@ class VisitorController extends ApiController
             'num_guests' => ['nullable', 'integer', 'min:1', 'max:100'],
             'expected_at' => ['required', 'date'],
             'expected_leave_at' => ['nullable', 'date', 'after_or_equal:expected_at'],
+            // Ảnh đính kèm lúc TẠO phiếu (giấy tờ khách, ảnh xe…). Trước đây cư
+            // dân chỉ đính được ảnh trong bình luận, tức phải tạo phiếu xong
+            // mới gửi được ảnh. Model đã sẵn trait HasAttachments.
+            'attachment_ids' => ['nullable', 'array', 'max:5'],
+            'attachment_ids.*' => ['integer'],
         ]);
 
         $contextId = $request->header('X-Context-Id');
@@ -90,7 +98,11 @@ class VisitorController extends ApiController
             'status' => 'pending',
         ]);
 
-        return ApiResponse::success(VisitorRegistrationResource::make($visitor)->resolve($request), [], 201);
+        $visitor->linkAttachments($validated['attachment_ids'] ?? [], $request->user()->id);
+
+        return ApiResponse::success(
+            VisitorRegistrationResource::make($visitor->fresh()->load('attachments'))
+                ->resolve($request), [], 201);
     }
 
     /** POST /resident/visitors/{visitor}/cancel — chủ căn huỷ đăng ký. */
