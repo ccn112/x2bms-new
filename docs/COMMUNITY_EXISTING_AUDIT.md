@@ -174,7 +174,11 @@ gọi theo `resourcePath` — `resident/community/posts/{id}` và
 - Flutter: `SlipPhotoPicker` (form tạo phiếu) và bộ chọn ảnh riêng trong
   `ComposePostScreen`. **Nén 1600px/82% lúc chọn**, tải lên trước khi tạo bản ghi.
 - `community_posts.image_paths` (json) **song song tồn tại** với `attachments` — hai
-  đường lưu ảnh cho cùng một thực thể, cần chốt một.
+  đường lưu ảnh cho cùng một thực thể. Số liệu thực tế: **37/40 bài dùng
+  `image_paths`, 0 bài dùng `attachments`** — nhưng `CommunityPostController@store`
+  lại gọi `linkAttachments()`. Nghĩa là bài **seed** đi đường json còn bài **tạo qua
+  API** đi đường attachments; cả hai nhánh đều sống, chỉ là dữ liệu hiện tại toàn từ
+  seeder. Đây là bẫy: test bằng dữ liệu seed sẽ không bao giờ chạm nhánh attachments.
 
 ---
 
@@ -260,5 +264,6 @@ prompt yêu cầu cả hai — đây là khoảng trống lớn nhất về ch�
 
 - `community_posts.image_paths` (json) và `attachments` đang là **hai đường lưu ảnh cho
   cùng một bài**. Chốt giữ đường nào — không chốt thì mọi việc sau đều phải xử lý cả hai.
-- Backfill follow dự án: 22/27 dự án vận hành **chưa nối** được với danh mục công khai.
+- Backfill follow dự án: **22/27** dự án vận hành chưa nối được với danh mục công khai
+  (đã kiểm: `projects.public_project_id` khác null chỉ 5/27).
   Nối tay, nối bằng thuật toán khớp mờ, hay chấp nhận chỉ follow được dự án đã nối?
