@@ -89,7 +89,12 @@ một quan hệ thì mất quyền đúng một nhóm, nhóm kia còn nguyên.
 2. Backfill 5 dự án đã nối qua `projects.public_project_id`.
 3. Màn Filament nối tay 22 dự án còn lại.
 4. `GET/POST/DELETE me/project-follows`.
-5. Kênh Quan tâm dự án cấp quyền xem theo follow.
+5. Kênh Quan tâm dự án hiện theo follow — **follow KHÔNG cấp quyền, không cho vào nhóm**
+   (chốt 29/07). Nó chỉ là tín hiệu **ưu tiên hiển thị**.
+6. Hashtag là **đầu vào**, `community_post_project_links` là **sự thật**: server phân
+   giải hashtag lúc GHI bài rồi validate. Feed xếp hạng theo link, không quét chuỗi lúc
+   đọc — quét lúc đọc thì vừa không index được vừa không chặn được ai gõ bừa
+   `#TenDuAn` để chen vào feed vài nghìn người.
 
 **Không dùng khớp mờ tên** — nối nhầm là cho người lạ vào kênh dự án khác. Xem
 DB_MAPPING §4.
@@ -158,8 +163,9 @@ lỗ hổng đó mà không phải migrate lần nữa.
 `community_reports` + `moderation_actions` + hàng đợi; RSVP; vote theo
 `vote_identity_mode`; notification theo docs 13.
 
-Chỉ sau đây mới nên bật **cư dân tự lập nhóm** — đó là van mở cho nội dung tăng đột biến,
-bật trước khi có hàng đợi kiểm duyệt là tự tạo việc cho mình.
+Kèm bảng `community_group_creation_policies` + màn cấu hình: **BQL và SuperAdmin thiết
+lập** ai được tạo nhóm (chốt 29/07) — đây là tính năng sản phẩm, không phải cờ kỹ thuật.
+Mặc định `staff_only`; BQL nào sẵn sàng trực kiểm duyệt thì tự mở.
 
 ---
 

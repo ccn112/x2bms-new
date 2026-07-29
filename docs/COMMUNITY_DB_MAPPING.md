@@ -104,6 +104,32 @@ unique(user_id, project_id)
 index(project_id, followed_at)
 ```
 
+### Vai trò của follow — chốt 2026-07-29
+
+**Follow KHÔNG cấp quyền và KHÔNG cho vào nhóm.** Nó chỉ là **tín hiệu ưu tiên hiển
+thị**: bài có gắn dự án mình theo dõi được đẩy lên trong feed.
+
+Điều này khớp với quy tắc 4 của master prompt ("không dùng hashtag để phân quyền") và
+docs 01 §5. Nhưng có một chỗ phải cẩn thận:
+
+> Nếu **hashtag tự do** quyết định bài nào lọt vào feed người theo dõi dự án, thì bất kỳ
+> ai cũng gõ được `#SunshineGarden` để xuất hiện trước mặt vài nghìn người quan tâm dự
+> án đó. Đấy là kênh phát tán cho spam và giả mạo, mở sẵn.
+
+**Cách làm an toàn — hashtag là ĐẦU VÀO, project link là SỰ THẬT:**
+
+1. Người viết gõ `#TenDuAn` cho tiện (hoặc chọn từ gợi ý).
+2. Lúc **ghi bài**, server phân giải hashtag → `community_post_project_links`, có
+   validate: dự án có thật, cùng tenant, và người viết có liên hệ gì với nó
+   (cư dân / đang theo dõi / là publisher).
+3. Feed xếp hạng theo `community_post_project_links` — **không** quét chuỗi hashtag lúc
+   đọc. Quét chuỗi lúc đọc thì vừa không index được, vừa không chặn được ai.
+4. Hashtag không phân giải được thì vẫn giữ trong nội dung như chữ thường, **không** tạo
+   liên kết dự án.
+
+Hệ quả cho kế hoạch: kênh `project_interest_channel` **không cần membership**. Ai theo
+dõi dự án thì thấy kênh đó, hết. Không join, không rời, không grant.
+
 ### Vấn đề backfill — cần chốt
 
 "Dự án quan tâm" hiện ở `user_public_projects.public_project_id` → trỏ **bảng danh mục**
@@ -232,3 +258,38 @@ Thêm: `group.post_count`, `post.reaction_count`, `comment.reply_count/reaction_
 
 Cập nhật qua domain event trong transaction. **Kèm job đối soát** — counter lệch là
 chuyện khi nào cũng xảy ra, không phải nếu.
+
+---
+
+## 10. Quyền tạo nhóm — thiết lập, không phải cờ tính năng
+
+Chốt 2026-07-29: **BQL và SuperAdmin thiết lập** ai được tạo nhóm, chứ không phải một
+cờ kỹ thuật tôi bật/tắt.
+
+Nghĩa là nó là **tính năng của sản phẩm**, phải có màn cấu hình, phải lưu, phải audit —
+không phải dòng trong `config/`.
+
+```
+community_group_creation_policies
+  id
+  scope_type      platform | tenant | project
+  scope_id        null với platform
+  allowed_for     nobody | staff_only | verified_resident | any_member
+  requires_approval  bool
+  max_per_user    int null
+  updated_by_user_id
+  timestamps
+  unique(scope_type, scope_id)
+```
+
+**Thứ tự áp dụng — hẹp thắng rộng:** `project` → `tenant` → `platform` → mặc định
+`staff_only`.
+
+Mặc định là `staff_only` chứ không phải `verified_resident`: mở van nội dung trước khi
+có người trực kiểm duyệt là tự tạo việc cho mình. BQL nào sẵn sàng thì tự mở.
+
+- **SuperAdmin** đặt mức `platform` và `tenant`.
+- **BQL** đặt mức `project` của mình, nhưng **không nới rộng hơn** mức tenant cho phép —
+  nếu không thì thiết lập cấp trên thành vô nghĩa.
+
+Server tính `capabilities.can_create_group` từ bảng này; app chỉ đọc và ẩn/hiện nút.

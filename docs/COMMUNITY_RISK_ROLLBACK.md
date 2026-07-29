@@ -11,7 +11,8 @@
 |---|---|---|---|---|
 | R1 | **Mất/hỏng cây bình luận** khi tách bảng | Trung bình | **Mất dữ liệu người dùng** | GĐ7 |
 | R2 | Grants sai → người hết quyền vẫn đọc nội dung nội bộ | Trung bình | Rò rỉ nội bộ | GĐ3 |
-| R3 | Backfill follow nối nhầm dự án | Cao nếu dùng khớp mờ | Người lạ vào kênh dự án khác | GĐ4 |
+| R3 | Backfill follow nối nhầm dự án | Cao nếu dùng khớp mờ | Feed hiện sai dự án (**không còn là lỗi quyền** sau khi chốt follow ≠ quyền) | GĐ4 |
+| R10 | Hashtag tự do chen vào feed người theo dõi | Cao nếu không validate | Spam/giả mạo | GĐ5 |
 | R4 | Backfill `group_type` gán sai 11 nhóm `private` | **Cao** | Sai quyền đăng/tham gia | GĐ2 |
 | R5 | Đổi payload làm vỡ app đang chạy | Trung bình | App trắng màn | GĐ2, GĐ5 |
 | R6 | Rò rỉ chéo tenant ở bảng comment mới | Thấp nếu làm đúng | Nghiêm trọng | GĐ7 |
@@ -127,7 +128,7 @@ một release, đối chiếu số ảnh mỗi bài, rồi mới drop cột.
 | `community.comments_dual_write` | off | Ghi cả hai bảng |
 | `community.comments_read_new` | off | Đọc bảng mới |
 | `community.feed_projection` | off | Bảng projection |
-| `community.member_group_creation` | off | Cư dân tự lập nhóm |
+| ~~`community.member_group_creation`~~ | — | **Bỏ** — thay bằng thiết lập của BQL/SuperAdmin trong sản phẩm |
 
 Tất cả **per-tenant** — bật cho một tenant nhỏ trước, không bật toàn hệ thống.
 
@@ -164,8 +165,8 @@ ghi gì.
 
 ## 6. Ba điều tôi sẽ không tự quyết
 
-1. **Bật `member_group_creation` khi nào.** Đây là van mở cho nội dung tăng đột biến, và
-   nó là quyết định vận hành (có người trực kiểm duyệt không) chứ không phải kỹ thuật.
+1. ~~Bật cho cư dân tạo nhóm khi nào~~ — **đã chốt 29/07**: BQL và SuperAdmin tự thiết
+   lập trong sản phẩm (`community_group_creation_policies`), mặc định `staff_only`.
 2. **Nối tay 22 dự án** với danh mục công khai — cần người biết dự án nào là dự án nào.
 3. **Phân loại 11 nhóm `private`** thành câu lạc bộ hay nhóm cư dân tự lập.
 
