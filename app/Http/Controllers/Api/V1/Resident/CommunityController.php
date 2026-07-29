@@ -39,6 +39,29 @@ class CommunityController extends ApiController
         return $this->context->projectIds($request->user(), $request->header('X-Context-Id'));
     }
 
+    /**
+     * Người này có được xem nhóm đó không.
+     *
+     * Kiểm ở server chứ không tin `group_id` client gửi lên: đoán id nhóm là
+     * việc dễ nhất trên đời, mà nhóm cư dân của dự án khác là nội dung nội bộ.
+     */
+    private function canSeeGroup(Request $request, int $groupId): bool
+    {
+        $group = CommunityGroup::withoutGlobalScopes()
+            ->where('status', 'active')
+            ->find($groupId);
+
+        if ($group === null) {
+            return false;
+        }
+        // Nhóm toàn hệ thống: ai đăng nhập cũng xem được.
+        if ($group->kind === 'platform') {
+            return true;
+        }
+
+        return in_array($group->project_id, $this->projectIds($request), true);
+    }
+
     /** @return array<int> resident ids của user (cho registered/voted). */
     private function residentIds(Request $request): array
     {
@@ -49,17 +72,28 @@ class CommunityController extends ApiController
     public function posts(Request $request): JsonResponse
     {
         $projectIds = $this->projectIds($request);
-        if (empty($projectIds)) {
+        $groupId = $request->integer('group_id') ?: null;
+
+        // Nhóm `platform` KHÔNG gắn dự án — lọc theo projectIds sẽ loại sạch bài
+        // của nó. Khi client hỏi đích danh một nhóm thì nhóm là phạm vi, không
+        // cần (và không được) lọc thêm theo dự án.
+        if ($groupId === null && empty($projectIds)) {
             return ApiResponse::paginated([], null);
+        }
+
+        if ($groupId !== null && ! $this->canSeeGroup($request, $groupId)) {
+            return ApiResponse::error('forbidden', 'Bạn không xem được nhóm này.', 403);
         }
 
         $perPage = min((int) $request->integer('per_page', 15), 50);
         $user = $request->user();
 
-        $paginator = CommunityPost::query()
+        $paginator = CommunityPost::withoutGlobalScopes()
             ->with(['author.apartmentRelations.apartment', 'attachments'])
             ->withCount('comments')
-            ->whereIn('project_id', $projectIds)
+            ->when($groupId !== null,
+                fn ($q) => $q->where('community_group_id', $groupId),
+                fn ($q) => $q->whereIn('project_id', $projectIds))
             // Bài ẩn không vào feed của người khác; tác giả vẫn thấy bài mình
             // (kèm banner lý do) để không tưởng app lỗi rồi đăng lại.
             ->where(function ($q) use ($user) {
