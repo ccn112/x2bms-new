@@ -22,3 +22,12 @@ Schedule::command('x2:sync-store-installs')
     ->dailyAt('03:15')
     ->withoutOverlapping()
     ->onOneServer();
+
+// Tổng hợp nhật ký màn của app theo ngày, rồi dọn dữ liệu thô quá hạn lưu.
+// Chạy 02:00 — TRƯỚC `logs:archive` (02:30) và trước mọi việc nặng khác, và lệnh tự
+// tổng hợp trước khi dọn. Tổng hợp lại 3 ngày gần nhất vì app gom lô gửi định kỳ:
+// sự kiện của hôm qua có thể tới server hôm nay.
+Schedule::command('x2:aggregate-telemetry --days=3')
+    ->dailyAt('02:00')
+    ->withoutOverlapping()
+    ->onOneServer();

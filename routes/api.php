@@ -31,6 +31,7 @@ use App\Http\Controllers\Api\V1\Resident\StatementController;
 use App\Http\Controllers\Api\V1\Resident\UploadController;
 use App\Http\Controllers\Api\V1\Resident\VisitorController;
 use App\Http\Controllers\Api\V1\Resident\WalletController;
+use App\Http\Controllers\Api\V1\TelemetryController;
 use App\Http\Controllers\Platform\Billing\BillingAdjustmentController;
 use App\Http\Controllers\Platform\Billing\BillingAuditLogController;
 use App\Http\Controllers\Platform\Billing\BillingInvoiceController;
@@ -87,6 +88,16 @@ Route::prefix('v1')->group(function () {
         Route::delete('me/avatar', [ProfileController::class, 'removeAvatar']);
         Route::post('me/devices', [DeviceController::class, 'store']);
         Route::delete('me/devices/{installationId}', [DeviceController::class, 'destroy']);
+    });
+
+    // Nhật ký màn hình + báo lỗi từ app — auth **TUỲ CHỌN** có chủ ý: thiết bị ẩn
+    // danh cũng phải đếm được (chốt 30/07), giữ device_id để ghép với người dùng
+    // định danh sau này. Bắt buộc đăng nhập thì mất sạch dữ liệu của nhóm chưa đăng
+    // nhập — đúng nhóm cần biết nhất khi hỏi "vì sao tải app rồi không dùng".
+    // Throttle riêng, thoáng hơn public-read vì app gửi theo lô định kỳ.
+    Route::middleware('throttle:60,1')->group(function () {
+        Route::post('telemetry/screen-views', [TelemetryController::class, 'screenViews']);
+        Route::post('telemetry/screen-reports', [TelemetryController::class, 'screenReport']);
     });
 
     // X2AI chat — auth OPTIONAL (web/app-authed = identified user; else anonymous by
