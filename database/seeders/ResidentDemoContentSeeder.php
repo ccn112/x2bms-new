@@ -9,9 +9,10 @@ use App\Models\CommunityPost;
 use App\Models\Event;
 use App\Models\FeedbackCategory;
 use App\Models\FeedbackRequest;
-use App\Models\PaymentChannel;
 use App\Models\LoyaltyAccount;
 use App\Models\LoyaltyTransaction;
+use App\Models\Payment;
+use App\Models\PaymentChannel;
 use App\Models\Poll;
 use App\Models\PollOption;
 use App\Models\Receipt;
@@ -279,7 +280,12 @@ class ResidentDemoContentSeeder extends Seeder
                 'amount' => $r['amount'],
                 'paid_at' => Carbon::parse($r['at']),
                 'reference_no' => $r['ref'],
-                'status' => 'completed',
+                // `confirmed`, KHÔNG phải `completed`. Vốn từ chốt của
+                // payments.status: pending|confirmed|rejected|reversed
+                // (Payment::STATUSES). Seeder này là chỗ DUY NHẤT từng ghi
+                // `completed` vào bảng payments, tạo ra giá trị thứ ba mà không
+                // code nào lọc theo — cùng loại lỗi với events.status 'published'.
+                'status' => Payment::STATUS_CONFIRMED,
                 'note' => 'Thanh toán phí quản lý',
                 'updated_at' => now(),
             ];

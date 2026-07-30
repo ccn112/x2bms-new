@@ -1,5 +1,36 @@
 <?php
 
+use App\Http\Controllers\Api\V1\Ai\ChatController;
+use App\Http\Controllers\Api\V1\AuthController;
+use App\Http\Controllers\Api\V1\BootstrapController;
+use App\Http\Controllers\Api\V1\DeviceController;
+use App\Http\Controllers\Api\V1\OtpController;
+use App\Http\Controllers\Api\V1\ProfileController;
+use App\Http\Controllers\Api\V1\PublicOfferController;
+use App\Http\Controllers\Api\V1\PublicProjectController;
+use App\Http\Controllers\Api\V1\Resident\AmenityController;
+use App\Http\Controllers\Api\V1\Resident\ApartmentController;
+use App\Http\Controllers\Api\V1\Resident\ArticleController;
+use App\Http\Controllers\Api\V1\Resident\BillingSummaryController;
+use App\Http\Controllers\Api\V1\Resident\CommunityController;
+use App\Http\Controllers\Api\V1\Resident\CommunityPostController;
+use App\Http\Controllers\Api\V1\Resident\EmergencyAlertController;
+use App\Http\Controllers\Api\V1\Resident\FeedbackController;
+use App\Http\Controllers\Api\V1\Resident\HomeController;
+use App\Http\Controllers\Api\V1\Resident\LinkPreviewController;
+use App\Http\Controllers\Api\V1\Resident\ListingController;
+use App\Http\Controllers\Api\V1\Resident\LoyaltyController;
+use App\Http\Controllers\Api\V1\Resident\MarketController;
+use App\Http\Controllers\Api\V1\Resident\NotificationController;
+use App\Http\Controllers\Api\V1\Resident\OfferController;
+use App\Http\Controllers\Api\V1\Resident\PaymentChannelController;
+use App\Http\Controllers\Api\V1\Resident\PaymentController;
+use App\Http\Controllers\Api\V1\Resident\SlipCommentController;
+use App\Http\Controllers\Api\V1\Resident\SosController;
+use App\Http\Controllers\Api\V1\Resident\StatementController;
+use App\Http\Controllers\Api\V1\Resident\UploadController;
+use App\Http\Controllers\Api\V1\Resident\VisitorController;
+use App\Http\Controllers\Api\V1\Resident\WalletController;
 use App\Http\Controllers\Platform\Billing\BillingAdjustmentController;
 use App\Http\Controllers\Platform\Billing\BillingAuditLogController;
 use App\Http\Controllers\Platform\Billing\BillingInvoiceController;
@@ -18,10 +49,6 @@ use App\Http\Controllers\Platform\Integration\WebhookEndpointController;
 use App\Http\Controllers\Platform\Support\DataCorrectionController;
 use App\Http\Controllers\Platform\Support\SupportCenterController;
 use App\Http\Controllers\Platform\Support\SupportTicketController;
-use App\Http\Controllers\Api\V1\AuthController;
-use App\Http\Controllers\Api\V1\BootstrapController;
-use App\Http\Controllers\Api\V1\DeviceController;
-use App\Http\Controllers\Api\V1\OtpController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -33,10 +60,10 @@ Route::prefix('v1')->group(function () {
     Route::middleware('throttle:public-read')->group(function () {
         Route::get('public/bootstrap', [BootstrapController::class, 'public']);
         // Danh mục dự án công khai (bảng public_projects) cho tab "Dự án".
-        Route::get('public/projects', [\App\Http\Controllers\Api\V1\PublicProjectController::class, 'index']);
-        Route::get('public/projects/{slug}', [\App\Http\Controllers\Api\V1\PublicProjectController::class, 'show']);
+        Route::get('public/projects', [PublicProjectController::class, 'index']);
+        Route::get('public/projects/{slug}', [PublicProjectController::class, 'show']);
         // Ưu đãi công khai (tab "Ưu đãi") — chỉ voucher platform đã bật is_public.
-        Route::get('public/offers', [\App\Http\Controllers\Api\V1\PublicOfferController::class, 'index']);
+        Route::get('public/offers', [PublicOfferController::class, 'index']);
     });
 
     // Auth.
@@ -55,9 +82,9 @@ Route::prefix('v1')->group(function () {
     Route::middleware(['auth:sanctum', 'throttle:api'])->group(function () {
         Route::post('auth/logout', [AuthController::class, 'logout']);
         Route::get('me/bootstrap', [BootstrapController::class, 'me']);
-        Route::patch('me/profile', [\App\Http\Controllers\Api\V1\ProfileController::class, 'update']);
-        Route::post('me/avatar', [\App\Http\Controllers\Api\V1\ProfileController::class, 'avatar']);
-        Route::delete('me/avatar', [\App\Http\Controllers\Api\V1\ProfileController::class, 'removeAvatar']);
+        Route::patch('me/profile', [ProfileController::class, 'update']);
+        Route::post('me/avatar', [ProfileController::class, 'avatar']);
+        Route::delete('me/avatar', [ProfileController::class, 'removeAvatar']);
         Route::post('me/devices', [DeviceController::class, 'store']);
         Route::delete('me/devices/{installationId}', [DeviceController::class, 'destroy']);
     });
@@ -65,137 +92,143 @@ Route::prefix('v1')->group(function () {
     // X2AI chat — auth OPTIONAL (web/app-authed = identified user; else anonymous by
     // X-Device-Id). Throttle keyed inside the service; a light route throttle guards abuse.
     Route::middleware('throttle:public-read')->group(function () {
-        Route::post('ai/chat', [\App\Http\Controllers\Api\V1\Ai\ChatController::class, 'chat']);
-        Route::get('ai/chat/sessions', [\App\Http\Controllers\Api\V1\Ai\ChatController::class, 'sessions']);
-        Route::get('ai/chat/sessions/{session}', [\App\Http\Controllers\Api\V1\Ai\ChatController::class, 'session']);
+        Route::post('ai/chat', [ChatController::class, 'chat']);
+        Route::get('ai/chat/sessions', [ChatController::class, 'sessions']);
+        Route::get('ai/chat/sessions/{session}', [ChatController::class, 'session']);
     });
 
     // Resident business endpoints — require the `resident` token ability.
     Route::middleware(['auth:sanctum', 'ability:resident', 'throttle:api'])->prefix('resident')->group(function () {
-        Route::get('statements', [\App\Http\Controllers\Api\V1\Resident\StatementController::class, 'index']);
-        Route::get('statements/{statement}', [\App\Http\Controllers\Api\V1\Resident\StatementController::class, 'show']);
+        Route::get('statements', [StatementController::class, 'index']);
+        Route::get('statements/{statement}', [StatementController::class, 'show']);
 
         // Công nợ tổng hợp (card Tiện ích) + xu hướng phí 6 tháng (CD-PAY-01).
-        Route::get('billing/summary', [\App\Http\Controllers\Api\V1\Resident\BillingSummaryController::class, 'show']);
-        Route::get('billing/summary/trend', [\App\Http\Controllers\Api\V1\Resident\BillingSummaryController::class, 'trend']);
+        Route::get('billing/summary', [BillingSummaryController::class, 'show']);
+        Route::get('billing/summary/trend', [BillingSummaryController::class, 'trend']);
 
         // Ví cư dân theo căn hộ: số dư + các ngăn + nợ per-service, và sổ ví (phiếu thu / hạch toán).
-        Route::get('wallet', [\App\Http\Controllers\Api\V1\Resident\WalletController::class, 'show']);
-        Route::get('wallet/transactions', [\App\Http\Controllers\Api\V1\Resident\WalletController::class, 'transactions']);
+        Route::get('wallet', [WalletController::class, 'show']);
+        Route::get('wallet/transactions', [WalletController::class, 'transactions']);
 
         // Thông báo cư dân.
-        Route::get('notifications', [\App\Http\Controllers\Api\V1\Resident\NotificationController::class, 'index']);
-        Route::post('notifications/{notification}/read', [\App\Http\Controllers\Api\V1\Resident\NotificationController::class, 'read']);
-        Route::get('notifications/{notification}/comments', [\App\Http\Controllers\Api\V1\Resident\NotificationController::class, 'comments']);
-        Route::post('notifications/{notification}/comments', [\App\Http\Controllers\Api\V1\Resident\NotificationController::class, 'storeComment']);
+        Route::get('notifications', [NotificationController::class, 'index']);
+        Route::post('notifications/{notification}/read', [NotificationController::class, 'read']);
+        Route::get('notifications/{notification}/comments', [NotificationController::class, 'comments']);
+        Route::post('notifications/{notification}/comments', [NotificationController::class, 'storeComment']);
 
         // Upload ảnh của cư dân (multipart, trả attachment id + url để gắn phiếu/bình luận).
-        Route::post('uploads', [\App\Http\Controllers\Api\V1\Resident\UploadController::class, 'store']);
+        Route::post('uploads', [UploadController::class, 'store']);
 
         // Bình luận trên các PHIẾU tương tác cư dân–BQL (đăng ký khách / thanh toán / đặt tiện ích).
-        Route::get('{resource}/{id}/comments', [\App\Http\Controllers\Api\V1\Resident\SlipCommentController::class, 'index'])
+        Route::get('{resource}/{id}/comments', [SlipCommentController::class, 'index'])
             ->whereIn('resource', ['visitor-registrations', 'payments', 'amenity-bookings'])->whereNumber('id');
-        Route::post('{resource}/{id}/comments', [\App\Http\Controllers\Api\V1\Resident\SlipCommentController::class, 'store'])
+        Route::post('{resource}/{id}/comments', [SlipCommentController::class, 'store'])
             ->whereIn('resource', ['visitor-registrations', 'payments', 'amenity-bookings'])->whereNumber('id');
 
         // Điểm thưởng & hạng (tab Ưu đãi — CD-LY-01).
-        Route::get('loyalty', [\App\Http\Controllers\Api\V1\Resident\LoyaltyController::class, 'show']);
-        Route::get('loyalty/activities', [\App\Http\Controllers\Api\V1\Resident\LoyaltyController::class, 'activities']);
-        Route::get('loyalty/gifts', [\App\Http\Controllers\Api\V1\Resident\LoyaltyController::class, 'gifts']);
+        Route::get('loyalty', [LoyaltyController::class, 'show']);
+        Route::get('loyalty/activities', [LoyaltyController::class, 'activities']);
+        Route::get('loyalty/gifts', [LoyaltyController::class, 'gifts']);
 
         // Ưu đãi — voucher không cần đổi điểm (CD-OF-01).
-        Route::get('offers', [\App\Http\Controllers\Api\V1\Resident\OfferController::class, 'index']);
+        Route::get('offers', [OfferController::class, 'index']);
 
         // Cộng đồng (CD-CM-*) — scope theo dự án.
         // Lớp GHI: đăng bài (published NGAY, không duyệt trước), cảm xúc, bình
         // luận, báo cáo. Kiểm duyệt tách xuống nhóm `ability:resident,staff` bên
         // dưới. Hợp đồng: x2mobile/docs/API_REQUIREMENTS_COMMUNITY_WRITE_20260727.md
-        Route::post('community/posts', [\App\Http\Controllers\Api\V1\Resident\CommunityPostController::class, 'store']);
-        Route::get('community/posts/{post}', [\App\Http\Controllers\Api\V1\Resident\CommunityPostController::class, 'show'])->whereNumber('post');
-        Route::delete('community/posts/{post}', [\App\Http\Controllers\Api\V1\Resident\CommunityPostController::class, 'destroy'])->whereNumber('post');
-        Route::post('community/posts/{post}/reactions', [\App\Http\Controllers\Api\V1\Resident\CommunityPostController::class, 'react'])->whereNumber('post');
-        Route::delete('community/posts/{post}/reactions', [\App\Http\Controllers\Api\V1\Resident\CommunityPostController::class, 'unreact'])->whereNumber('post');
-        Route::get('community/posts/{post}/comments', [\App\Http\Controllers\Api\V1\Resident\CommunityPostController::class, 'comments'])->whereNumber('post');
-        Route::post('community/posts/{post}/comments', [\App\Http\Controllers\Api\V1\Resident\CommunityPostController::class, 'storeComment'])->whereNumber('post');
-        Route::post('community/posts/{post}/report', [\App\Http\Controllers\Api\V1\Resident\CommunityPostController::class, 'report'])->whereNumber('post');
+        Route::post('community/posts', [CommunityPostController::class, 'store']);
+        Route::get('community/posts/{post}', [CommunityPostController::class, 'show'])->whereNumber('post');
+        Route::delete('community/posts/{post}', [CommunityPostController::class, 'destroy'])->whereNumber('post');
+        Route::post('community/posts/{post}/reactions', [CommunityPostController::class, 'react'])->whereNumber('post');
+        Route::delete('community/posts/{post}/reactions', [CommunityPostController::class, 'unreact'])->whereNumber('post');
+        Route::get('community/posts/{post}/comments', [CommunityPostController::class, 'comments'])->whereNumber('post');
+        Route::post('community/posts/{post}/comments', [CommunityPostController::class, 'storeComment'])->whereNumber('post');
+        Route::post('community/posts/{post}/report', [CommunityPostController::class, 'report'])->whereNumber('post');
 
-        Route::get('community/posts', [\App\Http\Controllers\Api\V1\Resident\CommunityController::class, 'posts']);
+        Route::get('community/posts', [CommunityController::class, 'posts']);
         // Bóc metadata link để app dựng thẻ xem trước. Throttle vì đây là endpoint
         // server tự đi gọi URL người dùng nhập — không giới hạn là biến máy chủ
         // thành công cụ quét hộ.
-        Route::post('link-preview', [\App\Http\Controllers\Api\V1\Resident\LinkPreviewController::class, 'show'])
+        Route::post('link-preview', [LinkPreviewController::class, 'show'])
             ->middleware('throttle:30,1');
-        Route::get('community/events', [\App\Http\Controllers\Api\V1\Resident\CommunityController::class, 'events']);
-        Route::post('community/events/{event}/register', [\App\Http\Controllers\Api\V1\Resident\CommunityController::class, 'registerEvent'])->whereNumber('event');
-        Route::delete('community/events/{event}/register', [\App\Http\Controllers\Api\V1\Resident\CommunityController::class, 'cancelEventRegistration'])->whereNumber('event');
-        Route::post('community/events/{event}/check-in', [\App\Http\Controllers\Api\V1\Resident\CommunityController::class, 'checkInEvent'])->whereNumber('event');
-        Route::get('community/polls', [\App\Http\Controllers\Api\V1\Resident\CommunityController::class, 'polls']);
-        Route::post('community/polls/{poll}/vote', [\App\Http\Controllers\Api\V1\Resident\CommunityController::class, 'vote']);
-        Route::get('community/groups', [\App\Http\Controllers\Api\V1\Resident\CommunityController::class, 'groups']);
-        Route::post('community/groups/{group}/join', [\App\Http\Controllers\Api\V1\Resident\CommunityController::class, 'joinGroup']);
-        Route::delete('community/groups/{group}/join', [\App\Http\Controllers\Api\V1\Resident\CommunityController::class, 'leaveGroup']);
+        Route::get('community/events', [CommunityController::class, 'events']);
+        Route::post('community/events/{event}/register', [CommunityController::class, 'registerEvent'])->whereNumber('event');
+        Route::delete('community/events/{event}/register', [CommunityController::class, 'cancelEventRegistration'])->whereNumber('event');
+        Route::post('community/events/{event}/check-in', [CommunityController::class, 'checkInEvent'])->whereNumber('event');
+        Route::get('community/polls', [CommunityController::class, 'polls']);
+        Route::post('community/polls/{poll}/vote', [CommunityController::class, 'vote']);
+        Route::get('community/groups', [CommunityController::class, 'groups']);
+        Route::post('community/groups/{group}/join', [CommunityController::class, 'joinGroup']);
+        Route::delete('community/groups/{group}/join', [CommunityController::class, 'leaveGroup']);
 
         // Chợ nội khu (CD-MK-*) — listings/services/categories scope dự án/tenant.
-        Route::get('market/listings', [\App\Http\Controllers\Api\V1\Resident\MarketController::class, 'listings']);
-        Route::get('market/services', [\App\Http\Controllers\Api\V1\Resident\MarketController::class, 'services']);
-        Route::get('market/categories', [\App\Http\Controllers\Api\V1\Resident\MarketController::class, 'categories']);
+        Route::get('market/listings', [MarketController::class, 'listings']);
+        Route::get('market/services', [MarketController::class, 'services']);
+        Route::get('market/categories', [MarketController::class, 'categories']);
         // BĐS nội khu — tách riêng khỏi market/*.
-        Route::get('real-estate', [\App\Http\Controllers\Api\V1\Resident\MarketController::class, 'realEstate']);
+        Route::get('real-estate', [MarketController::class, 'realEstate']);
 
         // Tin rao BĐS — GHI (chốt 2026-07-30): tạo/rút tin, quan tâm, để lại
         // thông tin xem nhà/liên hệ. Đọc công khai vẫn ở `real-estate` phía
         // trên. Hợp đồng: docs quyết định tin rao 2026-07-30.
-        Route::post('listings', [\App\Http\Controllers\Api\V1\Resident\ListingController::class, 'store']);
-        Route::get('listings/mine', [\App\Http\Controllers\Api\V1\Resident\ListingController::class, 'mine']);
-        Route::delete('listings/{listing}', [\App\Http\Controllers\Api\V1\Resident\ListingController::class, 'destroy'])->whereNumber('listing');
-        Route::post('listings/{listing}/interest', [\App\Http\Controllers\Api\V1\Resident\ListingController::class, 'interest'])->whereNumber('listing');
-        Route::delete('listings/{listing}/interest', [\App\Http\Controllers\Api\V1\Resident\ListingController::class, 'uninterest'])->whereNumber('listing');
-        Route::post('listings/{listing}/inquiries', [\App\Http\Controllers\Api\V1\Resident\ListingController::class, 'inquire'])->whereNumber('listing');
+        Route::post('listings', [ListingController::class, 'store']);
+        Route::get('listings/mine', [ListingController::class, 'mine']);
+        Route::delete('listings/{listing}', [ListingController::class, 'destroy'])->whereNumber('listing');
+        Route::post('listings/{listing}/interest', [ListingController::class, 'interest'])->whereNumber('listing');
+        Route::delete('listings/{listing}/interest', [ListingController::class, 'uninterest'])->whereNumber('listing');
+        Route::post('listings/{listing}/inquiries', [ListingController::class, 'inquire'])->whereNumber('listing');
 
         // Home aggregate (CD-HOME) — metrics(AQI)/tasks/notices_preview.
-        Route::get('home', [\App\Http\Controllers\Api\V1\Resident\HomeController::class, 'index']);
+        Route::get('home', [HomeController::class, 'index']);
 
         // SOS an ninh — cư dân bấm nút khẩn (P3).
-        Route::post('sos', [\App\Http\Controllers\Api\V1\Resident\SosController::class, 'store']);
+        Route::post('sos', [SosController::class, 'store']);
 
         // Cảnh báo khẩn cấp BQL phát xuống (CD-HOME-04) — bảng emergency_alerts.
-        Route::get('emergency-alerts', [\App\Http\Controllers\Api\V1\Resident\EmergencyAlertController::class, 'index']);
-        Route::get('emergency-alerts/{alert}', [\App\Http\Controllers\Api\V1\Resident\EmergencyAlertController::class, 'show'])->whereNumber('alert');
+        Route::get('emergency-alerts', [EmergencyAlertController::class, 'index']);
+        Route::get('emergency-alerts/{alert}', [EmergencyAlertController::class, 'show'])->whereNumber('alert');
 
         // Lịch sử thanh toán (CD-PAY-05).
-        Route::get('payments', [\App\Http\Controllers\Api\V1\Resident\PaymentController::class, 'index']);
+        Route::get('payments', [PaymentController::class, 'index']);
         // Cổng thanh toán: liệt kê cổng bật + tạo intent (VietQR/VNPay/MoMo).
-        Route::get('payment-methods', [\App\Http\Controllers\Api\V1\Resident\PaymentChannelController::class, 'index']);
-        Route::post('payments/intent', [\App\Http\Controllers\Api\V1\Resident\PaymentChannelController::class, 'intent']);
-        Route::get('payments/{payment}', [\App\Http\Controllers\Api\V1\Resident\PaymentController::class, 'show']);
+        Route::get('payment-methods', [PaymentChannelController::class, 'index']);
+        Route::post('payments/intent', [PaymentChannelController::class, 'intent']);
+        // Cư dân tự chuyển khoản → nộp ảnh chứng từ, BQL duyệt (chốt 30/07).
+        // Đặt TRƯỚC `payments/{payment}` vì route số cụ thể phải ăn trước tham số;
+        // whereNumber ở dưới đã chặn, nhưng thứ tự này là hàng rào thứ hai.
+        Route::post('payments/claim', [PaymentController::class, 'claim'])
+            ->middleware('throttle:20,1');
+        Route::get('payments/{payment}', [PaymentController::class, 'show'])
+            ->whereNumber('payment');
 
         // Căn hộ đang chọn + thành viên hộ (Hồ sơ cư dân — P3).
-        Route::get('apartment', [\App\Http\Controllers\Api\V1\Resident\ApartmentController::class, 'show']);
+        Route::get('apartment', [ApartmentController::class, 'show']);
 
         // Đăng ký khách (C12 — visitor_registrations).
-        Route::get('visitors', [\App\Http\Controllers\Api\V1\Resident\VisitorController::class, 'index']);
-        Route::post('visitors', [\App\Http\Controllers\Api\V1\Resident\VisitorController::class, 'store']);
-        Route::post('visitors/{visitor}/cancel', [\App\Http\Controllers\Api\V1\Resident\VisitorController::class, 'cancel']);
+        Route::get('visitors', [VisitorController::class, 'index']);
+        Route::post('visitors', [VisitorController::class, 'store']);
+        Route::post('visitors/{visitor}/cancel', [VisitorController::class, 'cancel']);
 
         // Đặt tiện ích nội khu (amenities/amenity_bookings).
-        Route::get('amenities', [\App\Http\Controllers\Api\V1\Resident\AmenityController::class, 'index']);
-        Route::get('amenities/{amenity}', [\App\Http\Controllers\Api\V1\Resident\AmenityController::class, 'show']);
-        Route::get('amenity-bookings', [\App\Http\Controllers\Api\V1\Resident\AmenityController::class, 'bookings']);
-        Route::post('amenity-bookings', [\App\Http\Controllers\Api\V1\Resident\AmenityController::class, 'book']);
-        Route::delete('amenity-bookings/{booking}', [\App\Http\Controllers\Api\V1\Resident\AmenityController::class, 'cancelBooking']);
+        Route::get('amenities', [AmenityController::class, 'index']);
+        Route::get('amenities/{amenity}', [AmenityController::class, 'show']);
+        Route::get('amenity-bookings', [AmenityController::class, 'bookings']);
+        Route::post('amenity-bookings', [AmenityController::class, 'book']);
+        Route::delete('amenity-bookings/{booking}', [AmenityController::class, 'cancelBooking']);
 
         // Phản ánh / yêu cầu dịch vụ (feedback_requests).
-        Route::get('feedback-categories', [\App\Http\Controllers\Api\V1\Resident\FeedbackController::class, 'categories']);
-        Route::get('feedback', [\App\Http\Controllers\Api\V1\Resident\FeedbackController::class, 'index']);
-        Route::post('feedback', [\App\Http\Controllers\Api\V1\Resident\FeedbackController::class, 'store']);
-        Route::get('feedback/{feedback}', [\App\Http\Controllers\Api\V1\Resident\FeedbackController::class, 'show']);
+        Route::get('feedback-categories', [FeedbackController::class, 'categories']);
+        Route::get('feedback', [FeedbackController::class, 'index']);
+        Route::post('feedback', [FeedbackController::class, 'store']);
+        Route::get('feedback/{feedback}', [FeedbackController::class, 'show']);
 
         // Chi tiết thông báo (full body + đánh dấu đã đọc).
-        Route::get('notifications/{notification}', [\App\Http\Controllers\Api\V1\Resident\NotificationController::class, 'show']);
+        Route::get('notifications/{notification}', [NotificationController::class, 'show']);
 
         // Bài viết cư dân đọc (PlatformContent: quy định/cẩm nang/tin tức).
-        Route::get('articles', [\App\Http\Controllers\Api\V1\Resident\ArticleController::class, 'index']);
-        Route::get('articles/{article}', [\App\Http\Controllers\Api\V1\Resident\ArticleController::class, 'show']);
+        Route::get('articles', [ArticleController::class, 'index']);
+        Route::get('articles/{article}', [ArticleController::class, 'show']);
     });
 
     /*
@@ -209,11 +242,11 @@ Route::prefix('v1')->group(function () {
     Route::middleware(['auth:sanctum', 'ability:resident,staff', 'throttle:api'])
         ->prefix('resident')
         ->group(function () {
-            Route::post('community/posts/{post}/moderate', [\App\Http\Controllers\Api\V1\Resident\CommunityPostController::class, 'moderate'])
+            Route::post('community/posts/{post}/moderate', [CommunityPostController::class, 'moderate'])
                 ->whereNumber('post');
             // Duyệt/từ chối tin rao — cùng lý do dùng nhóm ability này (xem
             // docblock trên): BQL app dùng chung token 'staff'.
-            Route::post('listings/{listing}/moderate', [\App\Http\Controllers\Api\V1\Resident\ListingController::class, 'moderate'])
+            Route::post('listings/{listing}/moderate', [ListingController::class, 'moderate'])
                 ->whereNumber('listing');
         });
 });
