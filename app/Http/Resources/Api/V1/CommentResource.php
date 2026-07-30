@@ -2,14 +2,15 @@
 
 namespace App\Http\Resources\Api\V1;
 
+use App\Models\Comment;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
 /**
- * @property \App\Models\Comment $resource
- * Bình luận dùng chung (thông báo/cộng đồng/phản ánh/ticket). `is_mine` set kèm
- * (transient) bởi controller. Nhân sự BQL hiển thị "Ban quản lý · dự án", KHÔNG
- * lộ tên/ảnh cá nhân.
+ * @property Comment $resource
+ *                             Bình luận dùng chung (thông báo/cộng đồng/phản ánh/ticket). `is_mine` set kèm
+ *                             (transient) bởi controller. Nhân sự BQL hiển thị "Ban quản lý · dự án", KHÔNG
+ *                             lộ tên/ảnh cá nhân.
  */
 class CommentResource extends JsonResource
 {
@@ -28,9 +29,14 @@ class CommentResource extends JsonResource
                 'avatar_url' => $staff ? null : $this->user?->avatar_url,
             ],
             'is_mine' => (bool) ($this->is_mine ?? false),
+            // Số trả lời — chỉ có khi controller `withCount('replies')`. App dùng
+            // để vẽ "Xem N trả lời" mà KHÔNG phải nạp sẵn cây trả lời: ở bài có
+            // hàng nghìn bình luận, nạp hết mọi cấp là chỗ vỡ đầu tiên.
+            'reply_count' => $this->replies_count === null
+                ? null
+                : (int) $this->replies_count,
             'created_at' => $this->created_at?->toIso8601String(),
-            'attachments' =>
-                AttachmentResource::collection($this->whenLoaded('attachments')),
+            'attachments' => AttachmentResource::collection($this->whenLoaded('attachments')),
         ];
     }
 }

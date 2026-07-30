@@ -6,6 +6,7 @@ use App\Http\Controllers\Api\V1\ApiController;
 use App\Http\Controllers\Api\V1\Resident\Concerns\LabelsCommentAuthor;
 use App\Http\Resources\Api\V1\CommentResource;
 use App\Http\Resources\Api\V1\CommunityPostResource;
+use App\Models\AuditLog;
 use App\Models\CommunityPost;
 use App\Models\CommunityPostReaction;
 use App\Models\CommunityPostReport;
@@ -158,7 +159,26 @@ class CommunityPostController extends ApiController
 
     // ── Bình luận (module polymorphic dùng chung) ──────────────────────────────
 
-    /** GET /resident/community/posts/{post}/comments */
+    /**
+     * GET /resident/community/posts/{post}/comments
+     *   ?per_page=20&cursor=<id>&sort=newest|oldest&parent_id=<id>
+     *
+     * Phân trang bằng **cursor theo id** (keyset), không phải offset.
+     *
+     * Bản trước là phân trang GIẢ: `->orderBy('id')->limit(500)->get()` rồi trả
+     * `ApiResponse::paginated(..., null)` — cursor luôn null nên client không có
+     * cách nào đi tiếp, bài quá 500 bình luận thì phần còn lại KHÔNG TỒN TẠI với
+     * người dùng, mà mỗi lần mở vẫn nạp 500 dòng kèm user + attachment.
+     *
+     * Vì sao keyset chứ không `OFFSET`: ở bài có hàng chục nghìn bình luận,
+     * `OFFSET 20000` buộc MySQL đếm qua 20k dòng mỗi trang; keyset dùng thẳng
+     * index `(commentable_type, commentable_id, id)` nên trang thứ 1000 nhanh
+     * bằng trang đầu. Keyset cũng không bị lệch trang khi có người vừa bình luận
+     * (offset thì chèn một dòng là cả trang sau trượt).
+     *
+     * `parent_id` để tải trả lời của MỘT bình luận theo trang riêng — trước đây
+     * mọi cấp trộn trong một mẻ 500 dòng.
+     */
     public function comments(Request $request, int $post): JsonResponse
     {
         $model = $this->findVisible($request, $post);
@@ -166,20 +186,55 @@ class CommunityPostController extends ApiController
             return ApiResponse::error('not_found', 'Bài viết không còn khả dụng.', 404);
         }
 
-        $user = $request->user();
-        $comments = $model->comments()
+        $data = $request->validate([
+            'per_page' => ['nullable', 'integer', 'min:1', 'max:50'],
+            'cursor' => ['nullable', 'integer', 'min:0'],
+            'sort' => ['nullable', 'in:newest,oldest'],
+            'parent_id' => ['nullable', 'integer'],
+        ]);
+
+        $perPage = (int) ($data['per_page'] ?? 20);
+        $sort = $data['sort'] ?? 'newest';
+        $cursor = $data['cursor'] ?? null;
+        $newest = $sort === 'newest';
+
+        $query = $model->comments()
             ->with(['user:id,name,avatar_path', 'attachments'])
-            ->orderBy('id')
-            ->limit(500)
+            // Đếm trả lời bằng subquery thay vì nạp cả cây: app vẽ "Xem N trả
+            // lời" rồi mới gọi tiếp với `parent_id` khi người dùng bấm.
+            ->withCount('replies');
+
+        // `parent_id` không truyền → chỉ bình luận GỐC. Trước đây trả lời trộn
+        // lẫn bình luận gốc nên app phải tự gom, và số dòng phình theo cấp.
+        if (array_key_exists('parent_id', $data) && $data['parent_id'] !== null) {
+            $query->where('parent_id', $data['parent_id']);
+        } else {
+            $query->whereNull('parent_id');
+        }
+
+        if ($cursor !== null) {
+            // Trang sau = "id nhỏ hơn cursor" khi sắp mới nhất trước, và ngược lại.
+            $query->where('id', $newest ? '<' : '>', $cursor);
+        }
+
+        // Lấy thừa 1 dòng để biết CÒN trang sau hay không, không phải COUNT(*)
+        // toàn bảng.
+        $rows = $query->orderBy('id', $newest ? 'desc' : 'asc')
+            ->limit($perPage + 1)
             ->get();
 
-        $comments->each(function ($c) use ($user): void {
-            $c->is_mine = $user->id !== null && $c->user_id === $user->id;
+        $hasMore = $rows->count() > $perPage;
+        $items = $hasMore ? $rows->take($perPage) : $rows;
+        $nextCursor = $hasMore ? (string) $items->last()->id : null;
+
+        $user = $request->user();
+        $items->each(function ($c) use ($user): void {
+            $c->is_mine = $user?->id !== null && $c->user_id === $user->id;
         });
 
         return ApiResponse::paginated(
-            CommentResource::collection($comments)->resolve($request),
-            null,
+            CommentResource::collection($items->values())->resolve($request),
+            $nextCursor,
         );
     }
 
@@ -355,7 +410,7 @@ class CommunityPostController extends ApiController
     private function auditModeration(CommunityPost $post, int $userId, string $action, string $reason): void
     {
         try {
-            \App\Models\AuditLog::create([
+            AuditLog::create([
                 'tenant_id' => $post->tenant_id,
                 'user_id' => $userId,
                 'auditable_type' => $post->getMorphClass(),
