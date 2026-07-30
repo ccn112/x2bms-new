@@ -27,7 +27,8 @@ class AmenityController extends ApiController
     /** GET /resident/amenities — tiện ích active thuộc dự án của user. */
     public function index(Request $request): JsonResponse
     {
-        $projectIds = $this->context->projectIds($request->user(), $request->header('X-Context-Id'));
+        $contextId = $request->header('X-Context-Id');
+        $projectIds = $this->context->projectIds($request->user(), $contextId);
         if (empty($projectIds)) {
             return ApiResponse::success([]);
         }
@@ -35,6 +36,7 @@ class AmenityController extends ApiController
         $amenities = Amenity::query()
             ->whereIn('project_id', $projectIds)
             ->where('status', 'active')
+            ->withCount($this->statsCounters($request, $contextId))
             ->orderBy('name')
             ->get();
 
@@ -44,14 +46,68 @@ class AmenityController extends ApiController
     /** GET /resident/amenities/{amenity} — chi tiết + khung giờ (slots). */
     public function show(Request $request, Amenity $amenity): JsonResponse
     {
-        $projectIds = $this->context->projectIds($request->user(), $request->header('X-Context-Id'));
+        $contextId = $request->header('X-Context-Id');
+        $projectIds = $this->context->projectIds($request->user(), $contextId);
         if (! in_array($amenity->project_id, $projectIds, true)) {
             return ApiResponse::error('not_found', 'Không tìm thấy tiện ích.', 404);
         }
 
+        $amenity->loadCount($this->statsCounters($request, $contextId));
         $amenity->load(['slots' => fn ($q) => $q->orderBy('day_of_week')->orderBy('start_time')]);
 
         return ApiResponse::success(AmenityResource::make($amenity)->resolve($request));
+    }
+
+    /**
+     * withCount() closures cho dải thống kê trên thẻ tiện ích (chốt 30/07 lần 2):
+     * - `bookings_today_total`: lượt đặt HÔM NAY của TẤT CẢ cư dân, chỉ tính
+     *   booking còn hiệu lực (pending/confirmed) — cancelled/rejected không giữ
+     *   chỗ nên không tính vào độ "hot".
+     * - `my_bookings_total`: lịch sử all-time của RIÊNG cư dân đang đăng nhập
+     *   (kể cả đã huỷ/từ chối — đây là "tôi từng đặt", không phải "đang giữ chỗ").
+     * - `my_bookings_today`: lượt còn hiệu lực hôm nay của riêng cư dân đó.
+     *
+     * Dùng withCount (subquery) thay vì lặp qua từng amenity rồi query riêng —
+     * danh sách tiện ích một dự án chỉ vài chục dòng, nhưng lặp query là kiểu
+     * N+1 kinh điển, mở rộng dự án lớn sẽ chậm dần đều.
+     *
+     * @return array<string, \Closure>
+     */
+    private function statsCounters(Request $request, ?string $contextId): array
+    {
+        $apartmentIds = $this->context->apartmentIds($request->user(), $contextId);
+        $residentIds = $request->user()->residentMemberships()->pluck('id')->all();
+        $today = now()->toDateString();
+
+        // Thu hẹp về đúng booking của resident hiện tại. Không có căn/hồ sơ nào
+        // khớp thì ép về rỗng (1=0) — để trống where() sẽ khớp MỌI dòng và lộ
+        // số liệu của người khác, đây là lỗi tệ hơn nhiều so với hiện số 0.
+        $onlyMine = function ($q) use ($apartmentIds, $residentIds): void {
+            if (empty($apartmentIds) && empty($residentIds)) {
+                $q->whereRaw('1 = 0');
+
+                return;
+            }
+            $q->where(function ($q2) use ($apartmentIds, $residentIds) {
+                if (! empty($apartmentIds)) {
+                    $q2->orWhereIn('apartment_id', $apartmentIds);
+                }
+                if (! empty($residentIds)) {
+                    $q2->orWhereIn('resident_id', $residentIds);
+                }
+            });
+        };
+
+        return [
+            'bookings as bookings_today_total' => fn ($q) => $q
+                ->whereDate('booking_date', $today)
+                ->whereIn('status', ['pending', 'confirmed']),
+            'bookings as my_bookings_total' => fn ($q) => $onlyMine($q),
+            'bookings as my_bookings_today' => function ($q) use ($today, $onlyMine): void {
+                $q->whereDate('booking_date', $today)->whereIn('status', ['pending', 'confirmed']);
+                $onlyMine($q);
+            },
+        ];
     }
 
     /** GET /resident/amenity-bookings?cursor= — lượt đặt của user, mới nhất trước. */
@@ -67,7 +123,11 @@ class AmenityController extends ApiController
         $perPage = min((int) $request->integer('per_page', 20), 50);
 
         $paginator = AmenityBooking::query()
-            ->with('amenity')
+            // `qrPass` để lấy completed_at (used_at) — mốc THỰC SỰ dùng tiện
+            // ích, khác với lúc BQL xác nhận. `withCount('comments')` để hiện
+            // số bình luận trên thẻ lịch đặt mà không phải gọi thêm request.
+            ->with(['amenity', 'qrPass'])
+            ->withCount('comments')
             ->where(function ($q) use ($apartmentIds, $residentIds) {
                 if (! empty($apartmentIds)) {
                     $q->orWhereIn('apartment_id', $apartmentIds);
@@ -143,9 +203,14 @@ class AmenityController extends ApiController
             'price' => $amenity->price ?? 0,
             'note' => $validated['note'] ?? null,
             'status' => $status,
+            // Không cần duyệt thì tự động coi như BQL "xác nhận" ngay lúc đặt —
+            // mốc quyết định trùng thời điểm tạo, để dòng thời gian phiếu không
+            // trống bước này (không bịa giờ: đây đúng là lúc trạng thái = confirmed).
+            'approved_at' => $status === 'confirmed' ? now() : null,
         ]);
 
-        $booking->load('amenity');
+        $booking->load(['amenity', 'qrPass']);
+        $booking->loadCount('comments');
 
         return ApiResponse::success(AmenityBookingResource::make($booking)->resolve($request), [], 201);
     }
@@ -167,8 +232,9 @@ class AmenityController extends ApiController
             return ApiResponse::error('cannot_cancel', 'Lượt đặt đã hoàn tất, không thể huỷ.', 422);
         }
 
-        $booking->update(['status' => 'cancelled']);
-        $booking->load('amenity');
+        $booking->update(['status' => 'cancelled', 'cancelled_at' => now()]);
+        $booking->load(['amenity', 'qrPass']);
+        $booking->loadCount('comments');
 
         return ApiResponse::success(AmenityBookingResource::make($booking)->resolve($request));
     }

@@ -2,14 +2,13 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\SoftDeletes;
-
 use App\Models\Concerns\BelongsToTenant;
 use App\Models\Concerns\HasAttachments;
 use App\Models\Concerns\HasComments;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 /** Tier 2 — Lượt đặt tiện ích của cư dân. */
 class AmenityBooking extends Model
@@ -22,6 +21,9 @@ class AmenityBooking extends Model
         'booking_date' => 'date',
         'price' => 'decimal:2',
         'approved_at' => 'datetime',
+        // Mốc cư dân TỰ huỷ — tách khỏi approved_at vì đó là quyết định của
+        // BQL, hai chủ thể khác nhau không nên chung một cột thời gian.
+        'cancelled_at' => 'datetime',
     ];
 
     public function amenity(): BelongsTo
