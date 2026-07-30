@@ -32,8 +32,20 @@ class EventForm
                     ->required()
                     ->numeric()
                     ->default(0),
-                TextInput::make('status')
+                // Select chứ KHÔNG phải ô chữ tự do: ô tự do chính là đường mà
+                // giá trị `published` (quy ước của bảng nội dung, không thuộc
+                // vòng đời sự kiện) lọt vào cột này, khiến sự kiện không lên
+                // được app cư dân. Nhãn tiếng Việt để BQL không phải đoán.
+                Select::make('status')
+                    ->label('Trạng thái')
+                    ->options([
+                        'upcoming' => 'Sắp diễn ra (cư dân thấy)',
+                        'ongoing' => 'Đang diễn ra (cư dân thấy)',
+                        'finished' => 'Đã kết thúc',
+                        'cancelled' => 'Đã huỷ',
+                    ])
                     ->required()
+                    ->native(false)
                     ->default('upcoming'),
             ]);
     }

@@ -91,7 +91,9 @@ class SecondProjectDemoSeeder extends Seeder
                     'ends_at' => now()->addDays($e['in'])->setTime(11, 0),
                     'capacity' => $e['cap'],
                     'registered_count' => $e['reg'],
-                    'status' => 'published',
+                    // upcoming|ongoing|finished|cancelled — KHÔNG phải
+                    // 'published' (quy ước của bảng nội dung).
+                    'status' => 'upcoming',
                 ]
             );
         }

@@ -5,6 +5,7 @@ namespace Database\Seeders;
 use App\Enums\CommunityContentType;
 use App\Models\CommunityGroup;
 use App\Models\CommunityPost;
+use App\Models\Event;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
@@ -59,18 +60,13 @@ class CommunityRefPostsSeeder extends Seeder
     /** @param Collection<int,CommunityGroup> $groups */
     private function seedEvents(Collection $groups): int
     {
-        // CHỈ `published` — phải khớp đúng bộ lọc của `CommunityController::events()`.
-        // Tạo bài ref cho sự kiện mà endpoint không trả về thì app không tra ra
-        // entity gốc, và thẻ sự kiện rơi về chữ trơn: người dùng thấy một bài
-        // "Sự kiện: ..." mà không có ngày, không có địa điểm, không bấm được.
-        //
-        // ⚠️ Dữ liệu hiện có event #1 mang `status = 'upcoming'` (seeder cũ) nên
-        // KHÔNG cư dân nào xem được — cần owner chốt: `upcoming` là trạng thái
-        // hợp lệ để hiện cho cư dân, hay chỉ là rác dữ liệu cần đổi sang
-        // `published`? Chưa chốt thì không mở rộng bộ lọc ở endpoint.
+        // Dùng ĐÚNG tập trạng thái mà endpoint cư dân trả về. Tạo bài ref cho sự
+        // kiện endpoint không trả thì app không tra ra entity gốc, và thẻ sự kiện
+        // rơi về chữ trơn: người dùng thấy bài "Sự kiện: ..." mà không có ngày,
+        // không địa điểm, không bấm được.
         $rows = DB::table('events')
             ->whereNull('deleted_at')
-            ->where('status', 'published')
+            ->whereIn('status', Event::RESIDENT_VISIBLE_STATUSES)
             ->orderBy('starts_at')
             ->get();
 

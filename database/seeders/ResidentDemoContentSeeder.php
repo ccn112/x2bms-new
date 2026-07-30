@@ -355,7 +355,10 @@ class ResidentDemoContentSeeder extends Seeder
                     'ends_at' => Carbon::parse($e['starts'])->addHours(2),
                     'capacity' => $e['cap'],
                     'registered_count' => $e['reg'],
-                    'status' => 'published',
+                    // Vòng đời sự kiện là upcoming|ongoing|finished|cancelled.
+                    // Trước 30/07 chỗ này ghi 'published' — quy ước của bảng nội
+                    // dung, không thuộc cột này.
+                    'status' => 'upcoming',
                 ]
             );
         }

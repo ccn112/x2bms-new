@@ -137,9 +137,17 @@ class CommunityController extends ApiController
         $residentIds = $this->residentIds($request);
         $perPage = min((int) $request->integer('per_page', 15), 50);
 
+        // Vòng đời sự kiện theo schema: upcoming|ongoing|finished|cancelled.
+        // Cư dân thấy hai trạng thái đầu — `finished`/`cancelled` không còn để
+        // đăng ký hay tham gia nữa.
+        //
+        // Trước 2026-07-30 chỗ này lọc `status = 'published'`, một giá trị KHÔNG
+        // thuộc tập trên. Nó lọt vào qua seeder chép quy ước của bảng nội dung.
+        // Trong khi đó form Filament tạo sự kiện mặc định `upcoming` → mọi sự
+        // kiện Ban quản lý tạo qua web đều không cư dân nào xem được.
         $paginator = Event::query()
             ->whereIn('project_id', $projectIds)
-            ->where('status', 'published')
+            ->whereIn('status', Event::RESIDENT_VISIBLE_STATUSES)
             ->orderBy('starts_at')
             ->orderByDesc('id')
             ->cursorPaginate($perPage);
