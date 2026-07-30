@@ -134,19 +134,20 @@ class PaymentController extends ApiController
 
         // `config('app.timezone')` là **UTC**, còn cư dân ở giờ Việt Nam. Một chuỗi
         // ISO KHÔNG kèm offset (Dart: `DateTime.now().toIso8601String()` trả
-        // "2026-07-30T21:05:00.000", không có hậu tố nào) sẽ bị hiểu là UTC, tức
-        // sớm hơn 7 tiếng so với ý người gửi — thành "tương lai" và bị chặn oan.
+        // "2026-07-30T21:05:00.000", không có hậu tố nào) mà đem parse thẳng sẽ bị
+        // hiểu là UTC — sớm hơn 7 tiếng so với ý người gửi, thành "tương lai" và
+        // bị chặn oan.
         //
-        // Nên bắt buộc kèm múi giờ và nói rõ, thay vì tự đoán là Asia/Ho_Chi_Minh:
-        // đoán đúng ở Việt Nam nhưng sai âm thầm với mọi múi khác, mà sai ở đây là
-        // sai mốc tiền.
-        if (! preg_match('/(Z|z|[+-]\d{2}:?\d{2})$/', trim((string) $data['paid_at']))) {
-            return ApiResponse::error('paid_at_timezone',
-                'Thời điểm chuyển khoản phải kèm múi giờ, ví dụ 2026-07-30T14:05:00+07:00 '
-                .'hoặc 2026-07-30T07:05:00Z.', 422);
-        }
+        // Chủ dự án chốt 30/07: mặc định là **UTC+7 (Việt Nam)**. Nên chuỗi thiếu
+        // múi giờ được hiểu theo `config('x2.timezone')` rồi đổi về UTC để lưu.
+        // Chuỗi CÓ kèm offset (`Z` hoặc `+07:00`) vẫn được tôn trọng nguyên vẹn —
+        // client nào gửi đúng chuẩn thì không bị đoán lại.
+        $raw = trim((string) $data['paid_at']);
+        $hasOffset = (bool) preg_match('/(Z|z|[+-]\d{2}:?\d{2})$/', $raw);
 
-        $paidAt = Carbon::parse($data['paid_at']);
+        $paidAt = $hasOffset
+            ? Carbon::parse($raw)
+            : Carbon::parse($raw, config('x2.timezone'))->utc();
 
         // Chừa 10 phút cho lệch đồng hồ máy — chặn cứng ở đúng `now()` thì cư dân
         // có máy nhanh vài phút sẽ bị từ chối mà không hiểu vì sao.

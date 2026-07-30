@@ -131,11 +131,32 @@ Check 'thoi diem TUONG LAI bi chan' ($r.code -eq 422) "code=$($r.code)"
 $r = Req 'POST' 'resident/payments/claim' @{ amount = 500000; paid_at = (Get-Date).AddDays(-400).ToString('o'); attachment_ids = @(1) } $token $ctx
 Check 'thoi diem qua xa qua khu bi chan' ($r.code -eq 422) "code=$($r.code)"
 
-Write-Output "`n== 7b. Gio KHONG kem mui gio phai bi tu choi RO RANG =="
-$r = Req 'POST' 'resident/payments/claim' @{ amount = 500000; paid_at = '2026-07-30T10:00:00'; attachment_ids = @(1) } $token $ctx
-Check 'thieu offset -> 422' ($r.code -eq 422) "code=$($r.code)"
-Check 'noi ro thieu mui gio (paid_at_timezone)' ($r.raw -match 'paid_at_timezone') "raw=$($r.raw)"
-Check 'thong bao co vi du de sua' ($r.raw -match '\+07:00') "raw=$($r.raw)"
+Write-Output "`n== 7b. Gio KHONG kem mui gio duoc hieu la UTC+7 (chu du an chot 30/07) =="
+# Gio local VN cach day 2 tieng, gui KHONG kem offset. Truoc day bi chan 422; nay
+# phai duoc chap nhan va luu dung moc (server luu UTC = gio VN tru 7).
+$vn = [System.TimeZoneInfo]::ConvertTimeBySystemTimeZoneId([DateTime]::UtcNow, 'SE Asia Standard Time')
+$naive = $vn.AddHours(-2).ToString('yyyy-MM-ddTHH:mm:ss')
+$att2 = $null
+try {
+    $bound2 = [Guid]::NewGuid().ToString()
+    $head2 = "--$bound2`r`nContent-Disposition: form-data; name=`"file`"; filename=`"p2.png`"`r`nContent-Type: image/png`r`n`r`n"
+    $tail2 = "`r`n--$bound2--`r`n"
+    $b2 = [Text.Encoding]::ASCII.GetBytes($head2) + $png + [Text.Encoding]::ASCII.GetBytes($tail2)
+    $rq2 = [Net.HttpWebRequest]::Create("$base/resident/uploads")
+    $rq2.Method = 'POST'; $rq2.ContentType = "multipart/form-data; boundary=$bound2"
+    $rq2.Headers.Add('Authorization', "Bearer $token"); $rq2.Headers.Add('X-Device-Id', $dev); $rq2.Headers.Add('X-Context-Id', $ctx)
+    $rq2.Accept = 'application/json'
+    $s2 = $rq2.GetRequestStream(); $s2.Write($b2, 0, $b2.Length); $s2.Close()
+    $att2 = (ConvertFrom-Json ((New-Object IO.StreamReader($rq2.GetResponse().GetResponseStream())).ReadToEnd())).data.id
+} catch {}
+
+$r = Req 'POST' 'resident/payments/claim' @{ amount = 777000; paid_at = $naive; attachment_ids = @([int]$att2) } $token $ctx
+Check 'thieu offset KHONG con bi chan' ($r.code -eq 201) "code=$($r.code) raw=$($r.raw)"
+if ($r.code -eq 201) {
+    # Server tra ISO co offset. Gio VN vua gui, doi ve VN phai ra dung chuoi ban dau.
+    $back = ([DateTimeOffset]::Parse($r.json.data.paid_at)).ToOffset([TimeSpan]::FromHours(7)).ToString('yyyy-MM-ddTHH:mm:ss')
+    Check 'moc thoi gian luu dung theo UTC+7' ($back -eq $naive) "gui=$naive nhan lai(VN)=$back"
+}
 Write-Output "`n== 8. Chua dang nhap thi khong khai duoc =="
 $r = Req 'POST' 'resident/payments/claim' @{ amount = 500000; paid_at = (Get-Date).AddHours(-1).ToString('o'); attachment_ids = @(1) } $null $ctx
 Check 'khong token -> 401' ($r.code -eq 401) "code=$($r.code)"
