@@ -152,19 +152,193 @@ class CommunityController extends ApiController
             ->orderByDesc('id')
             ->cursorPaginate($perPage);
 
-        $registeredEventIds = empty($residentIds) ? [] : DB::table('event_registrations')
+        // Trạng thái đăng ký của CHÍNH người đang xem, gộp một lượt cho cả trang.
+        // Lấy cả `status` chứ không chỉ "có dòng hay không": app cần phân biệt
+        // đã đăng ký / đã check-in / đã huỷ để chọn đúng nút.
+        $myRegistrations = empty($residentIds) ? [] : DB::table('event_registrations')
             ->whereIn('resident_id', $residentIds)
             ->whereIn('event_id', $paginator->getCollection()->pluck('id'))
-            ->pluck('event_id')
+            ->pluck('status', 'event_id')
             ->all();
 
-        $paginator->getCollection()->each(function ($e) use ($registeredEventIds) {
-            $e->registered = in_array($e->id, $registeredEventIds, true);
+        $paginator->getCollection()->each(function ($e) use ($myRegistrations) {
+            $status = $myRegistrations[$e->id] ?? null;
+            $e->registration_status = $status;
+            $e->registered = $status === 'registered' || $status === 'attended';
+            $e->can_check_in = $status === 'registered' && $this->isCheckInWindow($e);
         });
 
         $items = EventResource::collection($paginator->getCollection())->resolve($request);
 
         return ApiResponse::paginated($items, $paginator->nextCursor()?->encode());
+    }
+
+    /**
+     * Cửa sổ check-in: từ 2 GIỜ TRƯỚC giờ bắt đầu tới hết giờ kết thúc (không có
+     * `ends_at` thì tính 4 giờ sau giờ bắt đầu).
+     *
+     * Mở sớm 2 giờ vì cư dân tới trước giờ diễn ra là chuyện thường; đóng theo
+     * `ends_at` để không ai check-in một sự kiện đã tan.
+     */
+    private function isCheckInWindow(Event $e): bool
+    {
+        if ($e->starts_at === null) {
+            return false;
+        }
+        $from = $e->starts_at->copy()->subHours(2);
+        $to = $e->ends_at ?? $e->starts_at->copy()->addHours(4);
+
+        return now()->betweenIncluded($from, $to);
+    }
+
+    /**
+     * Sự kiện cư dân được tương tác: phải thuộc dự án của ngữ cảnh đang chọn.
+     *
+     * Kiểm ở server chứ không tin id client gửi lên — đoán id sự kiện là việc dễ
+     * nhất trên đời, mà sự kiện của dự án khác là nội dung nội bộ (và có thể
+     * thuộc tenant khác).
+     */
+    private function findEventInScope(Request $request, Event $event): ?Event
+    {
+        $projectIds = $this->projectIds($request);
+
+        return in_array($event->project_id, $projectIds, true) ? $event : null;
+    }
+
+    /** Resident id dùng để ghi đăng ký — căn đang chọn, không phải căn bất kỳ. */
+    private function actingResidentId(Request $request): ?int
+    {
+        $residentIds = $this->residentIds($request);
+
+        return $residentIds[0] ?? null;
+    }
+
+    /**
+     * POST /resident/community/events/{event}/register — đăng ký tham gia.
+     *
+     * Idempotent: đã đăng ký rồi thì trả về trạng thái hiện tại chứ không tạo
+     * dòng thứ hai (bấm hai lần vì mạng chậm là chuyện thường).
+     */
+    public function registerEvent(Request $request, Event $event): JsonResponse
+    {
+        $e = $this->findEventInScope($request, $event);
+        if ($e === null) {
+            return ApiResponse::error('forbidden', 'Bạn không xem được sự kiện này.', 403);
+        }
+        if (! in_array($e->status, Event::RESIDENT_VISIBLE_STATUSES, true)) {
+            return ApiResponse::error('event_closed', 'Sự kiện không còn nhận đăng ký.', 422);
+        }
+
+        $residentId = $this->actingResidentId($request);
+        if ($residentId === null) {
+            return ApiResponse::error('no_resident', 'Tài khoản chưa gắn căn hộ.', 422);
+        }
+
+        $existing = DB::table('event_registrations')
+            ->where('event_id', $e->id)->where('resident_id', $residentId)->first();
+
+        if ($existing && $existing->status !== 'cancelled') {
+            return $this->eventPayload($request, $e->fresh(), $existing->status);
+        }
+
+        // Hết chỗ thì chặn — nhưng CHỈ khi capacity có giá trị (null = không giới hạn).
+        if ($e->capacity !== null && (int) $e->registered_count >= (int) $e->capacity) {
+            return ApiResponse::error('event_full', 'Sự kiện đã hết chỗ.', 422);
+        }
+
+        DB::transaction(function () use ($e, $residentId, $existing) {
+            if ($existing) {
+                DB::table('event_registrations')
+                    ->where('id', $existing->id)
+                    ->update(['status' => 'registered', 'updated_at' => now()]);
+            } else {
+                DB::table('event_registrations')->insert([
+                    'event_id' => $e->id,
+                    'resident_id' => $residentId,
+                    'guests' => 0,
+                    'status' => 'registered',
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]);
+            }
+            // increment nguyên tử, không đọc-rồi-ghi: hai người đăng ký cùng lúc
+            // mà cộng ở PHP thì mất một lượt.
+            Event::withoutGlobalScopes()->where('id', $e->id)->increment('registered_count');
+        });
+
+        return $this->eventPayload($request, $e->fresh(), 'registered');
+    }
+
+    /** DELETE /resident/community/events/{event}/register — huỷ đăng ký. */
+    public function cancelEventRegistration(Request $request, Event $event): JsonResponse
+    {
+        $e = $this->findEventInScope($request, $event);
+        if ($e === null) {
+            return ApiResponse::error('forbidden', 'Bạn không xem được sự kiện này.', 403);
+        }
+
+        $residentId = $this->actingResidentId($request);
+        $existing = $residentId === null ? null : DB::table('event_registrations')
+            ->where('event_id', $e->id)->where('resident_id', $residentId)->first();
+
+        if ($existing === null || $existing->status === 'cancelled') {
+            return ApiResponse::error('not_registered', 'Bạn chưa đăng ký sự kiện này.', 422);
+        }
+        // Đã check-in thì không huỷ được: người ta đã tới dự rồi.
+        if ($existing->status === 'attended') {
+            return ApiResponse::error('already_attended', 'Bạn đã check-in, không huỷ được.', 422);
+        }
+
+        DB::transaction(function () use ($e, $existing) {
+            DB::table('event_registrations')
+                ->where('id', $existing->id)
+                ->update(['status' => 'cancelled', 'updated_at' => now()]);
+            // Sàn 0: dữ liệu cũ có thể lệch, trừ xuống âm thì hiển thị vô nghĩa.
+            Event::withoutGlobalScopes()->where('id', $e->id)
+                ->where('registered_count', '>', 0)->decrement('registered_count');
+        });
+
+        return $this->eventPayload($request, $e->fresh(), 'cancelled');
+    }
+
+    /** POST /resident/community/events/{event}/check-in — điểm danh tại sự kiện. */
+    public function checkInEvent(Request $request, Event $event): JsonResponse
+    {
+        $e = $this->findEventInScope($request, $event);
+        if ($e === null) {
+            return ApiResponse::error('forbidden', 'Bạn không xem được sự kiện này.', 403);
+        }
+
+        $residentId = $this->actingResidentId($request);
+        $existing = $residentId === null ? null : DB::table('event_registrations')
+            ->where('event_id', $e->id)->where('resident_id', $residentId)->first();
+
+        if ($existing === null || $existing->status === 'cancelled') {
+            return ApiResponse::error('not_registered', 'Bạn cần đăng ký trước khi check-in.', 422);
+        }
+        if ($existing->status === 'attended') {
+            return $this->eventPayload($request, $e, 'attended');
+        }
+        if (! $this->isCheckInWindow($e)) {
+            return ApiResponse::error('check_in_closed',
+                'Chỉ check-in được trong khoảng từ 2 giờ trước tới khi sự kiện kết thúc.', 422);
+        }
+
+        DB::table('event_registrations')
+            ->where('id', $existing->id)
+            ->update(['status' => 'attended', 'updated_at' => now()]);
+
+        return $this->eventPayload($request, $e, 'attended');
+    }
+
+    /** Trả sự kiện đã gắn trạng thái đăng ký — app thay thẳng item trong danh sách. */
+    private function eventPayload(Request $request, Event $e, ?string $status): JsonResponse
+    {
+        $e->registration_status = $status;
+        $e->registered = $status === 'registered' || $status === 'attended';
+        $e->can_check_in = $status === 'registered' && $this->isCheckInWindow($e);
+
+        return ApiResponse::success(EventResource::make($e)->resolve($request));
     }
 
     /** GET /resident/community/polls — poll đang mở + trạng thái đã vote của user. */

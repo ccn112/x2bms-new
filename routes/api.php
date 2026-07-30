@@ -121,6 +121,9 @@ Route::prefix('v1')->group(function () {
 
         Route::get('community/posts', [\App\Http\Controllers\Api\V1\Resident\CommunityController::class, 'posts']);
         Route::get('community/events', [\App\Http\Controllers\Api\V1\Resident\CommunityController::class, 'events']);
+        Route::post('community/events/{event}/register', [\App\Http\Controllers\Api\V1\Resident\CommunityController::class, 'registerEvent'])->whereNumber('event');
+        Route::delete('community/events/{event}/register', [\App\Http\Controllers\Api\V1\Resident\CommunityController::class, 'cancelEventRegistration'])->whereNumber('event');
+        Route::post('community/events/{event}/check-in', [\App\Http\Controllers\Api\V1\Resident\CommunityController::class, 'checkInEvent'])->whereNumber('event');
         Route::get('community/polls', [\App\Http\Controllers\Api\V1\Resident\CommunityController::class, 'polls']);
         Route::post('community/polls/{poll}/vote', [\App\Http\Controllers\Api\V1\Resident\CommunityController::class, 'vote']);
         Route::get('community/groups', [\App\Http\Controllers\Api\V1\Resident\CommunityController::class, 'groups']);

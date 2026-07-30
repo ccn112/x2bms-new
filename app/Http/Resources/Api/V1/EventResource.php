@@ -25,6 +25,18 @@ class EventResource extends JsonResource
             'capacity' => $this->capacity === null ? null : (int) $this->capacity,
             'attendees' => (int) $this->registered_count,
             'registered' => (bool) ($this->registered ?? false),
+            // Trạng thái đăng ký CỦA NGƯỜI ĐANG XEM: null (chưa đăng ký) |
+            // registered | attended | cancelled. App cần phân biệt để chọn đúng
+            // nút — `registered` (bool) không nói được "đã check-in".
+            'registration_status' => $this->registration_status ?? null,
+            // Còn chỗ hay không: app khoá nút đăng ký khi hết chỗ thay vì để cư
+            // dân bấm rồi nhận lỗi. `capacity` null = không giới hạn.
+            'is_full' => $this->capacity !== null
+                && (int) $this->registered_count >= (int) $this->capacity,
+            // Cư dân chỉ check-in được khi sự kiện ĐANG diễn ra — quyền do
+            // server quyết, app chỉ vẽ (nguyên tắc handoff §5).
+            'can_check_in' => (bool) ($this->can_check_in ?? false),
+            'status' => $this->status,
             'image_url' => DemoImage::url('event,party,concert', $this->id),
         ];
     }
