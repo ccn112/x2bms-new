@@ -3,12 +3,14 @@
 namespace App\Http\Controllers\Api\V1\Resident;
 
 use App\Http\Controllers\Api\V1\ApiController;
+use App\Http\Controllers\Api\V1\Resident\Concerns\AttachesListingMeta;
 use App\Http\Resources\Api\V1\MarketProductResource;
 use App\Http\Resources\Api\V1\RealEstateListingResource;
 use App\Http\Resources\Api\V1\ServiceProviderResource;
 use App\Models\MarketplaceProduct;
 use App\Models\RealEstateListing;
 use App\Models\ServiceProvider;
+use App\Services\Resident\ListingAccessService;
 use App\Services\Resident\ResidentContextService;
 use App\Support\Api\ApiResponse;
 use Illuminate\Http\JsonResponse;
@@ -23,9 +25,12 @@ use Illuminate\Http\Request;
  */
 class MarketController extends ApiController
 {
-    public function __construct(private readonly ResidentContextService $context)
-    {
-    }
+    use AttachesListingMeta;
+
+    public function __construct(
+        private readonly ResidentContextService $context,
+        private readonly ListingAccessService $listingAccess,
+    ) {}
 
     /** GET /resident/market/listings?cursor=&category= */
     public function listings(Request $request): JsonResponse
@@ -95,25 +100,36 @@ class MarketController extends ApiController
         return ApiResponse::success($categories);
     }
 
-    /** GET /resident/real-estate?cursor=&type=sale|rent */
+    /**
+     * GET /resident/real-estate?cursor=&type=sale|rent
+     *
+     * Phạm vi RỘNG HƠN market/real-estate khác: dùng `visibleProjectIds` (căn
+     * hộ thật ∪ dự án đã đánh dấu quan tâm) chứ không chỉ `projectIds` — tin
+     * rao vốn là nội dung "mời chào" người ngoài, người CHƯA mua nhà nhưng
+     * quan tâm dự án vẫn phải xem được (quyết định 2026-07-30 #3).
+     */
     public function realEstate(Request $request): JsonResponse
     {
-        $projectIds = $this->context->projectIds($request->user(), $request->header('X-Context-Id'));
+        $projectIds = $this->listingAccess->visibleProjectIds($request->user(), $request->header('X-Context-Id'));
         if (empty($projectIds)) {
             return ApiResponse::paginated([], null);
         }
 
         $perPage = min((int) $request->integer('per_page', 15), 50);
 
-        $paginator = RealEstateListing::query()
+        $paginator = RealEstateListing::withoutGlobalScope('tenant')
             ->with(['owner', 'apartment'])
             ->whereIn('project_id', $projectIds)
             ->where('status', 'active')
+            // Chỉ tin ĐÃ DUYỆT ra công khai — tin chờ duyệt/bị từ chối chỉ chủ
+            // tin thấy được qua `GET resident/listings/mine`.
+            ->where('approval_status', 'approved')
             ->when($request->filled('type'), fn ($q) => $q->where('type', $request->string('type')))
             ->orderByDesc('published_at')
             ->orderByDesc('id')
             ->cursorPaginate($perPage);
 
+        $this->attachListingMeta($request, $paginator->getCollection());
         $items = RealEstateListingResource::collection($paginator->getCollection())->resolve($request);
 
         return ApiResponse::paginated($items, $paginator->nextCursor()?->encode());

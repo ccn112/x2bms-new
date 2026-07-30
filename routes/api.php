@@ -142,6 +142,16 @@ Route::prefix('v1')->group(function () {
         // BĐS nội khu — tách riêng khỏi market/*.
         Route::get('real-estate', [\App\Http\Controllers\Api\V1\Resident\MarketController::class, 'realEstate']);
 
+        // Tin rao BĐS — GHI (chốt 2026-07-30): tạo/rút tin, quan tâm, để lại
+        // thông tin xem nhà/liên hệ. Đọc công khai vẫn ở `real-estate` phía
+        // trên. Hợp đồng: docs quyết định tin rao 2026-07-30.
+        Route::post('listings', [\App\Http\Controllers\Api\V1\Resident\ListingController::class, 'store']);
+        Route::get('listings/mine', [\App\Http\Controllers\Api\V1\Resident\ListingController::class, 'mine']);
+        Route::delete('listings/{listing}', [\App\Http\Controllers\Api\V1\Resident\ListingController::class, 'destroy'])->whereNumber('listing');
+        Route::post('listings/{listing}/interest', [\App\Http\Controllers\Api\V1\Resident\ListingController::class, 'interest'])->whereNumber('listing');
+        Route::delete('listings/{listing}/interest', [\App\Http\Controllers\Api\V1\Resident\ListingController::class, 'uninterest'])->whereNumber('listing');
+        Route::post('listings/{listing}/inquiries', [\App\Http\Controllers\Api\V1\Resident\ListingController::class, 'inquire'])->whereNumber('listing');
+
         // Home aggregate (CD-HOME) — metrics(AQI)/tasks/notices_preview.
         Route::get('home', [\App\Http\Controllers\Api\V1\Resident\HomeController::class, 'index']);
 
@@ -201,6 +211,10 @@ Route::prefix('v1')->group(function () {
         ->group(function () {
             Route::post('community/posts/{post}/moderate', [\App\Http\Controllers\Api\V1\Resident\CommunityPostController::class, 'moderate'])
                 ->whereNumber('post');
+            // Duyệt/từ chối tin rao — cùng lý do dùng nhóm ability này (xem
+            // docblock trên): BQL app dùng chung token 'staff'.
+            Route::post('listings/{listing}/moderate', [\App\Http\Controllers\Api\V1\Resident\ListingController::class, 'moderate'])
+                ->whereNumber('listing');
         });
 });
 

@@ -18,6 +18,8 @@ enum CommunityContentType: string
     case EventRef = 'event_ref';
     case PollRef = 'poll_ref';
     case SystemUpdate = 'system_update';
+    /** Tin rao BĐS đã được BQL duyệt (docs quyết định 2026-07-30 tin rao nội khu). */
+    case ListingRef = 'listing_ref';
 
     /**
      * Ánh xạ **tab UI → các loại nội dung** thuộc tab đó.
@@ -33,6 +35,7 @@ enum CommunityContentType: string
             'official_announcement' => [self::OfficialAnnouncementRef->value, self::NewsRef->value],
             'event' => [self::EventRef->value],
             'poll' => [self::PollRef->value],
+            'listing' => [self::ListingRef->value],
             default => null,
         };
     }
@@ -45,6 +48,7 @@ enum CommunityContentType: string
             ['key' => 'official_announcement', 'label' => 'Thông báo BQL'],
             ['key' => 'event', 'label' => 'Sự kiện'],
             ['key' => 'poll', 'label' => 'Bình chọn'],
+            ['key' => 'listing', 'label' => 'Tin rao'],
         ];
     }
 }
