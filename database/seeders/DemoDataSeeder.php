@@ -4,25 +4,287 @@ namespace Database\Seeders;
 
 use App\Enums\FeedbackStatus;
 use App\Enums\WorkOrderStatus;
+use App\Models\AccessCard;
+use App\Models\AccessDevice;
+use App\Models\AccessLog;
+use App\Models\ActivityLog;
+use App\Models\AiApproval;
+use App\Models\AiGuardrailPolicy;
+use App\Models\AiInsight;
+use App\Models\AiKnowledgeSource;
+use App\Models\AiKnowledgeSyncLog;
+use App\Models\AiPolicy;
+use App\Models\AiPromptTemplate;
+use App\Models\AiRequest;
+use App\Models\AiRetrievalLog;
 use App\Models\AiSuggestion;
+use App\Models\AiTestQuestion;
+use App\Models\AiTestRun;
+use App\Models\AiUsageLog;
+use App\Models\AiWorkflow;
+use App\Models\AiWorkflowRun;
+use App\Models\AlertAction;
+use App\Models\Amenity;
+use App\Models\AmenityBooking;
+use App\Models\AmenitySlot;
 use App\Models\Apartment;
+use App\Models\ApartmentStatusHistory;
+use App\Models\ApprovalRequest;
+use App\Models\ApprovalStep;
+use App\Models\Area;
+use App\Models\Asset;
+use App\Models\AssetCategory;
 use App\Models\AuditLog;
+use App\Models\AutomationStep;
+use App\Models\BankAccount;
+use App\Models\BankStatementImport;
+use App\Models\BankTransaction;
+use App\Models\BillingAdjustment;
+use App\Models\BillingInvoice;
+use App\Models\BillingInvoiceLine;
+use App\Models\BillingPayment;
 use App\Models\BillingPeriod;
+use App\Models\BillingRateCard;
+use App\Models\BillingReconciliation;
+use App\Models\BillingRun;
+use App\Models\BillingRunItem;
+use App\Models\Block;
+use App\Models\BookingQrPass;
+use App\Models\BqlTeam;
 use App\Models\Building;
+use App\Models\Camera;
+use App\Models\CashFund;
+use App\Models\CashTransaction;
+use App\Models\CashVoucher;
+use App\Models\ChecklistItem;
+use App\Models\ChecklistTemplate;
+use App\Models\CommunityGroup;
+use App\Models\CommunityPost;
+use App\Models\Company;
+use App\Models\ConfigInheritanceRule;
+use App\Models\Contract;
+use App\Models\ContractAcceptance;
+use App\Models\Contractor;
+use App\Models\ContractorKpi;
+use App\Models\ContractorSettlement;
+use App\Models\ContractPackage;
+use App\Models\CreditNote;
+use App\Models\DataCorrectionAffectedRecord;
+use App\Models\DataCorrectionRequest;
+use App\Models\DataFixApproval;
+use App\Models\DataFixDiffItem;
+use App\Models\DataFixExecution;
+use App\Models\DataFixSnapshot;
 use App\Models\Debt;
+use App\Models\DebtReminderCampaign;
+use App\Models\DebtReminderLog;
 use App\Models\Department;
+use App\Models\Document;
+use App\Models\DocumentLibrary;
+use App\Models\DocumentTemplate;
+use App\Models\DocumentTemplateCategory;
+use App\Models\DocumentTemplateClone;
+use App\Models\DocumentTemplateShare;
+use App\Models\DutyRoster;
+use App\Models\DynamicForm;
+use App\Models\EmergencyAlert;
+use App\Models\EmployeeAssignmentHistory;
+use App\Models\EmployeeProjectAssignment;
+use App\Models\EnergyReading;
+use App\Models\Event;
+use App\Models\EventRegistration;
+use App\Models\Expense;
+use App\Models\ExportJob;
+use App\Models\Feature;
+use App\Models\FeedbackAssignment;
+use App\Models\FeedbackAttachment;
 use App\Models\FeedbackCategory;
+use App\Models\FeedbackComment;
 use App\Models\FeedbackRequest;
+use App\Models\FeedbackStatusHistory;
+use App\Models\FeeFormula;
+use App\Models\FeeFormulaVersion;
+use App\Models\FeeRate;
+use App\Models\FeeScopeAssignment;
+use App\Models\FeeType;
+use App\Models\Floor;
+use App\Models\FormField;
+use App\Models\FormSection;
+use App\Models\FormSubmission;
+use App\Models\FormSubmissionValue;
+use App\Models\FormVersion;
+use App\Models\FormWorkflow;
+use App\Models\Fund;
+use App\Models\FundTransaction;
+use App\Models\GlobalUserAccount;
+use App\Models\HandoverBatch;
+use App\Models\HandoverChecklist;
+use App\Models\HandoverPunchItem;
+use App\Models\HandoverUnit;
+use App\Models\ImportBatch;
+use App\Models\ImportBatchRow;
+use App\Models\ImportJob;
+use App\Models\IntegrationApiKey;
+use App\Models\IntegrationApiKeyScope;
+use App\Models\IntegrationAuditLog;
+use App\Models\IntegrationCategory;
+use App\Models\IntegrationConnection;
+use App\Models\IntegrationConnectionCheck;
+use App\Models\IntegrationCredential;
+use App\Models\IntegrationEvent;
+use App\Models\IntegrationIncident;
+use App\Models\IntegrationIpAllowlist;
+use App\Models\IntegrationMapping;
+use App\Models\IntegrationRateLimit;
+use App\Models\IntegrationRetryJob;
+use App\Models\IntegrationSecurityPolicy;
+use App\Models\IntercomEvent;
 use App\Models\IocAlert;
+use App\Models\IotDevice;
+use App\Models\KnowledgeArticle;
+use App\Models\KnowledgeArticleShare;
+use App\Models\KnowledgeCategory;
+use App\Models\KnowledgeChunk;
+use App\Models\KnowledgeDocument;
+use App\Models\KnowledgeScope;
+use App\Models\ListingInquiry;
+use App\Models\LoginSession;
+use App\Models\LoyaltyAccount;
+use App\Models\LoyaltyTransaction;
+use App\Models\MaintenancePlan;
+use App\Models\MarketplaceOrder;
+use App\Models\MarketplaceProduct;
+use App\Models\Meter;
+use App\Models\MeterReading;
+use App\Models\MetricSnapshot;
+use App\Models\Module;
+use App\Models\Notification;
+use App\Models\NotificationAudience;
+use App\Models\NotificationChannel;
+use App\Models\NotificationDeliveryLog;
+use App\Models\NotificationRead;
+use App\Models\OrderItem;
+use App\Models\PackageDelivery;
+use App\Models\PassThroughTransaction;
+use App\Models\PassThroughWallet;
+use App\Models\PatrolCheckpoint;
+use App\Models\PatrolRoute;
+use App\Models\PatrolSession;
+use App\Models\Payment;
+use App\Models\PaymentAllocation;
+use App\Models\PaymentGatewayConfig;
+use App\Models\PaymentMethod;
+use App\Models\PaymentRequest;
+use App\Models\PermissionGroup;
+use App\Models\PermissionGroupItem;
+use App\Models\Plan;
+use App\Models\PlanChangeRequest;
+use App\Models\PlanFeature;
+use App\Models\PlanPrice;
+use App\Models\PlatformContent;
+use App\Models\PlatformContentCategory;
+use App\Models\Poll;
+use App\Models\PollOption;
+use App\Models\PollVote;
 use App\Models\Project;
+use App\Models\ProjectMedia;
+use App\Models\ProjectModuleOverride;
+use App\Models\ProjectSubscriptionPeriod;
+use App\Models\PublicProject;
+use App\Models\QrPaymentToken;
+use App\Models\QuotaAlert;
+use App\Models\RealEstateListing;
+use App\Models\Receipt;
+use App\Models\ReconciliationMatch;
+use App\Models\ReportExportJob;
+use App\Models\ReportSchedule;
+use App\Models\Resident;
+use App\Models\ResidentApartmentRelation;
+use App\Models\ResidentApprovalRequest;
+use App\Models\ResidentBindingRequest;
+use App\Models\ResidentEmergencyContact;
+use App\Models\ResidentUnitBinding;
+use App\Models\SecurityIncident;
+use App\Models\SensorEvent;
+use App\Models\ServiceEvaluation;
+use App\Models\ServiceOrder;
+use App\Models\ServiceProvider;
+use App\Models\SharedPartner;
+use App\Models\SharedPartnerCategory;
+use App\Models\SharedPartnerCertification;
+use App\Models\SharedPartnerProduct;
+use App\Models\Shift;
 use App\Models\SlaEvent;
+use App\Models\SlaPolicy;
+use App\Models\SmartDevice;
+use App\Models\SmartHomeAccount;
+use App\Models\SmartScene;
+use App\Models\SopTemplate;
+use App\Models\SosAlert;
+use App\Models\StaffProfile;
 use App\Models\Statement;
+use App\Models\StatementApproval;
+use App\Models\StatementLine;
+use App\Models\StatementPublishLog;
+use App\Models\SubscriptionAddon;
+use App\Models\SubscriptionContract;
+use App\Models\SubscriptionItem;
+use App\Models\SubscriptionRenewal;
+use App\Models\SupportAuditLog;
+use App\Models\SupportEntitlement;
+use App\Models\SupportEscalation;
+use App\Models\SupportKbArticle;
+use App\Models\SupportKbArticleVersion;
+use App\Models\SupportKbCategory;
+use App\Models\SupportReport;
+use App\Models\SupportSlaPolicy;
+use App\Models\SupportTeam;
+use App\Models\SupportTeamMember;
+use App\Models\SupportTicket;
+use App\Models\SupportTicketMessage;
+use App\Models\SupportTicketStatusLog;
+use App\Models\Team;
+use App\Models\TemplateAssignment;
 use App\Models\Tenant;
+use App\Models\TenantEntitlement;
+use App\Models\TenantModuleOverride;
+use App\Models\TenantPartnerAssignment;
+use App\Models\TenantProjectLink;
+use App\Models\TenantSubscription;
+use App\Models\TenantSupportContact;
+use App\Models\TenantSupportProfile;
+use App\Models\TwoFactorSetting;
+use App\Models\UsageMeter;
+use App\Models\UsagePeriod;
+use App\Models\UsageRecord;
 use App\Models\User;
+use App\Models\UserRoleScope;
+use App\Models\Vehicle;
+use App\Models\VisitorPass;
+use App\Models\VisitorRegistration;
+use App\Models\Voucher;
+use App\Models\Wallet;
+use App\Models\WalletTopupRequest;
+use App\Models\WalletTransaction;
+use App\Models\WarrantyRequest;
+use App\Models\WebhookDeliveryAttempt;
+use App\Models\WebhookEndpoint;
+use App\Models\WebhookEventGroup;
 use App\Models\WorkOrder;
+use App\Models\WorkOrderAssignment;
+use App\Models\WorkOrderAttachment;
+use App\Models\WorkOrderChecklist;
+use App\Models\WorkOrderChecklistItem;
+use App\Models\WorkOrderSignature;
+use App\Support\Integration\IntegrationSecret;
+use App\Support\Knowledge\DocumentTextExtractor;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
+use Spatie\Permission\Models\Permission;
+use Spatie\Permission\Models\Role;
 
 /**
  * Seeds the demo tenant exactly as approved in UI handoff WEB-01-01
@@ -60,7 +322,7 @@ class DemoDataSeeder extends Seeder
             'app_config' => ['locale' => 'vi', 'currency' => 'VND', 'modules' => ['finance', 'feedback', 'operations']],
         ]);
 
-        $company = \App\Models\Company::create([
+        $company = Company::create([
             'tenant_id' => $tenant->id,
             'code' => 'CO-SSG',
             'name' => 'Công ty CP Quản lý Vận hành Sunshine',
@@ -97,7 +359,7 @@ class DemoDataSeeder extends Seeder
             'description' => 'Khu căn hộ cao cấp ven sông, gồm 2 tòa A/B.',
         ]);
 
-        $block = \App\Models\Block::create([
+        $block = Block::create([
             'tenant_id' => $tenant->id,
             'project_id' => $project->id,
             'code' => 'S1',
@@ -146,7 +408,7 @@ class DemoDataSeeder extends Seeder
         $roles = [];
         foreach ($rolesByTier as $tierRoles) {
             foreach ($tierRoles as $role) {
-                $roles[$role] = \Spatie\Permission\Models\Role::findOrCreate($role, 'web');
+                $roles[$role] = Role::findOrCreate($role, 'web');
             }
         }
         $admin->assignRole($roles['super_admin']);
@@ -154,8 +416,8 @@ class DemoDataSeeder extends Seeder
         // X2AI access permissions (WEB-UX-09 governance — mode is permission-driven,
         // not a user toggle). super_admin bypasses via Gate::before; others are granted
         // explicitly here. ai.use = use copilot; ai.data_lookup = Mode 2 DB lookup.
-        $aiUse = \Spatie\Permission\Models\Permission::findOrCreate('ai.use', 'web');
-        $aiDataLookup = \Spatie\Permission\Models\Permission::findOrCreate('ai.data_lookup', 'web');
+        $aiUse = Permission::findOrCreate('ai.use', 'web');
+        $aiDataLookup = Permission::findOrCreate('ai.data_lookup', 'web');
         foreach ($roles as $role) {
             $role->givePermissionTo($aiUse);
         }
@@ -165,10 +427,10 @@ class DemoDataSeeder extends Seeder
 
         // Demo login is a platform operator (sees every project). The scope row makes
         // the 3-tier model explicit/auditable rather than relying only on the flag.
-        \App\Models\UserRoleScope::create([
+        UserRoleScope::create([
             'user_id' => $admin->id,
             'role_id' => $roles['super_admin']->id,
-            'scope_type' => \App\Models\UserRoleScope::SCOPE_PLATFORM,
+            'scope_type' => UserRoleScope::SCOPE_PLATFORM,
         ]);
 
         // --- Departments ---
@@ -183,7 +445,7 @@ class DemoDataSeeder extends Seeder
         // --- Floors (20) + common areas ---
         $floors = [];
         for ($level = 1; $level <= 20; $level++) {
-            $floors[$level] = \App\Models\Floor::create($scope + [
+            $floors[$level] = Floor::create($scope + [
                 'code' => sprintf('F%02d', $level),
                 'name' => "Tầng {$level}",
                 'level' => $level,
@@ -195,7 +457,7 @@ class DemoDataSeeder extends Seeder
             ['GYM', 'Phòng Gym', 'amenity'],
             ['KY-THUAT', 'Phòng kỹ thuật', 'technical'],
         ] as [$code, $name, $type]) {
-            \App\Models\Area::create($scope + ['code' => $code, 'name' => $name, 'type' => $type]);
+            Area::create($scope + ['code' => $code, 'name' => $name, 'type' => $type]);
         }
 
         // --- Apartments (120) ---
@@ -220,7 +482,7 @@ class DemoDataSeeder extends Seeder
         $residents = [];
         foreach ($apartments as $i => $apt) {
             $name = 'Nguyễn Văn '.$firstNames[$i % count($firstNames)];
-            $resident = \App\Models\Resident::create($scope + [
+            $resident = Resident::create($scope + [
                 'code' => sprintf('CD-%04d', $i + 1),
                 'full_name' => $name,
                 'phone' => '09'.str_pad((string) (10000000 + $i), 8, '0', STR_PAD_LEFT),
@@ -240,7 +502,7 @@ class DemoDataSeeder extends Seeder
             $residents[] = $resident;
             // Vary household role: ~70% owner, ~22% tenant, ~8% member.
             $role = $i % 5 === 0 ? 'tenant' : ($i % 12 === 0 ? 'member' : 'owner');
-            \App\Models\ResidentApartmentRelation::create([
+            ResidentApartmentRelation::create([
                 'tenant_id' => $tenant->id,
                 'resident_id' => $resident->id,
                 'apartment_id' => $apt->id,
@@ -254,7 +516,7 @@ class DemoDataSeeder extends Seeder
         $relMeta = [['Vợ', 'Trần Thị Lan', '0909876543'], ['Chồng', 'Phạm Văn Hòa', '0912765432'], ['Con', 'Nguyễn Thu Trang', '0987112233']];
         foreach (array_slice($residents, 0, 60) as $i => $res) {
             [$rel, $cName, $cPhone] = $relMeta[$i % 3];
-            \App\Models\ResidentEmergencyContact::create([
+            ResidentEmergencyContact::create([
                 'tenant_id' => $tenant->id,
                 'resident_id' => $res->id,
                 'full_name' => $cName,
@@ -272,7 +534,7 @@ class DemoDataSeeder extends Seeder
             }
             $type = $vehicleTypes[$i % count($vehicleTypes)];
             $isCar = $type === 'car';
-            \App\Models\Vehicle::create($scope + [
+            Vehicle::create($scope + [
                 'apartment_id' => $apt->id,
                 'resident_id' => $residents[$i]->id,
                 'plate_no' => $isCar ? sprintf('30A-%03d.%02d', $i % 1000, $i % 100) : sprintf('29-%02dX%d.%04d', $i % 100, $i % 9, $i % 10000),
@@ -288,7 +550,7 @@ class DemoDataSeeder extends Seeder
         // --- Access cards (WEB-02-03): one per resident, some biometric ---
         foreach ($residents as $i => $resident) {
             $bio = $i % 6 === 0;
-            \App\Models\AccessCard::create($scope + [
+            AccessCard::create($scope + [
                 'resident_id' => $resident->id,
                 'apartment_id' => $apartments[$i]->id,
                 'card_no' => sprintf('RFID-%06d', 100000 + $i),
@@ -312,7 +574,7 @@ class DemoDataSeeder extends Seeder
             ['Ngô Quang Huy', 'tenant', 83, 4],
         ];
         foreach ($applicants as $i => [$fullName, $reqRole, $score, $docs]) {
-            \App\Models\ResidentApprovalRequest::create($scope + [
+            ResidentApprovalRequest::create($scope + [
                 'apartment_id' => $apartments[($i * 7) % count($apartments)]->id,
                 'full_name' => $fullName,
                 'phone' => '09'.str_pad((string) (20000000 + $i), 8, '0', STR_PAD_LEFT),
@@ -502,7 +764,7 @@ class DemoDataSeeder extends Seeder
         $deptByCode = $departments->keyBy('code');
 
         // Admin's own HR profile.
-        \App\Models\StaffProfile::create([
+        StaffProfile::create([
             'tenant_id' => $tenant->id,
             'user_id' => $admin->id,
             'employee_code' => 'NV-0001',
@@ -533,14 +795,14 @@ class DemoDataSeeder extends Seeder
                 'email_verified_at' => now(),
             ]);
             $staff->assignRole($roles[$role]);
-            \App\Models\UserRoleScope::create([
+            UserRoleScope::create([
                 'user_id' => $staff->id,
                 'role_id' => $roles[$role]->id,
-                'scope_type' => \App\Models\UserRoleScope::SCOPE_PROJECT,
+                'scope_type' => UserRoleScope::SCOPE_PROJECT,
                 'tenant_id' => $tenant->id,
                 'project_id' => $project->id,
             ]);
-            \App\Models\StaffProfile::create([
+            StaffProfile::create([
                 'tenant_id' => $tenant->id,
                 'user_id' => $staff->id,
                 'department_id' => $deptByCode[$deptCode]->id,
@@ -555,7 +817,7 @@ class DemoDataSeeder extends Seeder
 
         // --- Teams within the project (WEB-FORM-03-04) ---
         foreach ([['T-KT', 'Tổ Kỹ thuật', 'KT'], ['T-AN', 'Tổ An ninh', 'AN'], ['T-VS', 'Tổ Vệ sinh', 'VS']] as [$code, $name, $deptCode]) {
-            \App\Models\Team::create([
+            Team::create([
                 'tenant_id' => $tenant->id,
                 'project_id' => $project->id,
                 'department_id' => $deptByCode[$deptCode]->id,
@@ -566,7 +828,7 @@ class DemoDataSeeder extends Seeder
 
         // --- Apartment status histories (WEB-FORM-01-04 "trạng thái căn") ---
         foreach (array_slice($apartments, 0, 8) as $apt) {
-            \App\Models\ApartmentStatusHistory::create([
+            ApartmentStatusHistory::create([
                 'tenant_id' => $tenant->id,
                 'apartment_id' => $apt->id,
                 'from_status' => 'handover',
@@ -625,7 +887,7 @@ class DemoDataSeeder extends Seeder
         }
         $hqUser = User::where('email', 'hq@sunshinegroup.vn')->first() ?? $admin;
         $projects = Project::where('tenant_id', $tenant->id)->orderBy('id')->take(8)->get();
-        $snap = fn (string $key, $value, ?array $dim = null, ?string $period = '2026-07') => \App\Models\MetricSnapshot::create([
+        $snap = fn (string $key, $value, ?array $dim = null, ?string $period = '2026-07') => MetricSnapshot::create([
             'tenant_id' => $tenant->id, 'metric_key' => $key, 'period' => $period, 'value' => $value, 'dimension' => $dim, 'captured_at' => $now,
         ]);
 
@@ -636,10 +898,10 @@ class DemoDataSeeder extends Seeder
         ];
         $folderModels = [];
         foreach ($folders as $i => [$code, $name, $count]) {
-            $folderModels[$code] = \App\Models\DocumentLibrary::create(['tenant_id' => $tenant->id, 'code' => $code, 'name' => $name, 'doc_count' => $count, 'sort' => $i]);
+            $folderModels[$code] = DocumentLibrary::create(['tenant_id' => $tenant->id, 'code' => $code, 'name' => $name, 'doc_count' => $count, 'sort' => $i]);
         }
         foreach ([['Quản trị dự án', 124], ['Tài chính - Kế toán', 86], ['Nhân sự - Hành chính', 64], ['Mua sắm - Hợp đồng', 52], ['IT - Hệ thống', 30]] as $j => [$sub, $c]) {
-            \App\Models\DocumentLibrary::create(['tenant_id' => $tenant->id, 'parent_id' => $folderModels['01']->id, 'name' => $sub, 'doc_count' => $c, 'sort' => $j]);
+            DocumentLibrary::create(['tenant_id' => $tenant->id, 'parent_id' => $folderModels['01']->id, 'name' => $sub, 'doc_count' => $c, 'sort' => $j]);
         }
 
         // Documents (representative rows for the table).
@@ -658,7 +920,7 @@ class DemoDataSeeder extends Seeder
             ['CHS-PCCC-02', 'Chính sách PCCC', 'policy', 'v1.4', 'synced', 'An toàn', 176],
         ];
         foreach ($docs as $i => [$code, $name, $type, $ver, $sync, $scope, $size]) {
-            \App\Models\Document::create([
+            Document::create([
                 'tenant_id' => $tenant->id, 'library_id' => $folderModels[$i % 2 ? '01' : '03']->id ?? null,
                 'code' => $code, 'name' => $name, 'type' => $type, 'version' => $ver,
                 'effective_from' => $now->copy()->subMonths($i + 1), 'owner_id' => $hqUser->id, 'scope' => $scope,
@@ -674,12 +936,12 @@ class DemoDataSeeder extends Seeder
 
         // SOP + checklist.
         foreach ([['SOP-QC-01', 'Quy trình nghiệm thu', 'QA/QC'], ['SOP-BT-02', 'Quy trình bảo trì thiết bị', 'Kỹ thuật'], ['SOP-AN-03', 'Quy trình tuần tra an ninh', 'An ninh'], ['SOP-CS-04', 'Quy trình xử lý phản ánh', 'CSKH']] as $i => [$code, $name, $cat]) {
-            \App\Models\SopTemplate::create(['tenant_id' => $tenant->id, 'code' => $code, 'name' => $name, 'category' => $cat, 'version' => 'v'.($i + 1).'.0', 'steps' => ['Bước 1', 'Bước 2', 'Bước 3'], 'status' => 'active', 'owner_id' => $hqUser->id]);
+            SopTemplate::create(['tenant_id' => $tenant->id, 'code' => $code, 'name' => $name, 'category' => $cat, 'version' => 'v'.($i + 1).'.0', 'steps' => ['Bước 1', 'Bước 2', 'Bước 3'], 'status' => 'active', 'owner_id' => $hqUser->id]);
         }
         foreach ([['CL-VS-01', 'Checklist vệ sinh hằng ngày', 'Vệ sinh', 12], ['CL-AN-02', 'Checklist an ninh ca trực', 'An ninh', 9], ['CL-KT-03', 'Checklist kiểm tra kỹ thuật', 'Kỹ thuật', 15]] as [$code, $name, $cat, $n]) {
-            $cl = \App\Models\ChecklistTemplate::create(['tenant_id' => $tenant->id, 'code' => $code, 'name' => $name, 'category' => $cat, 'item_count' => $n, 'version' => 'v1.0', 'status' => 'active']);
+            $cl = ChecklistTemplate::create(['tenant_id' => $tenant->id, 'code' => $code, 'name' => $name, 'category' => $cat, 'item_count' => $n, 'version' => 'v1.0', 'status' => 'active']);
             for ($k = 1; $k <= $n; $k++) {
-                \App\Models\ChecklistItem::create(['checklist_template_id' => $cl->id, 'label' => $name.' - mục '.$k, 'sort' => $k, 'is_required' => $k % 3 !== 0]);
+                ChecklistItem::create(['checklist_template_id' => $cl->id, 'label' => $name.' - mục '.$k, 'sort' => $k, 'is_required' => $k % 3 !== 0]);
             }
         }
 
@@ -698,7 +960,7 @@ class DemoDataSeeder extends Seeder
         ];
         $formModels = [];
         foreach ($forms as $i => [$code, $name, $cat, $status, $ver]) {
-            $formModels[] = \App\Models\DynamicForm::create([
+            $formModels[] = DynamicForm::create([
                 'tenant_id' => $tenant->id, 'code' => $code, 'name' => $name, 'description' => $name,
                 'category' => $cat, 'status' => $status, 'current_version' => (int) ltrim(explode('.', $ver)[0], 'v'),
                 'created_by_id' => $hqUser->id,
@@ -724,23 +986,23 @@ class DemoDataSeeder extends Seeder
         // Template assignments + inheritance.
         foreach ($formModels as $i => $fm) {
             $proj = $projects[$i % $projects->count()];
-            \App\Models\TemplateAssignment::create([
+            TemplateAssignment::create([
                 'tenant_id' => $tenant->id, 'assignable_type' => 'form', 'assignable_id' => $fm->id, 'resource_name' => $fm->name,
                 'project_id' => $proj->id, 'mode' => $i % 4 === 0 ? 'override' : 'apply', 'status' => 'active',
                 'assigned_by' => $hqUser->id, 'assigned_at' => $now->copy()->subDays($i),
             ]);
         }
         foreach ([['form', 'tenant', 'project', 'inherit', 1], ['sop', 'tenant', 'project', 'force', 2], ['document', 'platform', 'tenant', 'inherit', 3], ['kb', 'tenant', 'project', 'override', 4]] as $i => [$rt, $from, $to, $mode, $pri]) {
-            \App\Models\ConfigInheritanceRule::create(['tenant_id' => $tenant->id, 'resource_type' => $rt, 'scope_from' => $from, 'scope_to' => $to, 'mode' => $mode, 'priority' => $pri, 'status' => 'active', 'note' => 'Quy tắc kế thừa '.$rt]);
+            ConfigInheritanceRule::create(['tenant_id' => $tenant->id, 'resource_type' => $rt, 'scope_from' => $from, 'scope_to' => $to, 'mode' => $mode, 'priority' => $pri, 'status' => 'active', 'note' => 'Quy tắc kế thừa '.$rt]);
         }
 
         // Knowledge base (reuse knowledge_categories/articles) for T-SSG.
         foreach ([['Vận hành', 'blue'], ['Tài chính', 'amber'], ['Kỹ thuật', 'teal'], ['An ninh', 'red']] as $ci => [$cname, $color]) {
-            $cat = \App\Models\KnowledgeCategory::create(['tenant_id' => $tenant->id, 'name' => $cname, 'slug' => \Illuminate\Support\Str::slug($cname).'-ssg-'.$ci, 'color' => $color, 'description' => 'Kiến thức '.$cname, 'articles_count' => 3]);
+            $cat = KnowledgeCategory::create(['tenant_id' => $tenant->id, 'name' => $cname, 'slug' => Str::slug($cname).'-ssg-'.$ci, 'color' => $color, 'description' => 'Kiến thức '.$cname, 'articles_count' => 3]);
             for ($a = 1; $a <= 3; $a++) {
-                \App\Models\KnowledgeArticle::create([
+                KnowledgeArticle::create([
                     'tenant_id' => $tenant->id, 'knowledge_category_id' => $cat->id, 'title' => $cname.' — Bài hướng dẫn '.$a,
-                    'slug' => \Illuminate\Support\Str::slug($cname.'-huong-dan-'.$a.'-ssg'), 'excerpt' => 'Tóm tắt bài viết '.$cname.' '.$a,
+                    'slug' => Str::slug($cname.'-huong-dan-'.$a.'-ssg'), 'excerpt' => 'Tóm tắt bài viết '.$cname.' '.$a,
                     'body' => 'Nội dung chi tiết hướng dẫn '.$cname.' số '.$a.'.', 'status' => 'published', 'views' => 100 + $a * 20,
                     'helpful_count' => 10 + $a, 'author_id' => $hqUser->id, 'published_at' => $now->copy()->subDays($a * 3),
                 ]);
@@ -757,12 +1019,12 @@ class DemoDataSeeder extends Seeder
             ['FAQ & Hỏi đáp', 'Kho Q&A doanh nghiệp', 'faq', 51.2, 48901],
         ];
         foreach ($sources as $i => [$name, $provider, $type, $gb, $items]) {
-            $src = \App\Models\AiKnowledgeSource::create([
+            $src = AiKnowledgeSource::create([
                 'tenant_id' => $tenant->id, 'name' => $name, 'provider' => $provider, 'type' => $type,
                 'status' => $i === 5 ? 'syncing' : 'synced', 'size_gb' => $gb, 'indexed_items' => $items,
                 'auto_sync' => true, 'last_synced_at' => $now->copy()->subMinutes(5 + $i),
             ]);
-            \App\Models\AiKnowledgeSyncLog::create(['tenant_id' => $tenant->id, 'source_id' => $src->id, 'event' => 'Đồng bộ tự động', 'items_new' => 100 + $i * 10, 'items_updated' => 50 + $i * 5, 'errors' => 0, 'status' => 'success', 'ran_at' => $now->copy()->subMinutes(5 + $i)]);
+            AiKnowledgeSyncLog::create(['tenant_id' => $tenant->id, 'source_id' => $src->id, 'event' => 'Đồng bộ tự động', 'items_new' => 100 + $i * 10, 'items_updated' => 50 + $i * 5, 'errors' => 0, 'status' => 'success', 'ran_at' => $now->copy()->subMinutes(5 + $i)]);
         }
 
         // AI test (HQ-03-10).
@@ -774,8 +1036,8 @@ class DemoDataSeeder extends Seeder
             ['Checklist an ninh ca trực gồm mục gì?', 'An ninh', 'CL-AN-02'],
         ];
         foreach ($questions as $i => [$q, $cat, $src]) {
-            $qm = \App\Models\AiTestQuestion::create(['tenant_id' => $tenant->id, 'question' => $q, 'category' => $cat, 'expected_source' => $src, 'status' => 'active']);
-            \App\Models\AiTestRun::create([
+            $qm = AiTestQuestion::create(['tenant_id' => $tenant->id, 'question' => $q, 'category' => $cat, 'expected_source' => $src, 'status' => 'active']);
+            AiTestRun::create([
                 'tenant_id' => $tenant->id, 'question_id' => $qm->id, 'answer' => 'Theo tài liệu '.$src.', quy trình gồm các bước chính...',
                 'cited_sources' => [$src], 'has_citation' => $i !== 4, 'score' => $i === 4 ? 62 : 88 + $i, 'ran_at' => $now->copy()->subHours($i + 1),
             ]);
@@ -786,7 +1048,7 @@ class DemoDataSeeder extends Seeder
      * HQ-04 — Phân quyền & hỗ trợ tập trung cho Sunshine Group.
      * IAM (reuse spatie + user_role_scopes) + nhóm quyền + hỗ trợ (reuse support_*).
      *
-     * @param  array<string, \Spatie\Permission\Models\Role>  $roles
+     * @param  array<string, Role>  $roles
      */
     private function seedHq04(array $roles, User $admin): void
     {
@@ -796,7 +1058,7 @@ class DemoDataSeeder extends Seeder
             return;
         }
         $hqUser = User::where('email', 'hq@sunshinegroup.vn')->first() ?? $admin;
-        $snap = fn (string $key, $value, ?array $dim = null) => \App\Models\MetricSnapshot::create([
+        $snap = fn (string $key, $value, ?array $dim = null) => MetricSnapshot::create([
             'tenant_id' => $tenant->id, 'metric_key' => $key, 'period' => '2026-07', 'value' => $value, 'dimension' => $dim, 'captured_at' => $now,
         ]);
 
@@ -813,20 +1075,20 @@ class DemoDataSeeder extends Seeder
         ];
         foreach ($groups as $g) {
             [$code, $name, $desc, $module, $permCount, $roleCount] = $g;
-            $pg = \App\Models\PermissionGroup::create(['tenant_id' => $tenant->id, 'code' => $code, 'name' => $name, 'description' => $desc, 'module' => $module, 'permission_count' => $permCount, 'role_count' => $roleCount, 'status' => 'active']);
+            $pg = PermissionGroup::create(['tenant_id' => $tenant->id, 'code' => $code, 'name' => $name, 'description' => $desc, 'module' => $module, 'permission_count' => $permCount, 'role_count' => $roleCount, 'status' => 'active']);
             foreach (['xem', 'them', 'sua', 'xoa', 'duyet'] as $act) {
-                \App\Models\PermissionGroupItem::create(['permission_group_id' => $pg->id, 'permission_key' => strtolower($module).'.'.$act, 'module' => $module, 'action' => $act]);
+                PermissionGroupItem::create(['permission_group_id' => $pg->id, 'permission_key' => strtolower($module).'.'.$act, 'module' => $module, 'action' => $act]);
             }
         }
 
         // 2FA + login sessions cho HQ operator.
-        \App\Models\TwoFactorSetting::create(['user_id' => $hqUser->id, 'enabled' => true, 'method' => 'app', 'verified_at' => $now->copy()->subDays(10)]);
+        TwoFactorSetting::create(['user_id' => $hqUser->id, 'enabled' => true, 'method' => 'app', 'verified_at' => $now->copy()->subDays(10)]);
         foreach ([['Chrome / Windows', '113.161.20.5', 'TP. Hồ Chí Minh', true], ['Safari / iPhone', '113.161.20.9', 'TP. Hồ Chí Minh', false], ['Edge / Windows', '42.115.3.14', 'Hà Nội', false]] as $i => [$device, $ip, $loc, $current]) {
-            \App\Models\LoginSession::create(['tenant_id' => $tenant->id, 'user_id' => $hqUser->id, 'ip_address' => $ip, 'device' => $device, 'location' => $loc, 'last_active_at' => $now->copy()->subHours($i * 6), 'is_current' => $current]);
+            LoginSession::create(['tenant_id' => $tenant->id, 'user_id' => $hqUser->id, 'ip_address' => $ip, 'device' => $device, 'location' => $loc, 'last_active_at' => $now->copy()->subHours($i * 6), 'is_current' => $current]);
         }
 
         // Support tickets cho T-SSG (reuse Batch 10 support_tickets).
-        $slaPolicy = \App\Models\SupportSlaPolicy::first();
+        $slaPolicy = SupportSlaPolicy::first();
         $ticketDefs = [
             ['Không đăng nhập được cổng cư dân', 'Người dùng', 'high', 'new', 'Nguyễn Văn A', 'within_sla'],
             ['Sai số liệu công nợ tháng 06', 'Tài chính', 'critical', 'in_progress', 'Ban Tài chính', 'near_breach'],
@@ -838,7 +1100,7 @@ class DemoDataSeeder extends Seeder
             ['Xin hướng dẫn cấu hình gói dịch vụ', 'Billing', 'low', 'new', 'Hoàng F', 'within_sla'],
         ];
         foreach ($ticketDefs as $i => [$subject, $module, $priority, $status, $requester, $slaState]) {
-            $t = \App\Models\SupportTicket::create([
+            $t = SupportTicket::create([
                 'ticket_no' => 'TCK-SSG-'.sprintf('%04d', $i + 1), 'tenant_id' => $tenant->id, 'subject' => $subject,
                 'description' => 'Nội dung yêu cầu: '.$subject, 'module' => $module, 'category' => $module, 'priority' => $priority,
                 'status' => $status, 'environment' => 'production', 'channel' => 'web', 'sla_policy_id' => $slaPolicy?->id,
@@ -847,8 +1109,8 @@ class DemoDataSeeder extends Seeder
                 'csat_score' => in_array($status, ['resolved', 'closed'], true) ? (4 + ($i % 2)) : null,
                 'created_at' => $now->copy()->subDays($i),
             ]);
-            \App\Models\SupportTicketMessage::create(['support_ticket_id' => $t->id, 'author_id' => $hqUser->id, 'author_name' => $hqUser->name, 'type' => 'customer', 'body' => 'Mô tả chi tiết vấn đề: '.$subject]);
-            \App\Models\SupportTicketMessage::create(['support_ticket_id' => $t->id, 'author_id' => $hqUser->id, 'author_name' => 'Hỗ trợ HQ', 'type' => 'internal', 'body' => 'Đã tiếp nhận và đang xử lý.']);
+            SupportTicketMessage::create(['support_ticket_id' => $t->id, 'author_id' => $hqUser->id, 'author_name' => $hqUser->name, 'type' => 'customer', 'body' => 'Mô tả chi tiết vấn đề: '.$subject]);
+            SupportTicketMessage::create(['support_ticket_id' => $t->id, 'author_id' => $hqUser->id, 'author_name' => 'Hỗ trợ HQ', 'type' => 'internal', 'body' => 'Đã tiếp nhận và đang xử lý.']);
         }
 
         // Support KB (reuse knowledge_articles đã seed ở HQ-03 cho T-SSG) — dùng chung.
@@ -896,7 +1158,7 @@ class DemoDataSeeder extends Seeder
         $hqUser = User::where('email', 'hq@sunshinegroup.vn')->first() ?? $admin;
         $B = 1_000_000_000; // tỷ đồng
 
-        $snap = fn (string $key, $value, ?array $dim = null, ?string $period = '2026-06') => \App\Models\MetricSnapshot::create([
+        $snap = fn (string $key, $value, ?array $dim = null, ?string $period = '2026-06') => MetricSnapshot::create([
             'tenant_id' => $tenant->id, 'metric_key' => $key, 'period' => $period,
             'value' => $value, 'dimension' => $dim, 'captured_at' => $now,
         ]);
@@ -971,12 +1233,12 @@ class DemoDataSeeder extends Seeder
         }
 
         // Quỹ + thu chi thực + đề nghị chi.
-        $fund = \App\Models\CashFund::create(['tenant_id' => $tenant->id, 'code' => 'QUY-VH', 'name' => 'Quỹ vận hành công ty', 'type' => 'operating', 'balance' => 8_250_000_000]);
+        $fund = CashFund::create(['tenant_id' => $tenant->id, 'code' => 'QUY-VH', 'name' => 'Quỹ vận hành công ty', 'type' => 'operating', 'balance' => 8_250_000_000]);
         foreach ([['income', 'Thu phí dịch vụ', 2_800_000_000], ['expense', 'Chi lương nhân sự', 1_200_000_000], ['expense', 'Chi bảo trì', 620_000_000], ['income', 'Thu phí gửi xe', 480_000_000]] as $i => [$type, $cat, $amt]) {
-            \App\Models\CashTransaction::create(['tenant_id' => $tenant->id, 'cash_fund_id' => $fund->id, 'type' => $type, 'category' => $cat, 'amount' => $amt, 'description' => $cat, 'reference_no' => 'CT-'.($i + 1), 'occurred_at' => $now->copy()->subDays($i * 3), 'created_by' => $hqUser->id]);
+            CashTransaction::create(['tenant_id' => $tenant->id, 'cash_fund_id' => $fund->id, 'type' => $type, 'category' => $cat, 'amount' => $amt, 'description' => $cat, 'reference_no' => 'CT-'.($i + 1), 'occurred_at' => $now->copy()->subDays($i * 3), 'created_by' => $hqUser->id]);
         }
         foreach ([['Đề nghị chi phí bảo trì thang máy T6/2026', 'Bảo trì', 320_000_000, 'pending'], ['Mua vật tư kỹ thuật định kỳ Q2/2026', 'Vật tư', 180_000_000, 'pending'], ['Thanh toán dịch vụ vệ sinh T6/2026', 'Dịch vụ', 95_000_000, 'pending']] as $i => [$desc, $cat, $amt, $st]) {
-            \App\Models\Expense::create(['tenant_id' => $tenant->id, 'code' => 'EXP-2026-'.($i + 1), 'category' => $cat, 'amount' => $amt, 'status' => $st, 'description' => $desc, 'incurred_at' => $now->copy()->subDays($i * 2), 'vendor' => 'Nhà cung cấp '.($i + 1)]);
+            Expense::create(['tenant_id' => $tenant->id, 'code' => 'EXP-2026-'.($i + 1), 'category' => $cat, 'amount' => $amt, 'status' => $st, 'description' => $desc, 'incurred_at' => $now->copy()->subDays($i * 2), 'vendor' => 'Nhà cung cấp '.($i + 1)]);
         }
 
         /* ---- Top debtors (HQ-05-04) ---- */
@@ -1018,14 +1280,14 @@ class DemoDataSeeder extends Seeder
             ['Nhắc nợ chủ động doanh nghiệp', 'Cư dân', 'call', 'running', 1820, 1650, 9.20, 4.10, 1.86],
         ];
         foreach ($campaigns as $i => [$name, $scope, $ch, $st, $target, $sent, $resp, $commitTy, $collectTy]) {
-            $c = \App\Models\DebtReminderCampaign::create([
+            $c = DebtReminderCampaign::create([
                 'tenant_id' => $tenant->id, 'code' => 'CAMP-2026-'.sprintf('%03d', $i + 1), 'name' => $name,
                 'scope' => $scope, 'channel' => $ch, 'status' => $st, 'target_count' => $target, 'sent_count' => $sent,
                 'response_rate' => $resp, 'committed_amount' => $commitTy * $B, 'collected_amount' => $collectTy * $B,
                 'owner_id' => $hqUser->id, 'started_at' => $now->copy()->subDays(25 - $i), 'ended_at' => $st === 'completed' ? $now->copy()->subDays(2) : null,
             ]);
             foreach (['sent' => 'Gửi nhắc nợ', 'responded' => 'Phản hồi từ khách hàng', 'committed' => 'Cam kết thanh toán'] as $ls => $note) {
-                \App\Models\DebtReminderLog::create(['tenant_id' => $tenant->id, 'campaign_id' => $c->id, 'debtor_ref' => 'KH-'.($i + 1), 'channel' => $ch, 'status' => $ls, 'amount' => $collectTy * $B / 10, 'note' => $note, 'acted_at' => $now->copy()->subDays(20 - $i)]);
+                DebtReminderLog::create(['tenant_id' => $tenant->id, 'campaign_id' => $c->id, 'debtor_ref' => 'KH-'.($i + 1), 'channel' => $ch, 'status' => $ls, 'amount' => $collectTy * $B / 10, 'note' => $note, 'acted_at' => $now->copy()->subDays(20 - $i)]);
             }
         }
 
@@ -1036,14 +1298,14 @@ class DemoDataSeeder extends Seeder
             ['Báo cáo tuổi nợ (Aging)', 'aging', 'monthly', 'both'],
             ['Báo cáo tỷ lệ thu', 'collection', 'monthly', 'pdf'],
         ] as $i => [$name, $type, $freq, $fmt]) {
-            \App\Models\ReportSchedule::create([
+            ReportSchedule::create([
                 'tenant_id' => $tenant->id, 'name' => $name, 'report_type' => $type, 'frequency' => $freq, 'format' => $fmt,
                 'recipients' => ['ceo@sunshinegroup.vn', 'cfo@sunshinegroup.vn'], 'status' => 'active',
                 'next_run_at' => $now->copy()->addDays($i + 1), 'last_run_at' => $now->copy()->subDays(30 - $i), 'created_by' => $hqUser->id,
             ]);
         }
         foreach ([['debt_summary', 'pdf', 'completed'], ['cashflow', 'excel', 'completed'], ['aging', 'pdf', 'processing'], ['collection', 'excel', 'queued']] as $i => [$type, $fmt, $st]) {
-            \App\Models\ReportExportJob::create([
+            ReportExportJob::create([
                 'tenant_id' => $tenant->id, 'report_type' => $type, 'format' => $fmt, 'status' => $st,
                 'file_path' => $st === 'completed' ? 'exports/'.$type.'_2026_07.'.$fmt : null,
                 'requested_by' => $hqUser->id, 'completed_at' => $st === 'completed' ? $now->copy()->subHours($i + 1) : null,
@@ -1072,7 +1334,7 @@ class DemoDataSeeder extends Seeder
             ['Khách hàng khác', '—', 10.23, 39, 79.3, 10, 'Duy trì theo dõi', 'low'],
         ];
         foreach ($risks as $i => [$name, $group, $debtTy, $aiScore, $prob, $delay, $action, $sev]) {
-            \App\Models\AiInsight::create([
+            AiInsight::create([
                 'tenant_id' => $tenant->id, 'category' => 'debt_risk', 'severity' => $sev,
                 'title' => $name, 'body' => 'Khách hàng có rủi ro công nợ với điểm AI '.$aiScore.'/100.',
                 'score' => $aiScore, 'recommendation' => $action, 'status' => 'new', 'generated_at' => $now,
@@ -1095,10 +1357,10 @@ class DemoDataSeeder extends Seeder
         }
         $hqUser = User::where('email', 'hq@sunshinegroup.vn')->first() ?? $admin;
         $projects = Project::where('tenant_id', $tenant->id)->orderBy('id')->get();
-        $plans = \App\Models\Plan::whereIn('code', ['popular', 'full', 'intelligent'])->get()->keyBy('code');
+        $plans = Plan::whereIn('code', ['popular', 'full', 'intelligent'])->get()->keyBy('code');
 
         /* ---- Ví công ty (HQ-02-03) ---- */
-        $wallet = \App\Models\Wallet::create([
+        $wallet = Wallet::create([
             'tenant_id' => $tenant->id,
             'balance' => 352_680_000,
             'credit_limit' => 1_000_000_000,
@@ -1116,7 +1378,7 @@ class DemoDataSeeder extends Seeder
         $balanceSeq = [150_000_000, 275_000_000, 225_000_000, 335_000_000, 490_000_000, 360_000_000, 445_000_000, 470_000_000, 385_000_000, 420_000_000, 300_000_000, 352_680_000];
         foreach ($balanceSeq as $d => $bal) {
             $isTopup = $d % 2 === 0;
-            \App\Models\WalletTransaction::create([
+            WalletTransaction::create([
                 'tenant_id' => $tenant->id,
                 'wallet_id' => $wallet->id,
                 'type' => $isTopup ? 'top_up' : 'deduct',
@@ -1132,7 +1394,7 @@ class DemoDataSeeder extends Seeder
         // Phân bổ ngân sách dự phòng theo dự án (HQ-02-03 phải panel): 210/160/120/80 = 570M.
         $alloc = [[$projects[0] ?? null, 210_000_000], [$projects[1] ?? null, 160_000_000], [$projects[2] ?? null, 120_000_000], [null, 80_000_000]];
         foreach ($alloc as [$proj, $amount]) {
-            \App\Models\WalletTransaction::create([
+            WalletTransaction::create([
                 'tenant_id' => $tenant->id,
                 'wallet_id' => $wallet->id,
                 'project_id' => $proj?->id,
@@ -1146,19 +1408,19 @@ class DemoDataSeeder extends Seeder
             ]);
         }
         // 1 yêu cầu nạp ví đang chờ + 1 yêu cầu tăng hạn mức.
-        \App\Models\WalletTopupRequest::create([
+        WalletTopupRequest::create([
             'tenant_id' => $tenant->id, 'wallet_id' => $wallet->id, 'request_no' => 'TOPUP-2026-014',
             'kind' => 'top_up', 'amount' => 200_000_000, 'method' => 'Vietcombank', 'status' => 'pending',
             'note' => 'Nạp bổ sung cho kỳ 07/2026', 'requested_by' => $hqUser->id,
         ]);
-        \App\Models\WalletTopupRequest::create([
+        WalletTopupRequest::create([
             'tenant_id' => $tenant->id, 'wallet_id' => $wallet->id, 'request_no' => 'CLR-2026-003',
             'kind' => 'credit_limit', 'amount' => 1_500_000_000, 'method' => null, 'status' => 'pending',
             'note' => 'Đề nghị nâng hạn mức tín dụng lên 1,5 tỷ', 'requested_by' => $hqUser->id,
         ]);
 
         /* ---- Usage / pass-through (HQ-02-01/05/06) ---- */
-        $period = \App\Models\UsagePeriod::firstOrCreate(
+        $period = UsagePeriod::firstOrCreate(
             ['code' => '2026-07'],
             ['period_start' => $now->copy()->startOfMonth(), 'period_end' => $now->copy()->endOfMonth(), 'status' => 'open'],
         );
@@ -1171,7 +1433,7 @@ class DemoDataSeeder extends Seeder
             'platform' => [8, 24, 0], // số dự án dùng / hạn mức gói
         ];
         foreach ($usage as $meter => [$used, $limit, $ov]) {
-            \App\Models\UsageRecord::create([
+            UsageRecord::create([
                 'tenant_id' => $tenant->id,
                 'usage_period_id' => $period->id,
                 'meter_type' => $meter,
@@ -1184,7 +1446,7 @@ class DemoDataSeeder extends Seeder
             ]);
         }
         // Quota alert cho Zalo (76.7% — gần ngưỡng) + SMS (58%).
-        \App\Models\QuotaAlert::create([
+        QuotaAlert::create([
             'tenant_id' => $tenant->id, 'usage_period_id' => $period->id, 'meter_type' => 'zalo',
             'usage_value' => 92_000, 'included_limit' => 120_000, 'over_percent' => 76.7,
             'estimated_fee' => 0, 'recommendation' => 'Cân nhắc mua thêm gói Zalo ZNS', 'status' => 'open',
@@ -1196,7 +1458,7 @@ class DemoDataSeeder extends Seeder
             ['email', 'Email Marketing', 120, 5], ['payment_gateway', 'Cổng thanh toán', 0, 1.1],
             ['platform', 'Phí nền tảng / dự án', 6_000_000, 0],
         ] as [$ch, $name, $price, $markup]) {
-            \App\Models\BillingRateCard::create([
+            BillingRateCard::create([
                 'tenant_id' => null, 'channel' => $ch, 'meter_code' => $ch, 'name' => $name,
                 'unit_price' => $price, 'markup_percent' => $markup, 'currency' => 'VND',
                 'effective_from' => Carbon::parse('2026-01-01'), 'is_active' => true,
@@ -1206,27 +1468,27 @@ class DemoDataSeeder extends Seeder
         /* ---- Metric snapshots: cơ cấu chi phí + xu hướng + top dự án + dự báo ---- */
         $components = ['platform_fee' => 80_750_000, 'sms' => 17_400_000, 'zalo' => 14_000_000, 'email' => 7_800_000, 'payment_gateway' => 6_000_000, 'other' => 2_500_000];
         foreach ($components as $key => $val) {
-            \App\Models\MetricSnapshot::create([
+            MetricSnapshot::create([
                 'tenant_id' => $tenant->id, 'metric_key' => 'cost_component', 'period' => '2026-07',
                 'value' => $val, 'dimension' => ['channel' => $key], 'captured_at' => $now,
             ]);
         }
         $trend = ['2026-02' => 96_800_000, '2026-03' => 102_300_000, '2026-04' => 108_700_000, '2026-05' => 117_500_000, '2026-06' => 118_300_000, '2026-07' => 128_450_000];
         foreach ($trend as $p => $val) {
-            \App\Models\MetricSnapshot::create([
+            MetricSnapshot::create([
                 'tenant_id' => $tenant->id, 'metric_key' => 'monthly_cost', 'period' => $p,
                 'value' => $val, 'captured_at' => $now,
             ]);
         }
         $topProjects = [[$projects[0] ?? null, 45_230_000], [$projects[1] ?? null, 28_640_000], [$projects[2] ?? null, 19_870_000], [$projects[3] ?? null, 14_710_000]];
         foreach ($topProjects as $rank => [$proj, $val]) {
-            \App\Models\MetricSnapshot::create([
+            MetricSnapshot::create([
                 'tenant_id' => $tenant->id, 'project_id' => $proj?->id, 'metric_key' => 'project_cost', 'period' => '2026-07',
                 'value' => $val, 'dimension' => ['rank' => $rank + 1, 'project' => $proj?->name], 'captured_at' => $now,
             ]);
         }
         // Dự báo tháng tới (HQ-02-09): +6.3%.
-        \App\Models\MetricSnapshot::create([
+        MetricSnapshot::create([
             'tenant_id' => $tenant->id, 'metric_key' => 'forecast', 'period' => '2026-08',
             'value' => 136_540_000, 'dimension' => ['growth_percent' => 6.3, 'confidence' => 'medium'], 'captured_at' => $now,
         ]);
@@ -1237,7 +1499,7 @@ class DemoDataSeeder extends Seeder
         foreach ($invMonths as $p => $total) {
             $isCurrent = $p === '2026-07';
             $issue = Carbon::parse($p.'-01');
-            $inv = \App\Models\BillingInvoice::create([
+            $inv = BillingInvoice::create([
                 'invoice_no' => 'PINV-'.str_replace('-', '', $p).'-SSG',
                 'tenant_id' => $tenant->id,
                 'period' => $p,
@@ -1254,13 +1516,13 @@ class DemoDataSeeder extends Seeder
             ]);
             // Lines: phí nền tảng + pass-through gộp.
             foreach ([['subscription', 'Phí nền tảng (gói dịch vụ)', round($total * 0.63)], ['pass_through', 'Pass-through (SMS/Zalo/Email/Gateway)', round($total * 0.35)], ['usage_overage', 'Vượt hạn mức usage', $total - round($total * 0.63) - round($total * 0.35)]] as [$lt, $desc, $amt]) {
-                \App\Models\BillingInvoiceLine::create([
+                BillingInvoiceLine::create([
                     'invoice_id' => $inv->id, 'line_type' => $lt, 'description' => $desc,
                     'quantity' => 1, 'unit_price' => $amt, 'amount' => $amt, 'tax_rate' => 0,
                 ]);
             }
             if (! $isCurrent) {
-                \App\Models\BillingPayment::create([
+                BillingPayment::create([
                     'invoice_id' => $inv->id, 'tenant_id' => $tenant->id, 'payment_method' => 'bank',
                     'amount' => $total, 'paid_at' => $issue->copy()->addDays(10), 'transaction_ref' => 'PAY-'.$inv->invoice_no, 'status' => 'confirmed',
                 ]);
@@ -1268,16 +1530,16 @@ class DemoDataSeeder extends Seeder
             $mi++;
         }
         // Đối soát (HQ-02-08): 1 khớp + 1 chênh lệch.
-        $latestInv = \App\Models\BillingInvoice::where('tenant_id', $tenant->id)->latest('id')->first();
-        \App\Models\BillingReconciliation::create([
+        $latestInv = BillingInvoice::where('tenant_id', $tenant->id)->latest('id')->first();
+        BillingReconciliation::create([
             'tenant_id' => $tenant->id, 'invoice_id' => $latestInv?->id, 'bank_transaction_ref' => 'VCB-20260710-001',
             'status' => 'matched', 'difference_amount' => 0, 'confirmed_by' => $hqUser->id, 'confirmed_at' => $now,
         ]);
-        \App\Models\BillingReconciliation::create([
+        BillingReconciliation::create([
             'tenant_id' => $tenant->id, 'invoice_id' => $latestInv?->id, 'bank_transaction_ref' => 'VCB-20260710-002',
             'status' => 'mismatch', 'difference_amount' => 1_250_000,
         ]);
-        \App\Models\BillingAdjustment::create([
+        BillingAdjustment::create([
             'case_id' => 'ADJ-SSG-2026-001', 'tenant_id' => $tenant->id, 'invoice_id' => $latestInv?->id,
             'adjustment_type' => 'overcharge_sms', 'amount' => 1_250_000, 'reason' => 'Tính trùng phí SMS kỳ 06/2026', 'status' => 'pending_approval',
             'requested_by' => $hqUser->id,
@@ -1302,7 +1564,7 @@ class DemoDataSeeder extends Seeder
                 'downgrade' => 'Hạ từ '.$from->name.' xuống '.$to->name,
                 default => 'Gia hạn thêm '.(6 + ($k % 2) * 6).' tháng',
             };
-            \App\Models\PlanChangeRequest::create([
+            PlanChangeRequest::create([
                 'tenant_id' => $tenant->id,
                 'request_no' => sprintf('REQ-2026-%05d', 128 - $k),
                 'project_id' => $proj->id,
@@ -1327,7 +1589,7 @@ class DemoDataSeeder extends Seeder
      * (Tổng 24 · Đang hoạt động 18 · Trial 3 · Tạm ngừng 3 · gia hạn sắp tới 6 · BQL thiếu 4;
      * Tòa nhà 32 · Căn hộ 12.540 · Diện tích 238.500 m²).
      *
-     * @param  array<string, \Spatie\Permission\Models\Role>  $roles
+     * @param  array<string, Role>  $roles
      */
     private function seedHq01(array $roles, User $admin): void
     {
@@ -1353,7 +1615,7 @@ class DemoDataSeeder extends Seeder
             'app_config' => ['locale' => 'vi', 'currency' => 'VND'],
         ]);
 
-        $company = \App\Models\Company::create([
+        $company = Company::create([
             'tenant_id' => $tenant->id,
             'code' => 'CO-SSG-HQ',
             'name' => 'Công ty CP Quản lý Bất động sản Sunshine Group',
@@ -1378,10 +1640,10 @@ class DemoDataSeeder extends Seeder
             'email_verified_at' => now(),
         ]);
         $hqUser->assignRole($roles['company_admin']);
-        \App\Models\UserRoleScope::create([
+        UserRoleScope::create([
             'user_id' => $hqUser->id,
             'role_id' => $roles['company_admin']->id,
-            'scope_type' => \App\Models\UserRoleScope::SCOPE_TENANT,
+            'scope_type' => UserRoleScope::SCOPE_TENANT,
             'tenant_id' => $tenant->id,
         ]);
 
@@ -1395,7 +1657,7 @@ class DemoDataSeeder extends Seeder
             $deptByCode[$code] = Department::create(['tenant_id' => $tenant->id, 'code' => $code, 'name' => $name]);
         }
 
-        $plans = \App\Models\Plan::whereIn('code', ['popular', 'full', 'intelligent'])->get()->keyBy('code');
+        $plans = Plan::whereIn('code', ['popular', 'full', 'intelligent'])->get()->keyBy('code');
 
         // --- 24 dự án (8 dòng đầu khớp đúng ảnh HQ-01-01) ---
         // [code, name, typeLabel, managerName, planCode, status, renewSoon, deptCode]
@@ -1445,7 +1707,7 @@ class DemoDataSeeder extends Seeder
                 'password' => Hash::make('Bms@2026!'),
                 'email_verified_at' => now(),
             ]);
-            $manager = \App\Models\StaffProfile::create([
+            $manager = StaffProfile::create([
                 'tenant_id' => $tenant->id,
                 'user_id' => $mUser->id,
                 'department_id' => $deptByCode[$mgrDept]->id,
@@ -1483,7 +1745,7 @@ class DemoDataSeeder extends Seeder
 
             // BQL team — 4 dự án đầu tiên (index 0..3) đánh dấu thiếu nhân sự.
             $understaffed = $i < 4;
-            \App\Models\BqlTeam::create([
+            BqlTeam::create([
                 'tenant_id' => $tenant->id,
                 'project_id' => $project->id,
                 'code' => 'BQL-'.$code,
@@ -1501,7 +1763,7 @@ class DemoDataSeeder extends Seeder
             $started = Carbon::parse('2025-09-01')->addDays($i * 5);
             $periodEnd = $renewSoon ? $now->copy()->addDays(10 + ($i % 15))  // gia hạn trong 30 ngày
                 : $started->copy()->addYear();
-            \App\Models\ProjectSubscriptionPeriod::create([
+            ProjectSubscriptionPeriod::create([
                 'tenant_id' => $tenant->id,
                 'project_id' => $project->id,
                 'plan_id' => $plans[$planCode]->id,
@@ -1521,7 +1783,7 @@ class DemoDataSeeder extends Seeder
             ]);
 
             // Assign manager to project (primary).
-            \App\Models\EmployeeProjectAssignment::create([
+            EmployeeProjectAssignment::create([
                 'tenant_id' => $tenant->id,
                 'project_id' => $project->id,
                 'employee_id' => $manager->id,
@@ -1569,7 +1831,7 @@ class DemoDataSeeder extends Seeder
                 'password' => Hash::make('Bms@2026!'),
                 'email_verified_at' => now(),
             ]);
-            $fill[] = \App\Models\StaffProfile::create([
+            $fill[] = StaffProfile::create([
                 'tenant_id' => $tenant->id,
                 'user_id' => $u->id,
                 'department_id' => $deptByCode[$deptCode]->id,
@@ -1586,7 +1848,7 @@ class DemoDataSeeder extends Seeder
         $activeProjects = Project::where('tenant_id', $tenant->id)->where('status', 'active')->orderBy('id')->get();
         foreach (array_slice($fill, 0, 88) as $k => $sp) {
             $primary = $activeProjects[$k % $activeProjects->count()];
-            \App\Models\EmployeeProjectAssignment::create([
+            EmployeeProjectAssignment::create([
                 'tenant_id' => $tenant->id,
                 'project_id' => $primary->id,
                 'employee_id' => $sp->id,
@@ -1604,7 +1866,7 @@ class DemoDataSeeder extends Seeder
             // 36 người đầu tiên nhận thêm 1 dự án phụ (secondary) ⇒ đa dự án.
             if ($k < 36) {
                 $secondary = $activeProjects[($k + 5) % $activeProjects->count()];
-                \App\Models\EmployeeProjectAssignment::create([
+                EmployeeProjectAssignment::create([
                     'tenant_id' => $tenant->id,
                     'project_id' => $secondary->id,
                     'employee_id' => $sp->id,
@@ -1625,7 +1887,7 @@ class DemoDataSeeder extends Seeder
         // --- Lịch sử luân chuyển (HQ-01-07) ---
         for ($h = 0; $h < 6; $h++) {
             $emp = $fill[$h];
-            \App\Models\EmployeeAssignmentHistory::create([
+            EmployeeAssignmentHistory::create([
                 'tenant_id' => $tenant->id,
                 'employee_id' => $emp->id,
                 'from_project_id' => $activeProjects[$h]->id,
@@ -1644,7 +1906,7 @@ class DemoDataSeeder extends Seeder
         // --- Module overrides (HQ-01-09) ---
         $moduleKeys = ['x2ai', 'contractor_library', 'report_library', 'rag', 'supplier_library', 'kb_inheritance', 'public_project', 'prompt_guardrail'];
         foreach (array_slice($activeProjects->all(), 0, 8) as $mi => $p) {
-            \App\Models\ProjectModuleOverride::create([
+            ProjectModuleOverride::create([
                 'tenant_id' => $tenant->id,
                 'project_id' => $p->id,
                 'module_key' => $moduleKeys[$mi],
@@ -1659,7 +1921,7 @@ class DemoDataSeeder extends Seeder
         }
 
         // --- Import batches (HQ-01-10) ---
-        $batch = \App\Models\ImportBatch::create([
+        $batch = ImportBatch::create([
             'tenant_id' => $tenant->id,
             'import_type' => 'projects_employees',
             'file_name' => 'import_du_an_nhan_su_2026.xlsx',
@@ -1672,7 +1934,7 @@ class DemoDataSeeder extends Seeder
             'metadata' => ['sheet' => 'DuAn'],
         ]);
         for ($r = 1; $r <= 8; $r++) {
-            \App\Models\ImportBatchRow::create([
+            ImportBatchRow::create([
                 'tenant_id' => $tenant->id,
                 'import_batch_id' => $batch->id,
                 'row_number' => $r,
@@ -1696,14 +1958,14 @@ class DemoDataSeeder extends Seeder
             ['KBD-004', 'Hướng dẫn PCCC', 'guide', 'tenant', 'internal'],
         ];
         foreach ($docs as $i => [$code, $title, $type, $scope, $sens]) {
-            $doc = \App\Models\KnowledgeDocument::create([
+            $doc = KnowledgeDocument::create([
                 'code' => $code, 'title' => $title, 'description' => $title, 'document_type' => $type,
                 'owner_scope' => $scope, 'owner_id' => $scope === 'tenant' ? $tenant->id : null,
                 'content_markdown' => "# {$title}\n\nNội dung tài liệu.", 'status' => 'active',
                 'ai_index_status' => $i < 3 ? 'indexed' : 'queued', 'ai_indexed_at' => $i < 3 ? Carbon::parse('2026-06-20') : null,
                 'sensitivity' => $sens, 'effective_from' => Carbon::parse('2026-01-01'),
             ]);
-            \App\Models\KnowledgeScope::create([
+            KnowledgeScope::create([
                 'knowledge_document_id' => $doc->id, 'scope_type' => $scope,
                 'scope_id' => $scope === 'tenant' ? $tenant->id : null,
                 'permission' => $sens === 'public' ? 'ai_read' : ($sens === 'confidential' ? 'read' : 'ai_read'), 'status' => 'active',
@@ -1717,16 +1979,16 @@ class DemoDataSeeder extends Seeder
             ['GR-ESC', 'Leo thang khi rủi ro cao', 'escalation', 'critical', 'require_human_approval'],
         ];
         foreach ($guards as [$code, $name, $type, $sev, $action]) {
-            \App\Models\AiGuardrailPolicy::create([
+            AiGuardrailPolicy::create([
                 'code' => $code, 'name' => $name, 'description' => $name, 'policy_type' => $type,
                 'rule_json' => ['match' => $type], 'severity' => $sev, 'action' => $action, 'is_active' => true,
             ]);
         }
 
         // Retrieval logs demo.
-        $docIds = \App\Models\KnowledgeDocument::pluck('id')->all();
+        $docIds = KnowledgeDocument::pluck('id')->all();
         for ($i = 0; $i < 4; $i++) {
-            \App\Models\AiRetrievalLog::create([
+            AiRetrievalLog::create([
                 'user_id' => $admin->id, 'tenant_id' => $tenant->id, 'project_id' => $project->id,
                 'question' => ['Nội quy giữ xe?', 'Quy trình PCCC?', 'Chính sách phí?', 'Giờ mở hồ bơi?'][$i],
                 'answer_summary' => 'Trả lời dựa trên KB nền tảng.',
@@ -1738,7 +2000,7 @@ class DemoDataSeeder extends Seeder
         }
 
         // Mở rộng vài prompt template theo addendum (use_case/system_prompt).
-        foreach (\App\Models\AiPromptTemplate::where('tenant_id', $tenant->id)->take(3)->get() as $i => $pt) {
+        foreach (AiPromptTemplate::where('tenant_id', $tenant->id)->take(3)->get() as $i => $pt) {
             $pt->update([
                 'code' => 'PT-'.str_pad((string) ($i + 1), 3, '0', STR_PAD_LEFT),
                 'use_case' => ['resident_qa', 'bql_copilot', 'support_agent'][$i] ?? 'resident_qa',
@@ -1754,7 +2016,7 @@ class DemoDataSeeder extends Seeder
     {
         $cats = [];
         foreach ([['SOP', 'Quy trình SOP'], ['POLICY', 'Chính sách'], ['CONTRACT', 'Hợp đồng mẫu'], ['FORM', 'Biểu mẫu']] as [$code, $name]) {
-            $cats[$code] = \App\Models\DocumentTemplateCategory::create(['code' => $code, 'name' => $name]);
+            $cats[$code] = DocumentTemplateCategory::create(['code' => $code, 'name' => $name]);
         }
         $tplDefs = [
             ['TPL-SOP-01', 'SOP tiếp nhận phản ánh', 'sop', 'SOP'],
@@ -1764,7 +2026,7 @@ class DemoDataSeeder extends Seeder
         ];
         $templates = [];
         foreach ($tplDefs as $i => [$code, $title, $type, $catCode]) {
-            $templates[] = \App\Models\DocumentTemplate::create([
+            $templates[] = DocumentTemplate::create([
                 'code' => $code, 'category_id' => $cats[$catCode]->id, 'title' => $title, 'description' => $title,
                 'template_type' => $type, 'owner_scope' => 'platform', 'version' => 1, 'status' => 'active',
                 'body_markdown' => "# {$title}\n\nNội dung mẫu áp dụng toàn nền tảng.", 'ai_readable' => true,
@@ -1772,16 +2034,16 @@ class DemoDataSeeder extends Seeder
             ]);
         }
         // Chia sẻ mẫu platform → tenant (clone_allowed) + 1 clone.
-        \App\Models\DocumentTemplateShare::create([
+        DocumentTemplateShare::create([
             'template_id' => $templates[0]->id, 'from_scope' => 'platform', 'to_scope' => 'tenant', 'to_owner_id' => $tenant->id,
             'share_mode' => 'clone_allowed', 'can_ai_read' => true, 'effective_from' => Carbon::parse('2026-06-01'), 'status' => 'active',
         ]);
-        $clone = \App\Models\DocumentTemplate::create([
+        $clone = DocumentTemplate::create([
             'code' => 'TPL-SOP-01-T'.$tenant->id, 'category_id' => $cats['SOP']->id, 'title' => 'SOP tiếp nhận phản ánh (bản công ty)',
             'template_type' => 'sop', 'owner_scope' => 'tenant', 'owner_id' => $tenant->id, 'version' => 1, 'status' => 'active',
             'body_markdown' => "# SOP tiếp nhận phản ánh\n\nĐiều chỉnh theo công ty.", 'ai_readable' => true, 'created_by' => $admin->id,
         ]);
-        \App\Models\DocumentTemplateClone::create([
+        DocumentTemplateClone::create([
             'source_template_id' => $templates[0]->id, 'cloned_template_id' => $clone->id, 'cloned_by' => $admin->id,
             'cloned_at' => Carbon::parse('2026-06-15'), 'clone_reason' => 'Tùy biến cho công ty',
         ]);
@@ -1797,7 +2059,7 @@ class DemoDataSeeder extends Seeder
             ['SP-MEP', 'Vật tư M&E', 'supplier'], ['SP-EQP', 'Thiết bị', 'supplier'],
             ['SV-CLEAN', 'Vệ sinh', 'service_provider'],
         ] as [$code, $name, $type]) {
-            $cats[$code] = \App\Models\SharedPartnerCategory::create(['code' => $code, 'name' => $name, 'partner_type' => $type]);
+            $cats[$code] = SharedPartnerCategory::create(['code' => $code, 'name' => $name, 'partner_type' => $type]);
         }
         $partnerDefs = [
             // [code, name, partner_type, category_code, verification_status, rating]
@@ -1816,19 +2078,19 @@ class DemoDataSeeder extends Seeder
         ];
         $partners = [];
         foreach ($partnerDefs as $i => [$code, $name, $type, $catKey, $vstatus, $rating]) {
-            $p = \App\Models\SharedPartner::create([
+            $p = SharedPartner::create([
                 'code' => $code, 'name' => $name, 'partner_type' => $type, 'category_id' => $cats[$catKey]->id,
                 'tax_code' => '03123'.$i, 'contact_name' => 'Phòng KD', 'phone' => '028 3822 00'.$i,
                 'service_area' => 'TP.HCM', 'verification_status' => $vstatus, 'rating_avg' => $rating, 'kpi_score' => $rating * 20,
                 'description' => $name, 'is_active' => true,
             ]);
-            \App\Models\SharedPartnerCertification::create([
+            SharedPartnerCertification::create([
                 'partner_id' => $p->id, 'name' => 'Chứng nhận năng lực', 'certificate_no' => 'CC-'.$code,
                 'issued_by' => 'Sở Xây dựng', 'issued_at' => Carbon::parse('2024-01-01'), 'expired_at' => Carbon::parse('2027-01-01'),
             ]);
             if ($type === 'supplier') {
                 foreach ([['MEP-001', 'Cáp điện CV', 'm', 25000], ['MEP-002', 'Ống PPR', 'm', 45000]] as [$sku, $pn, $unit, $price]) {
-                    \App\Models\SharedPartnerProduct::create(['partner_id' => $p->id, 'sku' => $sku, 'name' => $pn, 'unit' => $unit, 'reference_price' => $price, 'warranty_months' => 12]);
+                    SharedPartnerProduct::create(['partner_id' => $p->id, 'sku' => $sku, 'name' => $pn, 'unit' => $unit, 'reference_price' => $price, 'warranty_months' => 12]);
                 }
             }
             $partners[] = $p;
@@ -1840,7 +2102,7 @@ class DemoDataSeeder extends Seeder
             if ($p->verification_status === 'blacklisted') {
                 continue;
             }
-            \App\Models\TenantPartnerAssignment::create([
+            TenantPartnerAssignment::create([
                 'tenant_id' => $tenant->id, 'project_id' => $project->id, 'partner_id' => $p->id,
                 'assignment_type' => $asgTypes[$i % count($asgTypes)],
                 'contract_no' => $i === 0 ? 'HD-2026-001' : null, 'start_date' => Carbon::parse('2026-01-01'),
@@ -1876,8 +2138,8 @@ class DemoDataSeeder extends Seeder
         ];
         $created = [];
         foreach ($accounts as $i => [$name, $phone, $email, $idStatus, $type, $accStatus, $risk, $dup]) {
-            $created[] = \App\Models\GlobalUserAccount::create([
-                'uuid' => \Illuminate\Support\Str::uuid(), 'phone' => $phone, 'email' => $email, 'full_name' => $name,
+            $created[] = GlobalUserAccount::create([
+                'uuid' => Str::uuid(), 'phone' => $phone, 'email' => $email, 'full_name' => $name,
                 'identity_status' => $idStatus, 'account_status' => $accStatus, 'account_type' => $type,
                 'first_registered_at' => Carbon::parse('2026-01-05')->addDays($i * 4),
                 'last_login_at' => Carbon::parse('2026-06-30')->subDays($i),
@@ -1887,26 +2149,26 @@ class DemoDataSeeder extends Seeder
 
         // Hàng đợi duyệt gắn căn: phủ đủ 5 trạng thái + 1 account gắn NHIỀU căn (AC-07).
         $ev = ['evidence' => ['so_hong.pdf', 'cccd_front.jpg']];
-        $reqApproved = \App\Models\ResidentBindingRequest::create([
+        $reqApproved = ResidentBindingRequest::create([
             'code' => 'BIND-0001', 'user_account_id' => $created[0]->id, 'tenant_id' => $tenant->id,
             'project_id' => $project->id, 'building_id' => $aptAt(0)?->building_id, 'apartment_id' => $aptAt(0)?->id,
             'requested_role' => 'owner', 'status' => 'approved', 'requested_at' => Carbon::parse('2026-06-20'),
             'reviewed_by' => $admin->id, 'reviewed_at' => Carbon::parse('2026-06-21'), 'review_note' => 'Hợp lệ',
             'evidence_files_json' => $ev,
         ]);
-        \App\Models\ResidentUnitBinding::create([
+        ResidentUnitBinding::create([
             'user_account_id' => $created[0]->id, 'tenant_id' => $tenant->id, 'project_id' => $project->id,
             'building_id' => $aptAt(0)?->building_id, 'apartment_id' => $aptAt(0)?->id, 'role' => 'owner', 'status' => 'active',
             'starts_at' => Carbon::parse('2026-06-21'), 'approved_request_id' => $reqApproved->id,
         ]);
         // Cùng account (An) sở hữu thêm 1 căn nữa — minh hoạ 1 tài khoản nhiều căn.
-        $reqApproved2 = \App\Models\ResidentBindingRequest::create([
+        $reqApproved2 = ResidentBindingRequest::create([
             'code' => 'BIND-0002', 'user_account_id' => $created[0]->id, 'tenant_id' => $tenant->id,
             'project_id' => $project->id, 'building_id' => $aptAt(5)?->building_id, 'apartment_id' => $aptAt(5)?->id,
             'requested_role' => 'owner', 'status' => 'approved', 'requested_at' => Carbon::parse('2026-06-25'),
             'reviewed_by' => $admin->id, 'reviewed_at' => Carbon::parse('2026-06-26'), 'evidence_files_json' => $ev,
         ]);
-        \App\Models\ResidentUnitBinding::create([
+        ResidentUnitBinding::create([
             'user_account_id' => $created[0]->id, 'tenant_id' => $tenant->id, 'project_id' => $project->id,
             'building_id' => $aptAt(5)?->building_id, 'apartment_id' => $aptAt(5)?->id, 'role' => 'owner', 'status' => 'active',
             'starts_at' => Carbon::parse('2026-06-26'), 'approved_request_id' => $reqApproved2->id,
@@ -1922,28 +2184,28 @@ class DemoDataSeeder extends Seeder
         ];
         $n = 3;
         foreach ($pending as [$acc, $ai, $role, $date]) {
-            \App\Models\ResidentBindingRequest::create([
+            ResidentBindingRequest::create([
                 'code' => 'BIND-'.str_pad((string) $n++, 4, '0', STR_PAD_LEFT), 'user_account_id' => $acc->id,
                 'tenant_id' => $tenant->id, 'project_id' => $project->id, 'building_id' => $aptAt($ai)?->building_id,
                 'apartment_id' => $aptAt($ai)?->id, 'requested_role' => $role, 'status' => 'pending',
                 'requested_at' => Carbon::parse($date), 'evidence_files_json' => $ev,
             ]);
         }
-        \App\Models\ResidentBindingRequest::create([
+        ResidentBindingRequest::create([
             'code' => 'BIND-'.str_pad((string) $n++, 4, '0', STR_PAD_LEFT), 'user_account_id' => $created[4]->id,
             'tenant_id' => $tenant->id, 'project_id' => $project->id, 'building_id' => $aptAt(7)?->building_id,
             'apartment_id' => $aptAt(7)?->id, 'requested_role' => 'owner', 'status' => 'need_more_info',
             'requested_at' => Carbon::parse('2026-06-27'), 'reviewed_by' => $admin->id, 'reviewed_at' => Carbon::parse('2026-06-28'),
             'review_note' => 'Cần bổ sung sổ hồng bản công chứng', 'evidence_files_json' => ['evidence' => ['cccd_front.jpg']],
         ]);
-        \App\Models\ResidentBindingRequest::create([
+        ResidentBindingRequest::create([
             'code' => 'BIND-'.str_pad((string) $n++, 4, '0', STR_PAD_LEFT), 'user_account_id' => $created[8]->id,
             'tenant_id' => $tenant->id, 'project_id' => $project->id, 'building_id' => $aptAt(8)?->building_id,
             'apartment_id' => $aptAt(8)?->id, 'requested_role' => 'tenant', 'status' => 'rejected',
             'requested_at' => Carbon::parse('2026-06-22'), 'reviewed_by' => $admin->id, 'reviewed_at' => Carbon::parse('2026-06-23'),
             'review_note' => 'Giấy tờ không khớp chủ hộ', 'evidence_files_json' => $ev,
         ]);
-        \App\Models\ResidentBindingRequest::create([
+        ResidentBindingRequest::create([
             'code' => 'BIND-'.str_pad((string) $n++, 4, '0', STR_PAD_LEFT), 'user_account_id' => $created[7]->id,
             'tenant_id' => $tenant->id, 'project_id' => $project->id, 'building_id' => $aptAt(9)?->building_id,
             'apartment_id' => $aptAt(9)?->id, 'requested_role' => 'guest', 'status' => 'cancelled',
@@ -1956,7 +2218,7 @@ class DemoDataSeeder extends Seeder
     {
         $cats = [];
         foreach ([['NEWS', 'Tin tức', 'news'], ['BANNER', 'Banner', 'banner'], ['GUIDE', 'Hướng dẫn', 'guide'], ['POLICY', 'Chính sách', 'policy']] as [$code, $name, $type]) {
-            $cats[$type] = \App\Models\PlatformContentCategory::create(['code' => $code, 'name' => $name, 'type' => $type]);
+            $cats[$type] = PlatformContentCategory::create(['code' => $code, 'name' => $name, 'type' => $type]);
         }
         $contents = [
             ['Ra mắt X2-BMS 2.0', 'news', 'published', 'platform'],
@@ -1966,8 +2228,8 @@ class DemoDataSeeder extends Seeder
             ['Bản tin vận hành tháng 7 (nháp)', 'news', 'draft', 'platform'],
         ];
         foreach ($contents as $i => [$title, $type, $status, $scope]) {
-            \App\Models\PlatformContent::create([
-                'category_id' => $cats[$type]->id ?? null, 'title' => $title, 'slug' => \Illuminate\Support\Str::slug($title),
+            PlatformContent::create([
+                'category_id' => $cats[$type]->id ?? null, 'title' => $title, 'slug' => Str::slug($title),
                 'summary' => $title, 'body' => '<p>'.$title.'</p>', 'content_type' => $type === 'banner' ? 'banner' : 'news',
                 'publish_scope' => $scope, 'status' => $status, 'created_by' => $admin->id,
                 'approved_by' => $status === 'published' ? $admin->id : null,
@@ -1975,16 +2237,16 @@ class DemoDataSeeder extends Seeder
             ]);
         }
 
-        $pp = \App\Models\PublicProject::create([
+        $pp = PublicProject::create([
             'code' => 'PP-SSG', 'name' => 'Sunshine Garden', 'developer_name' => 'Sunshine Group',
             'address' => 'P. An Phú, TP. Thủ Đức', 'province' => 'TP. Hồ Chí Minh', 'project_type' => 'urban_area',
             'status' => 'operating', 'blocks' => 2, 'apartments' => 160,
             'amenities_json' => ['gym', 'pool', 'bbq', 'kids'], 'description' => 'Khu căn hộ cao cấp ven sông.', 'is_public' => true,
         ]);
         foreach ([['image', 'Ảnh tổng thể'], ['floor_plan', 'Mặt bằng điển hình'], ['brochure', 'Brochure dự án']] as $i => [$mt, $t]) {
-            \App\Models\ProjectMedia::create(['public_project_id' => $pp->id, 'media_type' => $mt, 'title' => $t, 'file_url' => 'public-projects/ssg-'.$mt.'.jpg', 'sort_order' => $i]);
+            ProjectMedia::create(['public_project_id' => $pp->id, 'media_type' => $mt, 'title' => $t, 'file_url' => 'public-projects/ssg-'.$mt.'.jpg', 'sort_order' => $i]);
         }
-        \App\Models\TenantProjectLink::create([
+        TenantProjectLink::create([
             'tenant_id' => $tenant->id, 'project_id' => $project->id, 'public_project_id' => $pp->id,
             'linked_by' => $admin->id, 'linked_at' => Carbon::parse('2026-06-01'),
         ]);
@@ -1997,13 +2259,13 @@ class DemoDataSeeder extends Seeder
             ['PP-LOTUS', 'Lotus Lake', 'Ecopark', 'Hưng Yên', 'villa', 'planning', 6, 90, ['lake', 'golf']],
         ];
         foreach ($more as $j => [$code, $name, $dev, $prov, $ptype, $status, $blocks, $apts, $amen]) {
-            $x = \App\Models\PublicProject::create([
+            $x = PublicProject::create([
                 'code' => $code, 'name' => $name, 'developer_name' => $dev, 'province' => $prov,
                 'project_type' => $ptype, 'status' => $status, 'blocks' => $blocks, 'apartments' => $apts,
                 'amenities_json' => $amen, 'description' => $name.' — dự án trong thư viện nền tảng.',
                 'is_public' => $status !== 'planning',
             ]);
-            \App\Models\ProjectMedia::create(['public_project_id' => $x->id, 'media_type' => 'image', 'title' => 'Phối cảnh', 'file_url' => 'public-projects/'.strtolower($code).'.jpg', 'sort_order' => 0]);
+            ProjectMedia::create(['public_project_id' => $x->id, 'media_type' => 'image', 'title' => 'Phối cảnh', 'file_url' => 'public-projects/'.strtolower($code).'.jpg', 'sort_order' => 0]);
         }
     }
 
@@ -2011,34 +2273,34 @@ class DemoDataSeeder extends Seeder
     private function seedEntityGapClose(Tenant $tenant, User $admin): void
     {
         for ($i = 0; $i < 5; $i++) {
-            \App\Models\ActivityLog::create([
+            ActivityLog::create([
                 'tenant_id' => $tenant->id, 'user_id' => $admin->id, 'log_name' => 'default',
                 'description' => ['Đăng nhập hệ thống', 'Duyệt bảng kê', 'Cập nhật cư dân', 'Tạo workflow', 'Xuất báo cáo'][$i],
                 'created_at' => Carbon::parse('2026-07-01 08:00')->addHours($i), 'updated_at' => Carbon::parse('2026-07-01 08:00')->addHours($i),
             ]);
         }
 
-        $logs = \App\Models\AiUsageLog::where('tenant_id', $tenant->id)->orderBy('id')->take(6)->get();
+        $logs = AiUsageLog::where('tenant_id', $tenant->id)->orderBy('id')->take(6)->get();
         foreach ($logs as $i => $log) {
-            \App\Models\AiRequest::create([
+            AiRequest::create([
                 'tenant_id' => $tenant->id, 'user_id' => $log->user_id, 'mode' => $log->mode, 'model' => $log->model,
                 'prompt' => $log->prompt_excerpt, 'status' => $log->status, 'tokens_in' => $log->tokens_in,
                 'tokens_out' => $log->tokens_out, 'latency_ms' => $log->latency_ms,
             ]);
         }
         // Hàng chờ duyệt AI từ các log pending_approval.
-        $pending = \App\Models\AiUsageLog::where('tenant_id', $tenant->id)->where('status', 'pending_approval')->take(3)->get();
+        $pending = AiUsageLog::where('tenant_id', $tenant->id)->where('status', 'pending_approval')->take(3)->get();
         foreach ($pending as $p) {
-            \App\Models\AiApproval::create([
+            AiApproval::create([
                 'tenant_id' => $tenant->id, 'ai_usage_log_id' => $p->id, 'action' => $p->action,
                 'risk_level' => 'high', 'status' => 'pending', 'requested_by_id' => $p->user_id,
             ]);
         }
 
         // Bảng hoá steps cho workflow.
-        foreach (\App\Models\AiWorkflow::where('tenant_id', $tenant->id)->take(3)->get() as $wf) {
+        foreach (AiWorkflow::where('tenant_id', $tenant->id)->take(3)->get() as $wf) {
             foreach ($wf->steps ?? [] as $s => $step) {
-                \App\Models\AutomationStep::create([
+                AutomationStep::create([
                     'ai_workflow_id' => $wf->id, 'step_no' => $s + 1, 'type' => $step['type'] ?? 'action',
                     'label' => $step['label'] ?? 'Bước', 'config' => $step,
                 ]);
@@ -2046,9 +2308,9 @@ class DemoDataSeeder extends Seeder
         }
 
         // Chunk KB cho vài bài published.
-        foreach (\App\Models\KnowledgeArticle::where('status', 'published')->whereNotNull('content_text')->take(4)->get() as $art) {
+        foreach (KnowledgeArticle::where('status', 'published')->whereNotNull('content_text')->take(4)->get() as $art) {
             $text = (string) $art->content_text;
-            \App\Models\KnowledgeChunk::create([
+            KnowledgeChunk::create([
                 'knowledge_article_id' => $art->id, 'chunk_index' => 0,
                 'content' => mb_substr($text, 0, 500), 'tokens' => (int) ceil(mb_strlen($text) / 4),
             ]);
@@ -2058,28 +2320,28 @@ class DemoDataSeeder extends Seeder
     /** Tier 5 / B6 — marketplace + dịch vụ + loyalty + BĐS + nhà thông minh. */
     private function seedTier5Ecosystem(Tenant $tenant, Project $project, Building $building): void
     {
-        $residents = \App\Models\Resident::where('tenant_id', $tenant->id)->orderBy('id')->take(6)->get();
+        $residents = Resident::where('tenant_id', $tenant->id)->orderBy('id')->take(6)->get();
         $apts = Apartment::where('building_id', $building->id)->orderBy('id')->take(4)->get();
         $r = fn ($i) => $residents[$i % max(1, $residents->count())] ?? null;
 
         // Marketplace.
         $products = [];
         foreach ([['Tủ lạnh Samsung 2 cửa', 4_500_000, 'used'], ['Xe đạp trẻ em', 800_000, 'used'], ['Bộ bàn ăn gỗ', 3_200_000, 'used']] as $i => [$name, $price, $cond]) {
-            $products[] = \App\Models\MarketplaceProduct::create([
+            $products[] = MarketplaceProduct::create([
                 'tenant_id' => $tenant->id, 'project_id' => $project->id, 'seller_resident_id' => $r($i)?->id,
                 'name' => $name, 'description' => $name, 'price' => $price, 'category' => 'household', 'condition' => $cond, 'status' => 'active',
             ]);
         }
-        $order = \App\Models\MarketplaceOrder::create([
+        $order = MarketplaceOrder::create([
             'tenant_id' => $tenant->id, 'buyer_resident_id' => $r(3)?->id, 'seller_resident_id' => $products[0]->seller_resident_id,
             'code' => 'MO-0001', 'total' => 4_500_000, 'status' => 'completed', 'ordered_at' => Carbon::parse('2026-06-25'),
         ]);
-        \App\Models\OrderItem::create(['marketplace_order_id' => $order->id, 'marketplace_product_id' => $products[0]->id, 'quantity' => 1, 'price' => 4_500_000, 'amount' => 4_500_000]);
+        OrderItem::create(['marketplace_order_id' => $order->id, 'marketplace_product_id' => $products[0]->id, 'quantity' => 1, 'price' => 4_500_000, 'amount' => 4_500_000]);
 
         // Dịch vụ.
         foreach ([['Giặt là 5 sao', 'laundry', 4.7], ['Bếp nhà An', 'food', 4.5], ['Sửa điện nước 24h', 'repair', 4.3]] as $i => [$name, $cat, $rating]) {
-            $sp = \App\Models\ServiceProvider::create(['tenant_id' => $tenant->id, 'name' => $name, 'category' => $cat, 'phone' => '090000000'.$i, 'rating' => $rating, 'status' => 'active']);
-            \App\Models\ServiceOrder::create([
+            $sp = ServiceProvider::create(['tenant_id' => $tenant->id, 'name' => $name, 'category' => $cat, 'phone' => '090000000'.$i, 'rating' => $rating, 'status' => 'active']);
+            ServiceOrder::create([
                 'tenant_id' => $tenant->id, 'service_provider_id' => $sp->id, 'resident_id' => $r($i)?->id,
                 'code' => 'SO-'.str_pad((string) ($i + 1), 4, '0', STR_PAD_LEFT), 'description' => 'Đặt '.$name,
                 'amount' => 100_000 * ($i + 1), 'status' => ['completed', 'confirmed', 'pending'][$i], 'scheduled_at' => Carbon::parse('2026-07-03')->addDays($i),
@@ -2088,41 +2350,41 @@ class DemoDataSeeder extends Seeder
 
         // Loyalty + voucher.
         foreach ($residents as $i => $res) {
-            $acc = \App\Models\LoyaltyAccount::create([
+            $acc = LoyaltyAccount::create([
                 'tenant_id' => $tenant->id, 'resident_id' => $res->id, 'points_balance' => 500 + $i * 120,
                 'tier' => ['silver', 'gold', 'platinum'][$i % 3], 'status' => 'active',
             ]);
-            \App\Models\LoyaltyTransaction::create(['loyalty_account_id' => $acc->id, 'type' => 'earn', 'points' => 100, 'description' => 'Thanh toán phí đúng hạn', 'transacted_at' => Carbon::parse('2026-06-10')->addDays($i)]);
+            LoyaltyTransaction::create(['loyalty_account_id' => $acc->id, 'type' => 'earn', 'points' => 100, 'description' => 'Thanh toán phí đúng hạn', 'transacted_at' => Carbon::parse('2026-06-10')->addDays($i)]);
         }
         foreach ([['GIAM10', 'Giảm 10% dịch vụ', 'discount', 10, 200], ['QUA-CAFE', 'Voucher cafe', 'gift', 50_000, 500]] as [$code, $name, $type, $val, $cost]) {
-            \App\Models\Voucher::create(['tenant_id' => $tenant->id, 'code' => $code, 'name' => $name, 'type' => $type, 'value' => $val, 'points_cost' => $cost, 'quantity' => 100, 'valid_from' => Carbon::parse('2026-07-01'), 'valid_to' => Carbon::parse('2026-12-31'), 'status' => 'active']);
+            Voucher::create(['tenant_id' => $tenant->id, 'code' => $code, 'name' => $name, 'type' => $type, 'value' => $val, 'points_cost' => $cost, 'quantity' => 100, 'valid_from' => Carbon::parse('2026-07-01'), 'valid_to' => Carbon::parse('2026-12-31'), 'status' => 'active']);
         }
 
         // Bất động sản.
         foreach ([['sale', 'Bán căn 2PN view sông', 3_800_000_000, 68, 2, 'active'], ['rent', 'Cho thuê 1PN full nội thất', 12_000_000, 45, 1, 'active']] as $i => [$type, $title, $price, $area, $bed, $status]) {
-            $listing = \App\Models\RealEstateListing::create([
+            $listing = RealEstateListing::create([
                 'tenant_id' => $tenant->id, 'project_id' => $project->id, 'apartment_id' => $apts[$i]->id ?? null,
                 'owner_resident_id' => $r($i)?->id, 'code' => 'RE-'.str_pad((string) ($i + 1), 4, '0', STR_PAD_LEFT),
                 'type' => $type, 'title' => $title, 'price' => $price, 'area' => $area, 'bedrooms' => $bed, 'status' => $status,
                 'published_at' => Carbon::parse('2026-06-20')->addDays($i),
             ]);
-            \App\Models\ListingInquiry::create(['real_estate_listing_id' => $listing->id, 'resident_id' => $r($i + 1)?->id, 'name' => 'Khách quan tâm', 'phone' => '0911222333', 'message' => 'Xin xem nhà cuối tuần', 'status' => 'new']);
+            ListingInquiry::create(['real_estate_listing_id' => $listing->id, 'resident_id' => $r($i + 1)?->id, 'name' => 'Khách quan tâm', 'phone' => '0911222333', 'message' => 'Xin xem nhà cuối tuần', 'status' => 'new']);
         }
 
         // Nhà thông minh.
         foreach ($residents->take(3) as $i => $res) {
-            $acc = \App\Models\SmartHomeAccount::create([
+            $acc = SmartHomeAccount::create([
                 'tenant_id' => $tenant->id, 'resident_id' => $res->id, 'apartment_id' => $apts[$i % max(1, $apts->count())]->id ?? null,
                 'provider' => ['lumi', 'tuya', 'fpt'][$i % 3], 'status' => 'active', 'linked_at' => Carbon::parse('2026-05-01')->addDays($i),
             ]);
             foreach ([['Đèn phòng khách', 'light', 'Phòng khách', 'on'], ['Khóa cửa chính', 'lock', 'Cửa chính', 'online'], ['Điều hòa phòng ngủ', 'ac', 'Phòng ngủ', 'off']] as $d => [$name, $type, $room, $st]) {
-                $dev = \App\Models\SmartDevice::create(['smart_home_account_id' => $acc->id, 'name' => $name, 'type' => $type, 'room' => $room, 'status' => $st]);
+                $dev = SmartDevice::create(['smart_home_account_id' => $acc->id, 'name' => $name, 'type' => $type, 'room' => $room, 'status' => $st]);
                 if ($d === 0) {
-                    \App\Models\SensorEvent::create(['tenant_id' => $tenant->id, 'smart_device_id' => $dev->id, 'type' => 'motion', 'value' => 'detected', 'event_at' => Carbon::parse('2026-07-01 19:00')->addMinutes($i * 5)]);
+                    SensorEvent::create(['tenant_id' => $tenant->id, 'smart_device_id' => $dev->id, 'type' => 'motion', 'value' => 'detected', 'event_at' => Carbon::parse('2026-07-01 19:00')->addMinutes($i * 5)]);
                 }
             }
-            \App\Models\SmartScene::create(['smart_home_account_id' => $acc->id, 'name' => 'Về nhà', 'description' => 'Bật đèn + điều hòa', 'is_active' => true]);
-            \App\Models\EnergyReading::create(['tenant_id' => $tenant->id, 'apartment_id' => $acc->apartment_id, 'smart_home_account_id' => $acc->id, 'period' => '2026-06', 'kwh' => 220 + $i * 30, 'cost' => (220 + $i * 30) * 2500, 'reading_date' => Carbon::parse('2026-06-30')]);
+            SmartScene::create(['smart_home_account_id' => $acc->id, 'name' => 'Về nhà', 'description' => 'Bật đèn + điều hòa', 'is_active' => true]);
+            EnergyReading::create(['tenant_id' => $tenant->id, 'apartment_id' => $acc->apartment_id, 'smart_home_account_id' => $acc->id, 'period' => '2026-06', 'kwh' => 220 + $i * 30, 'cost' => (220 + $i * 30) * 2500, 'reading_date' => Carbon::parse('2026-06-30')]);
         }
     }
 
@@ -2130,23 +2392,23 @@ class DemoDataSeeder extends Seeder
     private function seedTier5Community(Tenant $tenant, Project $project, Building $building): void
     {
         $apts = Apartment::where('building_id', $building->id)->orderBy('id')->take(6)->get();
-        $residents = \App\Models\Resident::where('tenant_id', $tenant->id)->orderBy('id')->take(6)->get();
+        $residents = Resident::where('tenant_id', $tenant->id)->orderBy('id')->take(6)->get();
 
         // Bàn giao.
-        $batch = \App\Models\HandoverBatch::create([
+        $batch = HandoverBatch::create([
             'tenant_id' => $tenant->id, 'project_id' => $project->id, 'building_id' => $building->id,
             'code' => 'HB-2026-01', 'name' => 'Đợt bàn giao Tòa A - Block 1', 'scheduled_date' => Carbon::parse('2022-06-20'),
             'total_units' => $apts->count(), 'status' => 'completed',
         ]);
         foreach ($apts as $i => $apt) {
-            $unit = \App\Models\HandoverUnit::create([
+            $unit = HandoverUnit::create([
                 'handover_batch_id' => $batch->id, 'apartment_id' => $apt->id,
                 'resident_id' => $residents[$i % max(1, $residents->count())]->id ?? null,
                 'status' => $i % 4 === 0 ? 'pending_defects' : 'handed_over', 'handed_over_at' => Carbon::parse('2022-07-01'),
             ]);
-            $cl = \App\Models\HandoverChecklist::create(['handover_unit_id' => $unit->id, 'name' => 'Nghiệm thu căn hộ', 'status' => $i % 4 === 0 ? 'failed' : 'passed']);
+            $cl = HandoverChecklist::create(['handover_unit_id' => $unit->id, 'name' => 'Nghiệm thu căn hộ', 'status' => $i % 4 === 0 ? 'failed' : 'passed']);
             foreach (['Tường/trần', 'Điện nước', 'Cửa & khóa'] as $s => $label) {
-                \App\Models\HandoverPunchItem::create([
+                HandoverPunchItem::create([
                     'handover_checklist_id' => $cl->id, 'label' => $label, 'is_ok' => ! ($i % 4 === 0 && $s === 0),
                     'severity' => $s === 0 ? 'major' : 'minor', 'note' => $i % 4 === 0 && $s === 0 ? 'Nứt nhẹ trần bếp' : null,
                 ]);
@@ -2154,7 +2416,7 @@ class DemoDataSeeder extends Seeder
         }
         // Bảo hành.
         foreach ([['Thấm trần nhà tắm', 'waterproof', 'in_progress'], ['Ổ cắm không hoạt động', 'electrical', 'resolved']] as $i => [$title, $cat, $status]) {
-            \App\Models\WarrantyRequest::create([
+            WarrantyRequest::create([
                 'tenant_id' => $tenant->id, 'project_id' => $project->id, 'apartment_id' => $apts[$i]->id ?? null,
                 'resident_id' => $residents[$i]->id ?? null, 'code' => 'BH-'.str_pad((string) ($i + 1), 4, '0', STR_PAD_LEFT),
                 'title' => $title, 'description' => $title.'.', 'category' => $cat, 'status' => $status,
@@ -2163,12 +2425,12 @@ class DemoDataSeeder extends Seeder
         }
 
         // Cộng đồng.
-        $group = \App\Models\CommunityGroup::create([
+        $group = CommunityGroup::create([
             'tenant_id' => $tenant->id, 'project_id' => $project->id, 'name' => 'Cư dân Sunshine Garden',
             'description' => 'Nhóm trao đổi chung', 'member_count' => 320, 'status' => 'active',
         ]);
         foreach (['Tìm người đi chung xe đi làm', 'Thanh lý tủ lạnh còn mới', 'Góp ý khu vui chơi trẻ em'] as $i => $title) {
-            \App\Models\CommunityPost::create([
+            CommunityPost::create([
                 'tenant_id' => $tenant->id, 'project_id' => $project->id, 'community_group_id' => $group->id,
                 'author_resident_id' => $residents[$i % max(1, $residents->count())]->id ?? null,
                 'title' => $title, 'body' => $title.'...', 'like_count' => 5 + $i * 3, 'comment_count' => $i * 2, 'status' => 'published',
@@ -2176,7 +2438,7 @@ class DemoDataSeeder extends Seeder
         }
 
         // Sự kiện.
-        $event = \App\Models\Event::create([
+        $event = Event::create([
             'tenant_id' => $tenant->id, 'project_id' => $project->id, 'title' => 'Tết Trung Thu 2026',
             'description' => 'Đêm hội trăng rằm cho các bé', 'location' => 'Sảnh chính', 'capacity' => 200, 'registered_count' => 0,
             'starts_at' => Carbon::parse('2026-09-15 18:00'), 'ends_at' => Carbon::parse('2026-09-15 21:00'), 'status' => 'upcoming',
@@ -2184,25 +2446,25 @@ class DemoDataSeeder extends Seeder
         $reg = 0;
         foreach ($residents as $i => $res) {
             $reg += 1 + $i;
-            \App\Models\EventRegistration::create([
+            EventRegistration::create([
                 'event_id' => $event->id, 'resident_id' => $res->id, 'guests' => $i, 'status' => 'registered',
             ]);
         }
         $event->update(['registered_count' => $reg]);
 
         // Bình chọn.
-        $poll = \App\Models\Poll::create([
+        $poll = Poll::create([
             'tenant_id' => $tenant->id, 'project_id' => $project->id, 'question' => 'Chọn màu sơn mới cho sảnh',
             'type' => 'single', 'status' => 'open', 'closes_at' => Carbon::parse('2026-07-31'),
         ]);
         $options = [];
         foreach (['Trắng kem', 'Xám nhạt', 'Xanh pastel'] as $s => $label) {
-            $options[] = \App\Models\PollOption::create(['poll_id' => $poll->id, 'label' => $label, 'sort' => $s]);
+            $options[] = PollOption::create(['poll_id' => $poll->id, 'label' => $label, 'sort' => $s]);
         }
         $voteCount = 0;
         foreach ($residents as $i => $res) {
             $opt = $options[$i % count($options)];
-            \App\Models\PollVote::create(['poll_id' => $poll->id, 'poll_option_id' => $opt->id, 'resident_id' => $res->id]);
+            PollVote::create(['poll_id' => $poll->id, 'poll_option_id' => $opt->id, 'resident_id' => $res->id]);
             $opt->increment('vote_count');
             $voteCount++;
         }
@@ -2212,44 +2474,44 @@ class DemoDataSeeder extends Seeder
     /** Tier 4 / B4 — Form Builder (biểu mẫu động + lượt nộp). */
     private function seedTier4FormBuilder(Tenant $tenant, Project $project, User $admin): void
     {
-        $residents = \App\Models\Resident::where('tenant_id', $tenant->id)->orderBy('id')->take(3)->get();
+        $residents = Resident::where('tenant_id', $tenant->id)->orderBy('id')->take(3)->get();
         $formDefs = [
             ['Đăng ký chuyển đồ', 'operations', [['Họ tên', 'text', true], ['Ngày chuyển', 'date', true], ['Thang máy', 'select', true]]],
             ['Đăng ký sửa chữa nội thất', 'operations', [['Nội dung', 'textarea', true], ['Đơn vị thi công', 'text', false], ['Thời gian', 'date', true]]],
         ];
         foreach ($formDefs as $fi => [$name, $cat, $fields]) {
-            $form = \App\Models\DynamicForm::create([
+            $form = DynamicForm::create([
                 'tenant_id' => $tenant->id, 'project_id' => $project->id, 'code' => 'FORM-'.($fi + 1),
                 'name' => $name, 'description' => $name, 'category' => $cat, 'status' => 'published',
                 'current_version' => 1, 'created_by_id' => $admin->id,
             ]);
-            \App\Models\FormVersion::create([
+            FormVersion::create([
                 'dynamic_form_id' => $form->id, 'version' => 1, 'schema' => ['fields' => count($fields)],
                 'status' => 'published', 'published_at' => Carbon::parse('2026-06-01'),
             ]);
-            $section = \App\Models\FormSection::create(['dynamic_form_id' => $form->id, 'title' => 'Thông tin', 'sort' => 0]);
+            $section = FormSection::create(['dynamic_form_id' => $form->id, 'title' => 'Thông tin', 'sort' => 0]);
             foreach ($fields as $s => [$label, $type, $required]) {
-                \App\Models\FormField::create([
+                FormField::create([
                     'dynamic_form_id' => $form->id, 'form_section_id' => $section->id,
                     'key' => 'field_'.($s + 1), 'label' => $label, 'type' => $type,
                     'options' => $type === 'select' ? ['A', 'B', 'C'] : null, 'required' => $required, 'sort' => $s,
                 ]);
             }
-            \App\Models\FormWorkflow::create([
+            FormWorkflow::create([
                 'dynamic_form_id' => $form->id, 'name' => 'Duyệt bởi BQL',
                 'steps' => [['role' => 'building_manager', 'action' => 'approve']], 'status' => 'active',
             ]);
 
             // Lượt nộp.
-            $fieldModels = \App\Models\FormField::where('dynamic_form_id', $form->id)->get();
+            $fieldModels = FormField::where('dynamic_form_id', $form->id)->get();
             foreach (['submitted', 'approved'] as $si => $status) {
                 $res = $residents[$si % max(1, $residents->count())] ?? null;
-                $sub = \App\Models\FormSubmission::create([
+                $sub = FormSubmission::create([
                     'tenant_id' => $tenant->id, 'dynamic_form_id' => $form->id, 'resident_id' => $res?->id,
                     'status' => $status, 'data' => ['field_1' => 'Giá trị mẫu'], 'submitted_at' => Carbon::parse('2026-06-20')->addDays($si),
                 ]);
                 foreach ($fieldModels as $fm) {
-                    \App\Models\FormSubmissionValue::create([
+                    FormSubmissionValue::create([
                         'form_submission_id' => $sub->id, 'form_field_id' => $fm->id,
                         'field_key' => $fm->key, 'value' => 'Giá trị '.$fm->label,
                     ]);
@@ -2261,32 +2523,32 @@ class DemoDataSeeder extends Seeder
     /** Tier 4 / B3 — nhà thầu + hợp đồng + tài sản + đồng hồ + IoT. */
     private function seedTier4AssetsContractors(Tenant $tenant, Project $project, Building $building, User $admin): void
     {
-        $team = \App\Models\Team::where('tenant_id', $tenant->id)->first();
+        $team = Team::where('tenant_id', $tenant->id)->first();
 
         foreach ([['Cty Thang máy Thiên Nam', 'elevator', 4.6], ['Cty Vệ sinh Sạch Xanh', 'cleaning', 4.2]] as $ci => [$name, $svc, $rating]) {
-            $contractor = \App\Models\Contractor::create([
+            $contractor = Contractor::create([
                 'tenant_id' => $tenant->id, 'code' => 'NT-'.($ci + 1), 'name' => $name, 'tax_code' => '03123'.$ci,
                 'phone' => '028 3822 00'.$ci, 'service_type' => $svc, 'rating' => $rating, 'status' => 'active',
             ]);
-            $contract = \App\Models\Contract::create([
+            $contract = Contract::create([
                 'tenant_id' => $tenant->id, 'project_id' => $project->id, 'contractor_id' => $contractor->id,
                 'code' => 'HD-2026-'.str_pad((string) ($ci + 1), 3, '0', STR_PAD_LEFT), 'title' => 'Hợp đồng '.$svc.' 2026',
                 'type' => 'maintenance', 'value' => 240_000_000 * ($ci + 1),
                 'start_date' => Carbon::parse('2026-01-01'), 'end_date' => Carbon::parse('2026-12-31'), 'status' => 'active',
             ]);
-            $pkg = \App\Models\ContractPackage::create([
+            $pkg = ContractPackage::create([
                 'contract_id' => $contract->id, 'name' => 'Bảo trì định kỳ quý', 'value' => 60_000_000 * ($ci + 1), 'status' => 'active',
             ]);
-            \App\Models\ContractAcceptance::create([
+            ContractAcceptance::create([
                 'contract_id' => $contract->id, 'contract_package_id' => $pkg->id, 'code' => 'NT-'.($ci + 1).'-Q1',
                 'title' => 'Nghiệm thu Q1', 'amount' => 60_000_000 * ($ci + 1), 'status' => 'accepted',
                 'accepted_by_id' => $admin->id, 'accepted_at' => Carbon::parse('2026-04-01'),
             ]);
-            \App\Models\ContractorKpi::create([
+            ContractorKpi::create([
                 'contractor_id' => $contractor->id, 'period' => '2026-06', 'score' => $rating * 20,
                 'on_time_rate' => 95 - $ci * 5, 'quality_score' => 90 - $ci * 3, 'note' => 'Đạt yêu cầu',
             ]);
-            \App\Models\ContractorSettlement::create([
+            ContractorSettlement::create([
                 'contractor_id' => $contractor->id, 'contract_id' => $contract->id, 'period' => '2026-Q1',
                 'amount' => 60_000_000 * ($ci + 1), 'status' => 'paid', 'settled_at' => Carbon::parse('2026-04-10'),
             ]);
@@ -2294,10 +2556,10 @@ class DemoDataSeeder extends Seeder
 
         $cats = [];
         foreach (['Thang máy', 'Điện', 'PCCC', 'HVAC'] as $cn) {
-            $cats[] = \App\Models\AssetCategory::create(['tenant_id' => $tenant->id, 'code' => strtoupper(substr($cn, 0, 3)), 'name' => $cn]);
+            $cats[] = AssetCategory::create(['tenant_id' => $tenant->id, 'code' => strtoupper(substr($cn, 0, 3)), 'name' => $cn]);
         }
         for ($i = 0; $i < 6; $i++) {
-            \App\Models\Asset::create([
+            Asset::create([
                 'tenant_id' => $tenant->id, 'project_id' => $project->id, 'building_id' => $building->id,
                 'asset_category_id' => $cats[$i % count($cats)]->id, 'code' => 'TS-'.str_pad((string) ($i + 1), 4, '0', STR_PAD_LEFT),
                 'name' => ['Thang máy #1', 'Thang máy #2', 'Máy phát điện', 'Bơm PCCC', 'Chiller HVAC', 'Tủ điện tổng'][$i],
@@ -2306,9 +2568,9 @@ class DemoDataSeeder extends Seeder
                 'status' => $i === 4 ? 'maintenance' : 'active',
             ]);
         }
-        $assets = \App\Models\Asset::where('tenant_id', $tenant->id)->take(2)->get();
+        $assets = Asset::where('tenant_id', $tenant->id)->take(2)->get();
         foreach ($assets as $i => $asset) {
-            \App\Models\MaintenancePlan::create([
+            MaintenancePlan::create([
                 'tenant_id' => $tenant->id, 'project_id' => $project->id, 'asset_id' => $asset->id, 'team_id' => $team?->id,
                 'name' => 'Bảo trì '.$asset->name, 'frequency' => ['monthly', 'quarterly'][$i], 'status' => 'active',
                 'next_due_at' => Carbon::parse('2026-08-01')->addDays($i * 15),
@@ -2316,13 +2578,13 @@ class DemoDataSeeder extends Seeder
         }
 
         for ($i = 0; $i < 4; $i++) {
-            $meter = \App\Models\Meter::create([
+            $meter = Meter::create([
                 'tenant_id' => $tenant->id, 'project_id' => $project->id, 'building_id' => $building->id,
                 'code' => 'MT-'.str_pad((string) ($i + 1), 4, '0', STR_PAD_LEFT),
                 'type' => ['electric', 'water', 'electric', 'water'][$i], 'unit' => $i % 2 === 0 ? 'kWh' : 'm³',
                 'last_reading' => 1000 + $i * 100, 'status' => 'active', 'installed_at' => Carbon::parse('2022-06-01'),
             ]);
-            \App\Models\MeterReading::create([
+            MeterReading::create([
                 'meter_id' => $meter->id, 'period' => '2026-06', 'previous_reading' => 900 + $i * 100,
                 'current_reading' => 1000 + $i * 100, 'consumption' => 100, 'reading_date' => Carbon::parse('2026-06-30'),
                 'recorded_by_id' => $admin->id,
@@ -2330,7 +2592,7 @@ class DemoDataSeeder extends Seeder
         }
 
         foreach ([['Cảm biến khói tầng 5', 'sensor', 'lora'], ['Gateway IoT trung tâm', 'gateway', 'mqtt'], ['Van nước tự động', 'actuator', 'modbus'], ['Cảm biến nhiệt HVAC', 'sensor', 'zigbee']] as $i => [$name, $type, $proto]) {
-            \App\Models\IotDevice::create([
+            IotDevice::create([
                 'tenant_id' => $tenant->id, 'project_id' => $project->id, 'building_id' => $building->id,
                 'code' => 'IOT-'.str_pad((string) ($i + 1), 4, '0', STR_PAD_LEFT), 'name' => $name, 'type' => $type,
                 'protocol' => $proto, 'status' => $i === 3 ? 'offline' : 'online', 'last_seen_at' => Carbon::parse('2026-07-01 12:00'),
@@ -2344,14 +2606,14 @@ class DemoDataSeeder extends Seeder
         // NOTE: support_tickets + data correction are now the platform-level Support
         // Center (Batch 10) — seeded in seedBatch10Support(), no longer per-tenant here.
         foreach ([['residents', 240, 236, 4], ['apartments', 160, 160, 0]] as $i => [$type, $tot, $ok, $err]) {
-            \App\Models\ImportJob::create([
+            ImportJob::create([
                 'tenant_id' => $tenant->id, 'type' => $type, 'file_path' => 'imports/'.$type.'.xlsx',
                 'status' => 'done', 'total_rows' => $tot, 'success_rows' => $ok, 'error_rows' => $err,
                 'created_by_id' => $admin->id, 'finished_at' => Carbon::parse('2026-06-20 10:00')->addDays($i),
             ]);
         }
         foreach ([['statements', 'xlsx'], ['debts', 'pdf']] as $i => [$type, $fmt]) {
-            \App\Models\ExportJob::create([
+            ExportJob::create([
                 'tenant_id' => $tenant->id, 'type' => $type, 'format' => $fmt, 'status' => 'done',
                 'file_path' => 'exports/'.$type.'.'.$fmt, 'created_by_id' => $admin->id,
                 'finished_at' => Carbon::parse('2026-07-01 08:00')->addHours($i),
@@ -2361,7 +2623,7 @@ class DemoDataSeeder extends Seeder
         // NOTE: integration_connections is now the platform-level Integration Center
         // (Batch 08) — seeded in seedBatch08Integration(), no longer per-tenant here.
         foreach ([['vnpay', 'production', true], ['momo', 'sandbox', false]] as [$gw, $env, $active]) {
-            \App\Models\PaymentGatewayConfig::create([
+            PaymentGatewayConfig::create([
                 'tenant_id' => $tenant->id, 'gateway' => $gw, 'merchant_id' => strtoupper($gw).'-MID-001',
                 'environment' => $env, 'is_active' => $active,
             ]);
@@ -2388,9 +2650,9 @@ class DemoDataSeeder extends Seeder
         ];
         $featureByCode = [];
         foreach ($moduleDefs as [$mcode, $mname, $fcodes]) {
-            $module = \App\Models\Module::create(['code' => $mcode, 'name' => $mname]);
+            $module = Module::create(['code' => $mcode, 'name' => $mname]);
             foreach ($fcodes as $fc) {
-                $featureByCode[$fc] = \App\Models\Feature::create(['module_id' => $module->id, 'code' => $fc, 'name' => ucwords(str_replace('_', ' ', $fc))]);
+                $featureByCode[$fc] = Feature::create(['module_id' => $module->id, 'code' => $fc, 'name' => ucwords(str_replace('_', ' ', $fc))]);
             }
         }
 
@@ -2406,7 +2668,7 @@ class DemoDataSeeder extends Seeder
         $intelExtra = ['kb_inheritance', 'x2ai', 'rag', 'prompt_guardrail', 'ai_audit'];
         $planByCode = [];
         foreach ($planDefs as [$code, $name, $mo, $yr]) {
-            $plan = \App\Models\Plan::create(['code' => $code, 'name' => $name, 'description' => 'Gói '.$name, 'monthly_base_price' => $mo, 'yearly_base_price' => $yr]);
+            $plan = Plan::create(['code' => $code, 'name' => $name, 'description' => 'Gói '.$name, 'monthly_base_price' => $mo, 'yearly_base_price' => $yr]);
             $set = $popular;
             if ($code !== 'popular') {
                 $set = array_merge($set, $fullExtra);
@@ -2416,24 +2678,24 @@ class DemoDataSeeder extends Seeder
             }
             foreach ($set as $fc) {
                 if (isset($featureByCode[$fc])) {
-                    \App\Models\PlanFeature::create(['plan_id' => $plan->id, 'feature_id' => $featureByCode[$fc]->id, 'enabled' => true]);
+                    PlanFeature::create(['plan_id' => $plan->id, 'feature_id' => $featureByCode[$fc]->id, 'enabled' => true]);
                 }
             }
             $planByCode[$code] = $plan;
         }
 
         // --- Tenant demo: thuê bao gói Thông minh + entitlements (feature gate) ---
-        \App\Models\TenantSubscription::create([
+        TenantSubscription::create([
             'tenant_id' => $tenant->id, 'plan_id' => $planByCode['intelligent']->id, 'status' => 'active',
             'billing_cycle' => 'monthly', 'start_date' => Carbon::parse('2026-01-01'), 'end_date' => Carbon::parse('2026-12-31'),
             'auto_renew' => true, 'mrr' => 15_000_000, 'arr' => 180_000_000, 'currency' => 'VND',
         ]);
-        foreach (\App\Models\PlanFeature::where('plan_id', $planByCode['intelligent']->id)->pluck('feature_id') as $fid) {
-            \App\Models\TenantEntitlement::create(['tenant_id' => $tenant->id, 'feature_id' => $fid, 'enabled' => true, 'source' => 'plan', 'starts_at' => Carbon::parse('2026-07-01')]);
+        foreach (PlanFeature::where('plan_id', $planByCode['intelligent']->id)->pluck('feature_id') as $fid) {
+            TenantEntitlement::create(['tenant_id' => $tenant->id, 'feature_id' => $fid, 'enabled' => true, 'source' => 'plan', 'starts_at' => Carbon::parse('2026-07-01')]);
         }
         // 1 override: tắt marketplace-like module minh hoạ (M10) cho tenant demo.
-        \App\Models\TenantModuleOverride::create([
-            'tenant_id' => $tenant->id, 'module_id' => \App\Models\Module::where('code', 'M10')->value('id'),
+        TenantModuleOverride::create([
+            'tenant_id' => $tenant->id, 'module_id' => Module::where('code', 'M10')->value('id'),
             'enabled' => false, 'reason' => 'Chưa dùng thư viện đối tác dùng chung',
         ]);
 
@@ -2447,7 +2709,7 @@ class DemoDataSeeder extends Seeder
         // Bảng giá theo chu kỳ.
         foreach ($planByCode as $plan) {
             foreach ([['monthly', 1, 0], ['quarterly', 3, 5], ['yearly', 12, 15]] as [$cycle, $mult, $disc]) {
-                \App\Models\PlanPrice::create([
+                PlanPrice::create([
                     'plan_id' => $plan->id, 'billing_cycle' => $cycle, 'currency' => 'VND',
                     'price' => $plan->monthly_base_price * $mult, 'discount_percent' => $disc,
                 ]);
@@ -2461,7 +2723,7 @@ class DemoDataSeeder extends Seeder
             ['api_calls', 'API calls', 'lượt'], ['ai_tokens', 'AI tokens', 'token'],
         ];
         foreach ($meters as [$code, $name, $unit]) {
-            \App\Models\UsageMeter::create(['code' => $code, 'name' => $name, 'unit' => $unit, 'is_billable' => true]);
+            UsageMeter::create(['code' => $code, 'name' => $name, 'unit' => $unit, 'is_billable' => true]);
         }
 
         // 6 tenant billing (tạo tenant nếu chưa có theo code).
@@ -2476,28 +2738,28 @@ class DemoDataSeeder extends Seeder
         $subByCode = [];
         $tenantByCode = [];
         foreach ($tenantDefs as [$code, $name, $planCode, $status, $mrr, $contractNo, $cycle, $start, $end, $auto]) {
-            $t = \App\Models\Tenant::firstOrCreate(['code' => $code], ['name' => $name, 'status' => $status === 'suspended' ? 'suspended' : 'active']);
+            $t = Tenant::firstOrCreate(['code' => $code], ['name' => $name, 'status' => $status === 'suspended' ? 'suspended' : 'active']);
             $tenantByCode[$code] = $t;
             $contractStatus = ['pending_renewal' => 'near_expiry', 'suspended' => 'expired', 'trial' => 'draft'][$status] ?? 'active';
-            $contract = \App\Models\SubscriptionContract::create([
+            $contract = SubscriptionContract::create([
                 'tenant_id' => $t->id, 'contract_no' => $contractNo, 'contract_type' => $status === 'trial' ? 'trial' : 'standard',
                 'status' => $contractStatus, 'start_date' => $start, 'end_date' => $end, 'annual_value' => $mrr * 12,
                 'payment_terms' => 'Net 15', 'sla_code' => 'SLA-STD',
             ]);
-            $sub = \App\Models\TenantSubscription::create([
+            $sub = TenantSubscription::create([
                 'tenant_id' => $t->id, 'plan_id' => $planByCode[$planCode]->id, 'status' => $status,
                 'billing_cycle' => $cycle, 'start_date' => $start, 'end_date' => $end, 'auto_renew' => $auto,
                 'mrr' => $mrr, 'arr' => $mrr * 12, 'currency' => 'VND', 'contract_id' => $contract->id,
             ]);
             $subByCode[$code] = $sub;
-            \App\Models\SubscriptionItem::create([
+            SubscriptionItem::create([
                 'subscription_id' => $sub->id, 'item_type' => 'plan', 'name' => 'Gói '.$planByCode[$planCode]->name,
                 'quantity' => 1, 'unit_price' => $mrr, 'amount' => $mrr,
             ]);
         }
 
         // Renewal pipeline cho tenant sắp hết hạn.
-        \App\Models\SubscriptionRenewal::create([
+        SubscriptionRenewal::create([
             'subscription_id' => $subByCode['TEN-0005']->id, 'contract_id' => $subByCode['TEN-0005']->contract_id,
             'stage' => 'negotiation', 'target_date' => '2026-05-31', 'proposed_value' => 432_000_000, 'note' => 'Đàm phán gia hạn năm 2',
         ]);
@@ -2510,14 +2772,14 @@ class DemoDataSeeder extends Seeder
             ['TEN-0003', 'ADD-STORAGE-1TB', 'Storage 1TB', 2_500_000, 'storage'],
         ];
         foreach ($addonDefs as [$tc, $ac, $an, $price, $wt]) {
-            \App\Models\SubscriptionAddon::create([
+            SubscriptionAddon::create([
                 'subscription_id' => $subByCode[$tc]->id, 'addon_code' => $ac, 'name' => $an,
                 'quantity' => 1, 'unit_price' => $price, 'mrr' => $price, 'wallet_type' => $wt, 'status' => 'active', 'start_date' => '2026-05-01',
             ]);
         }
 
         // Kỳ usage đã khóa + records.
-        $period = \App\Models\UsagePeriod::create([
+        $period = UsagePeriod::create([
             'code' => 'USAGE-2026-05', 'period_start' => '2026-05-01', 'period_end' => '2026-05-31',
             'status' => 'locked', 'locked_at' => Carbon::parse('2026-06-01 07:30'), 'locked_by' => 'Nguyễn Minh Anh',
         ]);
@@ -2529,7 +2791,7 @@ class DemoDataSeeder extends Seeder
         foreach ($usageDefs as [$tc, $meters2, $overageTotal]) {
             foreach ($meters2 as $mt => [$val, $limit]) {
                 $over = max(0, $val - $limit);
-                \App\Models\UsageRecord::create([
+                UsageRecord::create([
                     'usage_period_id' => $period->id, 'tenant_id' => $tenantByCode[$tc]->id, 'meter_type' => $mt,
                     'usage_value' => $val, 'included_limit' => $limit, 'overage_value' => $over,
                     'overage_amount' => $over > 0 ? round($overageTotal / max(1, count(array_filter($meters2, fn ($m) => $m[0] > $m[1])))) : 0,
@@ -2545,7 +2807,7 @@ class DemoDataSeeder extends Seeder
             ['QA-2026-0003', 'TEN-0003', 'sms_count', 12_800, 10_000, 28, 12_800_000, 'Mua thêm SMS Pack'],
         ];
         foreach ($qaDefs as [$code, $tc, $mt, $usage, $limit, $pct, $fee, $rec]) {
-            \App\Models\QuotaAlert::create([
+            QuotaAlert::create([
                 'code' => $code, 'tenant_id' => $tenantByCode[$tc]->id, 'usage_period_id' => $period->id,
                 'meter_type' => $mt, 'usage_value' => $usage, 'included_limit' => $limit, 'over_percent' => $pct,
                 'estimated_fee' => $fee, 'recommendation' => $rec, 'status' => 'open',
@@ -2576,20 +2838,20 @@ class DemoDataSeeder extends Seeder
                     $sub += $amt;
                 }
             }
-            $inv = \App\Models\BillingInvoice::create([
+            $inv = BillingInvoice::create([
                 'invoice_no' => $no, 'tenant_id' => $tenantByCode[$tc]->id, 'subscription_id' => $subByCode[$tc]->id,
                 'period' => $per, 'status' => $status, 'issue_date' => '2026-06-01', 'due_date' => $due,
                 'subtotal' => $sub, 'discount_total' => $disc, 'tax_total' => $tax, 'total_amount' => $total,
                 'paid_amount' => $paid, 'remaining_amount' => $total - $paid, 'currency' => 'VND',
             ]);
             foreach ($lines as [$lt, $desc, $amt]) {
-                \App\Models\BillingInvoiceLine::create([
+                BillingInvoiceLine::create([
                     'invoice_id' => $inv->id, 'line_type' => $lt, 'description' => $desc,
                     'quantity' => 1, 'unit_price' => $amt, 'amount' => $amt, 'tax_rate' => $lt === 'tax' ? 10 : 0,
                 ]);
             }
             if ($paid > 0) {
-                \App\Models\BillingPayment::create([
+                BillingPayment::create([
                     'invoice_id' => $inv->id, 'tenant_id' => $tenantByCode[$tc]->id, 'payment_method' => 'bank_transfer',
                     'amount' => $paid, 'paid_at' => Carbon::parse('2026-06-10'), 'transaction_ref' => 'FT'.$inv->id.'2026', 'status' => 'confirmed',
                 ]);
@@ -2604,12 +2866,12 @@ class DemoDataSeeder extends Seeder
             ['TEN-0004', 'ai_token', 82_300_000, 3_600_000, true, 10_000_000],
         ];
         foreach ($walletDefs as [$tc, $wt, $bal, $target, $auto, $topupAmt]) {
-            $w = \App\Models\PassThroughWallet::create([
+            $w = PassThroughWallet::create([
                 'tenant_id' => $tenantByCode[$tc]->id, 'wallet_type' => $wt, 'balance' => $bal, 'currency' => 'VND',
                 'monthly_target' => $target, 'low_balance_threshold' => $target * 2, 'auto_topup_enabled' => $auto,
                 'auto_topup_amount' => $topupAmt, 'status' => 'active',
             ]);
-            \App\Models\PassThroughTransaction::create([
+            PassThroughTransaction::create([
                 'wallet_id' => $w->id, 'tenant_id' => $tenantByCode[$tc]->id, 'transaction_type' => 'top_up',
                 'amount' => $target, 'balance_after' => $bal, 'description' => 'Nạp đầu kỳ', 'status' => 'confirmed',
             ]);
@@ -2622,13 +2884,13 @@ class DemoDataSeeder extends Seeder
             ['ADJ-2026-000143', 'TEN-0003', null, 'courtesy_discount', -5_000_000, 'approved'],
         ];
         foreach ($adjDefs as [$cid, $tc, $invNo, $type, $amt, $status]) {
-            $inv = $invNo ? \App\Models\BillingInvoice::where('invoice_no', $invNo)->first() : null;
-            $adj = \App\Models\BillingAdjustment::create([
+            $inv = $invNo ? BillingInvoice::where('invoice_no', $invNo)->first() : null;
+            $adj = BillingAdjustment::create([
                 'case_id' => $cid, 'tenant_id' => $tenantByCode[$tc]->id, 'invoice_id' => $inv?->id,
                 'adjustment_type' => $type, 'amount' => $amt, 'reason' => 'Điều chỉnh billing', 'status' => $status,
             ]);
             if ($status === 'approved') {
-                \App\Models\CreditNote::create([
+                CreditNote::create([
                     'credit_note_no' => 'CN-'.$cid, 'tenant_id' => $tenantByCode[$tc]->id, 'invoice_id' => $inv?->id,
                     'adjustment_id' => $adj->id, 'amount' => abs($amt), 'reason' => 'Ghi có từ điều chỉnh', 'status' => 'issued', 'issued_at' => now(),
                 ]);
@@ -2641,22 +2903,22 @@ class DemoDataSeeder extends Seeder
     {
         $staff = User::where('tenant_id', $tenant->id)->where('account_type', 'staff')->orderBy('id')->get();
         $guard = $staff->first() ?? $admin;
-        $residents = \App\Models\Resident::where('tenant_id', $tenant->id)->orderBy('id')->take(4)->get();
+        $residents = Resident::where('tenant_id', $tenant->id)->orderBy('id')->take(4)->get();
         $apts = Apartment::where('building_id', $building->id)->orderBy('id')->take(4)->get();
 
         // Tuần tra.
         foreach ([['PT-A', 'Tuyến A - Tầng hầm & sảnh'], ['PT-B', 'Tuyến B - Hành lang & mái']] as $ri => [$code, $name]) {
-            $route = \App\Models\PatrolRoute::create([
+            $route = PatrolRoute::create([
                 'tenant_id' => $tenant->id, 'project_id' => $project->id, 'building_id' => $building->id,
                 'code' => $code, 'name' => $name, 'expected_minutes' => 30, 'status' => 'active',
             ]);
             for ($c = 1; $c <= 4; $c++) {
-                \App\Models\PatrolCheckpoint::create([
+                PatrolCheckpoint::create([
                     'patrol_route_id' => $route->id, 'code' => $code.'-C'.$c, 'name' => 'Chốt '.$c,
                     'location' => 'Vị trí '.$c, 'qr_code' => 'QRCP-'.$code.'-'.$c, 'sort' => $c,
                 ]);
             }
-            \App\Models\PatrolSession::create([
+            PatrolSession::create([
                 'patrol_route_id' => $route->id, 'guard_id' => $guard->id,
                 'status' => $ri === 0 ? 'completed' : 'in_progress', 'checkpoints_scanned' => $ri === 0 ? 4 : 2,
                 'started_at' => Carbon::parse('2026-07-01 22:00'), 'finished_at' => $ri === 0 ? Carbon::parse('2026-07-01 22:35') : null,
@@ -2670,7 +2932,7 @@ class DemoDataSeeder extends Seeder
             ['vandalism', 'low', 'Hư hỏng bảng tin sảnh', 'closed'],
         ];
         foreach ($incidents as $i => [$type, $sev, $title, $status]) {
-            \App\Models\SecurityIncident::create([
+            SecurityIncident::create([
                 'tenant_id' => $tenant->id, 'project_id' => $project->id, 'building_id' => $building->id,
                 'code' => 'SI-'.str_pad((string) ($i + 1), 4, '0', STR_PAD_LEFT), 'type' => $type, 'severity' => $sev,
                 'title' => $title, 'description' => $title.'.', 'location' => 'Tòa A', 'status' => $status,
@@ -2682,7 +2944,7 @@ class DemoDataSeeder extends Seeder
         // SOS.
         $sos = [['app', 'resolved'], ['panic_button', 'responding'], ['intercom', 'false_alarm']];
         foreach ($sos as $i => [$src, $status]) {
-            \App\Models\SosAlert::create([
+            SosAlert::create([
                 'tenant_id' => $tenant->id, 'project_id' => $project->id, 'building_id' => $building->id,
                 'apartment_id' => $apts[$i % max(1, $apts->count())]->id ?? null,
                 'resident_id' => $residents[$i % max(1, $residents->count())]->id ?? null,
@@ -2695,7 +2957,7 @@ class DemoDataSeeder extends Seeder
 
         // Thiết bị & camera.
         foreach ([['ACD-01', 'Đầu đọc thẻ sảnh', 'card_reader'], ['ACD-02', 'Barrier hầm xe', 'barrier'], ['ACD-03', 'Cửa từ tầng KT', 'door'], ['ACD-04', 'Face gate thang máy', 'face']] as $i => [$code, $name, $type]) {
-            \App\Models\AccessDevice::create([
+            AccessDevice::create([
                 'tenant_id' => $tenant->id, 'project_id' => $project->id, 'building_id' => $building->id,
                 'code' => $code, 'name' => $name, 'type' => $type, 'location' => 'Tòa A',
                 'ip_address' => '10.0.1.'.(10 + $i), 'status' => $i === 3 ? 'maintenance' : 'online',
@@ -2703,7 +2965,7 @@ class DemoDataSeeder extends Seeder
             ]);
         }
         for ($i = 1; $i <= 5; $i++) {
-            \App\Models\Camera::create([
+            Camera::create([
                 'tenant_id' => $tenant->id, 'project_id' => $project->id, 'building_id' => $building->id,
                 'code' => 'CAM-'.str_pad((string) $i, 2, '0', STR_PAD_LEFT), 'name' => 'Camera '.$i,
                 'location' => ['Sảnh', 'Hầm B1', 'Hầm B2', 'Thang máy', 'Mái'][$i - 1], 'type' => ['dome', 'bullet', 'ptz'][$i % 3],
@@ -2713,9 +2975,9 @@ class DemoDataSeeder extends Seeder
         }
 
         // Hành động trên cảnh báo IOC có sẵn.
-        $alerts = \App\Models\IocAlert::where('tenant_id', $tenant->id)->orderBy('id')->take(4)->get();
+        $alerts = IocAlert::where('tenant_id', $tenant->id)->orderBy('id')->take(4)->get();
         foreach ($alerts as $i => $al) {
-            \App\Models\AlertAction::create([
+            AlertAction::create([
                 'ioc_alert_id' => $al->id, 'action' => 'acknowledge', 'user_id' => $guard->id,
                 'note' => 'Đã ghi nhận', 'acted_at' => Carbon::parse('2026-07-01 08:00')->addMinutes($i * 10),
             ]);
@@ -2728,7 +2990,7 @@ class DemoDataSeeder extends Seeder
         // Quỹ.
         $funds = [];
         foreach ([['QUY-VH', 'Quỹ vận hành', 'operating', 800_000_000], ['QUY-BT', 'Quỹ bảo trì', 'maintenance', 2_500_000_000]] as [$code, $name, $type, $open]) {
-            $funds[] = \App\Models\Fund::create([
+            $funds[] = Fund::create([
                 'tenant_id' => $tenant->id, 'project_id' => $project->id, 'code' => $code, 'name' => $name,
                 'type' => $type, 'opening_balance' => $open, 'current_balance' => $open, 'status' => 'active',
             ]);
@@ -2744,7 +3006,7 @@ class DemoDataSeeder extends Seeder
         ];
         $balance = (float) $opFund->current_balance;
         foreach ($prDefs as $i => [$title, $payee, $amount, $cat, $status]) {
-            $pr = \App\Models\PaymentRequest::create([
+            $pr = PaymentRequest::create([
                 'tenant_id' => $tenant->id, 'project_id' => $project->id, 'fund_id' => $opFund->id,
                 'code' => 'PR-'.str_pad((string) ($i + 1), 4, '0', STR_PAD_LEFT), 'title' => $title, 'payee' => $payee,
                 'amount' => $amount, 'category' => $cat, 'status' => $status,
@@ -2753,13 +3015,13 @@ class DemoDataSeeder extends Seeder
             ]);
             if ($status === 'paid') {
                 $balance -= $amount;
-                $cv = \App\Models\CashVoucher::create([
+                $cv = CashVoucher::create([
                     'tenant_id' => $tenant->id, 'project_id' => $project->id, 'fund_id' => $opFund->id,
                     'payment_request_id' => $pr->id, 'code' => 'PC-'.str_pad((string) ($i + 1), 4, '0', STR_PAD_LEFT),
                     'type' => 'payment', 'amount' => $amount, 'party' => $payee, 'description' => $title,
                     'voucher_date' => Carbon::parse('2026-07-02'), 'status' => 'posted', 'created_by_id' => $admin->id,
                 ]);
-                \App\Models\FundTransaction::create([
+                FundTransaction::create([
                     'fund_id' => $opFund->id, 'cash_voucher_id' => $cv->id, 'type' => 'out', 'amount' => $amount,
                     'balance_after' => $balance, 'description' => $title, 'transaction_date' => Carbon::parse('2026-07-02'),
                     'created_by_id' => $admin->id,
@@ -2768,13 +3030,13 @@ class DemoDataSeeder extends Seeder
         }
         // Một phiếu thu (nộp phí tiền mặt).
         $balance += 15_000_000;
-        $rcv = \App\Models\CashVoucher::create([
+        $rcv = CashVoucher::create([
             'tenant_id' => $tenant->id, 'project_id' => $project->id, 'fund_id' => $opFund->id,
             'code' => 'PT-0001', 'type' => 'receipt', 'amount' => 15_000_000, 'party' => 'Cư dân nộp phí',
             'description' => 'Thu phí quản lý tiền mặt', 'voucher_date' => Carbon::parse('2026-07-01'),
             'status' => 'posted', 'created_by_id' => $admin->id,
         ]);
-        \App\Models\FundTransaction::create([
+        FundTransaction::create([
             'fund_id' => $opFund->id, 'cash_voucher_id' => $rcv->id, 'type' => 'in', 'amount' => 15_000_000,
             'balance_after' => $balance, 'description' => 'Thu phí tiền mặt', 'transaction_date' => Carbon::parse('2026-07-01'),
             'created_by_id' => $admin->id,
@@ -2788,14 +3050,14 @@ class DemoDataSeeder extends Seeder
             ['Duyệt bảng kê phí Q3', 'statement', 248_650_000, 'pending', 1],
         ];
         foreach ($arDefs as $i => [$title, $type, $amount, $status, $curStep]) {
-            $ar = \App\Models\ApprovalRequest::create([
+            $ar = ApprovalRequest::create([
                 'tenant_id' => $tenant->id, 'project_id' => $project->id,
                 'code' => 'AR-'.str_pad((string) ($i + 1), 4, '0', STR_PAD_LEFT), 'type' => $type, 'title' => $title,
                 'amount' => $amount, 'status' => $status, 'current_step' => $curStep, 'requested_by_id' => $admin->id,
                 'decided_at' => $status === 'approved' ? Carbon::parse('2026-07-02 15:00') : null,
             ]);
             foreach (['Kế toán trưởng', 'Trưởng BQL', 'Giám đốc'] as $s => $role) {
-                \App\Models\ApprovalStep::create([
+                ApprovalStep::create([
                     'approval_request_id' => $ar->id, 'step_no' => $s + 1, 'approver_id' => $admin->id, 'role' => $role,
                     'status' => ($s + 1) < $curStep || $status === 'approved' ? 'approved' : 'pending',
                     'decided_at' => (($s + 1) < $curStep || $status === 'approved') ? Carbon::parse('2026-07-02 14:00')->addMinutes($s * 30) : null,
@@ -2809,7 +3071,7 @@ class DemoDataSeeder extends Seeder
     {
         $staff = User::where('tenant_id', $tenant->id)->where('account_type', 'staff')->orderBy('id')->get();
         $handler = $staff->first() ?? $admin;
-        $team = \App\Models\Team::where('tenant_id', $tenant->id)->first();
+        $team = Team::where('tenant_id', $tenant->id)->first();
 
         // Làm giàu work orders có sẵn + thêm con.
         $wos = WorkOrder::where('tenant_id', $tenant->id)->orderBy('id')->take(8)->get();
@@ -2826,26 +3088,26 @@ class DemoDataSeeder extends Seeder
                 'completed_at' => $done ? Carbon::parse('2026-07-01 11:00')->addHours($i) : null,
                 'cost' => $done ? 150000 * ($i + 1) : 0,
             ]);
-            \App\Models\WorkOrderAssignment::create([
+            WorkOrderAssignment::create([
                 'work_order_id' => $wo->id, 'assigned_to_id' => $assignee->id, 'assigned_by_id' => $admin->id,
                 'team_id' => $team?->id, 'role' => 'primary', 'status' => $done ? 'done' : 'assigned',
                 'assigned_at' => Carbon::parse('2026-07-01 08:30')->addHours($i),
             ]);
-            $cl = \App\Models\WorkOrderChecklist::create(['work_order_id' => $wo->id, 'name' => 'Quy trình xử lý']);
+            $cl = WorkOrderChecklist::create(['work_order_id' => $wo->id, 'name' => 'Quy trình xử lý']);
             foreach (['Kiểm tra hiện trạng', 'Thực hiện sửa chữa', 'Vệ sinh & bàn giao'] as $s => $label) {
-                \App\Models\WorkOrderChecklistItem::create([
+                WorkOrderChecklistItem::create([
                     'work_order_checklist_id' => $cl->id, 'work_order_id' => $wo->id, 'label' => $label,
                     'is_done' => $done, 'done_by_id' => $done ? $assignee->id : null,
                     'done_at' => $done ? Carbon::parse('2026-07-01 10:00')->addHours($i) : null, 'sort' => $s,
                 ]);
             }
             if ($done) {
-                \App\Models\WorkOrderAttachment::create([
+                WorkOrderAttachment::create([
                     'work_order_id' => $wo->id, 'path' => 'work-orders/wo-'.$wo->id.'-after.jpg',
                     'name' => 'after.jpg', 'mime' => 'image/jpeg', 'size' => 320000, 'type' => 'after',
                     'uploaded_by_id' => $assignee->id,
                 ]);
-                \App\Models\WorkOrderSignature::create([
+                WorkOrderSignature::create([
                     'work_order_id' => $wo->id, 'signer_name' => $assignee->name, 'signer_role' => 'technician',
                     'signature_path' => 'signatures/wo-'.$wo->id.'.png', 'signed_at' => $wo->completed_at,
                 ]);
@@ -2860,7 +3122,7 @@ class DemoDataSeeder extends Seeder
             ['SLA công việc thường', 'work_order', 'normal', 120, 2880],
         ];
         foreach ($slas as [$name, $applies, $priority, $resp, $resolve]) {
-            \App\Models\SlaPolicy::create([
+            SlaPolicy::create([
                 'tenant_id' => $tenant->id, 'project_id' => $project->id, 'name' => $name,
                 'applies_to' => $applies, 'priority' => $priority, 'response_minutes' => $resp,
                 'resolve_minutes' => $resolve, 'business_hours_only' => $priority === 'normal', 'status' => 'active',
@@ -2871,13 +3133,13 @@ class DemoDataSeeder extends Seeder
         $dept = Department::where('tenant_id', $tenant->id)->where('code', 'AN')->first();
         $shiftDefs = [['Ca sáng', '06:00', '14:00'], ['Ca chiều', '14:00', '22:00'], ['Ca đêm', '22:00', '06:00']];
         foreach ($shiftDefs as $si => [$name, $start, $end]) {
-            $shift = \App\Models\Shift::create([
+            $shift = Shift::create([
                 'tenant_id' => $tenant->id, 'project_id' => $project->id, 'building_id' => $building->id,
                 'department_id' => $dept?->id, 'name' => $name, 'start_time' => $start, 'end_time' => $end, 'status' => 'active',
             ]);
             for ($d = 0; $d < 3; $d++) {
                 $u = $staff[($si + $d) % max(1, $staff->count())] ?? $handler;
-                \App\Models\DutyRoster::create([
+                DutyRoster::create([
                     'shift_id' => $shift->id, 'user_id' => $u->id,
                     'duty_date' => Carbon::parse('2026-07-01')->addDays($d),
                     'status' => $d === 0 ? 'present' : 'scheduled',
@@ -2890,9 +3152,9 @@ class DemoDataSeeder extends Seeder
     private function seedTier2Patch(Tenant $tenant, Project $project, Building $building, User $admin): void
     {
         $apts = Apartment::where('building_id', $building->id)->orderBy('id')->take(10)->get();
-        $residents = \App\Models\Resident::where('tenant_id', $tenant->id)->orderBy('id')->take(10)->get();
+        $residents = Resident::where('tenant_id', $tenant->id)->orderBy('id')->take(10)->get();
 
-        \App\Models\EmergencyAlert::create([
+        EmergencyAlert::create([
             'tenant_id' => $tenant->id, 'project_id' => $project->id, 'building_id' => $building->id,
             'code' => 'EMG-001', 'type' => 'fire', 'title' => 'Cảnh báo cháy tầng hầm B1',
             'message' => 'Phát hiện khói tầng hầm B1. Vui lòng di chuyển theo lối thoát hiểm.',
@@ -2900,7 +3162,7 @@ class DemoDataSeeder extends Seeder
             'starts_at' => Carbon::parse('2026-06-20 14:00'), 'ends_at' => Carbon::parse('2026-06-20 14:40'),
             'resolved_at' => Carbon::parse('2026-06-20 14:40'), 'created_by_id' => $admin->id,
         ]);
-        \App\Models\EmergencyAlert::create([
+        EmergencyAlert::create([
             'tenant_id' => $tenant->id, 'project_id' => $project->id, 'building_id' => $building->id,
             'code' => 'EMG-002', 'type' => 'health', 'title' => 'Phun khử khuẩn định kỳ',
             'message' => 'Khu vực sảnh sẽ phun khử khuẩn 20:00 hôm nay.',
@@ -2909,9 +3171,9 @@ class DemoDataSeeder extends Seeder
         ]);
 
         // QR thanh toán cho vài bảng kê.
-        $statements = \App\Models\Statement::where('tenant_id', $tenant->id)->orderBy('id')->take(5)->get();
+        $statements = Statement::where('tenant_id', $tenant->id)->orderBy('id')->take(5)->get();
         foreach ($statements as $i => $st) {
-            \App\Models\QrPaymentToken::create([
+            QrPaymentToken::create([
                 'tenant_id' => $tenant->id, 'statement_id' => $st->id,
                 'code' => 'QRP-'.strtoupper(substr(md5('qrp'.$st->id), 0, 12)),
                 'amount' => $st->total_amount ?? $st->total ?? 500000, 'provider' => ['vietqr', 'momo', 'vnpay'][$i % 3],
@@ -2924,7 +3186,7 @@ class DemoDataSeeder extends Seeder
         $resolved = FeedbackRequest::where('tenant_id', $tenant->id)
             ->whereIn('status', ['resolved', 'closed'])->orderBy('id')->take(5)->get();
         foreach ($resolved as $i => $req) {
-            \App\Models\ServiceEvaluation::create([
+            ServiceEvaluation::create([
                 'tenant_id' => $tenant->id, 'feedback_request_id' => $req->id,
                 'resident_id' => $residents[$i % max(1, $residents->count())]->id ?? null,
                 'rating' => 5 - ($i % 3), 'criteria' => ['thoi_gian' => 5 - ($i % 2), 'thai_do' => 5, 'ket_qua' => 4],
@@ -2936,7 +3198,7 @@ class DemoDataSeeder extends Seeder
         for ($i = 0; $i < 12; $i++) {
             $apt = $apts[$i % max(1, $apts->count())] ?? null;
             $res = $residents[$i % max(1, $residents->count())] ?? null;
-            \App\Models\AccessLog::create([
+            AccessLog::create([
                 'tenant_id' => $tenant->id, 'project_id' => $project->id, 'building_id' => $building->id,
                 'apartment_id' => $apt?->id, 'resident_id' => $res?->id,
                 'device_name' => 'Cổng chính', 'gate' => 'GATE-01',
@@ -2947,7 +3209,7 @@ class DemoDataSeeder extends Seeder
         for ($i = 0; $i < 5; $i++) {
             $apt = $apts[$i % max(1, $apts->count())] ?? null;
             $res = $residents[$i % max(1, $residents->count())] ?? null;
-            \App\Models\IntercomEvent::create([
+            IntercomEvent::create([
                 'tenant_id' => $tenant->id, 'building_id' => $building->id,
                 'apartment_id' => $apt?->id, 'resident_id' => $res?->id,
                 'from_device' => 'lobby_gate', 'direction' => 'incoming',
@@ -2990,7 +3252,7 @@ class DemoDataSeeder extends Seeder
             $status = $roll === 5 ? 'failed' : ($risk === 'high' && $roll === 0 ? 'pending_approval' : 'success');
             $createdAt = Carbon::parse('2026-06-30 18:00')->subHours($i * 7 + ($i % 5));
 
-            \App\Models\AiUsageLog::create([
+            AiUsageLog::create([
                 'tenant_id' => $tenant->id,
                 'project_id' => $project->id,
                 'building_id' => $building->id,
@@ -3031,7 +3293,7 @@ class DemoDataSeeder extends Seeder
             ['Giới hạn mô hình theo chi phí', 'Ưu tiên Haiku; chỉ dùng Sonnet cho tác vụ phức tạp.', 'access', 'low', 'inactive'],
         ];
         foreach ($policies as [$name, $desc, $cat, $risk, $st]) {
-            \App\Models\AiPolicy::create([
+            AiPolicy::create([
                 'tenant_id' => $tenant->id,
                 'name' => $name, 'description' => $desc,
                 'category' => $cat, 'risk_level' => $risk, 'status' => $st,
@@ -3050,7 +3312,7 @@ class DemoDataSeeder extends Seeder
             ['Tóm tắt biên bản cuộc họp', 'general', 'Văn phòng', null, 96],
         ];
         foreach ($prompts as [$name, $cat, $cls, $surface, $uses]) {
-            \App\Models\AiPromptTemplate::create([
+            AiPromptTemplate::create([
                 'tenant_id' => $tenant->id,
                 'name' => $name, 'category' => $cat, 'classification' => $cls,
                 'surface' => $surface, 'usage_count' => $uses, 'status' => 'active',
@@ -3069,7 +3331,7 @@ class DemoDataSeeder extends Seeder
         ];
         foreach ($workflows as $w) {
             [$name, $desc, $trigger, $schedule, $status, $runs, $ok] = $w;
-            $wf = \App\Models\AiWorkflow::create([
+            $wf = AiWorkflow::create([
                 'tenant_id' => $tenant->id,
                 'project_id' => $project->id,
                 'name' => $name, 'description' => $desc,
@@ -3088,7 +3350,7 @@ class DemoDataSeeder extends Seeder
             for ($r = 0; $r < min(6, $runs); $r++) {
                 $failed = $r === 2 && $ok < $runs;
                 $start = Carbon::parse('2026-06-30 08:00')->subDays($r);
-                \App\Models\AiWorkflowRun::create([
+                AiWorkflowRun::create([
                     'ai_workflow_id' => $wf->id,
                     'status' => $failed ? 'failed' : 'success',
                     'trigger_source' => $trigger,
@@ -3119,9 +3381,9 @@ class DemoDataSeeder extends Seeder
         ];
         $idx = 0;
         foreach ($categories as [$name, $icon, $color]) {
-            $cat = \App\Models\KnowledgeCategory::create([
+            $cat = KnowledgeCategory::create([
                 'tenant_id' => $tenant->id,
-                'name' => $name, 'slug' => \Illuminate\Support\Str::slug($name),
+                'name' => $name, 'slug' => Str::slug($name),
                 'icon' => $icon, 'color' => $color,
                 'articles_count' => count($articlesByCat[$name] ?? []),
             ]);
@@ -3132,16 +3394,16 @@ class DemoDataSeeder extends Seeder
                 // chia sẻ xuống mọi dự án (để BQL nhìn thấy tài liệu công ty).
                 $isCompany = $idx % 5 === 0;
                 $body = '<p>Nội dung hướng dẫn cho "'.$title.'". Áp dụng cho cư dân và ban quản lý dự án.</p>';
-                \App\Models\KnowledgeArticle::create([
+                KnowledgeArticle::create([
                     'tenant_id' => $tenant->id,
                     'owner_level' => $isCompany ? 'tenant' : 'project',
                     'project_id' => $isCompany ? null : $project->id,
                     'share_mode' => $isCompany ? 'descendants' : 'private',
                     'knowledge_category_id' => $cat->id,
-                    'title' => $title, 'slug' => \Illuminate\Support\Str::slug($title),
+                    'title' => $title, 'slug' => Str::slug($title),
                     'excerpt' => $title.' — hướng dẫn chi tiết cho cư dân và BQL.',
                     'body' => $body,
-                    'content_text' => app(\App\Support\Knowledge\DocumentTextExtractor::class)->htmlToText($body),
+                    'content_text' => app(DocumentTextExtractor::class)->htmlToText($body),
                     'status' => $status,
                     'views' => 120 + ($idx * 137 % 4200),
                     'helpful_count' => 30 + ($idx * 17 % 280),
@@ -3160,16 +3422,16 @@ class DemoDataSeeder extends Seeder
         ];
         foreach ($platformDocs as $i => [$title, $excerpt, $shareMode]) {
             $body = '<p>'.$excerpt.'</p><p>Tài liệu do đội ngũ nền tảng X2-BMS biên soạn.</p>';
-            $doc = \App\Models\KnowledgeArticle::create([
+            $doc = KnowledgeArticle::create([
                 'tenant_id' => null,
                 'owner_level' => 'platform',
                 'project_id' => null,
                 'share_mode' => $shareMode,
                 'knowledge_category_id' => null,
-                'title' => $title, 'slug' => \Illuminate\Support\Str::slug($title),
+                'title' => $title, 'slug' => Str::slug($title),
                 'excerpt' => $excerpt,
                 'body' => $body,
-                'content_text' => app(\App\Support\Knowledge\DocumentTextExtractor::class)->htmlToText($body),
+                'content_text' => app(DocumentTextExtractor::class)->htmlToText($body),
                 'status' => 'published',
                 'views' => 800 + $i * 250,
                 'helpful_count' => 120 + $i * 30,
@@ -3179,7 +3441,7 @@ class DemoDataSeeder extends Seeder
             ]);
             // Bản "custom" chỉ chia sẻ cho tenant demo (công ty 1).
             if ($shareMode === 'custom') {
-                \App\Models\KnowledgeArticleShare::create([
+                KnowledgeArticleShare::create([
                     'knowledge_article_id' => $doc->id, 'scope_type' => 'tenant', 'scope_id' => $tenant->id,
                 ]);
             }
@@ -3190,12 +3452,12 @@ class DemoDataSeeder extends Seeder
         if ($otherProject) {
             foreach (['Nội quy dự án '.$otherProject->name, 'Quy trình bàn giao '.$otherProject->name] as $j => $title) {
                 $body = '<p>Tài liệu riêng của dự án '.$otherProject->name.', không chia sẻ ra ngoài.</p>';
-                \App\Models\KnowledgeArticle::create([
+                KnowledgeArticle::create([
                     'tenant_id' => $tenant->id, 'owner_level' => 'project', 'project_id' => $otherProject->id,
                     'share_mode' => 'private', 'knowledge_category_id' => null,
-                    'title' => $title, 'slug' => \Illuminate\Support\Str::slug($title),
+                    'title' => $title, 'slug' => Str::slug($title),
                     'excerpt' => $title.'.', 'body' => $body,
-                    'content_text' => app(\App\Support\Knowledge\DocumentTextExtractor::class)->htmlToText($body),
+                    'content_text' => app(DocumentTextExtractor::class)->htmlToText($body),
                     'status' => 'published', 'views' => 200 + $j * 40, 'helpful_count' => 20, 'not_helpful_count' => 1,
                     'author_id' => $admin->id, 'published_at' => Carbon::parse('2026-05-10')->addDays($j),
                 ]);
@@ -3230,7 +3492,7 @@ class DemoDataSeeder extends Seeder
 
         foreach ($plan as $i => [$status, $approverId, $count, $total, $slaDays]) {
             $b = $buildings[$i % $buildings->count()];
-            \App\Models\BillingRun::create([
+            BillingRun::create([
                 'tenant_id' => $tenant->id,
                 'building_id' => $b->id,
                 'billing_period_id' => $period?->id,
@@ -3266,7 +3528,7 @@ class DemoDataSeeder extends Seeder
         $managementType = null;
         $managementRate = null;
         foreach ($types as [$code, $name, $cat, $unit, $amount, $note, $appliesTo, $vat, $formulaText, $complex]) {
-            $feeType = \App\Models\FeeType::create([
+            $feeType = FeeType::create([
                 'tenant_id' => $tenant->id,
                 'code' => $code,
                 'name' => $name,
@@ -3282,7 +3544,7 @@ class DemoDataSeeder extends Seeder
                 'effective_from' => Carbon::parse('2026-01-01'),
                 'is_complex' => $complex,
             ]);
-            $rate = \App\Models\FeeRate::create([
+            $rate = FeeRate::create([
                 'tenant_id' => $tenant->id,
                 'fee_type_id' => $feeType->id,
                 'code' => $code.'-2026',
@@ -3299,7 +3561,7 @@ class DemoDataSeeder extends Seeder
         }
 
         // Management fee formula (+ first version).
-        $formula = \App\Models\FeeFormula::create([
+        $formula = FeeFormula::create([
             'tenant_id' => $tenant->id,
             'fee_type_id' => $managementType->id,
             'code' => 'F-QL',
@@ -3308,7 +3570,7 @@ class DemoDataSeeder extends Seeder
             'variables' => ['area_sqm' => 'Diện tích căn (m²)', 'rate' => 'Đơn giá (đ/m²)'],
             'status' => 'active',
         ]);
-        \App\Models\FeeFormulaVersion::create([
+        FeeFormulaVersion::create([
             'fee_formula_id' => $formula->id,
             'version' => 1,
             'expression' => 'area_sqm * rate',
@@ -3317,7 +3579,7 @@ class DemoDataSeeder extends Seeder
         ]);
 
         // Apply management fee to the whole project.
-        \App\Models\FeeScopeAssignment::create([
+        FeeScopeAssignment::create([
             'tenant_id' => $tenant->id,
             'fee_type_id' => $managementType->id,
             'fee_rate_id' => $managementRate->id,
@@ -3386,7 +3648,7 @@ class DemoDataSeeder extends Seeder
         $make = function (array $def, string $status, ?string $effectiveFrom) use ($tenant, $prefix, &$counter, &$recentIds, &$seq) {
             [$name, $cat, $appliesTo, $vat, $formula, $freq, $complex] = $def;
             $counter[$cat] = ($counter[$cat] ?? 0) + 1;
-            $ft = \App\Models\FeeType::create([
+            $ft = FeeType::create([
                 'tenant_id' => $tenant->id,
                 'code' => 'BF-'.$prefix[$cat].'-'.str_pad((string) $counter[$cat], 2, '0', STR_PAD_LEFT),
                 'name' => $name,
@@ -3421,7 +3683,7 @@ class DemoDataSeeder extends Seeder
 
         // Backdate "updated_at" for every extra row except the first 7 so the
         // "Cập nhật tháng này" KPI lands at 12 (5 functional + 7 recent extras).
-        \App\Models\FeeType::where('tenant_id', $tenant->id)
+        FeeType::where('tenant_id', $tenant->id)
             ->where('code', 'like', 'BF-%')
             ->whereNotIn('id', $recentIds)
             ->update(['updated_at' => Carbon::parse('2026-05-15 09:00')]);
@@ -3437,8 +3699,8 @@ class DemoDataSeeder extends Seeder
      */
     private function seedBql03Receivables(Tenant $tenant, Building $building, Project $project, BillingPeriod $period, User $admin): void
     {
-        $db = \Illuminate\Support\Facades\DB::connection()->getName();
-        $DB = fn (string $t) => \Illuminate\Support\Facades\DB::table($t);
+        $db = DB::connection()->getName();
+        $DB = fn (string $t) => DB::table($t);
         $now = Carbon::parse('2026-07-02 09:00');
         $tid = $tenant->id;
         $bid = $building->id;
@@ -3467,7 +3729,7 @@ class DemoDataSeeder extends Seeder
         // ---- 1. Scale apartments in Tòa A up to 1,248 (+ a resident each) ----
         $target = 1248;
         $existing = Apartment::where('building_id', $bid)->count();
-        $floorIds = \App\Models\Floor::where('building_id', $bid)->pluck('id')->all() ?: [null];
+        $floorIds = Floor::where('building_id', $bid)->pluck('id')->all() ?: [null];
         $firstNames = ['An', 'Bình', 'Cường', 'Dũng', 'Giang', 'Hà', 'Hùng', 'Khánh', 'Lan', 'Minh', 'Nam', 'Oanh', 'Phúc', 'Quân', 'Sơn', 'Thảo', 'Uyên', 'Vân', 'Xuân', 'Yến'];
         $lastNames = ['Nguyễn Văn', 'Trần Thị', 'Lê Minh', 'Phạm Quang', 'Đỗ Thu', 'Vũ Hoàng', 'Ngô Đức', 'Đặng Thùy', 'Bùi Thị', 'Hoàng Anh', 'Trịnh Văn', 'Đinh Văn', 'Trương Hải', 'Phan Thị', 'Dương Minh'];
 
@@ -3671,7 +3933,7 @@ class DemoDataSeeder extends Seeder
             $amount = $b0 + $b1 + $b2 + $b3;
             $riskKey = $riskByIndex[$n];
             $apt = Apartment::find($debtApts[$n]);
-            $resName = optional(\App\Models\Resident::whereHas('apartmentRelations', fn ($q) => $q->where('apartment_id', $debtApts[$n]))->first())->full_name
+            $resName = optional(Resident::whereHas('apartmentRelations', fn ($q) => $q->where('apartment_id', $debtApts[$n]))->first())->full_name
                 ?? ('Cư dân '.($apt->code ?? $n));
             $DB('debts')->where('id', $debtId)->update([
                 'code' => sprintf('AR-2026-%04d', $n + 1),
@@ -3766,7 +4028,7 @@ class DemoDataSeeder extends Seeder
         // Mark the current period published & due.
         $period->update(['status' => 'published', 'due_date' => Carbon::parse('2026-07-15')]);
 
-        $feeTypes = \App\Models\FeeType::where('tenant_id', $tenant->id)->get()->keyBy('code');
+        $feeTypes = FeeType::where('tenant_id', $tenant->id)->get()->keyBy('code');
         $statements = Statement::where('billing_period_id', $period->id)->get();
 
         // Approval lifecycle variety for the queue (WEB-FORM-07-04).
@@ -3782,19 +4044,19 @@ class DemoDataSeeder extends Seeder
         foreach ($statements as $st) {
             $apt = Apartment::find($st->apartment_id);
             $area = (float) ($apt->area_sqm ?? 70);
-            \App\Models\StatementLine::create([
+            StatementLine::create([
                 'statement_id' => $st->id, 'fee_type_id' => $feeTypes['QL']->id ?? null,
                 'fee_type' => 'Phí quản lý', 'quantity' => $area, 'unit_price' => 16_500,
                 'amount' => round($area * 16_500),
             ]);
-            \App\Models\StatementLine::create([
+            StatementLine::create([
                 'statement_id' => $st->id, 'fee_type_id' => $feeTypes['RAC']->id ?? null,
                 'fee_type' => 'Phí vệ sinh', 'quantity' => 1, 'unit_price' => 50_000, 'amount' => 50_000,
             ]);
         }
 
         // Billing run that produced this period's statements.
-        $run = \App\Models\BillingRun::create([
+        $run = BillingRun::create([
             'tenant_id' => $tenant->id, 'building_id' => $building->id, 'billing_period_id' => $period->id,
             'code' => 'BK-2607-A', 'status' => 'completed', 'approval_status' => 'approved',
             'total_billed' => $statements->sum('total_amount'), 'statements_count' => $statements->count(),
@@ -3803,19 +4065,19 @@ class DemoDataSeeder extends Seeder
             'run_at' => Carbon::parse('2026-07-01 08:00'),
         ]);
         foreach ($statements as $st) {
-            \App\Models\BillingRunItem::create([
+            BillingRunItem::create([
                 'billing_run_id' => $run->id, 'apartment_id' => $st->apartment_id,
                 'statement_id' => $st->id, 'amount' => $st->total_amount, 'status' => 'ok',
             ]);
         }
 
         // Approval + publish.
-        \App\Models\StatementApproval::create([
+        StatementApproval::create([
             'tenant_id' => $tenant->id, 'billing_period_id' => $period->id, 'approver_id' => $admin->id,
             'level' => 1, 'status' => 'approved', 'note' => 'Duyệt phát hành kỳ T7/2026',
             'decided_at' => Carbon::parse('2026-07-01 09:30'),
         ]);
-        \App\Models\StatementPublishLog::create([
+        StatementPublishLog::create([
             'tenant_id' => $tenant->id, 'billing_period_id' => $period->id, 'published_by_id' => $admin->id,
             'channel' => 'app', 'statements_count' => $statements->count(), 'published_at' => Carbon::parse('2026-07-01 10:00'),
         ]);
@@ -3823,15 +4085,15 @@ class DemoDataSeeder extends Seeder
         // Payment methods + bank account.
         $methods = [];
         foreach ([['CASH', 'Tiền mặt', 'cash'], ['BANK', 'Chuyển khoản', 'bank'], ['QR', 'QR VietQR', 'qr']] as [$c, $n, $t]) {
-            $methods[$c] = \App\Models\PaymentMethod::create(['tenant_id' => $tenant->id, 'code' => $c, 'name' => $n, 'type' => $t]);
+            $methods[$c] = PaymentMethod::create(['tenant_id' => $tenant->id, 'code' => $c, 'name' => $n, 'type' => $t]);
         }
-        $bank = \App\Models\BankAccount::create([
+        $bank = BankAccount::create([
             'tenant_id' => $tenant->id, 'bank_name' => 'Vietcombank', 'account_no' => '0123456789',
             'account_name' => 'CTY QL VH SUNSHINE', 'is_active' => true,
         ]);
 
         // Payments for the paid statements (+ allocation + receipt).
-        $import = \App\Models\BankStatementImport::create([
+        $import = BankStatementImport::create([
             'tenant_id' => $tenant->id, 'bank_account_id' => $bank->id, 'code' => 'IMP-2026-07',
             'status' => 'done', 'row_count' => 0, 'imported_at' => Carbon::parse('2026-07-08 07:00'),
         ]);
@@ -3839,30 +4101,30 @@ class DemoDataSeeder extends Seeder
         $paid = $statements->where('status', 'paid')->values();
         $rows = 0;
         foreach ($paid as $i => $st) {
-            $payment = \App\Models\Payment::create([
+            $payment = Payment::create([
                 'tenant_id' => $tenant->id, 'building_id' => $building->id, 'apartment_id' => $st->apartment_id,
                 'payment_method_id' => ($i % 2 ? $methods['BANK'] : $methods['QR'])->id,
                 'code' => 'PAY-2607-'.str_pad((string) ($i + 1), 3, '0', STR_PAD_LEFT),
                 'amount' => $st->paid_amount, 'paid_at' => Carbon::parse('2026-07-05')->addDays($i),
                 'reference_no' => 'FT2607'.(100000 + $i), 'status' => 'confirmed',
             ]);
-            \App\Models\PaymentAllocation::create([
+            PaymentAllocation::create([
                 'payment_id' => $payment->id, 'statement_id' => $st->id, 'amount' => $st->paid_amount,
             ]);
-            \App\Models\Receipt::create([
+            Receipt::create([
                 'tenant_id' => $tenant->id, 'payment_id' => $payment->id, 'code' => 'BL-2607-'.str_pad((string) ($i + 1), 3, '0', STR_PAD_LEFT),
                 'amount' => $st->paid_amount, 'issued_at' => $payment->paid_at, 'issued_by_id' => $admin->id,
             ]);
 
             // Matching bank credit for ~first 5 payments.
             if ($i < 5) {
-                $txn = \App\Models\BankTransaction::create([
+                $txn = BankTransaction::create([
                     'tenant_id' => $tenant->id, 'bank_account_id' => $bank->id, 'bank_statement_import_id' => $import->id,
                     'txn_date' => $payment->paid_at->toDateString(), 'amount' => $payment->amount, 'direction' => 'credit',
                     'description' => 'TT phi '.$st->apartment_id, 'reference_no' => $payment->reference_no,
                     'is_matched' => true, 'payment_id' => $payment->id,
                 ]);
-                \App\Models\ReconciliationMatch::create([
+                ReconciliationMatch::create([
                     'tenant_id' => $tenant->id, 'bank_transaction_id' => $txn->id, 'payment_id' => $payment->id,
                     'statement_id' => $st->id, 'amount' => $payment->amount, 'status' => 'confirmed', 'matched_by_id' => $admin->id,
                 ]);
@@ -3872,7 +4134,7 @@ class DemoDataSeeder extends Seeder
 
         // A couple of unmatched credits to populate the reconciliation queue.
         for ($k = 0; $k < 2; $k++) {
-            \App\Models\BankTransaction::create([
+            BankTransaction::create([
                 'tenant_id' => $tenant->id, 'bank_account_id' => $bank->id, 'bank_statement_import_id' => $import->id,
                 'txn_date' => '2026-07-09', 'amount' => 500_000 + $k * 100_000, 'direction' => 'credit',
                 'description' => 'CK chua doi soat #'.($k + 1), 'is_matched' => false,
@@ -3910,7 +4172,7 @@ class DemoDataSeeder extends Seeder
         ]);
 
         // Membership 1 — Sunshine (Cty Sunshine). BQL typed "Nguyễn Văn A".
-        $r1 = \App\Models\Resident::create([
+        $r1 = Resident::create([
             'tenant_id' => $sunshineTenant->id,
             'building_id' => $sunshineApartment->building_id,
             'user_id' => $account->id,
@@ -3927,7 +4189,7 @@ class DemoDataSeeder extends Seeder
             'kyc_status' => 'verified',
             'requested_role' => 'owner',
         ]);
-        \App\Models\ResidentApartmentRelation::create([
+        ResidentApartmentRelation::create([
             'tenant_id' => $sunshineTenant->id,
             'resident_id' => $r1->id,
             'apartment_id' => $sunshineApartment->id,
@@ -3962,7 +4224,7 @@ class DemoDataSeeder extends Seeder
             'apartment_count' => 50,
             'floor_count' => 10,
         ]);
-        $floor2 = \App\Models\Floor::create([
+        $floor2 = Floor::create([
             'tenant_id' => $tenant2->id, 'building_id' => $building2->id,
             'code' => 'DP-F08', 'name' => 'Tầng 8', 'level' => 8,
         ]);
@@ -3973,7 +4235,7 @@ class DemoDataSeeder extends Seeder
         ]);
 
         // Membership 2 — Đại Phúc (Cty Đại Phúc). BQL typed "Anh A".
-        $r2 = \App\Models\Resident::create([
+        $r2 = Resident::create([
             'tenant_id' => $tenant2->id,
             'building_id' => $building2->id,
             'user_id' => $account->id,      // SAME global account
@@ -3989,7 +4251,7 @@ class DemoDataSeeder extends Seeder
             'kyc_status' => 'verified',
             'requested_role' => 'owner',
         ]);
-        \App\Models\ResidentApartmentRelation::create([
+        ResidentApartmentRelation::create([
             'tenant_id' => $tenant2->id,
             'resident_id' => $r2->id,
             'apartment_id' => $apt2->id,
@@ -4032,7 +4294,7 @@ class DemoDataSeeder extends Seeder
 
             // A few floors + apartments per tòa (data only).
             for ($level = 1; $level <= 3; $level++) {
-                $floor = \App\Models\Floor::create($scope + [
+                $floor = Floor::create($scope + [
                     'code' => sprintf('%s-F%02d', $code, $level),
                     'name' => "Tầng {$level}",
                     'level' => $level,
@@ -4049,7 +4311,7 @@ class DemoDataSeeder extends Seeder
                         'management_fee' => 14000,
                     ]);
                     $resSeq++;
-                    $resident = \App\Models\Resident::create($scope + [
+                    $resident = Resident::create($scope + [
                         'code' => sprintf('CDR-%04d', $resSeq),
                         'full_name' => 'Lê Văn '.$firstNames[$resSeq % count($firstNames)],
                         'phone' => '07'.str_pad((string) (50000000 + $resSeq), 8, '0', STR_PAD_LEFT),
@@ -4059,7 +4321,7 @@ class DemoDataSeeder extends Seeder
                         'nationality' => 'Việt Nam',
                         'join_date' => Carbon::parse('2024-09-10'),
                     ]);
-                    \App\Models\ResidentApartmentRelation::create([
+                    ResidentApartmentRelation::create([
                         'tenant_id' => $tenant->id,
                         'resident_id' => $resident->id,
                         'apartment_id' => $apt->id,
@@ -4095,7 +4357,7 @@ class DemoDataSeeder extends Seeder
 
         $floors = [];
         for ($level = 1; $level <= 5; $level++) {
-            $floors[$level] = \App\Models\Floor::create($scope + [
+            $floors[$level] = Floor::create($scope + [
                 'code' => sprintf('BF%02d', $level), 'name' => "Tầng {$level}", 'level' => $level,
             ]);
         }
@@ -4119,7 +4381,7 @@ class DemoDataSeeder extends Seeder
         foreach ($apartments as $i => $apt) {
             // Status variety for the list view: ~15% pending, ~10% locked, rest active.
             $status = $i % 7 === 0 ? 'pending' : ($i % 9 === 0 ? 'inactive' : 'active');
-            $resident = \App\Models\Resident::create($scope + [
+            $resident = Resident::create($scope + [
                 'code' => sprintf('CDB-%04d', $i + 1),
                 'full_name' => 'Trần Văn '.$firstNames[$i % count($firstNames)],
                 'phone' => '08'.str_pad((string) (30000000 + $i), 8, '0', STR_PAD_LEFT),
@@ -4136,7 +4398,7 @@ class DemoDataSeeder extends Seeder
                 'mailing_address' => $apt->code.' - Tòa B, Sunshine Garden, P. An Phú, TP. Thủ Đức, TP. HCM',
                 'join_date' => Carbon::parse('2023-03-20')->addDays($i % 40),
             ]);
-            \App\Models\ResidentApartmentRelation::create([
+            ResidentApartmentRelation::create([
                 'tenant_id' => $tenant->id,
                 'resident_id' => $resident->id,
                 'apartment_id' => $apt->id,
@@ -4144,7 +4406,7 @@ class DemoDataSeeder extends Seeder
                 'is_primary' => true,
                 'start_date' => Carbon::parse('2025-06-01'),
             ]);
-            \App\Models\ResidentEmergencyContact::create([
+            ResidentEmergencyContact::create([
                 'tenant_id' => $tenant->id,
                 'resident_id' => $resident->id,
                 'full_name' => $i % 2 ? 'Lê Thị Mai' : 'Trần Văn Hòa',
@@ -4237,7 +4499,7 @@ class DemoDataSeeder extends Seeder
             ['Lý Thị Hương', 'tenant', 72, 2],
             ['Hồ Văn Đức', 'member', 80, 3],
         ] as $i => [$fullName, $reqRole, $score, $docs]) {
-            \App\Models\ResidentApprovalRequest::create($scope + [
+            ResidentApprovalRequest::create($scope + [
                 'apartment_id' => $apartments[$i]->id,
                 'full_name' => $fullName,
                 'phone' => '08'.str_pad((string) (40000000 + $i), 8, '0', STR_PAD_LEFT),
@@ -4256,13 +4518,13 @@ class DemoDataSeeder extends Seeder
     private function seedTier2(Tenant $tenant, Project $project, Building $building, User $admin): void
     {
         $apts = Apartment::where('building_id', $building->id)->orderBy('id')->take(8)->get();
-        $residents = \App\Models\Resident::where('tenant_id', $tenant->id)->orderBy('id')->take(8)->get();
+        $residents = Resident::where('tenant_id', $tenant->id)->orderBy('id')->take(8)->get();
         $staff = User::where('tenant_id', $tenant->id)->where('account_type', 'staff')->orderBy('id')->take(3)->get();
         $handler = $staff->first() ?? $admin;
 
         // ============ NOTIFICATIONS (3 lớp) ============
         // Platform — toàn hệ thống (superadmin), gửi mọi đối tượng.
-        $plat = \App\Models\Notification::create([
+        $plat = Notification::create([
             'tenant_id' => null, 'owner_level' => 'platform', 'code' => 'NTF-PLAT-001',
             'type' => 'system', 'title' => 'Nâng cấp hệ thống X2-BMS cuối tuần',
             'summary' => 'Bảo trì 22:00–23:00 Thứ 7. Một số tính năng tạm gián đoạn.',
@@ -4270,13 +4532,13 @@ class DemoDataSeeder extends Seeder
             'priority' => 'high', 'status' => 'published', 'is_pinned' => true,
             'published_at' => Carbon::parse('2026-06-28 09:00'), 'created_by_id' => $admin->id, 'published_by_id' => $admin->id,
         ]);
-        \App\Models\NotificationAudience::create(['notification_id' => $plat->id, 'scope_type' => 'all']);
+        NotificationAudience::create(['notification_id' => $plat->id, 'scope_type' => 'all']);
         foreach (['app', 'email'] as $ch) {
-            \App\Models\NotificationChannel::create(['notification_id' => $plat->id, 'channel' => $ch]);
+            NotificationChannel::create(['notification_id' => $plat->id, 'channel' => $ch]);
         }
 
         // Tenant — công ty vận hành, gửi xuống dự án.
-        $ten = \App\Models\Notification::create([
+        $ten = Notification::create([
             'tenant_id' => $tenant->id, 'owner_level' => 'tenant', 'project_id' => $project->id, 'code' => 'NTF-CO-001',
             'type' => 'billing', 'title' => 'Lịch thu phí quý 3/2026',
             'summary' => 'Thông báo kỳ thu phí và hạn thanh toán tới cư dân toàn dự án.',
@@ -4284,8 +4546,8 @@ class DemoDataSeeder extends Seeder
             'priority' => 'normal', 'status' => 'published', 'published_at' => Carbon::parse('2026-06-30 08:00'),
             'created_by_id' => $admin->id, 'published_by_id' => $admin->id,
         ]);
-        \App\Models\NotificationAudience::create(['notification_id' => $ten->id, 'scope_type' => 'project', 'scope_id' => $project->id]);
-        \App\Models\NotificationChannel::create(['notification_id' => $ten->id, 'channel' => 'app']);
+        NotificationAudience::create(['notification_id' => $ten->id, 'scope_type' => 'project', 'scope_id' => $project->id]);
+        NotificationChannel::create(['notification_id' => $ten->id, 'channel' => 'app']);
 
         // Project — BQL, gửi trong tòa. (published / scheduled / draft)
         $projNotifs = [
@@ -4295,7 +4557,7 @@ class DemoDataSeeder extends Seeder
         ];
         $published = null;
         foreach ($projNotifs as [$code, $type, $title, $status, $priority, $pubAt]) {
-            $n = \App\Models\Notification::create([
+            $n = Notification::create([
                 'tenant_id' => $tenant->id, 'owner_level' => 'project', 'project_id' => $project->id, 'building_id' => $building->id,
                 'code' => $code, 'type' => $type, 'title' => $title,
                 'summary' => $title.'.', 'body' => '<p>'.$title.'. Vui lòng theo dõi hướng dẫn của BQL.</p>',
@@ -4304,8 +4566,8 @@ class DemoDataSeeder extends Seeder
                 'published_at' => $status === 'published' ? $pubAt : null,
                 'created_by_id' => $handler->id, 'published_by_id' => $status === 'published' ? $handler->id : null,
             ]);
-            \App\Models\NotificationAudience::create(['notification_id' => $n->id, 'scope_type' => 'building', 'scope_id' => $building->id]);
-            \App\Models\NotificationChannel::create(['notification_id' => $n->id, 'channel' => 'app']);
+            NotificationAudience::create(['notification_id' => $n->id, 'scope_type' => 'building', 'scope_id' => $building->id]);
+            NotificationChannel::create(['notification_id' => $n->id, 'channel' => 'app']);
             if ($status === 'published') {
                 $published = $n;
             }
@@ -4315,12 +4577,12 @@ class DemoDataSeeder extends Seeder
             $recipients = 0;
             foreach ($residents as $i => $res) {
                 $recipients++;
-                \App\Models\NotificationDeliveryLog::create([
+                NotificationDeliveryLog::create([
                     'notification_id' => $published->id, 'resident_id' => $res->id, 'channel' => 'app',
                     'status' => 'sent', 'sent_at' => Carbon::parse('2026-06-29 07:05'),
                 ]);
                 if ($i % 2 === 0) {
-                    \App\Models\NotificationRead::create([
+                    NotificationRead::create([
                         'notification_id' => $published->id, 'resident_id' => $res->id,
                         'read_at' => Carbon::parse('2026-06-29 08:00')->addMinutes($i * 3),
                     ]);
@@ -4338,7 +4600,7 @@ class DemoDataSeeder extends Seeder
         ];
         $amenities = [];
         foreach ($amenityDefs as [$code, $name, $type, $cap, $open, $close, $price, $needApprove]) {
-            $a = \App\Models\Amenity::create([
+            $a = Amenity::create([
                 'tenant_id' => $tenant->id, 'project_id' => $project->id, 'building_id' => $building->id,
                 'code' => $code, 'name' => $name, 'type' => $type, 'capacity' => $cap,
                 'open_time' => $open, 'close_time' => $close, 'price' => $price,
@@ -4346,7 +4608,7 @@ class DemoDataSeeder extends Seeder
                 'description' => $name.' phục vụ cư dân nội khu.',
             ]);
             foreach ([['08:00', '10:00'], ['18:00', '20:00']] as [$s, $e]) {
-                \App\Models\AmenitySlot::create(['amenity_id' => $a->id, 'start_time' => $s, 'end_time' => $e, 'capacity' => (int) ($cap / 2)]);
+                AmenitySlot::create(['amenity_id' => $a->id, 'start_time' => $s, 'end_time' => $e, 'capacity' => (int) ($cap / 2)]);
             }
             $amenities[] = $a;
         }
@@ -4356,19 +4618,27 @@ class DemoDataSeeder extends Seeder
             $res = $residents[$i % max(1, $residents->count())] ?? null;
             $apt = $apts[$i % max(1, $apts->count())] ?? null;
             $date = Carbon::parse('2026-07-02')->addDays($i);
-            $bk = \App\Models\AmenityBooking::create([
+            // Mốc thời gian dựng dòng thời gian phiếu ở app cư dân (chốt 30/07
+            // lần 2): confirmed/completed/rejected đều là MỘT quyết định của
+            // BQL nên dùng chung approved_at; cancelled là hành động của CƯ
+            // DÂN nên có cột riêng cancelled_at; completed còn có mốc THỰC SỰ
+            // dùng tiện ích qua vé QR (booking_qr_passes.used_at).
+            $decided = in_array($st, ['confirmed', 'completed', 'rejected'], true) ? $date->copy()->subDay() : null;
+            $bk = AmenityBooking::create([
                 'tenant_id' => $tenant->id, 'building_id' => $building->id, 'amenity_id' => $a->id,
                 'apartment_id' => $apt?->id, 'resident_id' => $res?->id, 'code' => 'BK-'.str_pad((string) ($i + 1), 4, '0', STR_PAD_LEFT),
                 'booking_date' => $date, 'start_time' => '18:00', 'end_time' => '20:00', 'party_size' => 2 + $i,
                 'status' => $st, 'price' => $a->price,
-                'approved_by_id' => in_array($st, ['confirmed', 'completed'], true) ? $handler->id : null,
-                'approved_at' => in_array($st, ['confirmed', 'completed'], true) ? $date->copy()->subDay() : null,
+                'approved_by_id' => $decided ? $handler->id : null,
+                'approved_at' => $decided,
+                'cancelled_at' => $st === 'cancelled' ? $date->copy()->subHours(3) : null,
             ]);
             if (in_array($st, ['confirmed', 'completed'], true)) {
-                \App\Models\BookingQrPass::create([
+                BookingQrPass::create([
                     'amenity_booking_id' => $bk->id, 'code' => 'QR-BK-'.strtoupper(substr(md5($bk->id.'booking'), 0, 10)),
                     'valid_from' => $date->copy()->setTime(17, 30), 'valid_to' => $date->copy()->setTime(20, 30),
                     'status' => $st === 'completed' ? 'used' : 'active',
+                    'used_at' => $st === 'completed' ? $date->copy()->setTime(18, 5) : null,
                 ]);
             }
         }
@@ -4385,24 +4655,24 @@ class DemoDataSeeder extends Seeder
                 'channel' => ['app', 'web', 'hotline'][$i % 3],
                 'assigned_to_id' => $handler->id, 'sla_due_at' => Carbon::parse('2026-07-01')->addDays(2),
             ]);
-            \App\Models\FeedbackComment::create([
+            FeedbackComment::create([
                 'feedback_request_id' => $req->id, 'resident_id' => $res?->id, 'author_name' => $res?->full_name ?? 'Cư dân',
                 'body' => 'Sự việc xảy ra từ hôm qua, mong được hỗ trợ.', 'is_internal' => false,
             ]);
-            \App\Models\FeedbackComment::create([
+            FeedbackComment::create([
                 'feedback_request_id' => $req->id, 'user_id' => $handler->id, 'author_name' => $handler->name,
                 'body' => 'Đã tiếp nhận, phân công kỹ thuật kiểm tra.', 'is_internal' => true,
             ]);
-            \App\Models\FeedbackAssignment::create([
+            FeedbackAssignment::create([
                 'feedback_request_id' => $req->id, 'assigned_to_id' => $handler->id, 'assigned_by_id' => $admin->id,
                 'status' => 'assigned', 'note' => 'Ưu tiên trong ngày', 'assigned_at' => Carbon::parse('2026-07-01 09:00'),
             ]);
-            \App\Models\FeedbackStatusHistory::create([
+            FeedbackStatusHistory::create([
                 'feedback_request_id' => $req->id, 'from_status' => 'new', 'to_status' => 'assigned',
                 'changed_by_id' => $admin->id, 'note' => 'Tự động phân công', 'changed_at' => Carbon::parse('2026-07-01 09:00'),
             ]);
             if ($i % 2 === 0) {
-                \App\Models\FeedbackAttachment::create([
+                FeedbackAttachment::create([
                     'feedback_request_id' => $req->id, 'path' => 'feedback/demo-'.$req->id.'.jpg',
                     'name' => 'hien-truong-'.$req->id.'.jpg', 'mime' => 'image/jpeg', 'size' => 240000,
                     'uploaded_by_id' => $res?->user_id,
@@ -4420,7 +4690,7 @@ class DemoDataSeeder extends Seeder
         foreach ($visitorDefs as $i => [$name, $phone, $st, $purpose]) {
             $res = $residents[$i % max(1, $residents->count())] ?? null;
             $apt = $apts[$i % max(1, $apts->count())] ?? null;
-            $reg = \App\Models\VisitorRegistration::create([
+            $reg = VisitorRegistration::create([
                 'tenant_id' => $tenant->id, 'project_id' => $project->id, 'building_id' => $building->id,
                 'apartment_id' => $apt?->id, 'resident_id' => $res?->id, 'host_user_id' => null,
                 'code' => 'VS-'.str_pad((string) ($i + 1), 4, '0', STR_PAD_LEFT),
@@ -4429,7 +4699,7 @@ class DemoDataSeeder extends Seeder
                 'status' => $st, 'approved_by_id' => in_array($st, ['approved', 'checked_in', 'checked_out'], true) ? $handler->id : null,
             ]);
             if (in_array($st, ['approved', 'checked_in', 'checked_out'], true)) {
-                \App\Models\VisitorPass::create([
+                VisitorPass::create([
                     'visitor_registration_id' => $reg->id, 'code' => 'QR-VS-'.strtoupper(substr(md5($reg->id.'visitor'), 0, 10)),
                     'valid_from' => $reg->expected_at, 'valid_to' => $reg->expected_at->copy()->addHours(6),
                     'status' => $st === 'checked_out' ? 'used' : 'active',
@@ -4446,7 +4716,7 @@ class DemoDataSeeder extends Seeder
         foreach ($pkgStatus as $i => $st) {
             $apt = $apts[$i % max(1, $apts->count())] ?? null;
             $res = $residents[$i % max(1, $residents->count())] ?? null;
-            \App\Models\PackageDelivery::create([
+            PackageDelivery::create([
                 'tenant_id' => $tenant->id, 'project_id' => $project->id, 'building_id' => $building->id,
                 'apartment_id' => $apt?->id, 'resident_id' => $res?->id,
                 'tracking_no' => 'TRK'.str_pad((string) (1000 + $i), 6, '0', STR_PAD_LEFT),
@@ -4464,7 +4734,7 @@ class DemoDataSeeder extends Seeder
      *  credentials, API keys, webhooks, events, retry queue, incidents, security. */
     private function seedBatch08Integration(Tenant $tenant, User $admin): void
     {
-        $secret = new \App\Support\Integration\IntegrationSecret();
+        $secret = new IntegrationSecret;
 
         // --- categories ---
         $categoryDefs = [
@@ -4474,7 +4744,7 @@ class DemoDataSeeder extends Seeder
         ];
         $catId = [];
         foreach ($categoryDefs as [$code, $name, $sort]) {
-            $catId[$code] = \App\Models\IntegrationCategory::create([
+            $catId[$code] = IntegrationCategory::create([
                 'code' => $code, 'name' => $name, 'is_active' => true, 'sort_order' => $sort,
             ])->id;
         }
@@ -4495,7 +4765,7 @@ class DemoDataSeeder extends Seeder
             ['CONN-WEBHOOK-GATEWAY', 'Webhook Gateway', 'custom', 'production', 'incident', 'v1.0', 97.8, 198, 'valid', 'warning'],
         ];
         foreach ($connections as $i => [$code, $name, $cat, $env, $status, $ver, $rate, $lat, $credStatus, $sla]) {
-            $conn = \App\Models\IntegrationConnection::create([
+            $conn = IntegrationConnection::create([
                 'code' => $code, 'name' => $name, 'category_id' => $catId[$cat] ?? null,
                 'provider_code' => strtolower(str_replace('CONN-', '', $code)),
                 'environment' => $env, 'status' => $status, 'api_version' => $ver,
@@ -4507,7 +4777,7 @@ class DemoDataSeeder extends Seeder
             ]);
 
             $plain = $secret->generateApiSecret();
-            \App\Models\IntegrationCredential::create([
+            IntegrationCredential::create([
                 'connection_id' => $conn->id, 'credential_type' => 'api_key',
                 'encrypted_payload' => $secret->encrypt($plain), 'masked_summary' => $secret->mask($plain),
                 'status' => $credStatus,
@@ -4516,7 +4786,7 @@ class DemoDataSeeder extends Seeder
             ]);
 
             foreach ([['success', 200], ['success', 200], [$status === 'incident' ? 'failed' : 'success', $status === 'incident' ? 500 : 200]] as $j => [$cs, $http]) {
-                \App\Models\IntegrationConnectionCheck::create([
+                IntegrationConnectionCheck::create([
                     'connection_id' => $conn->id, 'status' => $cs, 'latency_ms' => $lat + $j * 10,
                     'http_status' => $http, 'message' => $cs === 'success' ? 'OK' : 'Connection timeout',
                     'checked_at' => Carbon::parse('2026-07-07 10:00')->subHours($j), 'checked_by' => $admin->id,
@@ -4525,7 +4795,7 @@ class DemoDataSeeder extends Seeder
             }
 
             if ($code === 'CONN-VNPAY') {
-                \App\Models\IntegrationMapping::create([
+                IntegrationMapping::create([
                     'connection_id' => $conn->id, 'mapping_type' => 'status',
                     'source_event' => 'vnpay.payment.success', 'target_event' => 'payment.paid',
                     'mapping_json' => ['00' => 'paid', '01' => 'pending', '02' => 'failed'],
@@ -4543,7 +4813,7 @@ class DemoDataSeeder extends Seeder
         ];
         foreach ($apiKeys as $i => [$name, $clientId, $scopes, $env, $status, $exp, $rl, $hmac, $ipReq]) {
             $plain = $secret->generateApiSecret();
-            $key = \App\Models\IntegrationApiKey::create([
+            $key = IntegrationApiKey::create([
                 'name' => $name, 'client_id' => $clientId, 'secret_hash' => $secret->hash($plain),
                 'environment' => $env, 'status' => $status, 'expires_at' => Carbon::parse($exp),
                 'last_used_at' => Carbon::parse('2026-07-07 10:00')->subMinutes($i * 20 + 12),
@@ -4554,7 +4824,7 @@ class DemoDataSeeder extends Seeder
             ]);
             foreach ($scopes as $sc) {
                 [$res, $lvl] = array_pad(explode(':', $sc), 2, 'read');
-                \App\Models\IntegrationApiKeyScope::create([
+                IntegrationApiKeyScope::create([
                     'api_key_id' => $key->id, 'scope_code' => $sc,
                     'scope_name' => ucfirst($res).' '.$lvl, 'permission_level' => $lvl,
                 ]);
@@ -4564,7 +4834,7 @@ class DemoDataSeeder extends Seeder
         // --- webhook event groups ---
         $groupId = [];
         foreach (['payment', 'notification', 'work_order', 'billing', 'resident', 'access_control', 'maintenance', 'energy', 'parking', 'logistics', 'feedback', 'system'] as $gc) {
-            $groupId[$gc] = \App\Models\WebhookEventGroup::create([
+            $groupId[$gc] = WebhookEventGroup::create([
                 'code' => $gc, 'name' => ucwords(str_replace('_', ' ', $gc)), 'is_active' => true,
             ])->id;
         }
@@ -4578,7 +4848,7 @@ class DemoDataSeeder extends Seeder
             ['WH-FEEDBACK', '/api/v1/feedback-submitted', 'https://survey.app.com/webhook/feedback', 'feedback', 'none', 'disabled', null, 'Survey App'],
         ];
         foreach ($webhooks as $i => [$code, $epName, $url, $grp, $sig, $status, $rate, $owner]) {
-            $wh = \App\Models\WebhookEndpoint::create([
+            $wh = WebhookEndpoint::create([
                 'code' => $code, 'endpoint_name' => $epName, 'url' => $url,
                 'event_group_id' => $groupId[$grp] ?? null, 'method' => 'POST',
                 'signature_type' => $sig, 'signing_secret_hash' => $sig === 'HMAC' ? $secret->hash($secret->generateSigningSecret()) : null,
@@ -4588,9 +4858,9 @@ class DemoDataSeeder extends Seeder
             ]);
             if ($status !== 'disabled') {
                 foreach ([['success', 200], ['success', 200], [$status === 'warning' ? 'failed' : 'success', $status === 'warning' ? 500 : 200]] as $j => [$cs, $http]) {
-                    \App\Models\WebhookDeliveryAttempt::create([
-                        'webhook_endpoint_id' => $wh->id, 'event_id' => 'evt_'.strtoupper(\Illuminate\Support\Str::random(20)),
-                        'correlation_id' => 'corr_'.\Illuminate\Support\Str::lower(\Illuminate\Support\Str::random(12)),
+                    WebhookDeliveryAttempt::create([
+                        'webhook_endpoint_id' => $wh->id, 'event_id' => 'evt_'.strtoupper(Str::random(20)),
+                        'correlation_id' => 'corr_'.Str::lower(Str::random(12)),
                         'payload_hash' => hash('sha256', $code.$j), 'http_status' => $http,
                         'duration_ms' => 120 + $j * 40, 'status' => $cs, 'attempt_no' => $j + 1,
                         'response_body' => $cs === 'success' ? '{"ok":true}' : '{"error":"Internal Server Error"}',
@@ -4612,14 +4882,14 @@ class DemoDataSeeder extends Seeder
         $extraTypes = ['sms.sent', 'email.sent', 'push.sent', 'ai.completion', 'erp.sync', 'payment.refunded', 'einvoice.issued'];
         foreach ($extraSources as $k => $src) {
             $events[] = [
-                'evt_'.strtoupper(\Illuminate\Support\Str::random(20)), $src, $extraTypes[$k],
+                'evt_'.strtoupper(Str::random(20)), $src, $extraTypes[$k],
                 $k % 5 === 0 ? 'warning' : 'success', 100 + $k * 37, $k % 5 === 0 ? 1 : 0, 'OK',
             ];
         }
         $failedEventId = null;
         foreach ($events as $i => [$eid, $src, $type, $status, $dur, $retry, $msg]) {
-            \App\Models\IntegrationEvent::create([
-                'event_id' => $eid, 'correlation_id' => 'corr_'.\Illuminate\Support\Str::lower(\Illuminate\Support\Str::random(12)),
+            IntegrationEvent::create([
+                'event_id' => $eid, 'correlation_id' => 'corr_'.Str::lower(Str::random(12)),
                 'source' => $src, 'event_type' => $type, 'tenant_id' => $tenant->id, 'status' => $status,
                 'duration_ms' => $dur, 'retry_count' => $retry, 'payload_hash' => hash('sha256', $eid),
                 'message' => $msg, 'created_at' => Carbon::parse('2026-07-07 10:00')->subMinutes($i * 7),
@@ -4630,13 +4900,13 @@ class DemoDataSeeder extends Seeder
         }
 
         // --- retry queue ---
-        $whGateway = \App\Models\WebhookEndpoint::where('code', 'WH-INVOICE-PAID')->value('id');
+        $whGateway = WebhookEndpoint::where('code', 'WH-INVOICE-PAID')->value('id');
         foreach ([
             [$failedEventId, 'retrying', 2, 'HTTP 500 Internal Server Error'],
-            ['evt_'.strtoupper(\Illuminate\Support\Str::random(20)), 'pending', 0, null],
-            ['evt_'.strtoupper(\Illuminate\Support\Str::random(20)), 'dead_letter', 5, 'Max attempts exceeded'],
+            ['evt_'.strtoupper(Str::random(20)), 'pending', 0, null],
+            ['evt_'.strtoupper(Str::random(20)), 'dead_letter', 5, 'Max attempts exceeded'],
         ] as $i => [$eid, $status, $attempt, $err]) {
-            \App\Models\IntegrationRetryJob::create([
+            IntegrationRetryJob::create([
                 'event_id' => $eid, 'webhook_endpoint_id' => $whGateway, 'source' => 'Webhook Gateway',
                 'reason' => 'delivery_failed', 'status' => $status, 'attempt_no' => $attempt, 'max_attempts' => 5,
                 'next_retry_at' => $status === 'pending' || $status === 'retrying' ? Carbon::parse('2026-07-07 10:30')->addMinutes($i * 5) : null,
@@ -4649,7 +4919,7 @@ class DemoDataSeeder extends Seeder
             ['INC-2026-0007', 'Odoo ERP đồng bộ thất bại', 'high', 'investigating', 'Odoo ERP', '2026-07-07 08:30', null],
             ['INC-2026-0006', 'Webhook Gateway latency cao', 'medium', 'resolved', 'Webhook Gateway', '2026-07-06 22:10', '2026-07-06 23:40'],
         ] as [$code, $title, $sev, $status, $src, $start, $end]) {
-            \App\Models\IntegrationIncident::create([
+            IntegrationIncident::create([
                 'code' => $code, 'title' => $title, 'severity' => $sev, 'status' => $status, 'source' => $src,
                 'started_at' => Carbon::parse($start), 'resolved_at' => $end ? Carbon::parse($end) : null,
                 'owner_user_id' => $admin->id, 'summary' => $title,
@@ -4669,24 +4939,24 @@ class DemoDataSeeder extends Seeder
             ['emergency_disable_switch', ['enabled' => false], true],
         ];
         foreach ($policies as [$key, $value, $enabled]) {
-            \App\Models\IntegrationSecurityPolicy::create([
+            IntegrationSecurityPolicy::create([
                 'policy_key' => $key, 'policy_value_json' => $value, 'is_enabled' => $enabled, 'updated_by' => $admin->id,
             ]);
         }
 
         // --- IP allowlist + rate limit ---
         foreach (['203.0.113.10/32', '203.0.113.11/32', '203.0.113.20/32', '103.56.12.0/24'] as $ip) {
-            \App\Models\IntegrationIpAllowlist::create([
+            IntegrationIpAllowlist::create([
                 'scope_type' => 'global', 'ip_or_cidr' => $ip, 'description' => 'Văn phòng HQ', 'created_by' => $admin->id,
             ]);
         }
-        \App\Models\IntegrationRateLimit::create([
+        IntegrationRateLimit::create([
             'scope_type' => 'global', 'limit_per_minute' => 1000, 'burst_limit' => 200, 'window_seconds' => 60, 'is_enabled' => true,
         ]);
 
         // --- a couple of audit entries so the audit view is not empty ---
-        $vnpay = \App\Models\IntegrationConnection::where('code', 'CONN-VNPAY')->first();
-        \App\Models\IntegrationAuditLog::create([
+        $vnpay = IntegrationConnection::where('code', 'CONN-VNPAY')->first();
+        IntegrationAuditLog::create([
             'actor_id' => $admin->id, 'connection_id' => $vnpay?->id, 'entity_type' => 'IntegrationConnection',
             'entity_id' => $vnpay?->id, 'action' => 'connection.tested', 'after_json' => ['status' => 'active'],
             'ip_address' => '203.0.113.10', 'created_at' => Carbon::parse('2026-07-07 09:30'),
@@ -4701,25 +4971,25 @@ class DemoDataSeeder extends Seeder
 
         // SLA policies.
         foreach ([['critical', 15, 240], ['high', 30, 480], ['medium', 60, 960], ['low', 120, 2880]] as [$p, $resp, $reso]) {
-            \App\Models\SupportSlaPolicy::create(['code' => 'SLA-'.strtoupper($p), 'name' => 'SLA '.$p, 'priority' => $p, 'response_minutes' => $resp, 'resolution_minutes' => $reso]);
+            SupportSlaPolicy::create(['code' => 'SLA-'.strtoupper($p), 'name' => 'SLA '.$p, 'priority' => $p, 'response_minutes' => $resp, 'resolution_minutes' => $reso]);
         }
 
         // Teams (member counts đúng catalog).
         $teamId = [];
         foreach ([['L1', 'L1 Support', 'L1', 12, 60], ['L2', 'L2 Engineering', 'L2', 8, 120], ['DATA_FIX', 'Data Fix Team', 'L3', 5, 240], ['ACCOUNT', 'Account Manager', 'account', 4, 120]] as [$code, $name, $level, $members, $sla]) {
-            $team = \App\Models\SupportTeam::create(['code' => $code, 'name' => $name, 'level' => $level, 'member_count' => $members, 'sla_target_response_minutes' => $sla]);
+            $team = SupportTeam::create(['code' => $code, 'name' => $name, 'level' => $level, 'member_count' => $members, 'sla_target_response_minutes' => $sla]);
             $teamId[$code] = $team->id;
             for ($m = 1; $m <= $members; $m++) {
-                \App\Models\SupportTeamMember::create(['support_team_id' => $team->id, 'member_name' => $name.' #'.$m, 'role' => $level, 'is_on_call' => $m === 1, 'open_tickets' => random_int(0, 8)]);
+                SupportTeamMember::create(['support_team_id' => $team->id, 'member_name' => $name.' #'.$m, 'role' => $level, 'is_on_call' => $m === 1, 'open_tickets' => random_int(0, 8)]);
             }
         }
 
         // Tenant support profiles + contacts + entitlements.
         foreach ([[$tenant, 'VNPAY Headquarters', '24/7 P1', 88.4, 4.6], [$tenant2, 'Sunshine City', 'Business Hours', 91.2, 4.7]] as [$tn, $label, $plan, $health, $csat]) {
-            \App\Models\TenantSupportProfile::create(['tenant_id' => $tn->id, 'support_plan' => $plan, 'tier' => 'Enterprise', 'health_score' => $health, 'csat' => $csat, 'account_manager_id' => $admin->id, 'vip_notes' => 'Khách hàng chiến lược — ưu tiên P1.']);
-            \App\Models\TenantSupportContact::create(['tenant_id' => $tn->id, 'name' => 'Nguyễn Quản Trị', 'email' => 'it@'.strtolower(str_replace(' ', '', $label)).'.vn', 'phone' => '0900000000', 'role' => 'IT Manager', 'is_primary' => true]);
+            TenantSupportProfile::create(['tenant_id' => $tn->id, 'support_plan' => $plan, 'tier' => 'Enterprise', 'health_score' => $health, 'csat' => $csat, 'account_manager_id' => $admin->id, 'vip_notes' => 'Khách hàng chiến lược — ưu tiên P1.']);
+            TenantSupportContact::create(['tenant_id' => $tn->id, 'name' => 'Nguyễn Quản Trị', 'email' => 'it@'.strtolower(str_replace(' ', '', $label)).'.vn', 'phone' => '0900000000', 'role' => 'IT Manager', 'is_primary' => true]);
             foreach (['priority_support' => '24/7', 'dedicated_am' => 'Yes', 'data_fix' => 'Included'] as $c => $v) {
-                \App\Models\SupportEntitlement::create(['tenant_id' => $tn->id, 'code' => $c, 'name' => ucwords(str_replace('_', ' ', $c)), 'value' => $v]);
+                SupportEntitlement::create(['tenant_id' => $tn->id, 'code' => $c, 'name' => ucwords(str_replace('_', ' ', $c)), 'value' => $v]);
             }
         }
 
@@ -4731,16 +5001,16 @@ class DemoDataSeeder extends Seeder
             ['TKT-2025-0607', 'Sai dữ liệu công tơ điện tầng 12', 'Data Fix', 'medium', 'waiting_customer', 'paused_waiting_customer', 70, 'Võ Thị Mai Linh'],
         ];
         foreach ($named as $i => [$no, $subject, $module, $priority, $status, $slaState, $slaMin, $owner]) {
-            $t = \App\Models\SupportTicket::create([
+            $t = SupportTicket::create([
                 'ticket_no' => $no, 'tenant_id' => $i % 2 ? $tenant2->id : $tenant->id, 'subject' => $subject,
                 'description' => '<p>'.$subject.'.</p>', 'module' => $module, 'priority' => $priority, 'status' => $status,
                 'environment' => 'production', 'sla_state' => $slaState, 'sla_due_at' => Carbon::parse('2026-07-07 10:00')->addMinutes($slaMin),
                 'owner_id' => $admin->id, 'team_id' => $teamId['L2'], 'requester_name' => $owner, 'requester_contact' => 'kh@tenant.vn',
                 'first_response_at' => Carbon::parse('2026-07-07 08:30'),
             ]);
-            \App\Models\SupportTicketMessage::create(['support_ticket_id' => $t->id, 'author_id' => $admin->id, 'author_name' => 'Support', 'type' => 'customer', 'body' => '<p>'.$subject.'</p>']);
-            \App\Models\SupportTicketMessage::create(['support_ticket_id' => $t->id, 'author_id' => $admin->id, 'author_name' => 'Support', 'type' => 'internal', 'body' => '<p>Đã tiếp nhận, đang điều tra.</p>']);
-            \App\Models\SupportTicketStatusLog::create(['support_ticket_id' => $t->id, 'from_status' => 'new', 'to_status' => $status, 'changed_by' => $admin->id, 'created_at' => now()]);
+            SupportTicketMessage::create(['support_ticket_id' => $t->id, 'author_id' => $admin->id, 'author_name' => 'Support', 'type' => 'customer', 'body' => '<p>'.$subject.'</p>']);
+            SupportTicketMessage::create(['support_ticket_id' => $t->id, 'author_id' => $admin->id, 'author_name' => 'Support', 'type' => 'internal', 'body' => '<p>Đã tiếp nhận, đang điều tra.</p>']);
+            SupportTicketStatusLog::create(['support_ticket_id' => $t->id, 'from_status' => 'new', 'to_status' => $status, 'changed_by' => $admin->id, 'created_at' => now()]);
         }
 
         // --- filler tickets to reproduce exact priority distribution (Critical 12 / High 46 / Medium 132 / Low 120 = 310) ---
@@ -4776,13 +5046,13 @@ class DemoDataSeeder extends Seeder
             }
         }
         foreach (array_chunk($rows, 100) as $chunk) {
-            \App\Models\SupportTicket::insert($chunk);
+            SupportTicket::insert($chunk);
         }
 
         // Escalation events (2 active — đúng catalog).
         foreach (['TKT-2025-0612' => 'Chưa xử lý sau 30 phút', 'TKT-2025-0608' => 'Khách hàng phản hồi tiêu cực'] as $no => $reason) {
-            $tk = \App\Models\SupportTicket::where('ticket_no', $no)->first();
-            \App\Models\SupportEscalation::create(['support_ticket_id' => $tk->id, 'from_level' => 'L1', 'to_level' => 'L2', 'reason' => $reason, 'status' => 'active', 'escalated_by' => $admin->id]);
+            $tk = SupportTicket::where('ticket_no', $no)->first();
+            SupportEscalation::create(['support_ticket_id' => $tk->id, 'from_level' => 'L1', 'to_level' => 'L2', 'reason' => $reason, 'status' => 'active', 'escalated_by' => $admin->id]);
         }
 
         // --- Data correction requests (đúng catalog) ---
@@ -4792,7 +5062,7 @@ class DemoDataSeeder extends Seeder
             ['DCR-2026-0610', 'Hợp đồng', 23, 'medium', 'executed'],
         ];
         foreach ($dcrDefs as $i => [$code, $type, $records, $risk, $status]) {
-            $dcr = \App\Models\DataCorrectionRequest::create([
+            $dcr = DataCorrectionRequest::create([
                 'code' => $code, 'tenant_id' => $tenant->id, 'data_type' => $type, 'target_entity' => 'residents',
                 'affected_records' => $records, 'risk' => $risk, 'status' => $status,
                 'reason' => '<p>Đối soát và sửa dữ liệu '.$type.' sai lệch.</p>', 'rollback_plan' => '<p>Khôi phục từ snapshot.</p>',
@@ -4801,22 +5071,22 @@ class DemoDataSeeder extends Seeder
                 'execution_window_at' => Carbon::parse('2026-07-08 22:00'),
             ]);
             for ($r = 0; $r < min($records, 5); $r++) {
-                \App\Models\DataCorrectionAffectedRecord::create(['data_correction_request_id' => $dcr->id, 'entity' => 'residents', 'record_id' => (string) ($r + 1), 'identifier' => 'REC-'.($r + 1)]);
+                DataCorrectionAffectedRecord::create(['data_correction_request_id' => $dcr->id, 'entity' => 'residents', 'record_id' => (string) ($r + 1), 'identifier' => 'REC-'.($r + 1)]);
             }
             if (in_array($status, ['approved', 'executed'], true)) {
-                \App\Models\DataFixSnapshot::create(['data_correction_request_id' => $dcr->id, 'snapshot_json' => ['sample' => 'before'], 'record_count' => $records, 'created_by' => $admin->id, 'created_at' => now()]);
-                \App\Models\DataFixDiffItem::create(['data_correction_request_id' => $dcr->id, 'entity' => 'residents', 'record_id' => '1', 'field' => 'id_no', 'before_value' => '0123', 'after_value' => '079xxxxx']);
-                \App\Models\DataFixApproval::create(['data_correction_request_id' => $dcr->id, 'approver_id' => $admin->id, 'decision' => 'approved', 'reason' => 'Đã kiểm chứng', 'approved_at' => Carbon::parse('2026-07-06 09:00')]);
+                DataFixSnapshot::create(['data_correction_request_id' => $dcr->id, 'snapshot_json' => ['sample' => 'before'], 'record_count' => $records, 'created_by' => $admin->id, 'created_at' => now()]);
+                DataFixDiffItem::create(['data_correction_request_id' => $dcr->id, 'entity' => 'residents', 'record_id' => '1', 'field' => 'id_no', 'before_value' => '0123', 'after_value' => '079xxxxx']);
+                DataFixApproval::create(['data_correction_request_id' => $dcr->id, 'approver_id' => $admin->id, 'decision' => 'approved', 'reason' => 'Đã kiểm chứng', 'approved_at' => Carbon::parse('2026-07-06 09:00')]);
             }
             if ($status === 'executed') {
-                \App\Models\DataFixExecution::create(['data_correction_request_id' => $dcr->id, 'executed_by' => $admin->id, 'status' => 'executed', 'affected_count' => $records, 'executed_at' => Carbon::parse('2026-07-06 22:30'), 'log' => 'OK']);
+                DataFixExecution::create(['data_correction_request_id' => $dcr->id, 'executed_by' => $admin->id, 'status' => 'executed', 'affected_count' => $records, 'executed_at' => Carbon::parse('2026-07-06 22:30'), 'log' => 'OK']);
             }
         }
 
         // --- KB categories + articles (rating/views đúng catalog) ---
         $kbCat = [];
         foreach (['Onboarding & Tenant Setup', 'Integration', 'Data Correction'] as $i => $cn) {
-            $kbCat[$cn] = \App\Models\SupportKbCategory::create(['code' => 'KBC-'.($i + 1), 'name' => $cn, 'sort_order' => $i + 1])->id;
+            $kbCat[$cn] = SupportKbCategory::create(['code' => 'KBC-'.($i + 1), 'name' => $cn, 'sort_order' => $i + 1])->id;
         }
         foreach ([
             ['KB-SUP-001', 'SOP: Tạo tenant mới và cấu hình gói dịch vụ', 'Onboarding & Tenant Setup', 4.8, 1240],
@@ -4824,24 +5094,24 @@ class DemoDataSeeder extends Seeder
             ['KB-SUP-003', 'SOP: Reset webhook khi nhận lỗi 5xx', 'Integration', 4.6, 812],
             ['KB-SUP-004', 'Data Fix: Đối soát và sửa dữ liệu billing sai lệch', 'Data Correction', 4.9, 743],
         ] as [$code, $title, $cat, $rating, $views]) {
-            $art = \App\Models\SupportKbArticle::create([
+            $art = SupportKbArticle::create([
                 'code' => $code, 'title' => $title, 'category_id' => $kbCat[$cat] ?? null,
                 'body' => '<h2>'.$title.'</h2><p>Nội dung hướng dẫn chi tiết.</p>', 'status' => 'published',
                 'rating' => $rating, 'views' => $views, 'author_id' => $admin->id, 'published_at' => Carbon::parse('2026-06-01'),
             ]);
-            \App\Models\SupportKbArticleVersion::create(['support_kb_article_id' => $art->id, 'version' => 1, 'body' => $art->body, 'editor_id' => $admin->id, 'created_at' => now()]);
+            SupportKbArticleVersion::create(['support_kb_article_id' => $art->id, 'version' => 1, 'body' => $art->body, 'editor_id' => $admin->id, 'created_at' => now()]);
         }
 
         // --- Report snapshots (exact numbers) ---
-        \App\Models\SupportReport::create([
+        SupportReport::create([
             'code' => 'RPT-2026-06', 'period' => '2026-06', 'type' => 'resolution', 'generated_by' => $admin->id,
             'metrics_json' => ['tickets_resolved' => 1248, 'mttr' => '14h 36m', 'sla_compliance' => 96.8, 'data_fixes' => 312, 'rollbacks' => 24, 'csat' => 4.7],
         ]);
-        \App\Models\SupportReport::create([
+        SupportReport::create([
             'code' => 'DASH-CURRENT', 'period' => '2026-07', 'type' => 'dashboard_snapshot', 'generated_by' => $admin->id,
             'metrics_json' => ['sla_compliance' => 88.4, 'breach_rate' => 11.6, 'open_escalations' => 28, 'near_breach' => 37, 'csat' => 4.6, 'data_corrections_open' => 1],
         ]);
 
-        \App\Models\SupportAuditLog::create(['actor_id' => $admin->id, 'tenant_id' => $tenant->id, 'entity_type' => 'DataCorrectionRequest', 'entity_id' => '1', 'action' => 'data_correction.created', 'ip_address' => '10.0.0.1', 'created_at' => now()]);
+        SupportAuditLog::create(['actor_id' => $admin->id, 'tenant_id' => $tenant->id, 'entity_type' => 'DataCorrectionRequest', 'entity_id' => '1', 'action' => 'data_correction.created', 'ip_address' => '10.0.0.1', 'created_at' => now()]);
     }
 }
