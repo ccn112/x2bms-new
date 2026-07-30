@@ -120,6 +120,11 @@ Route::prefix('v1')->group(function () {
         Route::post('community/posts/{post}/report', [\App\Http\Controllers\Api\V1\Resident\CommunityPostController::class, 'report'])->whereNumber('post');
 
         Route::get('community/posts', [\App\Http\Controllers\Api\V1\Resident\CommunityController::class, 'posts']);
+        // Bóc metadata link để app dựng thẻ xem trước. Throttle vì đây là endpoint
+        // server tự đi gọi URL người dùng nhập — không giới hạn là biến máy chủ
+        // thành công cụ quét hộ.
+        Route::post('link-preview', [\App\Http\Controllers\Api\V1\Resident\LinkPreviewController::class, 'show'])
+            ->middleware('throttle:30,1');
         Route::get('community/events', [\App\Http\Controllers\Api\V1\Resident\CommunityController::class, 'events']);
         Route::post('community/events/{event}/register', [\App\Http\Controllers\Api\V1\Resident\CommunityController::class, 'registerEvent'])->whereNumber('event');
         Route::delete('community/events/{event}/register', [\App\Http\Controllers\Api\V1\Resident\CommunityController::class, 'cancelEventRegistration'])->whereNumber('event');
