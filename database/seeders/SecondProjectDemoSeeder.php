@@ -6,6 +6,8 @@ use App\Models\Amenity;
 use App\Models\CommunityGroup;
 use App\Models\CommunityPost;
 use App\Models\Event;
+use App\Models\Poll;
+use App\Models\PollOption;
 use App\Models\Voucher;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Carbon;
@@ -94,6 +96,44 @@ class SecondProjectDemoSeeder extends Seeder
             );
         }
 
+        // Bình chọn: dự án 1 có 4 khảo sát, dự án này trước đó KHÔNG có cái nào
+        // → đổi sang căn Đại Phúc là tab "Bình chọn" rỗng trơn, tưởng app lỗi.
+        $polls = [
+            [
+                'question' => 'Bến thuyền nên mở tới mấy giờ vào cuối tuần?',
+                'closes' => '2026-08-31',
+                'options' => ['Tới 18h' => 34, 'Tới 20h' => 61, 'Tới 22h' => 27],
+            ],
+            [
+                'question' => 'Khu vườn ven sông nên ưu tiên trồng gì?',
+                'closes' => '2026-09-20',
+                'options' => ['Rau sạch theo hộ' => 58, 'Vườn hoa ngắm cảnh' => 42, 'Cây bóng mát' => 39],
+            ],
+        ];
+        foreach ($polls as $pd) {
+            $poll = Poll::withoutGlobalScopes()->updateOrCreate(
+                ['project_id' => self::PROJECT_ID, 'question' => $pd['question']],
+                [
+                    'tenant_id' => self::TENANT_ID,
+                    'type' => 'single',
+                    'status' => 'open',
+                    'closes_at' => Carbon::parse($pd['closes']),
+                    'vote_count' => 0,
+                ]
+            );
+            $total = 0;
+            $idx = 0;
+            foreach ($pd['options'] as $label => $count) {
+                PollOption::updateOrCreate(
+                    ['poll_id' => $poll->id, 'label' => $label],
+                    ['vote_count' => $count, 'sort' => $idx]
+                );
+                $total += $count;
+                $idx++;
+            }
+            $poll->update(['vote_count' => $total]);
+        }
+
         $groups = [
             ['name' => 'CLB Chèo thuyền Đại Phúc', 'desc' => 'Kayak, SUP và chèo thuyền truyền thống', 'members' => 128],
             ['name' => 'Hội câu cá bến số 3', 'desc' => 'Chia sẻ điểm câu, mồi và chiến lợi phẩm', 'members' => 96],
@@ -112,7 +152,7 @@ class SecondProjectDemoSeeder extends Seeder
             );
         }
 
-        $this->command?->info('  [DP] Cộng đồng: 7 bài + 3 sự kiện + 4 nhóm (dự án '.self::PROJECT_ID.').');
+        $this->command?->info('  [DP] Cộng đồng: 7 bài + 3 sự kiện + 2 bình chọn + 4 nhóm (dự án '.self::PROJECT_ID.').');
     }
 
     /** Tiện ích nội khu — bộ khác dự án 1 để nhìn phát biết đã đổi ngữ cảnh. */

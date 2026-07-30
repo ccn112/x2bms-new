@@ -45,6 +45,16 @@ class CommunityPostResource extends JsonResource
                 'subtitle' => $this->authorSubtitle(),
             ],
             'body' => $this->body,
+            // Loại nội dung + entity gốc. App lọc tab bằng tham số `tab` phía
+            // server, nhưng vẫn cần hai trường này để VẼ đúng: bài `event_ref`
+            // phải ra thẻ sự kiện có nút đăng ký, không phải một đoạn chữ trơn.
+            // `source` chỉ là con trỏ (type+id) — feed không giữ bản sao nội
+            // dung, tránh hai nguồn sự thật rồi lệch nhau.
+            'content_type' => $this->content_type ?: 'status',
+            'source' => $this->source_type === null ? null : [
+                'type' => $this->source_type,
+                'id' => (string) $this->source_id,
+            ],
             // `likes` = TỔNG mọi cảm xúc (không riêng 'like') để code cũ đọc cột
             // này không vỡ khi chuyển sang hệ reaction nhiều loại.
             'likes' => (int) $tally['total'],
