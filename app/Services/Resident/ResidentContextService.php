@@ -18,6 +18,18 @@ class ResidentContextService
      * Apartment ids the user has an active relation to. When $contextId is given
      * (from X-Context-Id = "apartment:<relationId>"), narrows to that one apartment.
      *
+     * KHÔNG có $contextId thì thu hẹp về **một căn** — căn `is_primary`, không có
+     * thì căn có id nhỏ nhất. Trước 2026-07-30 nhánh này trả về TẤT CẢ các căn,
+     * và đó là một lỗ rò dữ liệu thật: app chỉ gửi `X-Context-Id` sau khi cư dân
+     * tự mở bảng chọn căn hộ, nên ngay sau khi đăng nhập mọi truy vấn đi ra
+     * không kèm header. Người có căn ở hai dự án thấy feed/sự kiện/khảo sát của
+     * cả hai trộn vào nhau — mà hai dự án có thể thuộc HAI TENANT khác nhau.
+     * Tệ hơn: nhãn dự án trên header lại lấy căn primary, nên giao diện ghi một
+     * dự án trong khi dữ liệu là của mọi dự án.
+     *
+     * Thu hẹp về một căn cũng đúng hợp đồng sản phẩm: app cư dân luôn đứng ở
+     * MỘT căn hộ, mọi nội dung ăn theo dự án của căn đó.
+     *
      * @return array<int>
      */
     public function apartmentIds(User $user, ?string $contextId = null): array
@@ -29,10 +41,18 @@ class ResidentContextService
 
         if ($contextId && str_starts_with($contextId, 'apartment:')) {
             $relationId = (int) substr($contextId, strlen('apartment:'));
-            $relations = $relations->where('id', $relationId);
+
+            return $relations->where('id', $relationId)
+                ->pluck('apartment_id')->unique()->values()->all();
         }
 
-        return $relations->pluck('apartment_id')->unique()->values()->all();
+        // Tie-break theo id để hai lần gọi liên tiếp không ra hai căn khác nhau
+        // (thứ tự quan hệ không được bảo đảm), và để khớp cách app chọn nhãn:
+        // primary trước, không có thì căn đầu danh sách.
+        $default = $relations->sortBy('id')->firstWhere('is_primary', true)
+            ?? $relations->sortBy('id')->first();
+
+        return $default === null ? [] : [$default->apartment_id];
     }
 
     /**
