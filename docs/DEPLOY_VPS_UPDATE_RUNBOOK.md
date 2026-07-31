@@ -37,6 +37,36 @@ Ghi lại `<APP_DIR>` và `<user>` — phần dưới dùng lại.
 
 ## 1. Lần này deploy những gì
 
+> ⚠️ **CẬP NHẬT 2026-07-31 — §1 bên dưới ĐÃ LẠC HẬU.** Nó viết cho lần deploy 30/07 và
+> ghi "4 migration mới". Từ đó tới nay repo thêm nhiều migration nữa. **Đừng tin con số
+> 4.** Luôn lấy sự thật bằng `php artisan migrate:status | grep -i pending` trên server
+> ngay trước khi migrate.
+>
+> Tính tới 2026-07-31, migration có trong repo từ 30/07 trở đi:
+>
+> | Migration | Làm gì | Rủi ro |
+> |---|---|---|
+> | `2026_07_30_100000_add_listing_approval_workflow` | cột duyệt tin rao | Thấp |
+> | `2026_07_30_100000_normalize_event_status` | `'published'` → `'upcoming'` | **Ghi dữ liệu, `down()` trống** |
+> | `2026_07_30_100001_ensure_residents_soft_deletes` | bù `deleted_at` | Rất thấp (no-op trên MySQL) |
+> | `2026_07_30_150000_add_cancelled_at_to_amenity_bookings` | thêm cột | Thấp |
+> | `2026_07_30_160000_add_listing_escalation_fields` | đẩy tin rao lên `/sa` | Thấp |
+> | `2026_07_30_170000_add_resident_payment_claim_fields` | 12 cột cho luồng cư dân nộp chứng từ | Thấp |
+> | `2026_07_30_170001_normalize_payment_status` | `completed` → `confirmed` | **Ghi dữ liệu, KHÔNG có `down()`** ⇒ backup ở §2 là bắt buộc |
+> | `2026_07_30_180000_create_store_install_stats_table` | bảng mới | Thấp |
+> | `2026_07_30_190000_create_app_telemetry_tables` | bảng mới | Thấp |
+> | `2026_07_31_100000_add_subject_and_service_period_to_statement_lines` | `subject_type`/`subject_id` + `service_period_start/end` + `due_date` cấp dòng | Thấp — additive, guarded, **có `down()`**. Đã verify up → rollback → up trên dev 31/07 |
+>
+> Migration cuối **chưa có code nào dùng tới** (phần import khoản phí còn dở, Phase B1).
+> Cột nullable nên deploy trước cũng vô hại; hoãn cũng được.
+>
+> **Đợt này có thay đổi hành vi nhìn thấy được:** cư dân **chỉ còn thấy bảng kê đã phát
+> hành** (`approval_status='published'` và `published_at != null`). Trên live hiện có bảng
+> kê `pending`, nên sau deploy **danh sách hóa đơn của một số căn sẽ ngắn đi** và công nợ
+> tổng giảm tương ứng. Đó là đúng ý (quyết định D1), không phải mất dữ liệu — nhưng phải
+> nói trước với BQL, kẻo họ báo lỗi "hóa đơn biến mất". Muốn hiện lại thì BQL vào duyệt và
+> phát hành, không phải sửa code.
+
 9 commit backend chưa push (`git log --oneline origin/main..HEAD`), gồm:
 
 | Commit | Nội dung |
