@@ -2,22 +2,19 @@
 
 namespace App\Filament\Resources\Payments\Tables;
 
-use Filament\Actions\ForceDeleteBulkAction;
-
-use Filament\Actions\RestoreBulkAction;
-
-use Filament\Actions\ForceDeleteAction;
-
-use Filament\Actions\RestoreAction;
-
 use Filament\Tables\Filters\TrashedFilter;
-
-use Filament\Actions\BulkActionGroup;
-use Filament\Actions\DeleteBulkAction;
-use Filament\Actions\EditAction;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 
+/**
+ * CHỈ ĐỌC (2026-07-31, gate G10 money & authority) — `payments` mang bất biến
+ * tiền, không được có Resource sửa/xoá được (`docs/delivery/02_FILAMENT_DECISION_MATRIX.md`).
+ * Đã bỏ `EditAction`/`RestoreAction`/`ForceDeleteAction` + toàn bộ bulk action
+ * (từng cho sửa tự do cột `status`, xoá cứng, khôi phục ngoài mọi review) —
+ * đây chính là "đường vòng /fila/payments" mà gói AI-First Delivery cảnh báo.
+ * Duyệt chứng từ cư dân đi qua `Pages/PaymentClaimQueue.php` (dùng
+ * `ResidentPaymentClaimReviewer`, có transaction + lock + idempotent).
+ */
 class PaymentsTable
 {
     public static function configure(Table $table): Table
@@ -61,19 +58,6 @@ class PaymentsTable
             ])
             ->filters([
                 TrashedFilter::make(),
-                //
-            ])
-            ->recordActions([
-                RestoreAction::make(),
-                ForceDeleteAction::make(),
-                EditAction::make(),
-            ])
-            ->toolbarActions([
-                BulkActionGroup::make([
-                    RestoreBulkAction::make(),
-                    ForceDeleteBulkAction::make(),
-                    DeleteBulkAction::make(),
-                ]),
             ]);
     }
 }

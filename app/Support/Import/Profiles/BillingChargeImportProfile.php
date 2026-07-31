@@ -218,6 +218,8 @@ class BillingChargeImportProfile implements ImportProfile
                 'status' => 'issued',
                 'approval_status' => Statement::APPROVAL_PENDING,
                 'issued_at' => now(),
+                // Ai tạo — cần cho chặn tự duyệt (G9, Phase B2 StatementApprovalService).
+                'created_by_user_id' => $userId,
             ]);
         } elseif ($statement->approval_status !== Statement::APPROVAL_PENDING) {
             // D1: import không bao giờ được thêm dòng vào bảng kê đã qua khỏi 'pending' —

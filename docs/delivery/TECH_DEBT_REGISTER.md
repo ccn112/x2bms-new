@@ -5,19 +5,19 @@
 
 ## Nhóm 1 — TIỀN (hậu quả cao nhất)
 
-| # | Nợ | Bằng chứng | Gate |
-|---|---|---|---|
-| M1 | **`/fila/payments` cho sửa `status` bằng `TextInput` tự do + sửa `amount`.** Set `confirmed` ở đây không sinh allocation/receipt; sửa `amount` sau khi phân bổ không đồng bộ `statements.paid_amount` | `app/Filament/Resources/Payments/Schemas/PaymentForm.php:33` | G9, G10 |
-| M2 | **Đường duyệt bảng kê thứ hai, không kiểm soát** — mass-update, không lock, không guard trạng thái, không audit đủ | `app/Filament/Pages/MyWork.php:338` | G9, G10 |
-| M3 | **Duyệt billing run không transaction, không maker-checker** — `$eligible->each->update(...)`; không chặn `created_by_id` tự duyệt | `app/Filament/Pages/StatementApprovalQueue.php:186` | G10 |
-| M4 | **`transitionRuns()` không lọc trạng thái hợp lệ** → từ chối được cả bản ghi đã `approved`/`published` | `StatementApprovalQueue.php:194` | G9 |
-| M5 | **Không có bất biến tầng DB** cho `Σ payment_allocations.amount ≤ payments.amount` và `statements.paid_amount = Σ allocations`. Đúng chỉ nhờ MỘT code path — mà có 4 đường vòng | — | G10 |
-| M6 | **`receipts.code` không unique** → hai lượt duyệt đồng thời cùng tháng có thể trùng mã | tự ghi nhận ở `app/Services/Billing/ResidentPaymentClaimReviewer.php:184` | G10 |
-| M7 | **`Payment::STATUS_REVERSED` khai báo nhưng không code path nào set** — không có nghiệp vụ đảo/hoàn, không `reversal_of_id` | `app/Models/Payment.php:32` | G10 |
-| M8 | **`ApartmentWalletService::autoSettleOutstanding()` là dead code và sẽ phá bất biến nếu bật** — ghi `statement_lines.paid_amount` mà bỏ qua `payment_allocations` + `statements.paid_amount` | `app/Services/Resident/ApartmentWalletService.php:107` | G10 |
-| M9 | **Không có code nào set `approval_status='published'`** (chỉ seeder); `statement_publish_logs` có bảng + model, không write-path | — | G10 |
-| M10 | **`GET resident/statements` không lọc `published`** — 130 bảng kê `pending` đang có thể lộ cho cư dân | `StatementController::index` | G10 |
-| M11 | **Tiền dùng `double` ở app** — 3 hàm `_money()` ép `double.tryParse`, so sánh bằng epsilon `0.009`; cache ghi `"5000000.0"` mất hình dạng gốc | `x2mobile` `statement_dto.dart:131` · `payment_dto.dart:99` · `wallet_dto.dart:132` | G10 |
+| # | Nợ | Bằng chứng | Gate | Trạng thái |
+|---|---|---|---|---|
+| M1 | **`/fila/payments` cho sửa `status` bằng `TextInput` tự do + sửa `amount`.** Set `confirmed` ở đây không sinh allocation/receipt; sửa `amount` sau khi phân bổ không đồng bộ `statements.paid_amount` | `app/Filament/Resources/Payments/Schemas/PaymentForm.php:33` | G9, G10 | ✅ **Đóng 31/07**: `PaymentResource` đổi CHỈ ĐỌC, xoá `PaymentForm.php`/create/edit page |
+| M2 | **Đường duyệt bảng kê thứ hai, không kiểm soát** — mass-update, không lock, không guard trạng thái, không audit đủ | `app/Filament/Pages/MyWork.php:338` | G9, G10 | ✅ **Đóng 31/07**: loại `statement` nay gọi `StatementApprovalService::approve/reject` |
+| M3 | **Duyệt billing run không transaction, không maker-checker** — `$eligible->each->update(...)`; không chặn `created_by_id` tự duyệt | `app/Filament/Pages/StatementApprovalQueue.php:186` | G10 | ⬜ **Chưa đóng** — đây là trục `BillingRun` (khác `Statement`), `approve()` đã lọc trạng thái từ trước nhưng vẫn thiếu transaction + chặn tự duyệt |
+| M4 | **`transitionRuns()` không lọc trạng thái hợp lệ** → từ chối được cả bản ghi đã `approved`/`published` | `StatementApprovalQueue.php:194` | G9 | ✅ **Đóng 31/07**: lọc `validFrom` theo `$status` đích trước khi transition |
+| M5 | **Không có bất biến tầng DB** cho `Σ payment_allocations.amount ≤ payments.amount` và `statements.paid_amount = Σ allocations`. Đúng chỉ nhờ MỘT code path — mà có 4 đường vòng | — | G10 | ⬜ Chưa đóng |
+| M6 | **`receipts.code` không unique** → hai lượt duyệt đồng thời cùng tháng có thể trùng mã | tự ghi nhận ở `app/Services/Billing/ResidentPaymentClaimReviewer.php:184` | G10 | ⬜ Chưa đóng |
+| M7 | **`Payment::STATUS_REVERSED` khai báo nhưng không code path nào set** — không có nghiệp vụ đảo/hoàn, không `reversal_of_id` | `app/Models/Payment.php:32` | G10 | ⬜ Chưa đóng |
+| M8 | **`ApartmentWalletService::autoSettleOutstanding()` là dead code và sẽ phá bất biến nếu bật** — ghi `statement_lines.paid_amount` mà bỏ qua `payment_allocations` + `statements.paid_amount` | `app/Services/Resident/ApartmentWalletService.php:107` | G10 | ⬜ Chưa đóng |
+| M9 | **Không có code nào set `approval_status='published'`** (chỉ seeder); `statement_publish_logs` có bảng + model, không write-path | — | G10 | ✅ **Đóng 31/07**: `StatementApprovalService::publish()` — chỗ DUY NHẤT set `published`, ghi `StatementPublishLog` |
+| M10 | **`GET resident/statements` không lọc `published`** — 130 bảng kê `pending` đang có thể lộ cho cư dân | `StatementController::index` | G10 | ✅ **Đã đóng cùng ngày lập register này** (D1, `Statement::scopeVisibleToResident()` — chốt trước khi mục này được ghi, entry lạc hậu ngay từ lúc viết) |
+| M11 | **Tiền dùng `double` ở app** — 3 hàm `_money()` ép `double.tryParse`, so sánh bằng epsilon `0.009`; cache ghi `"5000000.0"` mất hình dạng gốc | `x2mobile` `statement_dto.dart:131` · `payment_dto.dart:99` · `wallet_dto.dart:132` | G10 | ⬜ Chưa đóng — Phase B7 |
 | M12 | **`debts` không có nguồn tính** — buckets/risk/recovery chỉ seeder, không job tính lại → `/admin/debts` và HQ DebtAging không đảm bảo khớp `statements` | — | G10 |
 | M13 | **Migration data-fix không có `down()`** — vi phạm "migration reversible" ngay ở code đã merge | `database/migrations/2026_07_30_170001_*` | G3 |
 | M14 | **Hai số tiền khác nhau cùng luồng** — sheet hiện `totalAmount`, intent tạo theo `outstanding`; thẻ hóa đơn `totalAmount` vs hàng tổng `remaining` | `payment_method_sheet.dart:100` · `statements_screen.dart:384` | G10 |

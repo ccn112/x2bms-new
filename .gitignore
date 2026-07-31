@@ -27,6 +27,7 @@ Homestead.yaml
 Thumbs.db
 _render_hq.php
 _render_admin.php
+_render_fila.php
 _chk.php
 
 **/caddy

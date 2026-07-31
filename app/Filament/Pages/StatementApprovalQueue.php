@@ -191,11 +191,27 @@ class StatementApprovalQueue extends Page implements HasTable
         Notification::make()->title('Đã duyệt '.$eligible->count().' bảng kê')->success()->send();
     }
 
+    /**
+     * G9: chỉ chuyển trạng thái các bản ghi ĐANG ở trạng thái hợp lệ để đi tới
+     * `$status` — trước đây `update()` mù, cho phép ví dụ "từ chối" một run đã
+     * `published`. Bản ghi không hợp lệ bị bỏ qua, không báo lỗi cả lô.
+     */
     private function transitionRuns(Collection $records, string $status, string $action, string $verb, ?string $note): void
     {
-        $records->each->update(['approval_status' => $status, 'approval_note' => $note]);
-        $this->audit($action, $verb.' '.$records->count().' bảng kê'.($note ? ': '.$note : ''));
-        Notification::make()->title($verb.' '.$records->count().' bảng kê')->warning()->send();
+        $validFrom = match ($status) {
+            'rejected', 'need_more' => ['pending', 'reviewing', 'need_more'],
+            default => ['pending', 'reviewing', 'need_more', 'approved'],
+        };
+
+        $eligible = $records->whereIn('approval_status', $validFrom);
+        $eligible->each->update(['approval_status' => $status, 'approval_note' => $note]);
+        $this->audit($action, $verb.' '.$eligible->count().'/'.$records->count().' bảng kê'.($note ? ': '.$note : ''));
+
+        $skipped = $records->count() - $eligible->count();
+        Notification::make()
+            ->title($verb.' '.$eligible->count().' bảng kê')
+            ->body($skipped > 0 ? "Bỏ qua {$skipped} bảng kê không ở trạng thái hợp lệ." : null)
+            ->warning()->send();
     }
 
     private function audit(string $action, string $description): void

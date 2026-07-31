@@ -1,9 +1,5 @@
 <x-filament-panels::page>
     <div class="flex flex-wrap items-center justify-end gap-3">
-        <button type="button" class="inline-flex items-center gap-2 rounded-lg bg-x2-primary px-4 py-2 text-sm font-semibold text-white shadow-sm hover:opacity-90">
-            <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
-            Phát hành bảng kê
-        </button>
         <button type="button" class="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50">
             <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/></svg>
             Gửi thông báo
@@ -73,9 +69,18 @@
                             <td class="whitespace-nowrap px-4 py-3 text-slate-600">{{ $r['due_at'] }}</td>
                             <td class="whitespace-nowrap px-4 py-3"><x-x2.status-badge :label="$r['status_label']" :tone="$r['status_tone']" /></td>
                             <td class="whitespace-nowrap px-4 py-3 text-right">
-                                <a href="{{ url('/admin/statements/'.$r['id']) }}" class="rounded p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-600" title="Chi tiết bảng kê">
-                                    <svg class="h-4 w-4" fill="currentColor" viewBox="0 0 24 24"><path d="M12 8a2 2 0 100-4 2 2 0 000 4zm0 6a2 2 0 100-4 2 2 0 000 4zm0 6a2 2 0 100-4 2 2 0 000 4z"/></svg>
-                                </a>
+                                <div class="flex items-center justify-end gap-1">
+                                    @if ($r['approval_status_raw'] === 'pending')
+                                        <button type="button" wire:click="approveStatement({{ $r['id'] }})" wire:confirm="Duyệt bảng kê {{ $r['code'] }}?" class="rounded px-2 py-1 text-xs font-medium text-x2-green hover:bg-green-50">Duyệt</button>
+                                        <button type="button" wire:click="rejectStatement({{ $r['id'] }})" wire:confirm="Từ chối bảng kê {{ $r['code'] }}?" class="rounded px-2 py-1 text-xs font-medium text-x2-red hover:bg-red-50">Từ chối</button>
+                                    @elseif ($r['approval_status_raw'] === 'approved')
+                                        <button type="button" wire:click="publishStatement({{ $r['id'] }})" wire:confirm="Phát hành bảng kê {{ $r['code'] }}? Cư dân sẽ thấy được ngay." class="rounded px-2 py-1 text-xs font-medium text-x2-primary hover:bg-blue-50">Phát hành</button>
+                                        <button type="button" wire:click="rejectStatement({{ $r['id'] }})" wire:confirm="Từ chối bảng kê {{ $r['code'] }}?" class="rounded px-2 py-1 text-xs font-medium text-x2-red hover:bg-red-50">Từ chối</button>
+                                    @endif
+                                    <a href="{{ url('/admin/statements/'.$r['id']) }}" class="rounded p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-600" title="Chi tiết bảng kê">
+                                        <svg class="h-4 w-4" fill="currentColor" viewBox="0 0 24 24"><path d="M12 8a2 2 0 100-4 2 2 0 000 4zm0 6a2 2 0 100-4 2 2 0 000 4zm0 6a2 2 0 100-4 2 2 0 000 4z"/></svg>
+                                    </a>
+                                </div>
                             </td>
                         </tr>
                     @empty

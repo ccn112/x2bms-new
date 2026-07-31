@@ -2533,3 +2533,65 @@ Verify: `php artisan test` → **121/121 pass** (109 cũ + 12 mới), 387 assert
 **Còn lại rất nhiều** (xem `docs/PROGRESS_TRACKER.md` mục Community Domain): GĐ1 nền
 (CommunityAccessService, capability resolver, idempotency), GĐ3 grants, GĐ5-9, và GĐ7
 tách bình luận vẫn đúng vị trí CUỐI CÙNG như kế hoạch gốc — chưa đụng.
+
+## 2026-07-31 (tiếp) — Phase B2: Duyệt & phát hành có maker-checker (D1)
+
+Đóng phần lớn nợ nhóm 1 (TIỀN) trong `docs/delivery/TECH_DEBT_REGISTER.md`: M1, M2,
+M4, M9 — cập nhật trạng thái ngay trong file đó thay vì chỉ nói ở đây, để tài liệu
+không kể hai câu chuyện khác nhau.
+
+### `StatementApprovalService` — chỗ DUY NHẤT được set `published`
+
+`approve()`/`reject()`/`publish()`, cùng tinh thần `ResidentPaymentClaimReviewer`:
+service thuần (không phụ thuộc `auth()`), `lockForUpdate()` + transaction, để `MyWork`,
+`StatementList`, hay job nền sau này gọi vào MỘT chỗ thay vì tự viết lại state machine.
+
+- `approve()`: chỉ từ `pending`; chặn tự duyệt bằng so `approver->id` với
+  `statements.created_by_user_id` (cột MỚI — trước đây không có gì để so sánh). Bảng kê
+  cũ (`created_by_user_id = null`, tạo trước cột này tồn tại) không bị chặn — thiếu dữ
+  liệu thì không giả định là vi phạm. Ghi thêm `StatementApproval` (bảng có sẵn từ lâu,
+  0 write-path).
+- `publish()`: chỉ từ `approved`; set `published_at` + ghi `StatementPublishLog`.
+- `reject()`: từ `pending` hoặc `approved`.
+
+`BillingChargeImportProfile::commitRow()` (B1) nay set `created_by_user_id` khi TẠO
+statement mới — nếu không có bước này thì `approve()` không có gì để chặn tự duyệt.
+
+### Đóng 3 đường vòng đã xác minh (G9)
+
+1. **`MyWork::decide()` loại `statement`** — trước là
+   `Statement::whereKey($id)->update(['approval_status' => ...])` trần, không transaction,
+   không guard. Nay gọi `StatementApprovalService`, bắt `InvalidArgumentException` để báo
+   lỗi rõ ràng thay vì âm thầm thất bại.
+2. **`StatementApprovalQueue::transitionRuns()`** — trước chuyển MÙ mọi bản ghi được
+   chọn sang trạng thái đích, kể cả bản ghi đã `published`. Nay lọc `validFrom` theo
+   `$status` đích (giống cách `approve()` cùng file đã làm từ trước — bất nhất là
+   `transitionRuns()` không học theo). Bản ghi không hợp lệ bị BỎ QUA, báo số bị bỏ qua
+   trong thông báo, không chặn cả lô.
+3. **`/fila/payments` (`PaymentResource`)** — phát hiện đây là scaffold tự sinh, CHỈ
+   discover ở panel `/fila` (`FilaPanelProvider::discoverResources()` toàn bộ thư mục),
+   giống hệt bẫy `CommunityPosts` đã xử lý ở Phase B6. Form có `TextInput::make('status')`
+   tự do — gõ gì cũng lưu, không sinh allocation/receipt. Bảng còn có
+   `EditAction`/`RestoreAction`/`ForceDeleteAction` + bulk restore/force-delete/delete —
+   xoá cứng một khoản thanh toán qua một cú click, không qua review nào. Đổi hẳn thành
+   CHỈ ĐỌC: xoá `PaymentForm.php`, `CreatePayment.php`, `EditPayment.php`, mọi action sửa/
+   xoá trong `PaymentsTable.php`. Duyệt chứng từ thật đi qua `Pages/PaymentClaimQueue.php`
+   (đã có, dùng `ResidentPaymentClaimReviewer`).
+
+### UI thật thay nút trang trí
+
+`StatementList.php` (`docs 03-04`) từng có nút "Phát hành bảng kê" là `<button>` KHÔNG
+`wire:click` — bấm không làm gì. Bỏ nút đó (phát hành hàng loạt theo kỳ chưa nằm trong
+scope B2), thay bằng nút theo TỪNG DÒNG: "Duyệt"/"Từ chối" khi `pending`,
+"Phát hành"/"Từ chối" khi `approved` — gọi thẳng `StatementApprovalService` qua 3
+Livewire method mới, `wire:confirm` xác nhận trước khi làm.
+
+**Chưa đụng trong bản này** (ghi rõ để không ai tưởng đã xong): `StatementList.php:47`
+hardcode `$today='2026-07-02'`, sort hash-shuffle giả lập; filter/search ở blade là
+`<select>`/`<input>` không `wire:model`, chưa nối gì; `StatementApprovalQueue` (trục
+`BillingRun`) vẫn thiếu transaction + chặn tự duyệt (M3, chưa đóng — khác trục với
+`Statement` nên rủi ro thấp hơn nhưng vẫn là nợ thật).
+
+Verify: `_render_admin.php statements,my-work,finance/statement-approvals` +
+`_render_fila.php payments` → cả 4 đều 200. `php artisan test` → **129/129 pass**
+(121 cũ + 8 mới), 401 assertion.

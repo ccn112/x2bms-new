@@ -333,9 +333,35 @@ class MyWork extends Page
         [$type, $id] = explode(':', $key);
         $isApprove = $decision === 'approve';
 
+        // 'statement' đi qua StatementApprovalService — KHÔNG mass-update trực
+        // tiếp nữa (đây từng là đường vòng G9: bỏ qua guard trạng thái + tự
+        // duyệt bảng kê mình tạo). Các loại khác giữ nguyên hành vi cũ.
+        if ($type === 'statement') {
+            $statement = Statement::find($id);
+            if ($statement === null) {
+                Notification::make()->title('Không thể xử lý mục này')->danger()->send();
+
+                return;
+            }
+
+            try {
+                $service = app(\App\Services\Billing\StatementApprovalService::class);
+                $isApprove
+                    ? $service->approve($statement, auth()->user())
+                    : $service->reject($statement, auth()->user(), 'Từ chối từ Hộp thư công việc');
+            } catch (\InvalidArgumentException $e) {
+                Notification::make()->title('Không thể xử lý')->body($e->getMessage())->danger()->send();
+
+                return;
+            }
+
+            Notification::make()->title(($isApprove ? 'Phê duyệt' : 'Từ chối').' thành công')->{$isApprove ? 'success' : 'warning'}()->send();
+
+            return;
+        }
+
         $ok = match ($type) {
             'approval' => (bool) ApprovalRequest::whereKey($id)->update(['status' => $isApprove ? 'approved' : 'rejected', 'decided_at' => now()]),
-            'statement' => (bool) Statement::whereKey($id)->update(['approval_status' => $isApprove ? 'approved' : 'rejected']),
             'resident' => (bool) ResidentApprovalRequest::whereKey($id)->update(['status' => $isApprove ? 'approved' : 'rejected']),
             'payment' => (bool) PaymentRequest::whereKey($id)->update(['status' => $isApprove ? 'approved' : 'rejected']),
             default => false,
