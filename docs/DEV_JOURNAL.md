@@ -2595,3 +2595,57 @@ hardcode `$today='2026-07-02'`, sort hash-shuffle giả lập; filter/search ở
 Verify: `_render_admin.php statements,my-work,finance/statement-approvals` +
 `_render_fila.php payments` → cả 4 đều 200. `php artisan test` → **129/129 pass**
 (121 cũ + 8 mới), 401 assertion.
+
+## 2026-07-31 (tiếp) — Phase B3: Phân bổ tiền theo từng dòng phí (D3)
+
+Đóng thêm M5 (một phần) và M8 trong `docs/delivery/TECH_DEBT_REGISTER.md`.
+
+**Vấn đề trước bản này:** `payment_allocations.statement_line_id` có cột từ lâu
+nhưng KHÔNG dòng code nào ghi. `ResidentPaymentClaimReviewer::allocateToClaimedStatement()`
+chỉ tạo MỘT `PaymentAllocation` phẳng ở cấp `statement`, cộng thẳng vào
+`statement.paid_amount`. Hệ quả: "còn nợ gì theo từng dịch vụ" (màn công nợ D6,
+`statement_lines`) không bao giờ đúng vì tiền vào không biết trả cho dòng nào —
+mọi dòng phí của một bảng kê mãi mãi hiện `paid_amount = 0` dù bảng kê đã `paid`.
+
+**`StatementLine::allocationSortKey()`** — rút khoá sắp xếp DÙNG CHUNG từ
+`ApartmentWalletService::outstandingLines()` (vốn đã có sẵn, đúng, nhưng riêng
+một mình): `is_critical` trước (0 = critical), `payment_priority` tăng dần, rồi
+`id` tăng dần (nợ cũ trả trước). Quan trọng: is_critical THẮNG payment_priority
+— viết test khoá đúng hành vi thật thay vì trực giác ("điện quan trọng" có thể
+trả trước "quản lý" dù số payment_priority nhỏ hơn).
+
+**`Statement::recomputePaidAmount()`** — `paid_amount`/`status` giờ là PHÉP
+CHIẾU từ `SUM(lines.paid_amount)`, một hàm DUY NHẤT cho cả hai đường ghi tiền
+gọi vào sau khi sửa dòng phí.
+
+**`ResidentPaymentClaimReviewer::allocateToClaimedStatement()` viết lại**: đi
+qua từng dòng CÒN NỢ theo khoá trên, tạo MỘT `PaymentAllocation` cho MỖI dòng
+chạm tới (`statement_line_id` + `statement_id`), rồi gọi `recomputePaidAmount()`.
+**Fallback quan trọng**: nếu statement KHÔNG có `StatementLine` nào (dữ liệu cũ
+chưa từng itemize — 4/11 test cũ của `ResidentPaymentClaimReviewTest` dựng đúng
+kịch bản này), giữ nguyên hành vi PHẲNG cũ ở cấp statement. Không có fallback
+này thì tiền "biến mất" (vòng lặp qua 0 dòng, không phân bổ được gì) — phát hiện
+ngay khi chạy lại bộ test cũ, 4/11 đỏ.
+
+**`ApartmentWalletService::autoSettleOutstanding()` (M8) sửa theo**: trước ghi
+`line.paid_amount` xong không đụng gì `statement.paid_amount` — bảng kê cha lệch
+NGAY khi hàm chạy (dead code, 0 caller, nhưng phase plan yêu cầu sửa để không phá
+bất biến "nếu bật nguyên trạng"). Một dòng phí có thể nợ dồn qua NHIỀU statement
+(nợ cũ dồn kỳ) nên gom `statement_id` CHẠM TỚI vào một tập rồi mới
+`recomputePaidAmount()` từng cái — không phải mọi statement của căn hộ.
+
+**`billing:reconcile-statement-balances`** — đối chiếu `statements.paid_amount`
+với tổng dòng, tự sửa lệch (đóng một phần M5); báo — KHÔNG tự sửa — dòng phí
+`paid_amount > amount` (nhận quá tiền của chính nó), vì sửa đòi quyết định hoàn
+khoản nào, không phải chuyện đoán tự động.
+
+Verify: `php artisan test` → **138/138 pass** (129 cũ + 9 mới: 5
+`StatementLineAllocationTest` + 2 `ApartmentWalletAutoSettleTest` + 2
+`ReconcileStatementBalancesTest`), 423 assertion. `_render_admin.php
+statements,my-work,finance/statement-approvals,payments/claims,statements/1` →
+tất cả 200.
+
+**Còn nợ (Phase B4, chưa làm)**: `fee_types.payment_priority` hiện mặc định
+đồng loạt 100 cho MỌI loại phí (chưa backfill theo family QL→Nước→Điện→Xe→Khác);
+override theo từng dự án; UI kéo-thả sắp thứ tự. Không có B4, thứ tự phân bổ
+hiện tại chỉ phân biệt được nhờ `is_critical`, không phải gia đình phí.

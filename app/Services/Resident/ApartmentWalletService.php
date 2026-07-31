@@ -7,6 +7,7 @@ use App\Models\ApartmentWallet;
 use App\Models\ApartmentWalletBucket;
 use App\Models\ApartmentWalletTransaction;
 use App\Models\FeeType;
+use App\Models\Statement;
 use App\Models\StatementLine;
 use Illuminate\Support\Facades\DB;
 
@@ -106,11 +107,20 @@ class ApartmentWalletService
 
     /**
      * Tự hạch toán toàn bộ tiền đang có trong ví vào các dòng phí còn nợ của căn hộ.
-     * Thứ tự: phí ƯU TIÊN trước (is_critical desc, payment_priority asc, dòng cũ trước).
+     * Thứ tự: `StatementLine::allocationSortKey()` — CHUNG với
+     * `ResidentPaymentClaimReviewer`, không tự chọn thứ tự riêng (Phase B3).
+     *
+     * SỬA 2026-07-31 (`docs/delivery/TECH_DEBT_REGISTER.md` M8): trước bản này
+     * ghi `line.paid_amount` xong KHÔNG đụng gì tới `statement.paid_amount` —
+     * bảng kê cha lệch khỏi tổng các dòng của chính nó ngay khi hàm này chạy.
+     * Dòng phí có thể trải trên NHIỀU bảng kê (nợ dồn nhiều kỳ) nên phải gom
+     * theo `statement_id` rồi `recomputePaidAmount()` từng bảng kê CHẠM TỚI,
+     * không phải mọi bảng kê của căn hộ.
      */
     public function autoSettleOutstanding(ApartmentWallet $wallet): void
     {
         $lines = $this->outstandingLines($wallet->apartment_id);
+        $touchedStatementIds = [];
 
         foreach ($lines as $line) {
             if (bccomp($this->totalAvailable($wallet->fresh(['buckets'])), '0', 2) <= 0) {
@@ -126,24 +136,24 @@ class ApartmentWalletService
                 $line->paid_amount = bcadd((string) ($line->paid_amount ?? 0), $settled, 2);
                 $line->status = bccomp($line->outstanding(), '0', 2) <= 0 ? 'paid' : 'partial';
                 $line->save();
+                $touchedStatementIds[$line->statement_id] = true;
             }
+        }
+
+        foreach (array_keys($touchedStatementIds) as $statementId) {
+            Statement::find($statementId)?->recomputePaidAmount();
         }
     }
 
-    /** Dòng phí còn nợ của căn hộ, đã sắp theo ưu tiên. */
+    /** Dòng phí còn nợ của căn hộ, đã sắp theo khoá phân bổ dùng chung (B3). */
     public function outstandingLines(int $apartmentId)
     {
         return StatementLine::query()
             ->whereHas('statement', fn ($q) => $q->where('apartment_id', $apartmentId))
-            ->whereColumn('paid_amount', '<', 'amount')
+            ->outstanding()
             ->with('feeType')
             ->get()
-            ->sortBy(function (StatementLine $l) {
-                $ft = $l->feeType;
-                $critical = $ft && $ft->is_critical ? 0 : 1;
-                $priority = $ft->payment_priority ?? 100;
-                return sprintf('%d-%05d-%012d', $critical, $priority, $l->id);
-            })
+            ->sortBy(fn (StatementLine $l) => $l->allocationSortKey())
             ->values();
     }
 

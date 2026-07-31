@@ -27,4 +27,9 @@ class PaymentAllocation extends Model
     {
         return $this->belongsTo(Debt::class);
     }
+
+    public function statementLine(): BelongsTo
+    {
+        return $this->belongsTo(StatementLine::class);
+    }
 }

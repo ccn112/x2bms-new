@@ -85,4 +85,28 @@ class Statement extends Model
     {
         return $this->hasMany(StatementApproval::class);
     }
+
+    /**
+     * `paid_amount`/`status` là PHÉP CHIẾU từ `SUM(lines.paid_amount)` — không
+     * bao giờ ghi tay (Phase B3, D3). Hai đường ghi tiền khác nhau chạm vào
+     * dòng phí (`ResidentPaymentClaimReviewer` cho chứng từ chuyển khoản,
+     * `ApartmentWalletService` cho ví căn hộ) đều phải gọi hàm này SAU khi sửa
+     * `statement_lines.paid_amount`, để không có đường nào để bảng kê lệch với
+     * tổng các dòng của chính nó.
+     *
+     * `status` dùng ĐÚNG 3 giá trị đo được thật trên DB (30/07): `paid` · `partial`
+     * · `issued` — không có giá trị nào khác.
+     */
+    public function recomputePaidAmount(): void
+    {
+        $paid = (string) $this->lines()->sum('paid_amount');
+        $total = (string) $this->total_amount;
+
+        $this->forceFill([
+            'paid_amount' => $paid,
+            'status' => bccomp($paid, $total, 2) >= 0 && bccomp($total, '0', 2) > 0
+                ? 'paid'
+                : (bccomp($paid, '0', 2) > 0 ? 'partial' : 'issued'),
+        ])->save();
+    }
 }

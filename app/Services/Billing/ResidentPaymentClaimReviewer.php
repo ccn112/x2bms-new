@@ -7,6 +7,7 @@ use App\Models\Payment;
 use App\Models\PaymentAllocation;
 use App\Models\Receipt;
 use App\Models\Statement;
+use App\Models\StatementLine;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
@@ -110,12 +111,21 @@ class ResidentPaymentClaimReviewer
     }
 
     /**
-     * Phân bổ vào hoá đơn cư dân khai. Trả về số tiền ĐÃ phân bổ.
+     * Phân bổ vào hoá đơn cư dân khai — THEO TỪNG DÒNG PHÍ (Phase B3, D3).
+     * Trả về số tiền ĐÃ phân bổ.
      *
-     * Chỉ phân bổ tối đa bằng phần CÒN NỢ của hoá đơn. Cư dân chuyển nhiều hơn
-     * (trả gộp nhiều kỳ, hoặc trả dư) thì phần vượt để nguyên chưa phân bổ —
-     * `paid_amount` không được vượt `total_amount`, nếu không hoá đơn hiện "đã
-     * trả 6 triệu / tổng 5 triệu" và mọi báo cáo công nợ sai theo.
+     * Trước bản này: một `PaymentAllocation` phẳng ở cấp `statement`, không
+     * đụng `statement_lines.paid_amount` — "còn nợ gì" ở cấp dòng phí (màn công
+     * nợ theo dịch vụ, D6) không có cách nào đúng vì tiền vào không biết trả
+     * cho dòng nào. Nay đi qua từng dòng theo `StatementLine::allocationSortKey()`
+     * (dùng CHUNG với `ApartmentWalletService` — một khoá thứ tự duy nhất),
+     * ghi một `PaymentAllocation` riêng cho MỖI dòng chạm tới (`statement_line_id`
+     * kèm `statement_id`), rồi để `Statement::recomputePaidAmount()` tính lại
+     * `paid_amount`/`status` từ tổng các dòng — không cộng tay ở đây nữa.
+     *
+     * Chỉ phân bổ tối đa bằng phần CÒN NỢ. Cư dân chuyển nhiều hơn (trả gộp
+     * nhiều kỳ, hoặc trả dư) thì phần vượt để nguyên CHƯA phân bổ — dòng phí
+     * không được nhận quá `amount` của chính nó.
      */
     private function allocateToClaimedStatement(Payment $payment): float
     {
@@ -132,30 +142,68 @@ class ResidentPaymentClaimReviewer
             return 0.0;
         }
 
-        $remaining = (float) $statement->total_amount - (float) $statement->paid_amount;
-        if ($remaining <= 0) {
+        $remaining = (string) $payment->amount;
+        if (bccomp($remaining, '0', 2) <= 0) {
             return 0.0;
         }
 
-        $amount = min((float) $payment->amount, $remaining);
+        $lines = $statement->lines()->outstanding()->with('feeType')->lockForUpdate()->get()
+            ->sortBy(fn (StatementLine $l) => $l->allocationSortKey());
 
-        PaymentAllocation::create([
-            'payment_id' => $payment->id,
-            'statement_id' => $statement->id,
-            'amount' => $amount,
-        ]);
+        // Bảng kê KHÔNG có dòng phí nào (dữ liệu cũ/legacy chưa từng itemize) —
+        // không có gì để đi qua từng dòng, giữ hành vi phẳng cũ ở cấp statement
+        // thay vì để tiền "biến mất" vì vòng lặp dưới không chạm gì.
+        if ($statement->lines()->count() === 0) {
+            $remainingOnStatement = bcsub((string) $statement->total_amount, (string) $statement->paid_amount, 2);
+            if (bccomp($remainingOnStatement, '0', 2) <= 0) {
+                return 0.0;
+            }
+            $take = bccomp($remaining, $remainingOnStatement, 2) >= 0 ? $remainingOnStatement : $remaining;
 
-        $paid = (float) $statement->paid_amount + $amount;
-        $statement->forceFill([
-            'paid_amount' => $paid,
-            // Vốn từ THẬT của statements.status (đo trên DB 30/07):
-            // paid 466 · partial 622 · issued 272 — không có giá trị nào khác.
-            'status' => $paid >= (float) $statement->total_amount
-                ? 'paid'
-                : ($paid > 0 ? 'partial' : 'issued'),
-        ])->save();
+            PaymentAllocation::create([
+                'payment_id' => $payment->id,
+                'statement_id' => $statement->id,
+                'amount' => $take,
+            ]);
 
-        return $amount;
+            $statement->forceFill(['paid_amount' => bcadd((string) $statement->paid_amount, $take, 2)]);
+            $statement->status = bccomp($statement->paid_amount, $statement->total_amount, 2) >= 0 ? 'paid' : 'partial';
+            $statement->save();
+
+            return (float) $take;
+        }
+
+        $allocated = '0';
+        foreach ($lines as $line) {
+            if (bccomp($remaining, '0', 2) <= 0) {
+                break;
+            }
+
+            $owed = $line->outstanding();
+            if (bccomp($owed, '0', 2) <= 0) {
+                continue;
+            }
+
+            $take = bccomp($remaining, $owed, 2) >= 0 ? $owed : $remaining;
+
+            PaymentAllocation::create([
+                'payment_id' => $payment->id,
+                'statement_id' => $statement->id,
+                'statement_line_id' => $line->id,
+                'amount' => $take,
+            ]);
+
+            $line->forceFill(['paid_amount' => bcadd((string) $line->paid_amount, $take, 2)])->save();
+
+            $remaining = bcsub($remaining, $take, 2);
+            $allocated = bcadd($allocated, $take, 2);
+        }
+
+        if (bccomp($allocated, '0', 2) > 0) {
+            $statement->recomputePaidAmount();
+        }
+
+        return (float) $allocated;
     }
 
     /**
