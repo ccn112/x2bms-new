@@ -2428,3 +2428,45 @@ chỉnh âm).
 
 Verify: `php artisan test` → **100/100 pass** (91 cũ + 9 mới), 330 assertion. `php -l`
 sạch 4 file mới.
+
+## 2026-07-31 (tiếp) — Phase B6: Kiểm duyệt cộng đồng ở `/admin`
+
+`docs/COMMUNITY_WRITE_MODERATION_DESIGN.md` §4 đã có spec từ 27/07, chưa 1 dòng code.
+Bước 1–3 (migration, API ghi, `POST moderate`) đã xong từ trước — chỉ thiếu bước 5 (web).
+
+**Tách state machine ra `ModerateCommunityPostAction`.** `CommunityPostController::
+moderate()` trước đây tự chứa toàn bộ match(hide|unhide|lock|unlock|delete|restore) +
+audit. Chuyển vào `app/Actions/Community/ModerateCommunityPostAction.php` để màn
+`/admin` mới gọi ĐÚNG MỘT chỗ với app cư dân — nếu để mỗi nơi tự viết lại state
+machine thì sớm muộn hai bản lệch nhau (đúng bài học COMMUNITY_WRITE_MODERATION_DESIGN
+đã cảnh báo cho "khóa" vs "ẩn"). Controller giờ chỉ lo auth + HTTP response; validate
+lý do bắt buộc chuyển thành `InvalidArgumentException` từ action, controller bắt lại
+thành 422. Không đổi hành vi request/response — refactor thuần, verify bằng test mới
+(chưa có test nào trước đó cho endpoint này).
+
+**Report resolve/dismiss.** `community_post_reports.status/resolved_*` có cột từ
+27/07 nhưng **không dòng code nào ghi vào** — report tạo ra rồi nằm mãi `open`, BQL
+không có cách nào đóng. Thêm `CommunityPostReport::markResolved()/markDismissed()` —
+hai trạng thái khác nhau (đã xử lý bài vì report đúng, vs bỏ qua vì report không có
+căn cứ) để sau này biết người báo cáo nào đáng tin.
+
+**`Pages/CommunityModeration.php`** thay Resource scaffold tự sinh. Cố ý MỎNG hơn
+spec đầy đủ: có KPI strip + filter (trạng thái, có report) + bảng sort theo
+`report_count desc` + row action đủ 3 cặp hành động + modal xem report — CHƯA có màn
+chi tiết bài riêng (07-09, cây bình luận drilldown) và chưa có bulk inline. Ghi rõ
+trong tracker để không lặp lỗi "để 🟢 cho scaffold" đã xảy ra với BQL-03-03.
+
+**Đóng một đường vòng (tinh thần G9):** `app/Filament/Resources/CommunityPosts/*` là
+scaffold tự sinh, KHÔNG hiện ở `/admin` (`AdminPanelProvider` không `discoverResources()`)
+nhưng VẪN hiện ở `/fila` (panel đó `discoverResources()` toàn bộ thư mục) — Edit trần
+không qua lý do bắt buộc, không audit theo đúng format kiểm duyệt. Xoá hẳn thư mục
+này; giờ chỉ còn một đường sửa bài cộng đồng duy nhất.
+
+**Test cô lập tenant/dự án** (trước đây 0 test backend cho cộng đồng, đúng như phase
+plan ghi): BQL thuộc dự án khác gọi `POST .../moderate` cho bài dự án mình phụ trách
+→ 403, KHÔNG đổi trạng thái bài. Cộng với test state machine (hide/lock/unlock/xóa
+mềm+khôi phục/hành động sai) và resolve/dismiss report.
+
+Verify: `_render_admin.php community-moderation,billing-charge-import` → cả hai 200
+(`community-moderation` 400KB, có dữ liệu thật 60 bài dự án 1). `php artisan test` →
+**109/109 pass** (100 cũ + 9 mới), 349 assertion.

@@ -28,4 +28,19 @@ class CommunityPostReport extends Model
     {
         return $this->belongsTo(User::class, 'reported_by_user_id');
     }
+
+    /**
+     * Đóng report với kết luận CÓ xử lý bài (đã khóa/ẩn/xóa vì report này) hay
+     * KHÔNG (report không có căn cứ). Hai trạng thái khác nhau để BQL sau này
+     * biết report nào của người dùng này đáng tin — `resolved` != `dismissed`.
+     */
+    public function markResolved(User $by): void
+    {
+        $this->update(['status' => 'resolved', 'resolved_by_user_id' => $by->id, 'resolved_at' => now()]);
+    }
+
+    public function markDismissed(User $by): void
+    {
+        $this->update(['status' => 'dismissed', 'resolved_by_user_id' => $by->id, 'resolved_at' => now()]);
+    }
 }

@@ -2,11 +2,11 @@
 
 namespace App\Http\Controllers\Api\V1\Resident;
 
+use App\Actions\Community\ModerateCommunityPostAction;
 use App\Http\Controllers\Api\V1\ApiController;
 use App\Http\Controllers\Api\V1\Resident\Concerns\LabelsCommentAuthor;
 use App\Http\Resources\Api\V1\CommentResource;
 use App\Http\Resources\Api\V1\CommunityPostResource;
-use App\Models\AuditLog;
 use App\Models\CommunityPost;
 use App\Models\CommunityPostReaction;
 use App\Models\CommunityPostReport;
@@ -16,6 +16,7 @@ use App\Support\Api\ApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use InvalidArgumentException;
 
 /**
  * Lớp GHI của tab Cộng đồng (CD-CM-01) — đăng bài, cảm xúc, bình luận, báo cáo
@@ -332,7 +333,7 @@ class CommunityPostController extends ApiController
     public function moderate(Request $request, int $post): JsonResponse
     {
         $data = $request->validate([
-            'action' => ['required', 'string', 'in:hide,unhide,lock,unlock,delete,restore'],
+            'action' => ['required', 'string', 'in:'.implode(',', ModerateCommunityPostAction::ACTIONS)],
             'reason' => ['nullable', 'string', 'max:500'],
         ]);
 
@@ -347,81 +348,16 @@ class CommunityPostController extends ApiController
             return ApiResponse::error('forbidden', 'Bạn không có quyền kiểm duyệt bài này.', 403);
         }
 
-        $action = $data['action'];
-        $reason = trim((string) ($data['reason'] ?? ''));
-        if (in_array($action, ['hide', 'lock', 'delete'], true) && $reason === '') {
-            return ApiResponse::error(
-                'validation_failed',
-                'Cần nhập lý do — cư dân sẽ nhìn thấy lý do này.',
-                422,
-                ['reason' => ['Bắt buộc nhập lý do.']],
-            );
+        try {
+            $model = app(ModerateCommunityPostAction::class)->execute($model, $data['action'], $data['reason'] ?? null, $user);
+        } catch (InvalidArgumentException $e) {
+            return ApiResponse::error('validation_failed', $e->getMessage(), 422, ['reason' => [$e->getMessage()]]);
         }
 
-        $now = now();
-        match ($action) {
-            'hide' => $model->forceFill([
-                'status' => 'hidden',
-                'moderated_at' => $now,
-                'moderated_by_user_id' => $user->id,
-                'moderation_reason' => $reason,
-            ])->save(),
-            'unhide' => $model->forceFill([
-                'status' => 'published',
-                'moderated_at' => $now,
-                'moderated_by_user_id' => $user->id,
-                'moderation_reason' => null,
-            ])->save(),
-            'lock' => $model->forceFill([
-                'locked_at' => $now,
-                'locked_by_user_id' => $user->id,
-                'moderation_reason' => $reason,
-            ])->save(),
-            'unlock' => $model->forceFill([
-                'locked_at' => null,
-                'locked_by_user_id' => null,
-            ])->save(),
-            'delete' => $this->softDeleteWithReason($model, $user->id, $reason, $now),
-            'restore' => $model->restore(),
-            default => null,
-        };
-
-        $this->auditModeration($model, $user->id, $action, $reason);
-
-        return $this->respondWithPost($request, $model->fresh() ?? $model);
+        return $this->respondWithPost($request, $model);
     }
 
     // ── Helpers ────────────────────────────────────────────────────────────────
-
-    private function softDeleteWithReason(CommunityPost $post, int $userId, string $reason, $now): void
-    {
-        $post->forceFill([
-            'moderated_at' => $now,
-            'moderated_by_user_id' => $userId,
-            'moderation_reason' => $reason,
-        ])->save();
-        $post->delete();
-    }
-
-    /**
-     * Kiểm duyệt là hành động có thể bị khiếu nại → phải truy vết được ai làm.
-     * Ghi mềm: thiếu bảng audit thì cũng không được làm hỏng request.
-     */
-    private function auditModeration(CommunityPost $post, int $userId, string $action, string $reason): void
-    {
-        try {
-            AuditLog::create([
-                'tenant_id' => $post->tenant_id,
-                'user_id' => $userId,
-                'auditable_type' => $post->getMorphClass(),
-                'auditable_id' => $post->id,
-                'event' => 'community.moderate.'.$action,
-                'new_values' => ['action' => $action, 'reason' => $reason],
-            ]);
-        } catch (\Throwable) {
-            // bỏ qua — không chặn nghiệp vụ vì log
-        }
-    }
 
     /** Bài trong phạm vi dự án của người xem (kể cả đã ẩn — lọc ở tầng trên). */
     private function findInScope(Request $request, int $id): ?CommunityPost

@@ -3,7 +3,7 @@
 namespace App\Filament\Pages;
 
 use App\Filament\Concerns\ImportsBillingChargesFromExcel;
-use App\Models\AuditLog;
+use App\Filament\Concerns\WritesAudit;
 use App\Models\ImportBatch;
 use App\Support\Context\CurrentContext;
 use App\Support\Import\Profiles\BillingChargeImportProfile;
@@ -31,10 +31,11 @@ class BillingChargeImport extends Page implements HasTable
 {
     use ImportsBillingChargesFromExcel;
     use InteractsWithTable;
+    use WritesAudit;
 
     protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-document-arrow-up';
 
-    protected static string|\UnitEnum|null $navigationGroup = 'Hóa đơn & thanh toán';
+    protected static string|\UnitEnum|null $navigationGroup = 'Tài chính – Phí';
 
     protected static ?string $navigationLabel = 'Nhập khoản phí';
 
@@ -120,16 +121,4 @@ class BillingChargeImport extends Page implements HasTable
         'cancelled' => ['Đã hủy', 'gray'],
     ];
 
-    private function audit(string $action, string $description): void
-    {
-        $user = auth()->user();
-        AuditLog::create([
-            'tenant_id' => $user->tenant_id,
-            'building_id' => $user->building_id,
-            'user_id' => $user->id,
-            'actor_name' => $user->name,
-            'action' => $action,
-            'description' => $description,
-        ]);
-    }
 }
