@@ -2470,3 +2470,66 @@ mềm+khôi phục/hành động sai) và resolve/dismiss report.
 Verify: `_render_admin.php community-moderation,billing-charge-import` → cả hai 200
 (`community-moderation` 400KB, có dữ liệu thật 60 bài dự án 1). `php artisan test` →
 **109/109 pass** (100 cũ + 9 mới), 349 assertion.
+
+## 2026-07-31 (tiếp) — Community Domain: bắt đầu code (GĐ2 một phần + GĐ4)
+
+`COMMUNITY_IMPLEMENTATION_PLAN.md` (9 giai đoạn, lập 29/07) tới hôm nay vẫn 100% tài
+liệu, 0 dòng code. Chủ dự án chốt hai quyết định đang chặn kế hoạch:
+1. 22/27 dự án chưa nối danh mục công khai → **để SuperAdmin tự nối tay** ở màn có
+   sẵn (`Sa/Pages/ProjectCatalogLinking`), không khớp mờ tên (đúng khuyến nghị R3).
+2. 11 nhóm `private` hiện có → **toàn bộ là cư dân tự lập**, không phải câu lạc bộ sở
+   thích. Xoá được thế lưỡng nan "đoán sai thì sai quyền" mà audit 29/07 nêu.
+
+Làm GĐ2 (nhóm) và GĐ4 (follow) trước — không theo thứ tự 1→9 gốc — vì đó là hai chỗ
+vừa có quyết định, để quyết định không nguội.
+
+### GĐ2 — `community_groups` mở rộng
+
+`app/Enums/CommunityGroupType.php` (6 giá trị) + migration
+`2026_07_31_300000_community_group_hierarchy.php`: cột mới + backfill NGAY trong
+`up()` — chấp nhận được vì chỉ 16 nhóm, giá trị suy trực tiếp từ `kind`/`project_id`
+sẵn có (khác backfill follow/comments ở giai đoạn sau, phức tạp hơn phải tách lệnh
+artisan riêng theo đúng quy tắc `COMMUNITY_RISK_ROLLBACK.md` §5).
+
+`private` → `resident_custom_group` DUY NHẤT (không rẽ nhánh `resident_interest_group`)
+— khớp quyết định chủ dự án, xoá bẫy audit từng cảnh báo.
+
+**Phát hiện khi viết test đầu tiên cho `GET resident/community/groups`:**
+`orderByRaw("FIELD(kind, ...)")` là hàm MySQL, SQLite không có → mọi test chạm endpoint
+này sẽ lỗi `no such function: FIELD`. Không ai gặp vì đây là **test đầu tiên** chạm
+endpoint (tracker từng ghi "0 test backend cho cộng đồng"). Sửa sang `CASE kind WHEN
+... END` — chạy được cả hai driver, cùng thứ tự sắp xếp.
+
+`CommunityGroupResource` thêm `group_type`, `scope{type,id,name}`,
+`capabilities{can_post,can_comment,can_invite,can_moderate,can_leave}` — **cộng thêm
+cạnh**, giữ nguyên `kind`/`can_post`/`is_default`/`verification_level` (quy tắc R5,
+app đang đọc trường cũ). Tiện thể sửa một bug ẩn: `$this->project?->name` trước đây
+LUÔN trả `null` vì `CommunityGroup` chưa từng khai `project()` — không method nghĩa là
+Eloquent coi `project` không phải relation, trả `null` êm ru, không lỗi. Thêm quan hệ
+`project()`/`parent()`/`verificationHistory()`.
+
+Bảng `community_group_verification_history` đã tạo cho GĐ2 mục 4 (nâng gold→blue) —
+**chưa viết service dùng nó**, chỉ có chỗ chứa.
+
+### GĐ4 — Follow dự án
+
+`user_project_follows` (trỏ `projects` vận hành) + `GET/POST/DELETE
+me/project-follows`, đặt cạnh `me/bootstrap`/`me/devices` (nhóm middleware
+`auth:sanctum` bất kỳ ability nào — **không** `ability:resident`, vì đúng lý do kênh
+tồn tại là cho người CHƯA phải cư dân, tier `member`).
+
+`community:backfill-project-follows` — CHỈ backfill qua `projects.public_project_id`
+đã nối chính xác (Cách A đã đề xuất từ 29/07), có `--dry-run` và `--rollback` (xoá
+`user_project_follows`, không đụng `user_public_projects` — đúng chuẩn lệnh backout của
+`COMMUNITY_RISK_ROLLBACK.md` §4). Chạy trên DB dev: **0 dòng** — không phải lỗi, dữ
+liệu dev chỉ có 2 dòng `user_public_projects` (public_project_id 778, 892), không dòng
+nào khớp 5 dự án đã nối (id 1, 1, 2, 230, 2515 — *phát hiện phụ*: hai dự án khác nhau
+cùng trỏ `public_project_id=1`, cột này không có unique constraint; chưa sửa, ghi
+nhận cho phiên nối tay của SA). Verify logic bằng test fixture tự dựng (idempotent,
+chặn dự án chưa nối, rollback sạch).
+
+Verify: `php artisan test` → **121/121 pass** (109 cũ + 12 mới), 387 assertion.
+
+**Còn lại rất nhiều** (xem `docs/PROGRESS_TRACKER.md` mục Community Domain): GĐ1 nền
+(CommunityAccessService, capability resolver, idempotency), GĐ3 grants, GĐ5-9, và GĐ7
+tách bình luận vẫn đúng vị trí CUỐI CÙNG như kế hoạch gốc — chưa đụng.

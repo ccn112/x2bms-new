@@ -4,6 +4,7 @@ use App\Http\Controllers\Api\V1\Ai\ChatController;
 use App\Http\Controllers\Api\V1\AuthController;
 use App\Http\Controllers\Api\V1\BootstrapController;
 use App\Http\Controllers\Api\V1\DeviceController;
+use App\Http\Controllers\Api\V1\ProjectFollowController;
 use App\Http\Controllers\Api\V1\OtpController;
 use App\Http\Controllers\Api\V1\ProfileController;
 use App\Http\Controllers\Api\V1\PublicOfferController;
@@ -88,6 +89,12 @@ Route::prefix('v1')->group(function () {
         Route::delete('me/avatar', [ProfileController::class, 'removeAvatar']);
         Route::post('me/devices', [DeviceController::class, 'store']);
         Route::delete('me/devices/{installationId}', [DeviceController::class, 'destroy']);
+
+        // Quan tâm dự án (Giai đoạn 4 Community Domain) — không cấp quyền, không
+        // cho vào nhóm, chỉ ưu tiên hiển thị trong feed. Mọi tier đều follow được.
+        Route::get('me/project-follows', [ProjectFollowController::class, 'index']);
+        Route::post('me/project-follows', [ProjectFollowController::class, 'store']);
+        Route::delete('me/project-follows/{project}', [ProjectFollowController::class, 'destroy'])->whereNumber('project');
     });
 
     // Nhật ký màn hình + báo lỗi từ app — auth **TUỲ CHỌN** có chủ ý: thiết bị ẩn

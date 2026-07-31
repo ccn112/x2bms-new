@@ -148,9 +148,39 @@
 | 07-06 Khảo sát & bình chọn | 🟢 | Resource `Polls`, model `Poll`,`PollOption`,`PollVote` | survey vs poll ❓ |
 | 07-07 Kết quả khảo sát | 🟡 | model `PollVote` | dashboard sentiment ❓ |
 | 07-08 Kiểm duyệt cộng đồng | 🟢 | `Pages/CommunityModeration.php`, `Actions/Community/ModerateCommunityPostAction.php`, model `CommunityPost`,`CommunityPostReport` | **XONG 2026-07-31 (Phase B6), thay scaffold cũ.** KPI (bài mới hôm nay/chờ xử lý report/đang khóa/đang ẩn/đã xóa mềm), filter trạng thái + "có report", bảng mặc định sắp `report_count desc`. Row action Khóa/Mở khóa·Ẩn/Bỏ ẩn·Xóa mềm/Khôi phục (bắt lý do, trừ mở khóa/bỏ ẩn/khôi phục) — dùng CHUNG state machine với app cư dân qua `ModerateCommunityPostAction` (tách khỏi `CommunityPostController::moderate()`, không còn 2 bản logic). "Xem báo cáo" mở modal liệt kê report kèm nút Đã xử lý/Bỏ qua (`CommunityPostReport::markResolved/markDismissed` — MỚI, trước đây `resolved_at`/`resolved_by_user_id` không có dòng code nào ghi). Đã **xoá Resource scaffold** `/fila/community-posts` (đường vòng không qua audit/lý do). Render thật `/admin/community-moderation` = 200. 9 test `CommunityModerationTest` (state machine + cô lập theo dự án qua HTTP + resolve/dismiss) — trước đây **0 test backend cho cộng đồng**. **Còn thiếu so với spec §4:** màn chi tiết bài riêng (07-09, cây bình luận drilldown), bulk inline, ngưỡng tự động ẩn (cố ý chưa làm, xem §7 spec) |
-| 07-09 Chi tiết bài báo cáo | ⬜ | model `CommunityPost` (flags mig 2026-07-23) | **`community_post_reports.status`/`resolved_by_user_id`/`resolved_at` KHÔNG có dòng code nào ghi vào**; `moderate()` không đóng report ⇒ hậu kiểm **không có vòng đóng**. Không endpoint, không màn queue |
+| 07-09 Chi tiết bài báo cáo | 🟡 | `CommunityModeration::reportsContent()/resolveReport()/dismissReport()`, `CommunityPostReport::markResolved/markDismissed` | **SỬA 2026-07-31**: vòng đóng report đã có (modal "Xem báo cáo" ở 07-08 CommunityModeration, liệt kê + nút Đã xử lý/Bỏ qua). Còn thiếu: màn chi tiết bài RIÊNG (không phải modal) với cây bình luận đầy đủ + lịch sử kiểm duyệt — chưa làm |
 | 07-10 Phân tích hiệu quả | ⬜ | — | CTR/open-rate analytics chưa thấy |
 | Sự kiện cộng đồng | 🟢 | Resource `Events`, model `Event`,`EventRegistration` | |
+
+**Community Domain — kế hoạch 9 giai đoạn** (`COMMUNITY_IMPLEMENTATION_PLAN.md`, từ
+`handoff/x2mobile/X2_BMS_COMMUNITY_DOMAIN_HANDOFF_20260729`): Stage 0 (audit) xong
+29/07. 2026-07-31 bắt đầu code — KHÔNG theo đúng thứ tự 1→9 của kế hoạch mà làm trước
+hai phần chủ dự án vừa chốt quyết định (GĐ2 nhóm, GĐ4 follow), để không phí quyết định
+mới có:
+- **GĐ2 (nhóm & xác minh) — một phần**: `community_groups` thêm `group_type` (6
+  giá trị, enum `CommunityGroupType`) + `slug`/`scope_type`/`scope_id`/`parent_group_id`/
+  `created_by_user_id`/`post_count`/`lifecycle_state`, backfill 16 nhóm (chốt 31/07: cả
+  11 nhóm `private` là **cư dân tự lập** → `resident_custom_group`, không phải câu lạc
+  bộ sở thích). `CommunityGroupResource` thêm `group_type`/`scope{}`/`capabilities{}`
+  cạnh trường cũ (`kind`/`can_post`/`is_default` giữ nguyên — quy tắc R5). Bảng
+  `community_group_verification_history` đã tạo, **chưa có service nâng cấp** gold→blue.
+  Sửa kèm: `orderByRaw("FIELD(...))")` trong `CommunityController::groups()` là
+  MySQL-only, vỡ trên SQLite — đổi sang `CASE WHEN` (phát hiện khi viết test đầu tiên
+  cho endpoint này, trước đó 0 test).
+- **GĐ4 (follow dự án) — cơ bản xong**: bảng `user_project_follows` (trỏ `projects`
+  vận hành, KHÔNG phải `public_projects` danh mục) + `GET/POST/DELETE me/project-follows`
+  (mọi tier kể cả `member` thuần đều follow được — đúng lý do kênh
+  `project_interest_channel` tồn tại). Backfill `community:backfill-project-follows`
+  chỉ lấy dự án đã nối chính xác qua `projects.public_project_id` (chốt 31/07: **để SA
+  tự nối** 22 dự án còn lại ở `Sa/Pages/ProjectCatalogLinking` có sẵn — không khớp mờ
+  tên). DB dev chỉ 2 dòng `user_public_projects`, không dòng nào khớp 5 dự án đã nối →
+  backfill thật ra 0 dòng; logic verify bằng test fixture riêng (7 test).
+- **Chưa làm**: GĐ1 nền (CommunityAccessService, capability resolver hợp nhất, error
+  code, idempotency middleware), GĐ3 grants, GĐ5 content/feed bootstrap, GĐ6 ảnh,
+  **GĐ7 tách bình luận** (vẫn đúng thứ tự CUỐI CÙNG — điều kiện tiên quyết seed khối
+  lượng lớn chưa làm), GĐ8 kiểm duyệt tổng quát hơn B6, GĐ9 scale.
+- 15 test mới (`CommunityGroupTypeTest`, `CommunityGroupHierarchyTest`,
+  `ProjectFollowTest`).
 
 ### BQL-08 — An ninh, Khách, Tuần tra, Bãi xe & SOS
 | Màn | Trạng thái | Bằng chứng | Ghi chú |

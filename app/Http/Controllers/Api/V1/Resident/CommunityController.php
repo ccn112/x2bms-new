@@ -440,7 +440,8 @@ class CommunityController extends ApiController
                         ->whereIn('kind', ['project_interest', 'project_resident', 'private']));
                 }
             })
-            ->orderByRaw("FIELD(kind, 'platform', 'project_interest', 'project_resident', 'private')")
+            // CASE WHEN thay vì FIELD() (MySQL-only, vỡ trên SQLite của test suite).
+            ->orderByRaw("CASE kind WHEN 'platform' THEN 0 WHEN 'project_interest' THEN 1 WHEN 'project_resident' THEN 2 WHEN 'private' THEN 3 ELSE 4 END")
             ->orderByDesc('is_default')
             ->orderByDesc('member_count')
             ->orderBy('name')
