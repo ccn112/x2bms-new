@@ -13,6 +13,10 @@ use Illuminate\Http\Request;
  * Công nợ tổng hợp cho card Tiện ích — tránh app phải tải hết statements để cộng.
  * Chưa trả = status != 'paid'; công nợ = Σ max(total_amount - paid_amount, 0).
  * Tiền là chuỗi decimal (không float).
+ *
+ * Chỉ tính bảng kê ĐÃ PHÁT HÀNH (`Statement::scopeVisibleToResident`, quyết định D1).
+ * Con số ở đây PHẢI khớp với danh sách `GET resident/statements` — hai chỗ dùng chung
+ * một scope chính là để không lệch.
  */
 class BillingSummaryController extends ApiController
 {
@@ -27,7 +31,12 @@ class BillingSummaryController extends ApiController
             return ApiResponse::success($this->emptySummary());
         }
 
+        // D1: cùng định nghĩa "cư dân được thấy" như StatementController. Nếu ở đây không
+        // lọc thì công nợ tổng cộng cả bảng kê chưa phát hành → cư dân thấy một con số nợ
+        // mà mở danh sách ra không có hóa đơn nào tương ứng. Đó là loại lệch làm cư dân
+        // gọi BQL, tệ hơn cả việc lộ hóa đơn.
         $unpaid = Statement::query()
+            ->visibleToResident()
             ->whereIn('apartment_id', $apartmentIds)
             ->where('status', '!=', 'paid')
             ->get(['total_amount', 'paid_amount', 'due_date']);
@@ -70,8 +79,11 @@ class BillingSummaryController extends ApiController
 
         $months = min(max((int) $request->integer('months', 6), 1), 12);
 
+        // D1: biểu đồ xu hướng cũng chỉ tính bảng kê đã phát hành — nếu không, cột tháng
+        // này nhảy lên trước khi BQL chốt phát hành, rồi tháng sau lại khác.
         $rows = Statement::query()
             ->with('billingPeriod')
+            ->visibleToResident()
             ->whereIn('apartment_id', $apartmentIds)
             ->whereNotNull('billing_period_id')
             ->get(['id', 'billing_period_id', 'total_amount']);

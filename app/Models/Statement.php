@@ -14,6 +14,18 @@ class Statement extends Model
 {
     use BelongsToTenant, SoftDeletes, BelongsToProject;
 
+    /**
+     * Vốn từ `approval_status` — trục DUYỆT PHÁT HÀNH của BQL. Độc lập với `status`
+     * (trục THU TIỀN: issued|partial|paid). Đừng trộn hai trục.
+     */
+    public const APPROVAL_PENDING = 'pending';
+
+    public const APPROVAL_APPROVED = 'approved';
+
+    public const APPROVAL_PUBLISHED = 'published';
+
+    public const APPROVAL_REJECTED = 'rejected';
+
     protected $guarded = [];
 
     protected $casts = [
@@ -24,6 +36,35 @@ class Statement extends Model
         'viewed_at' => 'datetime',
         'due_date' => 'date',
     ];
+
+    /**
+     * Bảng kê CƯ DÂN ĐƯỢC THẤY — định nghĩa DUY NHẤT một chỗ.
+     *
+     * Quyết định chủ dự án D1 (2026-07-31, `docs/BILLING_OWNER_DECISIONS_20260731.md`):
+     * cư dân chỉ thấy khoản phí đã đi hết chuỗi kế toán nhập → trưởng ban duyệt → phát hành.
+     *
+     * Đòi CẢ HAI điều kiện, không chỉ một:
+     *  - `approval_status = published` — BQL đã bấm phát hành
+     *  - `published_at IS NOT NULL`    — có mốc thời gian phát hành thật
+     * Lý do đòi cả hai: `approval_status` là chuỗi, một mass-update lỡ tay đặt được nó mà
+     * không đặt `published_at`. Mốc thời gian là bằng chứng khó giả hơn.
+     *
+     * MỌI đường đọc dành cho cư dân phải dùng scope này. Thêm điều kiện lọc ở chỗ khác
+     * là tạo ra định nghĩa thứ hai — và định nghĩa thứ hai sẽ lệch.
+     */
+    public function scopeVisibleToResident($query)
+    {
+        return $query
+            ->where('approval_status', self::APPROVAL_PUBLISHED)
+            ->whereNotNull('published_at');
+    }
+
+    /** Cư dân có được thấy bản ghi NÀY không — dùng cho đường show/deep-link. */
+    public function isVisibleToResident(): bool
+    {
+        return $this->approval_status === self::APPROVAL_PUBLISHED
+            && $this->published_at !== null;
+    }
 
     public function apartment(): BelongsTo
     {

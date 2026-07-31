@@ -88,11 +88,11 @@
 |---|---|---|---|
 | 03-01 Tổng quan / Fee Cycle | 🟢 | `Pages/FeeCycleList.php`, Resource `BillingPeriods`, model `FeeCycle`(via BillingPeriod/BillingRun) | mig `2026_07_02_000008 fee_cycles_bql0302` |
 | 03-02 Biểu phí / Cấu hình | 🟢 | `Pages/FeeCatalog.php`, Resource `FeeTypes`,`FeeRates`, model `FeeFormula`,`FeeFormulaVersion`,`FeeScopeAssignment` | wizard đủ bước ❓ |
-| 03-03 Tạo/Chạy kỳ phí | 🟢 | model `BillingRun`,`BillingRunItem`, mig `2026_06_30_000010` lifecycle | |
-| 03-04 Duyệt & Phát hành bảng kê | 🟢 | `Pages/StatementList.php`,`StatementApprovalQueue.php`, model `Statement`,`StatementApproval`,`StatementPublishLog`, mig `..._000009 approval_status` | bulk-publish ❓ |
-| 03-05 Chi tiết bảng kê / Aging | 🟢 | `Pages/StatementDetail.php`,`DebtAgingList.php`, model `StatementLine` | |
-| 03-06 Duyệt & phát hành | 🟢 | `StatementApprovalQueue.php` | maker-checker RBAC ❓ verify |
-| 03-07 Công nợ theo căn | 🟢 | `Pages/DebtLedger.php`, model `Debt` | (map dùng `debt_ledgers`; code dùng `Debt`) ❓ đối chiếu tên bảng |
+| 03-03 Tạo/Chạy kỳ phí | ⬜ | model `BillingRun`,`BillingRunItem`, mig `2026_06_30_000010` lifecycle | **SỬA 31/07: chỉ có bảng + model, KHÔNG CÓ RUNNER.** Không Service/Action/Job nào tính bảng kê. 1.360 statements hiện có đều do `DemoDataSeeder` sinh. Trước ghi 🟢 là sai. → engine sang Phase 2 (`BILLING_FEE_ENGINE_PHASE2_PLAN.md`), giai đoạn đầu kế toán import (D9) |
+| 03-04 Duyệt & Phát hành bảng kê | 🟡 | `Pages/StatementList.php`,`StatementApprovalQueue.php`, model `Statement`,`StatementApproval`,`StatementPublishLog`, mig `..._000009 approval_status` | **KHÔNG có dòng code nào set `approval_status='published'`** (chỉ seeder); `statement_publish_logs` có bảng + model, **không write-path**. `StatementApproval` cũng không có code ghi. `StatementList.php:47` hardcode `$today='2026-07-02'`, `:58` sort hash-shuffle |
+| 03-05 Chi tiết bảng kê / Aging | 🟡 | `Pages/StatementDetail.php`,`DebtAgingList.php`, model `StatementLine` | `StatementDetail.php:54` VAT hardcode `/1.08` thay vì đọc `fee_types.vat_percent` |
+| 03-06 Duyệt & phát hành | 🟡 | `StatementApprovalQueue.php` | **KHÔNG có maker-checker** — `:186` `$eligible->each->update()` ngoài transaction, không chặn `created_by_id` tự duyệt; `transitionRuns()` không lọc trạng thái hợp lệ. Còn **đường duyệt thứ hai** không kiểm soát ở `MyWork.php:338`. D1 chốt maker-checker là BẮT BUỘC → Phase B2 |
+| 03-07 Công nợ theo căn | 🟡 | `Pages/DebtLedger.php`, model `Debt` | `debts` **không có nguồn tính** — buckets/risk/recovery chỉ seeder, không job tính lại ⇒ số ở đây và HQ DebtAging **không đảm bảo khớp** `statements`. (map dùng `debt_ledgers`; code dùng `Debt`) |
 | 03-08 Điều chỉnh / Miễn giảm | 🟢 | Resource `BillingAdjustments`,`CreditNotes`, model `BillingAdjustment`,`CreditNote` | |
 | 03-09 Nhắc nợ & Chiến dịch | 🟢 | model `DebtReminderCampaign`,`DebtReminderLog` | có model, chưa rõ Page |
 | 03-10 Báo cáo kỳ phí | 🟡 | báo cáo tài chính ở HQ-05 | Page báo cáo cấp BQL ❓ |
@@ -101,7 +101,7 @@
 ### BQL-04 — Thu tiền, Đối soát & Biên lai
 | Màn/Nhóm | Trạng thái | Bằng chứng | Ghi chú |
 |---|---|---|---|
-| Thu tiền / Payment | 🟢 | Resource `Payments`,`BillingPayments`,`PaymentRequests`, model `Payment`,`PaymentAllocation`,`Receipt` | |
+| Thu tiền / Payment | 🟡 | Resource `Payments`,`BillingPayments`,`PaymentRequests`, model `Payment`,`PaymentAllocation`,`Receipt` | Nghiệp vụ duyệt chứng từ cư dân (`ResidentPaymentClaimReviewer` + 11 test) ✅ RẤT CHẮC. Nhưng **4 đường vòng qua nó** — nặng nhất: `PaymentForm.php:33` cho sửa `status` bằng `TextInput` tự do ⇒ set `confirmed` KHÔNG sinh allocation/receipt. Xem `docs/delivery/TECH_DEBT_REGISTER.md` nhóm 1 |
 | Đối soát ngân hàng | 🟢 | Resource `BankTransactions`,`BillingReconciliations`, model `BankStatementImport`,`ReconciliationMatch` | |
 | Biên lai / Phiếu thu chi | 🟢 | Resource `CashVouchers`, model `CashVoucher`,`CashTransaction`,`CashFund` | |
 | Cổng thanh toán (VietQR/VNPay/MoMo) | 🟢 | Resource `PaymentChannels`,`PaymentGatewayConfigs`,`QrPaymentTokens` (2026-07-24) | verify route:list fila |
@@ -146,8 +146,8 @@
 | 07-05 Hộp thư yêu cầu biểu mẫu | 🟢 | Resource `FormSubmissions`, model `FormSubmission`,`FormSubmissionValue` | |
 | 07-06 Khảo sát & bình chọn | 🟢 | Resource `Polls`, model `Poll`,`PollOption`,`PollVote` | survey vs poll ❓ |
 | 07-07 Kết quả khảo sát | 🟡 | model `PollVote` | dashboard sentiment ❓ |
-| 07-08 Kiểm duyệt cộng đồng | 🟢 | Resource `CommunityPosts`, model `CommunityPost`,`Comment`(polymorphic),`CommunityGroup` | risk score/auto-hide ❓ |
-| 07-09 Chi tiết bài báo cáo | 🟡 | model `CommunityPost` (flags mig 2026-07-23) | màn xử lý báo cáo riêng ❓ |
+| 07-08 Kiểm duyệt cộng đồng | ⬜ | Resource `CommunityPosts`, model `CommunityPost`,`Comment`(polymorphic),`CommunityGroup` | **SỬA 31/07: `/admin` KHÔNG có màn cộng đồng nào.** `AdminPanelProvider` cố ý không `discoverResources()`, nên `CommunityPostResource` chỉ tồn tại ở `/fila` dạng **scaffold auto-gen** (`project_id` là số thô, form `TextInput::numeric`). Spec đầy đủ đã có ở `COMMUNITY_WRITE_MODERATION_DESIGN.md` §4, **chưa 1 dòng code**. Trước ghi 🟢 là sai → Phase B6 |
+| 07-09 Chi tiết bài báo cáo | ⬜ | model `CommunityPost` (flags mig 2026-07-23) | **`community_post_reports.status`/`resolved_by_user_id`/`resolved_at` KHÔNG có dòng code nào ghi vào**; `moderate()` không đóng report ⇒ hậu kiểm **không có vòng đóng**. Không endpoint, không màn queue |
 | 07-10 Phân tích hiệu quả | ⬜ | — | CTR/open-rate analytics chưa thấy |
 | Sự kiện cộng đồng | 🟢 | Resource `Events`, model `Event`,`EventRegistration` | |
 
@@ -225,9 +225,9 @@
 | Profile + Avatar | ✅ | `ProfileController` (PATCH profile, POST/DELETE avatar) |
 | Devices (đăng ký thiết bị) | ✅ | `DeviceController`, model `MobileDevice` |
 | AI Chat | 🟢 | `Ai/ChatController` (chat/sessions) |
-| Statements / Billing summary + trend | ✅ | `StatementController`,`BillingSummaryController` (verify HTTP user_id=6) |
+| Statements / Billing summary + trend | ✅ | `StatementController`,`BillingSummaryController` (verify HTTP user_id=6). **31/07: chỉ trả bảng kê ĐÃ PHÁT HÀNH** (D1) — `Statement::scopeVisibleToResident()` là định nghĩa duy nhất, áp cho cả 3 đường đọc (danh sách/chi tiết/summary/trend) để con số không lệch nhau. 7 test ở `ResidentStatementVisibilityTest` |
 | Notifications + detail + read + comments | ✅ | `NotificationController` (+comment polymorphic 2026-07-25) |
-| **Ví căn hộ** (`wallet`, `wallet/transactions`) | 🟡 | `WalletController`, `Services/Resident/ApartmentWalletService` (trừ ví theo ưu tiên, bcmath), model `ApartmentWallet`,`ApartmentWalletBucket`,`ApartmentWalletTransaction`; mig `2026_07_26_000001`; seeder `ApartmentWalletDemoSeeder`. ⚠️ **Chưa migrate/chạy lần nào** (máy dev không có PHP) — mig đã guard `hasTable`/`hasColumn` idempotent nhưng chưa verify |
+| **Ví căn hộ** (`wallet`, `wallet/transactions`) | 🟡 | `WalletController`, `Services/Resident/ApartmentWalletService` (trừ ví theo ưu tiên, bcmath), model `ApartmentWallet`,`ApartmentWalletBucket`,`ApartmentWalletTransaction`; mig `2026_07_26_000001`; seeder `ApartmentWalletDemoSeeder`. **31/07: đã migrate** (xác nhận qua `migrate:status`) — ghi chú "máy dev không có PHP" là sai, PHP chạy qua Herd/PowerShell (`php.bat` nên Git Bash không thấy trong PATH). ⚠️ Còn: 0 test; `autoSettleOutstanding()` là dead code và sẽ phá bất biến nếu bật nguyên trạng. ⚠️ Handoff billing 30/07 §6.7 nói vốn từ ví lệch là **SAI** — nó mô tả bảng `wallet_transactions` (ví công ty HQ-02), còn app đọc `apartment_wallet_transactions` vốn CÓ `direction` và đúng bộ `type` |
 | **Upload ảnh cư dân** (`POST uploads`) | 🟡 | `UploadController`, model `Attachment` (polymorphic) + trait `HasAttachments` + `AttachmentResource`; mig `2026_07_26_000002`. Disk `public` → server **bắt buộc** `php artisan storage:link`. Chưa verify |
 | **Bình luận trên PHIẾU** (`{resource}/{id}/comments`) | 🟡 | `SlipCommentController` generic, whitelist `visitor-registrations`/`payments`/`amenity-bookings`, scope theo `apartment_id`; `HasComments` gắn `VisitorRegistration`,`Payment`,`AmenityBooking`. Chưa verify HTTP |
 | **Articles** (quy định/cẩm nang/tin tức) | 🟡 | `ArticleController` đọc qua `PlatformContent`; seeder `ResidentArticleSeeder`. Chưa verify |

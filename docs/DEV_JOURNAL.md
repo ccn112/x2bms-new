@@ -2223,3 +2223,133 @@ chứ không xếp hàng sau nó.
 Kèm quan hệ `Project::publicProject()` — trước chỉ có cột `public_project_id` trần.
 
 Verify: badge 22 · stats 27/5/22 · quan hệ nạp ra "Sunshine Garden" · route đăng ký.
+
+---
+
+## 2026-07-31 — Chốt nghiệp vụ công nợ, cài bộ gate delivery, lọc bảng kê đã phát hành
+
+> Nhật ký này **trễ 3 commit** trước phiên (chưa có entry nào cho 30/07: cư dân nộp
+> chứng từ `503f28c`, BQL duyệt `1a42017`, timezone `94e1134`). Ghi bù phần hôm nay.
+
+### Audit trước, không code trước
+
+Chạy 3 audit song song (x2mobile công nợ · x2bms billing · cộng đồng 2 repo). Kết quả
+đáng nói nhất **không** phải thiếu tính năng, mà là **tài liệu nói khác code**:
+
+- `PROGRESS_TRACKER` đánh 🟢 cho BQL-03-03 (tạo/chạy kỳ phí), 03-04 và 03-06 (duyệt &
+  phát hành). Thực tế: **không có runner, không có dòng code nào set
+  `approval_status='published'`**. 1.360 bảng kê hiện có đều do `DemoDataSeeder` sinh.
+  `statement_publish_logs` và `statement_approvals` có bảng + model, **không write-path**.
+- 07-08 (kiểm duyệt cộng đồng) đánh 🟢 nhưng `/admin` **không có màn cộng đồng nào** —
+  `AdminPanelProvider` cố ý không `discoverResources()`, nên Resource chỉ nằm ở `/fila`
+  dạng scaffold auto-gen.
+
+Đã sửa các mốc đó trong tracker. Để 🟢 cho scaffold là tài liệu nói dối, và nó đắt hơn
+không có tài liệu: người đọc tin rồi lập kế hoạch trên đó.
+
+Nợ đầy đủ: `docs/delivery/TECH_DEBT_REGISTER.md` — 60 mục, 7 nhóm, mỗi mục có bằng
+chứng `file:line`.
+
+### Chốt 9 quyết định nghiệp vụ công nợ (D1–D9)
+
+`docs/BILLING_OWNER_DECISIONS_20260731.md`. **Thắng** gói handoff 30/07 ở chỗ hai bên
+khác nhau. Ba điều đảo ngược so với handoff:
+
+1. **Tiền VND là SỐ NGUYÊN đồng** — handoff ghi `DECIMAL(20,2)` + decimal string. Đảo.
+   API trả `"1234000"`, Flutter dùng `int`. Việc này còn *giải quyết luôn* vi phạm "tiền
+   không dùng float" mà app đang mắc: `int` chính xác hơn cả decimal string, và bỏ được
+   epsilon `0.009` app đang phải so sánh bằng.
+2. **HQ ngành dọc ĐƯỢC duyệt chứng từ tiền** — handoff ghi HQ chỉ quan sát. Cấm chỉ áp
+   cho T1 SuperAdmin `/sa`: nhà cung cấp phần mềm không xem được sao kê của công ty vận
+   hành, duyệt là xác nhận việc mình không có cách nào biết. HQ **sở hữu** tài khoản đó.
+3. **5 billing family là điều kiện bắt buộc, không phải lựa chọn kiến trúc.** D4 chốt thứ
+   tự phân bổ mặc định QL → Nước → Điện → Xe → Khác. Nhưng `fee_types.category` gộp điện
+   và nước chung vào `utility` (9 fee type), nên **không có cách nào xếp Nước trước
+   Điện**. Đây là lý do backfill `fee_category` phải nhắm vào family mới, không vào bộ
+   category cũ — kẻo backfill hai lần.
+
+Hai chiều schema mà quyết định tạo ra, handoff chưa có: **chiều tài sản** trên dòng phí
+và trên ngăn tiền thừa (tiền thừa của xe BKS nào phải vào ngăn của chính xe đó), và
+**override thứ tự ưu tiên theo từng dự án**.
+
+**Ba cấp phí** (câu chủ dự án hỏi): hình dạng `family › fee_type › tài sản` đúng, nhưng
+cấp 3 **không nên là dòng trong danh mục phí**. `fee_types` là danh mục dùng chung của
+tenant (~39 dòng); nếu mỗi biển số là một dòng thì danh mục nổ thành hàng nghìn, và mỗi
+lần cư dân mua xe là *sửa danh mục phí*. Biển số đã là thuộc tính của `vehicles`
+(`plate_no`, `parking_card_no`, `monthly_fee`, `valid_to`). Mô hình này chạy đều cho cả 5
+family (điện/nước → `meters`, phí quản lý → chính căn hộ) — dấu hiệu nó đúng.
+
+**Engine tính phí → Phase 2** (`BILLING_FEE_ENGINE_PHASE2_PLAN.md`), giai đoạn đầu kế
+toán import (`BILLING_IMPORT_SPEC_20260731.md`). Điều này **gỡ chặn lớn nhất**: trước đây
+D3/D4/D6 đều phụ thuộc "phải có gì sinh ra khoản phí". Và nó cho một lợi ích không thấy
+ngay — bộ số kế toán import thành **bộ test vàng** để nghiệm thu engine sau này; không có
+nó thì engine chỉ tự đối chiếu với chính nó.
+
+Mẫu import đặt trên `StagingImporter` đã có sẵn, không làm hạ tầng mới. File mẫu `.xlsx`
+sinh từ chính `columns()` của profile nên **luôn khớp code** — theo đúng khuôn
+`ImportsResidentsFromExcel`.
+
+### Cài bộ gate AI-First Delivery, sửa 5 điểm
+
+Gói `handoff/x2bms/X2BMS_AI_FIRST_DELIVERY_SKILL_20260731`. Phương pháp đúng và chẩn
+đoán chính xác — audit xác nhận từng điểm nó cảnh báo bằng bằng chứng thật. Nhưng sửa 5:
+
+- **G9 anti-bypass + G10 money & authority** (gói gốc không có gate nào về bất biến tài
+  chính). G9 quan trọng vì gate gốc kiểm "làm đúng chưa", không kiểm "còn cửa sau nào
+  không" — đúng khoảng trống sinh ra `MyWork.php:338` và form `/fila/payments`.
+  `ResidentPaymentClaimReviewer` làm rất đúng (transaction + 2 lớp lock + idempotent + 11
+  test) nhưng có **4 đường vòng** qua nó.
+- **Filament matrix**: "Thu phí/công nợ → Resource" → **Custom Page bắt buộc**. Bảng có
+  bất biến tiền không được có Resource sửa được.
+- **`docs/` → `docs/delivery/`** — không trộn tài liệu phương pháp với tài liệu sản phẩm.
+- **Phase plan viết lại theo trạng thái thật** (bản gốc giữ ở `_ORIGINAL.md`). Bản gốc
+  xếp `resident-identity` làm reference slice — nhưng nó **phần lớn đã xong**; xếp
+  community cuối — nhưng nó ~90% xong và đang có hồi quy sống. Reference slice đổi thành
+  **Billing Charge Import**: việc đang cần thật, đi trọn vòng, và buộc qua G9+G10.
+- **Artifact theo tầng rủi ro** thay vì 10 cho mọi module — repo ~100 màn và đã có drift.
+
+Chốt quan hệ hai hệ tài liệu trong `CLAUDE.md`: `docs/modules/` là **đầu vào thiết kế**
+(trước khi code), Track 1–4 là **đầu ra vận hành** (sau khi code), `PROGRESS_TRACKER` là
+**nguồn duy nhất về trạng thái**. Không để hai hệ cùng đánh trạng thái.
+
+### Cư dân chỉ thấy bảng kê ĐÃ PHÁT HÀNH (D1) — đã làm
+
+`Statement::scopeVisibleToResident()` — **định nghĩa duy nhất một chỗ**, đòi cả
+`approval_status='published'` **và** `published_at IS NOT NULL`. Đòi cả hai có lý do:
+`approval_status` là cột chuỗi, một mass-update lỡ tay (kiểu `MyWork::decide()`) đặt được
+nó mà không đặt mốc thời gian; mốc thời gian là bằng chứng khó giả hơn.
+
+Áp cho **cả 3 đường đọc**, không chỉ danh sách: `statements` index + show,
+`billing/summary`, `billing/summary/trend`. Đây là phần dễ bỏ sót và là phần quan trọng
+nhất — nếu chỉ lọc danh sách mà không lọc công nợ tổng thì cư dân thấy nợ 8tr rồi mở danh
+sách chỉ có hóa đơn 5tr. Lệch kiểu đó làm cư dân gọi BQL, tệ hơn cả việc lộ hóa đơn.
+
+Chi tiết bảng kê chưa phát hành trả **404 không phải 403**: 403 vẫn tiết lộ "có một bảng
+kê ở đây mà bạn không được xem", và cư dân sẽ hỏi BQL về hóa đơn chưa chốt.
+
+`tests/Feature/ResidentStatementVisibilityTest.php` — 7 test, khóa cả ca
+`approval_status=published` mà thiếu `published_at`, và hồi quy cách ly căn hộ.
+
+**Sửa kèm:** `ExampleTest` đòi 200 ở `/` trong khi `routes/web.php:13` là
+`redirect('/admin')` — **đỏ vĩnh viễn từ đầu dự án**. Sửa cho đúng hành vi thật. Một test
+luôn đỏ trong suite huấn luyện người ta bỏ qua màu đỏ, và đó là cách lỗi thật bị lọt.
+
+### Dở dang — B1 (import khoản phí)
+
+Đã có: `app/Enums/BillingFamily.php` (5 family + `defaultPriority` 100/200/300/400/900 +
+`fromFeeType()` là chỗ duy nhất chứa logic suy family; tách `utility` kiểm **nước trước
+điện** có chủ ý vì "Nước nóng trung tâm" chứa cả "nước", còn "Phí sạc xe điện" chứa "điện"
+nhưng là phương tiện → về `other` cho BQL gán tay) và migration thêm
+`subject_type`/`subject_id` + `service_period_start/end` + `due_date` cấp dòng cho
+`statement_lines` (guarded, có `down()`, 2 index).
+
+**Migration CHƯA CHẠY.** Còn: `RowNormalizers::money()`, backfill command,
+`BillingChargeImportProfile`, màn import, seed, test.
+
+### Ghi chú môi trường
+
+`php` **không gọi được từ Git Bash** nhưng chạy tốt qua PowerShell — Herd cài `php.bat`
+(batch Windows), Git Bash không nhận. PHP 8.4.15 · Laravel v13.17.0 · Filament v5.6.7 ·
+MySQL `x2bms`. Ghi chú cũ trong tracker "máy dev không có PHP" là sai.
+
+Verify: `php artisan test` → **91/91 pass**, 303 assertion.
