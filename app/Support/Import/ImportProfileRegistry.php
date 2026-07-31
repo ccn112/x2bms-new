@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Support\Import;
 
+use App\Support\Import\Profiles\BillingChargeImportProfile;
 use App\Support\Import\Profiles\ResidentImportProfile;
 use InvalidArgumentException;
 
@@ -17,6 +18,7 @@ final class ImportProfileRegistry
     {
         return match ($importType) {
             'residents' => new ResidentImportProfile,
+            'billing_charges' => new BillingChargeImportProfile,
             default => throw new InvalidArgumentException("Không hỗ trợ import_type: {$importType}"),
         };
     }

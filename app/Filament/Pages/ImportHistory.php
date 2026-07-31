@@ -57,6 +57,7 @@ class ImportHistory extends Page implements HasTable
     private const IMPORT_TYPE = [
         'residents' => 'Cư dân/Căn hộ',
         'projects_employees' => 'Dự án/Nhân sự',
+        'billing_charges' => 'Khoản phí',
     ];
 
     private function buildingIds(): array

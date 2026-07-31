@@ -2353,3 +2353,78 @@ nhưng là phương tiện → về `other` cho BQL gán tay) và migration thê
 MySQL `x2bms`. Ghi chú cũ trong tracker "máy dev không có PHP" là sai.
 
 Verify: `php artisan test` → **91/91 pass**, 303 assertion.
+
+## 2026-07-31 (tiếp) — Phase B1: Billing Charge Import (reference slice)
+
+Đi trọn slice mẫu theo `docs/delivery/04_INITIAL_PHASE_PLAN.md` Phase B1:
+`docs/BILLING_IMPORT_SPEC_20260731.md`. Migration cột (`subject_type/id`,
+`service_period_start/end`, `due_date` trên `statement_lines`) đã có sẵn từ phiên trước
+nhưng **chưa chạy** — chạy xong mới bắt đầu.
+
+**Backfill `fee_category` → 5 family (D2, `billing:backfill-fee-family`).** Phát hiện khi
+viết lệnh: 2211/7212 dòng ĐÃ có `fee_category`, nhưng mang giá trị CŨ (`management|
+parking|service` — copy thẳng từ `fee_types.category` trước khi khái niệm family tồn
+tại). Không chỉ lấp NULL — phải GHI ĐÈ cả cột, vì riêng `parking` sai hẳn thành phải là
+`vehicle`. 4792 dòng cũ hơn không có `fee_type_id` (chuỗi tự do `fee_type` như "Phí gửi
+xe ô tô"/"Điện sinh hoạt") — viết resolver từ khoá riêng cho trường hợp này (kiểm "xe"
+trước "điện" như `BillingFamily::splitUtility()`, nhưng đây là lối thoát một lần cho dữ
+liệu cũ, không phải bản sao của `fromParts()`). Chạy trên DB dev: 6002 dòng đổi, 1210 giữ
+nguyên, 0 dòng còn NULL.
+
+**`RowNormalizers::money()` (D7).** Nhận `518000`/`518.000`/`518,000`/`"518 000"`/`518000 đ`
+→ `518000` (int); từ chối (trả về CHUỖI thay vì int) khi phần lẻ khác 0. Phân biệt "dấu
+ngăn hàng nghìn" với "dấu thập phân" bằng SỐ CHỮ SỐ sau dấu tách CUỐI CÙNG trong chuỗi: 3
+chữ số → hàng nghìn (gộp mọi dấu cùng loại, xử lý được `1.234.567`); 1-2 chữ số → thập
+phân (chấp nhận nếu toàn số 0, từ chối nếu khác 0). Normalizer không có kênh báo lỗi
+riêng (`ImportColumnSpec::extract()` chỉ trả `mixed`) nên đẩy việc phát hiện "không phải
+int" xuống `validateRow()` của profile, echo lại đúng chuỗi gốc trong thông báo.
+
+**`BillingChargeImportProfile`** trên `StagingImporter`/`ImportProfile` dùng chung, theo
+đúng khuôn `ResidentImportProfile`. 16 cột; family suy từ `fee_type_code` (không có
+trong file, để kế toán không phải nhớ). Tài sản (BKS/mã đồng hồ) validate RIÊNG khỏi
+tiền: xe luôn bắt buộc; điện/nước chỉ bắt buộc khi căn có >1 đồng hồ cùng loại (đếm qua
+`Meter::where('apartment_id','type')`); khớp sai → CHẶN cụ thể ("BKS ... không thuộc
+căn ..."), không đoán — vì tài sản sai là tiền thừa vào ngăn của người khác (D6), không
+phải sai hiển thị. Chuẩn hoá biển số: bỏ khoảng trắng/`.`/`-`, in hoa, rồi mới so khớp.
+
+Statement luôn sinh `pending` (D1); nếu statement đã tồn tại mà KHÔNG còn `pending` (đã
+duyệt/phát hành) thì CHẶN CẢ DÒNG bằng exception — import không được âm thầm thêm dòng
+vào một bảng kê cư dân có thể đã thấy. Idempotent theo khoá `(statement_id, fee_type_id,
+subject_type, subject_id, service_period_start)` — Eloquent tự dịch `null` trong mảng
+where thành `whereNull`, nên hai dòng phí quản lý (không tài sản) cùng kỳ vẫn khớp đúng
+dòng cũ thay vì tạo trùng. Re-import **không đụng `paid_amount`/`status`** của dòng đã
+tồn tại (chỉ đặt mặc định khi dòng MỚI) — nghĩa vụ và tiền là hai việc khác nhau.
+`total_amount` là PHÉP CHIẾU, tính lại từ `SUM(lines.amount)` sau mỗi lần ghi, không cộng
+dồn tay.
+
+**Hoàn tác lô** (spec §5.7): thêm cột `rolled_back_at`/`rolled_back_by` trên
+`import_batches` — CỐ Ý không thêm giá trị mới vào `status` (xem bẫy enum dưới). Chặn cả
+lô nếu BẤT KỲ bảng kê liên quan không còn `pending`; không hoàn tác được một phần.
+
+**Bẫy phát hiện khi viết test (2 cột ENUM chết từ lâu):** `import_batch_rows.row_type`
+là ENUM gốc `project|employee|assignment`, được mở rộng thêm `resident` bằng
+`ALTER ... MODIFY` **CHỈ trên MySQL**. Trên SQLite (DB test) CHECK constraint GỐC vẫn
+còn — `row_type = 'resident'` (đã dùng thật) hay `'billing_charge'` (mới) đều vỡ CHECK
+khi test. Không ai gặp vì **trước bản này không có test nào cho luồng import** —
+`BillingChargeImportTest` là test đầu tiên chạm bảng này. Sửa triệt để: đổi cột thành
+`string` (đổi tên cột tạm rồi xoá cột cũ, không dùng `->change()` vì thiếu doctrine/dbal)
+— bỏ hẳn ràng buộc enum ở tầng DB, `ImportProfile::rowType()` tự khai báo giá trị.
+
+**Filament `/admin`:** `Pages/BillingChargeImport.php` (nhóm "Hóa đơn & thanh toán") +
+trait `ImportsBillingChargesFromExcel` theo đúng khuôn `ImportsResidentsFromExcel` (tải
+mẫu .xlsx sinh từ `columns()`, 2 bước upload→xem trước→ghi nền qua `CommitImportBatchJob`
+có sẵn — không viết job mới). Cố ý MỎNG: chi tiết dòng/retry/export dùng chung màn có sẵn
+"Nhật ký Import/Export" (đã generic theo `import_type` từ trước); màn mới chỉ thêm bảng
+lọc riêng `billing_charges` + nút "Hoàn tác" (nghiệp vụ này generic `StagingImporter`
+không biết). Render thật qua `_render_admin.php`: `billing-charge-import` và
+`import-history` đều 200.
+
+**Chưa làm (nằm ngoài ranh giới B1, đúng theo phase plan):** seed kịch bản demo end-to-end
+(2 dự án/MUST_NOT_LEAK/nợ cũ dồn kỳ) cho việc click tay — bộ 9 test đã tự dựng fixture
+riêng cho từng kịch bản này nên coi là đã verify, nhưng CHƯA có seeder riêng để BQL bấm
+thử trên `/admin` với dữ liệu demo. `docs/templates/mau_import_khoan_phi.csv` có sẵn từ
+trước dùng tạm được cho việc này (đã có đủ QL/điện/nước/2 loại xe/nợ cũ dồn/dòng điều
+chỉnh âm).
+
+Verify: `php artisan test` → **100/100 pass** (91 cũ + 9 mới), 330 assertion. `php -l`
+sạch 4 file mới.

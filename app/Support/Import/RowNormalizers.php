@@ -128,6 +128,88 @@ final class RowNormalizers
         return null;
     }
 
+    /**
+     * Số thập phân đơn giản (chỉ số công tơ, số lượng, %) — KHÔNG dùng cho tiền, xem
+     * `money()`. Nhận cả dấu `,` lẫn `.` làm dấu thập phân (không phân biệt hàng nghìn ở
+     * đây vì các cột này không cần nhóm số). Không parse được → null.
+     */
+    public static function decimal(?string $value): ?float
+    {
+        $v = self::string($value);
+        if ($v === null) {
+            return null;
+        }
+
+        $v = preg_replace('/[^0-9.,\-]/u', '', $v) ?? '';
+        $v = str_replace(',', '.', $v);
+
+        return is_numeric($v) ? (float) $v : null;
+    }
+
+    /**
+     * Tiền VND — số nguyên đồng (D7, `docs/BILLING_OWNER_DECISIONS_20260731.md`).
+     *
+     * Trả về `int` khi rút gọn SẠCH được về số nguyên đồng. Trả về CHUỖI đã làm sạch
+     * (không ép được về nguyên) khi giá trị có phần lẻ khác 0 hoặc định dạng không nhận
+     * diện được — normalizer không có kênh báo lỗi riêng (xem `ImportColumnSpec::extract()`),
+     * nên tầng validate của profile đọc lại giá trị này: `is_int()` thật thì hợp lệ, chuỗi
+     * thì lấy nguyên văn để echo vào thông báo lỗi "Tiền đồng không có số lẻ".
+     *
+     * Nhận: `518000` · `518.000` · `518,000` · `"518 000"` · `518000 đ` → `518000` (int).
+     * Từ chối (giữ dạng chuỗi): `518000.5` · `518.000,50` — phần lẻ khác 0.
+     * Chấp nhận `.00`/`,00` (Excel hay xuất số nguyên kèm đuôi này) → cắt về nguyên.
+     *
+     * Quy ước phân biệt "dấu ngăn cách hàng nghìn" với "dấu thập phân": nhìn vào DẤU
+     * TÁCH CUỐI CÙNG trong chuỗi — theo sau đúng 3 chữ số thì coi là hàng nghìn (gộp mọi
+     * dấu cùng loại lại, xử lý được cả `1.234.567`); theo sau 1-2 chữ số thì coi là thập
+     * phân (chấp nhận nếu toàn số 0, từ chối nếu khác 0).
+     */
+    public static function money(?string $value): int|string|null
+    {
+        $raw = self::string($value);
+        if ($raw === null) {
+            return null;
+        }
+
+        $clean = preg_replace('/[^0-9.,\-]/u', '', $raw) ?? '';
+        if ($clean === '' || $clean === '-') {
+            return null;
+        }
+
+        $negative = str_starts_with($clean, '-');
+        $clean = ltrim($clean, '-');
+
+        $lastSep = null;
+        foreach ([strrpos($clean, '.'), strrpos($clean, ',')] as $pos) {
+            if ($pos !== false && ($lastSep === null || $pos > $lastSep)) {
+                $lastSep = $pos;
+            }
+        }
+
+        if ($lastSep === null) {
+            $digits = $clean;
+        } else {
+            $fraction = substr($clean, $lastSep + 1);
+            $integerPart = substr($clean, 0, $lastSep);
+
+            if ($fraction !== '' && ctype_digit($fraction) && strlen($fraction) === 3) {
+                $digits = preg_replace('/[.,]/', '', $clean) ?? $clean;
+            } elseif ($fraction !== '' && ctype_digit($fraction) && (int) $fraction === 0) {
+                $digits = preg_replace('/[.,]/', '', $integerPart) ?? $integerPart;
+            } else {
+                return $clean;
+            }
+        }
+
+        if ($digits === '' || ! ctype_digit($digits)) {
+            return $clean;
+        }
+
+        $intVal = (int) $digits;
+
+        return $negative ? -$intVal : $intVal;
+    }
+
     /** Chuẩn hóa tên header để so khớp không phân biệt khoảng trắng thừa/newline. */
     public static function header(string $header): string
     {
