@@ -25,6 +25,9 @@ class StatementLineResource extends JsonResource
             'quantity' => $this->quantity === null ? null : (string) $this->quantity,
             'unit_price' => $this->unit_price === null ? null : (string) $this->unit_price,
             'amount' => $this->amount === null ? null : (string) $this->amount,
+            // Đã trả cấp DÒNG (B3 recomputePaidAmount) → app tính còn nợ mỗi dòng
+            // để cư dân chọn dòng khi thanh toán (D10).
+            'paid_amount' => $this->paid_amount === null ? null : (string) $this->paid_amount,
         ];
     }
 }
