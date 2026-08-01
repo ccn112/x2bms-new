@@ -27,6 +27,8 @@ class FeedbackRequestResource extends JsonResource
                 'color' => $this->category->color,
             ]),
             'status' => $status,
+            // Cư dân chỉ sửa được khi BQL chưa tiếp nhận (status vẫn 'new').
+            'can_edit' => $status === 'new',
             'priority' => $this->priority,
             'sla_due_at' => optional($this->sla_due_at)->toIso8601String(),
             'resolved_at' => optional($this->resolved_at)->toIso8601String(),

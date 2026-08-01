@@ -127,13 +127,7 @@ class FeedbackController extends ApiController
     /** GET /resident/feedback/{feedback} — chi tiết + timeline (bình luận công khai + lịch sử trạng thái). */
     public function show(Request $request, FeedbackRequest $feedback): JsonResponse
     {
-        $apartmentIds = $this->context->apartmentIds($request->user(), $request->header('X-Context-Id'));
-        $residentIds = $request->user()->residentMemberships()->pluck('id')->all();
-
-        $owns = in_array($feedback->apartment_id, $apartmentIds, true)
-            || ($feedback->resident_id !== null && in_array($feedback->resident_id, $residentIds, true))
-            || $feedback->user_id === $request->user()->id;
-        if (! $owns) {
+        if (! $this->owns($request, $feedback)) {
             return ApiResponse::error('not_found', 'Không tìm thấy phản ánh.', 404);
         }
 
@@ -161,5 +155,122 @@ class FeedbackController extends ApiController
         $feedback->timeline = $timeline;
 
         return ApiResponse::success(FeedbackRequestResource::make($feedback)->resolve($request));
+    }
+
+    /**
+     * PUT /resident/feedback/{feedback} — cư dân sửa phản ánh CỦA MÌNH, chỉ khi
+     * BQL chưa tiếp nhận (status vẫn `new`). Sau khi BQL xử lý thì khoá sửa để
+     * không đổi nội dung phía sau lưng người đang xử lý.
+     */
+    public function update(Request $request, FeedbackRequest $feedback): JsonResponse
+    {
+        if (! $this->owns($request, $feedback)) {
+            return ApiResponse::error('not_found', 'Không tìm thấy phản ánh.', 404);
+        }
+        if ($this->statusValue($feedback) !== 'new') {
+            return ApiResponse::error('not_editable',
+                'Chỉ sửa được phản ánh khi Ban quản lý chưa tiếp nhận.', 422);
+        }
+
+        $validated = $request->validate([
+            'feedback_category_id' => ['nullable', 'integer'],
+            'title' => ['sometimes', 'required', 'string', 'max:255'],
+            'description' => ['sometimes', 'required', 'string', 'max:5000'],
+            'priority' => ['sometimes', 'nullable', 'string', 'in:low,normal,high,urgent'],
+        ]);
+
+        $update = [];
+        foreach (['title', 'description'] as $f) {
+            if (array_key_exists($f, $validated)) {
+                $update[$f] = $validated[$f];
+            }
+        }
+        if (array_key_exists('priority', $validated) && $validated['priority'] !== null) {
+            $update['priority'] = $validated['priority'];
+        }
+        if (array_key_exists('feedback_category_id', $validated)) {
+            $update['feedback_category_id'] = $validated['feedback_category_id'] === null
+                ? null
+                : FeedbackCategory::query()
+                    ->where('tenant_id', $feedback->tenant_id)
+                    ->where('id', $validated['feedback_category_id'])
+                    ->value('id');
+        }
+
+        $feedback->update($update);
+        $feedback->load('category');
+
+        return ApiResponse::success(FeedbackRequestResource::make($feedback)->resolve($request));
+    }
+
+    /** GET /resident/feedback/{feedback}/comments — bình luận công khai (2 chiều cư dân ↔ BQL). */
+    public function comments(Request $request, FeedbackRequest $feedback): JsonResponse
+    {
+        if (! $this->owns($request, $feedback)) {
+            return ApiResponse::error('not_found', 'Không tìm thấy phản ánh.', 404);
+        }
+
+        $userId = $request->user()->id;
+        $comments = $feedback->comments()
+            ->where('is_internal', false)
+            ->orderBy('created_at')->orderBy('id')
+            ->get()
+            ->map(fn ($c) => $this->commentPayload($c, $userId))
+            ->all();
+
+        return ApiResponse::success($comments);
+    }
+
+    /** POST /resident/feedback/{feedback}/comments — cư dân trả lời trên phản ánh của mình. */
+    public function storeComment(Request $request, FeedbackRequest $feedback): JsonResponse
+    {
+        if (! $this->owns($request, $feedback)) {
+            return ApiResponse::error('not_found', 'Không tìm thấy phản ánh.', 404);
+        }
+
+        $data = $request->validate(['body' => ['required', 'string', 'max:2000']]);
+        $user = $request->user();
+
+        $comment = $feedback->comments()->create([
+            'user_id' => $user->id,
+            'resident_id' => $user->residentMemberships()->value('id'),
+            'author_name' => $user->name,
+            'body' => trim($data['body']),
+            'is_internal' => false,
+        ]);
+
+        return ApiResponse::success($this->commentPayload($comment, $user->id), [], 201);
+    }
+
+    /** Sở hữu = căn hộ HOẶC resident HOẶC người tạo (khớp index/show). */
+    private function owns(Request $request, FeedbackRequest $feedback): bool
+    {
+        $apartmentIds = $this->context->apartmentIds($request->user(), $request->header('X-Context-Id'));
+        $residentIds = $request->user()->residentMemberships()->pluck('id')->all();
+
+        return in_array($feedback->apartment_id, $apartmentIds, true)
+            || ($feedback->resident_id !== null && in_array($feedback->resident_id, $residentIds, true))
+            || $feedback->user_id === $request->user()->id;
+    }
+
+    private function statusValue(FeedbackRequest $feedback): string
+    {
+        return $feedback->status instanceof \BackedEnum
+            ? $feedback->status->value
+            : (string) $feedback->status;
+    }
+
+    /** @return array<string,mixed> */
+    private function commentPayload(\App\Models\FeedbackComment $c, int $userId): array
+    {
+        return [
+            'id' => (string) $c->id,
+            'author' => $c->author_name,
+            // Bình luận của cư dân mang resident_id; BQL trả lời thì không → nhãn.
+            'is_staff' => $c->resident_id === null,
+            'is_mine' => $c->user_id === $userId,
+            'body' => $c->body,
+            'at' => optional($c->created_at)->toIso8601String(),
+        ];
     }
 }
