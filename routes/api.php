@@ -16,6 +16,7 @@ use App\Http\Controllers\Api\V1\Resident\BillingSummaryController;
 use App\Http\Controllers\Api\V1\Resident\CommunityController;
 use App\Http\Controllers\Api\V1\Resident\CommunityPostController;
 use App\Http\Controllers\Api\V1\Resident\DeviceTokenController;
+use App\Http\Controllers\Api\V1\Resident\NotificationPreferenceController;
 use App\Http\Controllers\Api\V1\Resident\EmergencyAlertController;
 use App\Http\Controllers\Api\V1\Resident\FeedbackController;
 use App\Http\Controllers\Api\V1\Resident\HomeController;
@@ -251,6 +252,10 @@ Route::prefix('v1')->group(function () {
         Route::match(['put', 'patch'], 'feedback/{feedback}', [FeedbackController::class, 'update']);
         Route::get('feedback/{feedback}/comments', [FeedbackController::class, 'comments']);
         Route::post('feedback/{feedback}/comments', [FeedbackController::class, 'storeComment']);
+
+        // Tuỳ chọn bật/tắt kênh thông báo push (màn Cá nhân → Thông báo).
+        Route::get('notification-preferences', [NotificationPreferenceController::class, 'index']);
+        Route::put('notification-preferences', [NotificationPreferenceController::class, 'update']);
 
         // Chi tiết thông báo (full body + đánh dấu đã đọc).
         Route::get('notifications/{notification}', [NotificationController::class, 'show']);

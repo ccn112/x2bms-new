@@ -2,7 +2,9 @@
 
 namespace App\Services\Push;
 
+use App\Enums\NotificationChannel;
 use App\Models\DeviceToken;
+use App\Models\NotificationPreference;
 use App\Models\User;
 use Kreait\Firebase\Factory;
 use Kreait\Firebase\Messaging\CloudMessage;
@@ -29,13 +31,41 @@ class PushService
             ->createMessaging();
     }
 
-    /** Gửi tới MỌI thiết bị của một user. Trả số thiết bị nhận thành công. */
-    public function toUser(User $user, string $title, string $body, array $data = []): int
-    {
+    /**
+     * Gửi tới MỌI thiết bị của một user, tôn trọng tuỳ chọn KÊNH. Người đã tắt
+     * kênh (trừ khẩn cấp) thì bỏ qua. Trả số thiết bị nhận thành công.
+     */
+    public function toUser(
+        User $user,
+        string $title,
+        string $body,
+        array $data = [],
+        ?NotificationChannel $channel = null,
+    ): int {
+        if ($channel !== null && ! $this->userAllows($user, $channel)) {
+            return 0;
+        }
+
         return $this->toTokens(
             DeviceToken::where('user_id', $user->id)->pluck('token')->all(),
-            $title, $body, $data,
+            $title,
+            $body,
+            $channel === null ? $data : $data + ['channel' => $channel->value],
         );
+    }
+
+    /** Người dùng có nhận kênh này không. Kênh khẩn cấp luôn nhận. */
+    public function userAllows(User $user, NotificationChannel $channel): bool
+    {
+        if (! $channel->canDisable()) {
+            return true;
+        }
+        $pref = NotificationPreference::query()
+            ->where('user_id', $user->id)
+            ->where('channel', $channel->value)
+            ->value('enabled');
+
+        return $pref === null ? $channel->defaultOn() : (bool) $pref;
     }
 
     /** @param array<string> $tokens */
