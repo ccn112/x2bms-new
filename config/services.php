@@ -93,6 +93,7 @@ return [
         'project_id' => env('FIREBASE_PROJECT_ID'),
         'credentials' => env('FIREBASE_CREDENTIALS', storage_path('app/firebase/service-account.json')),
         'enabled' => (bool) env('FCM_ENABLED', false),
+        'vapid_key' => env('FIREBASE_VAPID_KEY'),
     ],
 
 ];
