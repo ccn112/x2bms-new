@@ -272,6 +272,9 @@ Route::prefix('v1')->group(function () {
         ->group(function () {
             Route::post('community/posts/{post}/moderate', [CommunityPostController::class, 'moderate'])
                 ->whereNumber('post');
+            // GĐ7 — kiểm duyệt bình luận cộng đồng (ẩn/xoá/khôi phục).
+            Route::post('community/posts/{post}/comments/{comment}/moderate', [CommunityPostController::class, 'moderateComment'])
+                ->whereNumber('post')->whereNumber('comment');
             // Duyệt/từ chối tin rao — cùng lý do dùng nhóm ability này (xem
             // docblock trên): BQL app dùng chung token 'staff'.
             Route::post('listings/{listing}/moderate', [ListingController::class, 'moderate'])

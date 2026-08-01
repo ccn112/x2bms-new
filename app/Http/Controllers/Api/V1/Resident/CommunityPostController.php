@@ -330,6 +330,43 @@ class CommunityPostController extends ApiController
         return $this->commentTally($c, $request);
     }
 
+    /**
+     * POST /resident/community/posts/{post}/comments/{comment}/moderate — GĐ7.
+     * BQL ẩn/xoá/khôi phục bình luận (cột `status`). Quyền = kiểm duyệt được BÀI.
+     */
+    public function moderateComment(Request $request, int $post, int $comment): JsonResponse
+    {
+        $data = $request->validate([
+            'action' => ['required', 'string', 'in:hide,unhide,delete,restore'],
+            'reason' => ['nullable', 'string', 'max:500'],
+        ]);
+
+        $model = CommunityPost::withTrashed()->find($post);
+        if (! $model) {
+            return ApiResponse::error('not_found', 'Bài viết không tồn tại.', 404);
+        }
+        if (! $this->moderation->canModerate($request->user(), $model)) {
+            return ApiResponse::error('forbidden', 'Bạn không có quyền kiểm duyệt.', 403);
+        }
+
+        // Thấy cả bình luận đã ẩn/xoá để bỏ ẩn/khôi phục.
+        $c = CommunityComment::query()
+            ->where('community_post_id', $model->id)->whereKey($comment)->first();
+        if (! $c) {
+            return ApiResponse::error('not_found', 'Bình luận không tồn tại.', 404);
+        }
+
+        $c->update([
+            'status' => match ($data['action']) {
+                'hide' => 'hidden',
+                'delete' => 'deleted',
+                default => 'visible', // unhide | restore
+            },
+        ]);
+
+        return ApiResponse::success(['comment_id' => (string) $c->id, 'status' => $c->status]);
+    }
+
     /** Bình luận NHÌN THẤY được (thuộc bài trong phạm vi + status visible). */
     private function findVisibleComment(Request $request, int $post, int $comment): ?CommunityComment
     {
