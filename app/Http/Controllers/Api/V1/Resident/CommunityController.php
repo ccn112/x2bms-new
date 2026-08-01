@@ -425,12 +425,24 @@ class CommunityController extends ApiController
     /** GET /resident/community/groups — nhóm cộng đồng của dự án (+ đã tham gia?). */
     public function groups(Request $request): JsonResponse
     {
+        return ApiResponse::success(
+            CommunityGroupResource::collection($this->residentGroups($request))->resolve($request)
+        );
+    }
+
+    /**
+     * Danh sách nhóm cộng đồng của cư dân (bậc thang RỘNG→HẸP) kèm cờ `joined`.
+     * Dùng chung cho [groups] và [bootstrap] (GĐ5) — một nguồn truy vấn.
+     *
+     * Bậc thang (chốt 29/07): cả hệ thống → dự án quan tâm → dự án đang ở → nhóm
+     * riêng. `platform` không gắn dự án nên trả kể cả khi chưa gắn căn hộ.
+     *
+     * @return \Illuminate\Support\Collection<int, CommunityGroup>
+     */
+    private function residentGroups(Request $request): \Illuminate\Support\Collection
+    {
         $projectIds = $this->projectIds($request);
 
-        // Bậc thang nhóm (chốt 29/07), xếp từ RỘNG tới HẸP — đúng thứ tự cư dân
-        // hình dung: cả hệ thống → dự án mình quan tâm → dự án mình ở → nhóm
-        // riêng. `platform` không gắn dự án nên vẫn trả về kể cả khi tài khoản
-        // chưa gắn căn hộ nào.
         $groups = CommunityGroup::withoutGlobalScopes()
             ->where('status', 'active')
             ->where(function ($q) use ($projectIds) {
@@ -448,11 +460,9 @@ class CommunityController extends ApiController
             ->orderBy('name')
             ->get();
 
-        // "Đã tham gia" phải loại các membership đã `left_at` (Giai đoạn 3,
-        // 2026-08-01) — từ khi `leaveGroup()` không còn XOÁ CỨNG dòng
-        // `community_group_members` (đi qua `MembershipService::revokeManualJoin()`,
-        // chỉ đánh dấu `left_at`), thiếu điều kiện này thì rời nhóm xong app
-        // vẫn thấy `joined=true`.
+        // "Đã tham gia" phải loại membership đã `left_at` (GĐ3, 2026-08-01): từ
+        // khi `leaveGroup()` không xoá cứng nữa (`MembershipService::revokeManualJoin()`
+        // chỉ đánh dấu `left_at`), thiếu điều kiện này thì rời nhóm xong vẫn `joined=true`.
         $residentIds = $this->residentIds($request);
         $joinedIds = empty($residentIds) ? [] : CommunityGroupMember::query()
             ->whereIn('resident_id', $residentIds)
@@ -463,7 +473,47 @@ class CommunityController extends ApiController
 
         $groups->each(fn ($g) => $g->joined = in_array($g->id, $joinedIds, true));
 
-        return ApiResponse::success(CommunityGroupResource::collection($groups)->resolve($request));
+        return $groups;
+    }
+
+    /**
+     * GET resident/community/bootstrap — GĐ5. Gom MỌI thứ cần khi MỞ tab Cộng
+     * đồng vào một call (tier, phạm vi feed, tabs, nhóm, dự án theo dõi, quyền
+     * soạn), thay vì app gọi rời 3-4 endpoint. Theo hợp đồng
+     * `handoff/x2mobile/…_COMMUNITY_DOMAIN_HANDOFF_20260729/docs/07_API_CONTRACT.md §3`.
+     */
+    public function bootstrap(Request $request): JsonResponse
+    {
+        $user = $request->user();
+
+        // Tier: có quan hệ căn hộ (residentIds) ⇒ verified_resident; còn lại
+        // (member thuần, chưa gắn căn) ⇒ member. Không đoán từ token — dựa dữ liệu.
+        $tier = empty($this->residentIds($request)) ? 'member' : 'verified_resident';
+
+        $follows = \App\Models\UserProjectFollow::query()
+            ->where('user_id', $user->id)
+            ->with('project')
+            ->orderByDesc('followed_at')
+            ->get()
+            ->map(fn ($f) => [
+                'project_id' => (string) $f->project_id,
+                'project_name' => $f->project?->name,
+                'followed_at' => $f->followed_at?->toIso8601String(),
+            ])->all();
+
+        return ApiResponse::success([
+            'identity_tier' => $tier,
+            // v1: ngữ cảnh căn hộ đang chọn nằm ở `me/bootstrap`; ở đây để null,
+            // app đã có context riêng. Có thể làm giàu sau nếu cần.
+            'current_context' => null,
+            'default_feed_scope' => 'for_you',
+            'available_feed_scopes' => ['for_you', 'latest', 'x2living', 'following_projects'],
+            'tabs' => \App\Enums\CommunityContentType::tabs(),
+            'groups' => CommunityGroupResource::collection($this->residentGroups($request))->resolve($request),
+            'project_follows' => $follows,
+            'composer' => ['enabled' => true, 'allowed_types' => ['status', 'link_share']],
+            'capabilities' => (object) [],
+        ]);
     }
 
     /**

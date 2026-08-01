@@ -356,3 +356,31 @@ tính.
 7. Ngăn tiền thừa theo tài sản (D6.3).
 8. Màn công nợ theo dịch vụ trên app + dropdown 3 cấp + tick nhiều tháng (D6-ter).
 9. Chuyển tiền sang số nguyên đồng toàn tuyến DB → PHP → API → Flutter (D7).
+
+---
+
+## Addendum 2026-08-01 — D10: Cư dân chọn TỪNG LOẠI PHÍ khi thanh toán
+
+> Quyết định mới của chủ dự án, sau ngày chốt D1–D9. Ghi kèm ở đây để không mồ côi;
+> chi tiết UI + vòng đời ở app handoff `x2mobile/docs/HANDOFF_HOA_DON_CONG_NO_20260730.md`
+> §5.0.
+
+**Yêu cầu:** khi thanh toán một bảng kê, cư dân được chọn **các dòng phí cụ thể**
+(`statement_lines`) muốn trả, không bắt buộc trả nguyên bảng kê.
+
+**Đổi API (`x2bms`):** `POST /resident/payments/claim` hiện chỉ nhận `statement_id`. Bổ
+sung danh sách dòng đích, ví dụ `line_items[]: [{statement_line_id, amount}]`. Khi có:
+- Phân bổ B3 (`payment_allocations.statement_line_id`, D3) đi theo ĐÚNG dòng cư dân chọn,
+  **không** chạy khoá ưu tiên tenant-wide (D4) cho phạm vi đã chọn — D4 chỉ còn là mặc
+  định khi cư dân KHÔNG chỉ định dòng.
+- Bất biến giữ nguyên: tổng phân bổ ≤ phần còn nợ **của từng dòng** (`amount − paid_amount`);
+  trả dư một dòng thì phần vượt để chưa phân bổ (§3.1 handoff / invariant B3).
+- Validate scope server-side: mọi `statement_line_id` phải thuộc `statement_id` và thuộc
+  căn của cư dân; lệch → 404/422 (không lộ dòng của căn khác).
+
+**Vòng đời KHÔNG đổi:** claim `pending` → BQL đối chiếu → duyệt sinh allocation theo dòng
+đã chọn. Đây là bước duyệt tiền (G9/G10), không phải cư dân tự giảm công nợ.
+
+**Trạng thái:** MỚI, chưa build. Điều kiện tiên quyết đã đạt: `statement_lines.paid_amount`
+cấp dòng đã được cập nhật thật từ B3 (`recomputePaidAmount()`). Đưa vào backlog billing
+sau khi các slice D-hiện-hành ổn định; artifact thiết kế `docs/modules/` trước khi code.

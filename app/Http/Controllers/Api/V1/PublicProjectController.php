@@ -32,6 +32,9 @@ class PublicProjectController extends ApiController
             // Ảnh bìa đọc từ thư viện ProjectMedia (ưu tiên ảnh chính thống hơn
             // ảnh batdongsan có watermark) — nạp sẵn để khỏi N+1.
             ->with(['media' => fn ($m) => $m->where('is_active', true)->orderBy('sort_order')])
+            // Id dự án vận hành (nếu catalog đã được nối) để app hiện nút "Theo
+            // dõi dự án" — nạp sẵn tránh N+1 khi map từng thẻ.
+            ->with('operationalProject')
             // Dự án có ảnh + có số căn lên trước: danh sách đầu tiên người lạ
             // nhìn thấy không nên toàn thẻ thiếu ảnh.
             ->orderByRaw("CASE WHEN json_extract(metadata_json, '$.cover_image') IS NULL THEN 1 ELSE 0 END")
@@ -60,6 +63,7 @@ class PublicProjectController extends ApiController
         $project = PublicProject::query()
             ->where('is_public', true)
             ->with(['media' => fn ($m) => $m->where('is_active', true)->orderBy('sort_order')])
+            ->with('operationalProject')
             ->where(fn (Builder $q) => $q->where('code', $slug)->orWhere('id', $slug))
             ->first();
 
@@ -157,6 +161,11 @@ class PublicProjectController extends ApiController
             // Trả ngay ở thẻ danh sách: tìm được theo chủ đầu tư thì phải NHÌN
             // thấy chủ đầu tư, không thì người dùng không hiểu vì sao ra kết quả.
             'developer_name' => $p->developer_name,
+            // Id dự án VẬN HÀNH đã nối (bảng `projects`) — dùng làm project_id
+            // cho endpoint follow. HẦU HẾT catalog chưa nối nên thường null;
+            // app chỉ hiện nút "Theo dõi dự án" khi field này khác null.
+            // Field ADDITIVE, không đổi field cũ (backward-compatible).
+            'operational_project_id' => $p->operationalProject?->id,
         ];
     }
 

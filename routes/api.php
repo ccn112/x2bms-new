@@ -165,6 +165,9 @@ Route::prefix('v1')->group(function () {
         Route::post('community/posts/{post}/report', [CommunityPostController::class, 'report'])->whereNumber('post');
 
         Route::get('community/posts', [CommunityController::class, 'posts']);
+        // GĐ5: gom mọi thứ khi MỞ tab Cộng đồng (tier, feed scopes, tabs, nhóm,
+        // dự án theo dõi, quyền soạn) vào một call.
+        Route::get('community/bootstrap', [CommunityController::class, 'bootstrap']);
         // Bóc metadata link để app dựng thẻ xem trước. Throttle vì đây là endpoint
         // server tự đi gọi URL người dùng nhập — không giới hạn là biến máy chủ
         // thành công cụ quét hộ.
