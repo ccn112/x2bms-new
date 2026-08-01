@@ -8,6 +8,7 @@ use App\Http\Controllers\Api\V1\Resident\Concerns\LabelsCommentAuthor;
 use App\Http\Resources\Api\V1\CommentResource;
 use App\Http\Resources\Api\V1\CommunityPostResource;
 use App\Models\CommunityComment;
+use App\Models\CommunityCommentReaction;
 use App\Models\CommunityPost;
 use App\Models\CommunityPostReaction;
 use App\Models\CommunityPostReport;
@@ -292,6 +293,81 @@ class CommunityPostController extends ApiController
         $model->increment('comment_count');
 
         return ApiResponse::success(CommentResource::make($comment)->resolve($request), [], 201);
+    }
+
+    /** POST /resident/community/posts/{post}/comments/{comment}/reactions — GĐ7. */
+    public function reactComment(Request $request, int $post, int $comment): JsonResponse
+    {
+        $data = $request->validate([
+            'emoji' => ['required', 'string', 'in:'.implode(',', CommunityPostReaction::CODES)],
+        ]);
+        $c = $this->findVisibleComment($request, $post, $comment);
+        if (! $c) {
+            return ApiResponse::error('not_found', 'Bình luận không còn khả dụng.', 404);
+        }
+
+        CommunityCommentReaction::updateOrCreate(
+            ['community_comment_id' => $c->id, 'user_id' => $request->user()->id],
+            ['emoji' => $data['emoji']],
+        );
+
+        return $this->commentTally($c, $request);
+    }
+
+    /** DELETE /resident/community/posts/{post}/comments/{comment}/reactions — GĐ7. */
+    public function unreactComment(Request $request, int $post, int $comment): JsonResponse
+    {
+        $c = $this->findVisibleComment($request, $post, $comment);
+        if (! $c) {
+            return ApiResponse::error('not_found', 'Bình luận không còn khả dụng.', 404);
+        }
+
+        CommunityCommentReaction::query()
+            ->where('community_comment_id', $c->id)
+            ->where('user_id', $request->user()->id)
+            ->delete();
+
+        return $this->commentTally($c, $request);
+    }
+
+    /** Bình luận NHÌN THẤY được (thuộc bài trong phạm vi + status visible). */
+    private function findVisibleComment(Request $request, int $post, int $comment): ?CommunityComment
+    {
+        $model = $this->findVisible($request, $post);
+        if (! $model) {
+            return null;
+        }
+
+        return CommunityComment::query()
+            ->where('community_post_id', $model->id)
+            ->where('status', 'visible')
+            ->whereKey($comment)
+            ->first();
+    }
+
+    /** Đếm lại cảm xúc của một bình luận + trả tally (mine + summary theo emoji). */
+    private function commentTally(CommunityComment $c, Request $request): JsonResponse
+    {
+        $summary = CommunityCommentReaction::query()
+            ->where('community_comment_id', $c->id)
+            ->selectRaw('emoji, COUNT(*) as n')
+            ->groupBy('emoji')
+            ->pluck('n', 'emoji');
+        $total = (int) $summary->sum();
+
+        $c->forceFill(['reaction_count' => $total])->saveQuietly();
+
+        $mine = CommunityCommentReaction::query()
+            ->where('community_comment_id', $c->id)
+            ->where('user_id', $request->user()->id)
+            ->value('emoji');
+
+        return ApiResponse::success([
+            'comment_id' => (string) $c->id,
+            'reaction_count' => $total,
+            'summary' => $summary,
+            'mine' => $mine,
+        ]);
     }
 
     // ── Báo cáo & kiểm duyệt ───────────────────────────────────────────────────

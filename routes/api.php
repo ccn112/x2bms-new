@@ -162,6 +162,9 @@ Route::prefix('v1')->group(function () {
         Route::delete('community/posts/{post}/reactions', [CommunityPostController::class, 'unreact'])->whereNumber('post');
         Route::get('community/posts/{post}/comments', [CommunityPostController::class, 'comments'])->whereNumber('post');
         Route::post('community/posts/{post}/comments', [CommunityPostController::class, 'storeComment'])->whereNumber('post');
+        // GĐ7 — cảm xúc trên bình luận cộng đồng.
+        Route::post('community/posts/{post}/comments/{comment}/reactions', [CommunityPostController::class, 'reactComment'])->whereNumber('post')->whereNumber('comment');
+        Route::delete('community/posts/{post}/comments/{comment}/reactions', [CommunityPostController::class, 'unreactComment'])->whereNumber('post')->whereNumber('comment');
         Route::post('community/posts/{post}/report', [CommunityPostController::class, 'report'])->whereNumber('post');
 
         Route::get('community/posts', [CommunityController::class, 'posts']);
