@@ -255,7 +255,7 @@ Route::prefix('v1')->group(function () {
 
         // Tuỳ chọn bật/tắt kênh thông báo push (màn Cá nhân → Thông báo).
         Route::get('notification-preferences', [NotificationPreferenceController::class, 'index']);
-        Route::put('notification-preferences', [NotificationPreferenceController::class, 'update']);
+        Route::match(['put', 'patch'], 'notification-preferences', [NotificationPreferenceController::class, 'update']);
 
         // Chi tiết thông báo (full body + đánh dấu đã đọc).
         Route::get('notifications/{notification}', [NotificationController::class, 'show']);
