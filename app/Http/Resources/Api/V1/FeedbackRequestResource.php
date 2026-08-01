@@ -4,6 +4,7 @@ namespace App\Http\Resources\Api\V1;
 
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
+use Illuminate\Support\Facades\Storage;
 
 /**
  * @property \App\Models\FeedbackRequest $resource
@@ -29,6 +30,16 @@ class FeedbackRequestResource extends JsonResource
             'status' => $status,
             // Cư dân chỉ sửa được khi BQL chưa tiếp nhận (status vẫn 'new').
             'can_edit' => $status === 'new',
+            // Đính kèm cấp phản ánh (ảnh/video/PDF); của bình luận đi theo comment.
+            'attachments' => $this->whenLoaded('attachments', fn () => $this->attachments
+                ->map(fn ($fa) => [
+                    'id' => (string) $fa->id,
+                    'url' => $fa->path ? Storage::disk('public')->url($fa->path) : null,
+                    'name' => $fa->name,
+                    'mime' => $fa->mime,
+                    'size' => $fa->size === null ? null : (int) $fa->size,
+                    'is_image' => str_starts_with((string) $fa->mime, 'image/'),
+                ])->values()),
             'priority' => $this->priority,
             'sla_due_at' => optional($this->sla_due_at)->toIso8601String(),
             'resolved_at' => optional($this->resolved_at)->toIso8601String(),

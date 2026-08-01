@@ -6,13 +6,16 @@ use App\Http\Controllers\Api\V1\ApiController;
 use App\Http\Resources\Api\V1\FeedbackCategoryResource;
 use App\Http\Resources\Api\V1\FeedbackRequestResource;
 use App\Models\Apartment;
+use App\Models\Attachment;
 use App\Models\Building;
+use App\Models\FeedbackAttachment;
 use App\Models\FeedbackCategory;
 use App\Models\FeedbackRequest;
 use App\Services\Resident\ResidentContextService;
 use App\Support\Api\ApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
 /**
@@ -79,6 +82,8 @@ class FeedbackController extends ApiController
             'title' => ['required', 'string', 'max:255'],
             'description' => ['required', 'string', 'max:5000'],
             'priority' => ['nullable', 'string', 'in:low,normal,high,urgent'],
+            'attachment_ids' => ['nullable', 'array'],
+            'attachment_ids.*' => ['integer'],
         ]);
 
         $contextId = $request->header('X-Context-Id');
@@ -119,7 +124,8 @@ class FeedbackController extends ApiController
             'status' => 'new',
         ]);
 
-        $feedback->load('category');
+        $this->attachFiles($feedback, null, $validated['attachment_ids'] ?? [], $request->user()->id);
+        $feedback->load(['category', 'attachments']);
 
         return ApiResponse::success(FeedbackRequestResource::make($feedback)->resolve($request), [], 201);
     }
@@ -131,7 +137,12 @@ class FeedbackController extends ApiController
             return ApiResponse::error('not_found', 'Không tìm thấy phản ánh.', 404);
         }
 
-        $feedback->load(['category', 'comments' => fn ($q) => $q->where('is_internal', false)->orderBy('created_at'), 'statusHistories' => fn ($q) => $q->orderBy('created_at')]);
+        $feedback->load([
+            'category',
+            'attachments' => fn ($q) => $q->whereNull('feedback_comment_id'),
+            'comments' => fn ($q) => $q->where('is_internal', false)->orderBy('created_at'),
+            'statusHistories' => fn ($q) => $q->orderBy('created_at'),
+        ]);
 
         $timeline = [];
         foreach ($feedback->comments as $c) {
@@ -177,6 +188,8 @@ class FeedbackController extends ApiController
             'title' => ['sometimes', 'required', 'string', 'max:255'],
             'description' => ['sometimes', 'required', 'string', 'max:5000'],
             'priority' => ['sometimes', 'nullable', 'string', 'in:low,normal,high,urgent'],
+            'attachment_ids' => ['nullable', 'array'],
+            'attachment_ids.*' => ['integer'],
         ]);
 
         $update = [];
@@ -198,7 +211,8 @@ class FeedbackController extends ApiController
         }
 
         $feedback->update($update);
-        $feedback->load('category');
+        $this->attachFiles($feedback, null, $validated['attachment_ids'] ?? [], $request->user()->id);
+        $feedback->load(['category', 'attachments' => fn ($q) => $q->whereNull('feedback_comment_id')]);
 
         return ApiResponse::success(FeedbackRequestResource::make($feedback)->resolve($request));
     }
@@ -213,6 +227,7 @@ class FeedbackController extends ApiController
         $userId = $request->user()->id;
         $comments = $feedback->comments()
             ->where('is_internal', false)
+            ->with('attachments')
             ->orderBy('created_at')->orderBy('id')
             ->get()
             ->map(fn ($c) => $this->commentPayload($c, $userId))
@@ -228,7 +243,11 @@ class FeedbackController extends ApiController
             return ApiResponse::error('not_found', 'Không tìm thấy phản ánh.', 404);
         }
 
-        $data = $request->validate(['body' => ['required', 'string', 'max:2000']]);
+        $data = $request->validate([
+            'body' => ['required', 'string', 'max:2000'],
+            'attachment_ids' => ['nullable', 'array'],
+            'attachment_ids.*' => ['integer'],
+        ]);
         $user = $request->user();
 
         $comment = $feedback->comments()->create([
@@ -238,6 +257,8 @@ class FeedbackController extends ApiController
             'body' => trim($data['body']),
             'is_internal' => false,
         ]);
+        $this->attachFiles($feedback, $comment->id, $data['attachment_ids'] ?? [], $user->id);
+        $comment->load('attachments');
 
         return ApiResponse::success($this->commentPayload($comment, $user->id), [], 201);
     }
@@ -270,7 +291,52 @@ class FeedbackController extends ApiController
             'is_staff' => $c->resident_id === null,
             'is_mine' => $c->user_id === $userId,
             'body' => $c->body,
+            'attachments' => $c->relationLoaded('attachments')
+                ? $c->attachments->map(fn ($fa) => $this->attachmentPayload($fa))->all()
+                : [],
             'at' => optional($c->created_at)->toIso8601String(),
+        ];
+    }
+
+    /**
+     * Copy các Attachment (cư dân upload qua POST resident/uploads?kind=media) vào
+     * feedback_attachments — feedback dùng bảng đính kèm RIÊNG (admin đọc từ đây),
+     * không polymorphic. Chỉ nhận file do CHÍNH user upload (chống mượn id người khác).
+     *
+     * @param  array<int>  $attachmentIds
+     */
+    private function attachFiles(FeedbackRequest $feedback, ?int $commentId, array $attachmentIds, int $userId): void
+    {
+        if (empty($attachmentIds)) {
+            return;
+        }
+        $sources = Attachment::query()
+            ->whereIn('id', $attachmentIds)
+            ->where('uploaded_by', $userId)
+            ->get();
+        foreach ($sources as $a) {
+            FeedbackAttachment::create([
+                'feedback_request_id' => $feedback->id,
+                'feedback_comment_id' => $commentId,
+                'path' => $a->path,
+                'name' => $a->file_name,
+                'mime' => $a->mime_type,
+                'size' => $a->size,
+                'uploaded_by_id' => $userId,
+            ]);
+        }
+    }
+
+    /** @return array<string,mixed> */
+    private function attachmentPayload(FeedbackAttachment $fa): array
+    {
+        return [
+            'id' => (string) $fa->id,
+            'url' => $fa->path ? Storage::disk('public')->url($fa->path) : null,
+            'name' => $fa->name,
+            'mime' => $fa->mime,
+            'size' => $fa->size === null ? null : (int) $fa->size,
+            'is_image' => str_starts_with((string) $fa->mime, 'image/'),
         ];
     }
 }

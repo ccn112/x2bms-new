@@ -18,15 +18,31 @@ class UploadController extends ApiController
 {
     private const MAX_KB = 8192; // 8MB / ảnh
 
+    /** Video/PDF (chỉ khi caller gửi `kind=media`, vd đính kèm phản ánh). */
+    private const MAX_KB_MEDIA = 51200; // 50MB
+
+    private const MEDIA_MIMES =
+        'image/jpeg,image/png,image/webp,image/heic,image/heif,image/gif,'
+        .'video/mp4,video/quicktime,application/pdf';
+
     public function __construct(
         private readonly \App\Services\Media\ImageVariantService $variants,
     ) {}
 
-    /** POST /resident/uploads (multipart) — field `file`. */
+    /**
+     * POST /resident/uploads (multipart) — field `file`.
+     *
+     * Mặc định CHỈ nhận ảnh (≤8MB) — giữ nguyên cho slip comment/community.
+     * Gửi `kind=media` để nhận thêm video/PDF (≤50MB) — dùng cho đính kèm phản ánh.
+     * Đây là opt-in nên không nới quyền cho caller cũ.
+     */
     public function store(Request $request): JsonResponse
     {
+        $isMedia = $request->input('kind') === 'media';
         $request->validate([
-            'file' => ['required', 'file', 'image', 'max:'.self::MAX_KB],
+            'file' => $isMedia
+                ? ['required', 'file', 'max:'.self::MAX_KB_MEDIA, 'mimetypes:'.self::MEDIA_MIMES]
+                : ['required', 'file', 'image', 'max:'.self::MAX_KB],
         ]);
 
         $user = $request->user();
@@ -34,13 +50,15 @@ class UploadController extends ApiController
         $dir = 'resident-uploads/'.($user->id ?? 'anon');
         $path = $file->store($dir, 'public');
 
-        // Sinh thumb/feed/original + đọc kích thước thật (đã áp cờ xoay EXIF).
-        // Hỏng ở khâu này thì vẫn giữ ảnh gốc: mất tối ưu chứ không mất bài đăng.
+        // Sinh thumb/feed/original + đọc kích thước thật CHỈ cho ảnh (video/PDF
+        // không có biến thể). Hỏng ở khâu này thì vẫn giữ file gốc.
         $meta = null;
-        try {
-            $meta = $this->variants->generate($file, 'public', $path);
-        } catch (\Throwable $e) {
-            report($e);
+        if (str_starts_with((string) $file->getMimeType(), 'image/')) {
+            try {
+                $meta = $this->variants->generate($file, 'public', $path);
+            } catch (\Throwable $e) {
+                report($e);
+            }
         }
 
         $attachment = Attachment::create([
