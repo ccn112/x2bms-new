@@ -7,6 +7,7 @@ use App\Http\Controllers\Api\V1\ApiController;
 use App\Http\Controllers\Api\V1\Resident\Concerns\LabelsCommentAuthor;
 use App\Http\Resources\Api\V1\CommentResource;
 use App\Http\Resources\Api\V1\CommunityPostResource;
+use App\Models\CommunityComment;
 use App\Models\CommunityPost;
 use App\Models\CommunityPostReaction;
 use App\Models\CommunityPostReport;
@@ -199,7 +200,10 @@ class CommunityPostController extends ApiController
         $cursor = $data['cursor'] ?? null;
         $newest = $sort === 'newest';
 
-        $query = $model->comments()
+        // GĐ7 — bảng chuyên dụng community_comments (không polymorphic).
+        $query = CommunityComment::query()
+            ->where('community_post_id', $model->id)
+            ->where('status', 'visible')
             ->with(['user:id,name,avatar_path', 'attachments'])
             // Đếm trả lời bằng subquery thay vì nạp cả cây: app vẽ "Xem N trả
             // lời" rồi mới gọi tiếp với `parent_id` khi người dùng bấm.
@@ -260,18 +264,23 @@ class CommunityPostController extends ApiController
         // Chỉ 1 cấp lồng — reply-của-reply gộp về bình luận cha.
         $parentId = null;
         if (! empty($data['parent_id'])) {
-            $parent = $model->comments()->whereKey($data['parent_id'])->first();
+            $parent = CommunityComment::where('community_post_id', $model->id)
+                ->whereKey($data['parent_id'])->first();
             $parentId = $parent?->parent_id ?? $parent?->id;
         }
 
         $user = $request->user();
         $author = $this->commentAuthor($request, $this->context);
 
-        $comment = $model->comments()->create([
+        $comment = CommunityComment::create([
+            'community_post_id' => $model->id,
+            'tenant_id' => $model->tenant_id,
+            'project_id' => $model->project_id,
             'parent_id' => $parentId,
             'user_id' => $user->id,
             'author_name' => $author['name'],
             'author_subtitle' => $author['subtitle'],
+            'author_kind' => $author['is_staff'] ? 'staff' : 'resident',
             'is_staff' => $author['is_staff'],
             'body' => trim($data['body']),
         ]);
