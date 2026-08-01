@@ -41,16 +41,67 @@ class StatementLine extends Model
      * `ApartmentWalletService` (ví căn hộ) đều PHẢI dùng khoá này — hai đường
      * ghi tiền khác nhau tự chọn thứ tự khác nhau là kết quả khó giải thích
      * cho cư dân ("sao trả tiền điện xong nợ quản lý vẫn còn mà nợ điện tháng
-     * trước lại hết"). Family-based priority (B4, override theo dự án) sẽ THAY
-     * bằng cách backfill `fee_types.payment_priority`, không đổi khoá này.
+     * trước lại hết"). Phase B4: `payment_priority` không còn đọc thẳng cột
+     * `fee_types.payment_priority` — đi qua {@see effectivePaymentPriority()}
+     * để override theo dự án (nếu có) thắng mặc định tenant-wide.
      */
     public function allocationSortKey(): string
     {
         $ft = $this->feeType;
         $critical = $ft && $ft->is_critical ? 0 : 1;
-        $priority = $ft->payment_priority ?? 100;
+        $priority = $this->effectivePaymentPriority();
 
         return sprintf('%d-%05d-%012d', $critical, $priority, $this->id);
+    }
+
+    /**
+     * Ưu tiên phân bổ CÓ HIỆU LỰC cho dòng phí này (Phase B4, D4-bis):
+     * override theo dự án (`fee_type_priority_overrides`) nếu dự án của bảng kê
+     * này đã tự sắp thứ tự riêng, không thì về mặc định tenant-wide
+     * (`fee_types.payment_priority`, đã backfill theo family bằng
+     * `billing:backfill-fee-priority`).
+     *
+     * Không tìm ra `fee_type` hoặc không suy được dự án (dữ liệu cũ thiếu
+     * `building_id`) → về mặc định `100`, giữ đúng hành vi trước B4.
+     */
+    public function effectivePaymentPriority(): int
+    {
+        $ft = $this->feeType;
+        $tenantDefault = $ft->payment_priority ?? 100;
+
+        if ($ft === null) {
+            return $tenantDefault;
+        }
+
+        $projectId = $this->resolveProjectId();
+        if ($projectId === null) {
+            return $tenantDefault;
+        }
+
+        $override = FeeTypePriorityOverride::withoutGlobalScopes()
+            ->where('project_id', $projectId)
+            ->where('fee_type_id', $ft->id)
+            ->value('payment_priority');
+
+        return $override ?? $tenantDefault;
+    }
+
+    /**
+     * Dự án của bảng kê này, suy qua `statement.building.project_id` — `StatementLine`
+     * không mang `project_id` trực tiếp. Ưu tiên quan hệ ĐÃ NẠP SẴN (cả hai call site
+     * B3/B4 đều eager-load `statement.building` trước khi sắp `allocationSortKey()`)
+     * để không phát sinh N+1 khi sắp nhiều dòng.
+     */
+    private function resolveProjectId(): ?int
+    {
+        $statement = $this->relationLoaded('statement') ? $this->getRelation('statement') : $this->statement;
+        if ($statement === null) {
+            return null;
+        }
+
+        $building = $statement->relationLoaded('building') ? $statement->getRelation('building') : $statement->building;
+
+        return $building?->project_id;
     }
 
     public function statement(): BelongsTo

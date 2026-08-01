@@ -147,7 +147,12 @@ class ResidentPaymentClaimReviewer
             return 0.0;
         }
 
+        // Nạp sẵn `building` MỘT LẦN rồi gán thẳng quan hệ `statement` cho từng dòng
+        // (thay vì để `StatementLine::resolveProjectId()` lazy-load lại) — mọi dòng ở
+        // đây cùng một bảng kê nên không cần eager-load theo từng dòng (Phase B4).
+        $statement->loadMissing('building');
         $lines = $statement->lines()->outstanding()->with('feeType')->lockForUpdate()->get()
+            ->each(fn (StatementLine $l) => $l->setRelation('statement', $statement))
             ->sortBy(fn (StatementLine $l) => $l->allocationSortKey());
 
         // Bảng kê KHÔNG có dòng phí nào (dữ liệu cũ/legacy chưa từng itemize) —

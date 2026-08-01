@@ -71,6 +71,18 @@ class Statement extends Model
         return $this->belongsTo(Apartment::class);
     }
 
+    /**
+     * Toà nhà của bảng kê — nguồn để suy `project_id` cho override phân bổ theo dự án
+     * (Phase B4, `StatementLine::effectivePaymentPriority()`). Chưa khai quan hệ này
+     * trước đây dù cột `building_id` đã dùng khắp nơi (`BelongsToProject` trait, seed,
+     * test) — không có method thì Eloquent không coi `building` là relation, gọi
+     * `$statement->building` sẽ ra lỗi thay vì lazy-load.
+     */
+    public function building(): BelongsTo
+    {
+        return $this->belongsTo(Building::class);
+    }
+
     public function billingPeriod(): BelongsTo
     {
         return $this->belongsTo(BillingPeriod::class);

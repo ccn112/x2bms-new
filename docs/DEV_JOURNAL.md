@@ -2792,3 +2792,136 @@ nullable một cột đang dùng + 3 call site + 9 test), thêm một endpoint t
 nữa trong cùng phiên tăng rủi ro review dồn cục — để nguyên cho phiên kế tiếp bắt đầu
 sạch từ GĐ5. `community_group_verification_history` (tạo từ GĐ2) vẫn chưa có service
 nâng cấp gold→blue dùng tới — vẫn là chỗ chứa trống.
+
+## 2026-08-01 — Phase B4: Thứ tự ưu tiên phân bổ (D4-bis)
+
+Việc chính của phiên này. Đọc lại `docs/delivery/04_INITIAL_PHASE_PLAN.md` (B4) +
+`docs/BILLING_OWNER_DECISIONS_20260731.md` (D4: QL→Nước→Điện→Xe→Khác) trước khi
+đụng code — không có gì đổi so với lúc B3 kết thúc, chỉ có `fee_types.payment_priority`
+vẫn mặc định đồng loạt `100`.
+
+### Trước khi viết code: soi schema `fee_types` xem có "dấu vết BQL đã sửa tay" chưa
+
+Grep `app/Filament/Resources/FeeTypes/` — **không cột `payment_priority` nào xuất
+hiện trong form/table** hiện tại. Nghĩa là hôm nay không có đường nào cho người dùng
+sửa cột này ngoài giá trị mặc định `100` lúc tạo. Backfill chạy đè hôm nay AN TOÀN
+tuyệt đối. Nhưng "an toàn hôm nay" không phải lý do bỏ qua bảo vệ — thêm cột mới
+`fee_types.payment_priority_locked_at` (nullable timestamp, migration
+`2026_08_01_000001_...`): NULL = chưa ai từng đặt tay, backfill ghi đè tự do; khác
+NULL = có người thật đặt, backfill BỎ QUA. Dùng timestamp thay vì boolean để có luôn
+bằng chứng "khi nào" nếu sau này cần điều tra một dòng bị "kẹt" không cập nhật theo
+family mới.
+
+### `billing:backfill-fee-priority` — mirror đúng `BackfillFeeCategoryFamily`
+
+Không viết logic suy family lần hai — gọi thẳng `BillingFamily::fromFeeType()`
+(đã có từ B1/B3). Có `--dry-run`, báo theo family. Chạy dev: **36/39 dòng đổi, 3 đã
+đúng sẵn** (những dòng `category=management` tình cờ đã có `payment_priority=100`
+từ trước — trùng với default family, không phải vì ai backfill). Rerun lần 2:
+**0 đổi** — idempotent thật, không phải chỉ theo lý thuyết.
+
+### Override theo dự án — bảng mới, không mở rộng `fee_scope_assignments`
+
+Cân nhắc rồi bỏ: thêm cột `payment_priority` vào `fee_scope_assignments` (bảng có
+sẵn, gán fee_type/rate vào scope project|building|apartment). Bỏ vì bảng đó phục vụ
+MỘT việc (gán biểu giá) — một fee_type có thể áp dụng toàn dự án mà KHÔNG có dòng
+`fee_scope_assignments` nào (áp qua đường khác), nên trộn "thứ tự phân bổ" vào đó
+sẽ buộc tạo dòng giả chỉ để mang một con số, và ai xoá/sửa gán biểu giá vì lý do
+tiền sẽ vô tình xoá luôn override thứ tự — hai vòng đời khác nhau bị ép chung một
+bảng. Bảng riêng `fee_type_priority_overrides` (`tenant_id, project_id, fee_type_id,
+payment_priority`, unique `[project_id, fee_type_id]`, KHÔNG soft-delete — giống
+`fee_scope_assignments`, xoá override = "quay lại mặc định", không cần giữ lịch sử
+xoá) — độc lập vòng đời hoàn toàn.
+
+`StatementLine::allocationSortKey()` đổi tối thiểu: rút `payment_priority` ra hàm
+mới `effectivePaymentPriority()` — tra override theo `(project_id, fee_type_id)`
+trước, không có thì về `fee_types.payment_priority`. `StatementLine` không mang
+`project_id` trực tiếp, phải suy qua `statement.building.project_id` — phát hiện
+phụ: `Statement` model dùng `building_id` khắp nơi (trait `BelongsToProject`, seed,
+test) nhưng **chưa từng khai `building(): BelongsTo`** — thêm quan hệ này (giống
+lỗi `CommunityGroup::project()` thiếu đã gặp ở Phase community trước đây, cùng một
+dạng bug "gọi `$model->quanHe` êm ru ra `null` vì không phải relation thật").
+
+Cả hai call site B3 (`ResidentPaymentClaimReviewer::allocateToClaimedStatement()`,
+`ApartmentWalletService::outstandingLines()`) sửa để eager-load `statement.building`
+trước khi `sortBy(allocationSortKey())` — tránh N+1 khi sắp nhiều dòng. Bên
+`ResidentPaymentClaimReviewer` mọi dòng cùng MỘT statement nên chỉ cần
+`$statement->loadMissing('building')` rồi gán thẳng quan hệ cho từng dòng
+(`setRelation('statement', $statement)`), không cần eager-load lặp; bên
+`ApartmentWalletService` các dòng có thể trải trên NHIỀU statement (nợ dồn kỳ) nên
+dùng `->with(['feeType', 'statement.building'])` trên query.
+
+### Bẫy tự đào rồi tự vá: static cache theo `projectId:feeTypeId`
+
+Bản đầu tiên nhớ kết quả tra override bằng mảng static trong `StatementLine` (memo
+hoá cho một lượt chạy, tránh query lặp khi nhiều dòng cùng fee_type+project). Test
+`test_override_theo_du_an_doi_thu_tu...` đỏ: override tạo thật trong DB nhưng
+`effectivePaymentPriority()` vẫn trả về mặc định. Nguyên nhân: test dùng SQLite
+`:memory:` + `RefreshDatabase` (rollback theo transaction) — ID tự tăng của SQLite
+với từ khoá `AUTOINCREMENT` cũng nằm TRONG transaction, rollback thì `sqlite_sequence`
+cũng lùi lại, nên hai test khác nhau chạy trong cùng tiến trình PHPUnit có thể ra
+CÙNG một cặp `(project_id, fee_type_id)` — cache tĩnh (sống suốt tiến trình, không
+theo từng test) trả nhầm giá trị `null` đã nhớ từ test trước đó chạy trước nó (test
+không override thì thấy override giả từ cache; test có override run sau lại thấy
+cache `null` cũ). Bỏ hẳn cache, tra DB trực tiếp mỗi lần — chi phí chấp nhận được
+(mỗi lượt phân bổ chỉ vài dòng phí). Không chỉ là vấn đề test: BẤT KỲ cache tĩnh
+theo ID nào cũng rủi ro y hệt trong môi trường có khả năng tái dùng ID (kể cả một
+worker PHP dài hạn xử lý nhiều tenant) — bỏ đúng, không phải bỏ vì ngại debug thêm.
+
+### UI kéo-thả — `Pages/FeePriorityOrder.php` (`/admin/fees/priority`)
+
+Thao tác trên `fee_type_priority_overrides`, KHÔNG đụng `fee_types` — sửa
+`fee_types.payment_priority` ở đây sẽ đổi cho MỌI dự án của tenant, ngược đúng cái
+D4 cần ("dự án A khác dự án B"). Dự án đang thao tác lấy từ
+`CurrentContext::projectId()` — đúng mô hình "một workspace BQL = một dự án" đã
+dùng khắp `/admin`, không cần thêm bộ chọn dự án riêng cho màn này.
+
+Hai trạng thái màn hình: CHƯA tuỳ chỉnh (bảng rỗng, nút "Khởi tạo từ mặc định" — copy
+thứ tự tenant-wide hiện tại thành điểm bắt đầu, không phải một bộ số ngẫu nhiên) và
+ĐÃ tuỳ chỉnh (kéo-thả qua `Table::reorderable('payment_priority')` của Filament, tự
+ghi `payment_priority` liên tục 1,2,3... lên từng override — đủ dùng vì các số này
+chỉ so sánh tương đối trong nội bộ một dự án). Thêm nút "Khôi phục mặc định" xoá
+sạch override của dự án — quay lại dùng tenant-wide.
+
+### Một trục trặc môi trường không liên quan tới code nghiệp vụ, mất khá nhiều thời gian
+
+Worktree phiên này (`'.claude/worktrees/agent-a76b69c2c45db27a6`) không có `vendor/`
+sẵn. Thử tạo junction trỏ sang `vendor` của checkout chính (composer.lock giống hệt,
+tưởng an toàn) — SAI: Composer tính `$baseDir` trong `autoload_psr4.php` bằng
+`dirname(__DIR__)`, và trên Windows một file được require QUA junction vẫn cho
+`__DIR__` là đường dẫn thật của đích junction (checkout chính), không phải đường dẫn
+worktree — nên PSR-4 autoload nạp `App\` từ **`app/` của checkout chính**, class
+mới viết trong worktree biến mất khỏi tầm nhìn autoloader (`class_exists()` trả
+`false`) dù file nằm đúng chỗ, đúng namespace. Class NÀO đã tồn tại ở checkout
+chính (mọi file kế thừa từ trước) vẫn autoload bình thường — nên `billing:backfill-
+fee-family` chạy được mà `billing:backfill-fee-priority` (file mới) báo "not
+defined", dễ tưởng nhầm là lỗi khai báo command. Gỡ junction, `composer install
+--ignore-platform-reqs` (thiếu `ext-pcntl`/`ext-posix` cho Horizon — không cần cho
+test) cài vendor THẬT trong worktree — hết vấn đề. Ghi lại vì bẫy này sẽ tái diễn
+với bất kỳ agent nào tưởng "trỏ symlink/junction sang vendor có sẵn cho nhanh" là an
+toàn khi composer.lock giống hệt.
+
+Verify: `php -d memory_limit=1G vendor/bin/phpunit` (lệnh `php artisan test` mặc
+định qua `php.ini` 128M không đủ, không liên quan gì tới thay đổi phiên này) →
+**142 test, 141 pass** (137 cũ + 4 mới `FeePaymentPriorityTest`: backfill đúng
+family · backfill không đụng dòng khoá tay + ổn định khi rerun · override đổi thứ
+tự CHỈ dự án đó · dự án khác vẫn mặc định tenant-wide). 1 lỗi còn lại là
+`ScreenTelemetryTest::test_tong_hop_theo_ngay_dem_dung_va_chay_lai_khong_nhan_doi`
+— xác minh lại bằng `git stash` (chỉ tệp ĐÃ SỬA, không đụng migration/model/command
+mới) rồi chạy lại: **lỗi y hệt trên baseline B3**, không liên quan gì tới B4 (đọc
+lỗi: `AppScreenDailyStat` không thấy bản ghi — domain app telemetry, không đụng
+billing/fee_types). Không sửa trong phiên này — ngoài phạm vi B4, ghi nhận để phiên
+khác xử lý riêng.
+
+**Đã migrate + backfill thật trên DB dev** (`x2bms`, dùng chung với checkout
+chính): 2 migration mới, `billing:backfill-fee-priority` đã chạy (không phải
+`--dry-run`) — 36 dòng `fee_types.payment_priority` đã đổi thật theo family.
+
+**Phase B5 (D6, ngăn tiền thừa theo tài sản + màn công nợ theo dịch vụ) — KHÔNG làm
+trong phiên này.** Lý do: xử lý sự cố môi trường (vendor/junction ở trên) ăn phần
+lớn ngân sách phiên; B4 cần chạy thật + verify test trước khi mở rộng thêm sang
+`ApartmentWalletBucket` (thêm chiều tài sản) — làm ẩu B5 trên nền B4 chưa nguội thì
+rủi ro cao hơn lợi ích. Để nguyên cho phiên sau, đọc `statement_lines.subject_type/
+subject_id` (migration `2026_07_31_100000_...`) và
+`Support/Import/Profiles/BillingChargeImportProfile.php` (đã có resolve tài sản
+xe/đồng hồ) làm điểm bắt đầu.
