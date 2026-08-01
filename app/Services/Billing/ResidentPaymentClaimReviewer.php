@@ -147,6 +147,14 @@ class ResidentPaymentClaimReviewer
             return 0.0;
         }
 
+        // D10 — cư dân đã chọn DÒNG cụ thể: phân bổ đúng các dòng đó theo số tiền
+        // đã chọn (cap ở phần còn nợ mỗi dòng + phần còn của khoản), KHÔNG quét
+        // theo khoá ưu tiên D4. Cap lại theo `outstanding()` hiện tại vì giữa lúc
+        // khai và lúc duyệt, khoản khác có thể đã trả bớt dòng đó.
+        if (! empty($payment->claimed_line_items)) {
+            return $this->allocateToClaimedLines($payment, $statement, $remaining);
+        }
+
         // Nạp sẵn `building` MỘT LẦN rồi gán thẳng quan hệ `statement` cho từng dòng
         // (thay vì để `StatementLine::resolveProjectId()` lazy-load lại) — mọi dòng ở
         // đây cùng một bảng kê nên không cần eager-load theo từng dòng (Phase B4).
@@ -198,6 +206,60 @@ class ResidentPaymentClaimReviewer
                 'amount' => $take,
             ]);
 
+            $line->forceFill(['paid_amount' => bcadd((string) $line->paid_amount, $take, 2)])->save();
+
+            $remaining = bcsub($remaining, $take, 2);
+            $allocated = bcadd($allocated, $take, 2);
+        }
+
+        if (bccomp($allocated, '0', 2) > 0) {
+            $statement->recomputePaidAmount();
+        }
+
+        return (float) $allocated;
+    }
+
+    /**
+     * D10 — phân bổ vào ĐÚNG các dòng cư dân chọn (`payment.claimed_line_items`),
+     * theo số tiền chọn nhưng cap ở phần còn nợ mỗi dòng và phần còn của khoản.
+     * Thứ tự theo đúng danh sách cư dân gửi; không dùng khoá ưu tiên D4.
+     */
+    private function allocateToClaimedLines(Payment $payment, Statement $statement, string $remaining): float
+    {
+        $allocated = '0';
+        $ids = collect($payment->claimed_line_items)
+            ->pluck('statement_line_id')->map(fn ($v) => (int) $v);
+        $lines = $statement->lines()->whereIn('id', $ids)->lockForUpdate()->get()->keyBy('id');
+
+        foreach ($payment->claimed_line_items as $item) {
+            if (bccomp($remaining, '0', 2) <= 0) {
+                break;
+            }
+            $line = $lines[(int) $item['statement_line_id']] ?? null;
+            if ($line === null) {
+                continue;
+            }
+            $owed = $line->outstanding();
+            if (bccomp($owed, '0', 2) <= 0) {
+                continue;
+            }
+            $take = (string) $item['amount'];
+            if (bccomp($take, $owed, 2) > 0) {
+                $take = $owed;
+            }
+            if (bccomp($take, $remaining, 2) > 0) {
+                $take = $remaining;
+            }
+            if (bccomp($take, '0', 2) <= 0) {
+                continue;
+            }
+
+            PaymentAllocation::create([
+                'payment_id' => $payment->id,
+                'statement_id' => $statement->id,
+                'statement_line_id' => $line->id,
+                'amount' => $take,
+            ]);
             $line->forceFill(['paid_amount' => bcadd((string) $line->paid_amount, $take, 2)])->save();
 
             $remaining = bcsub($remaining, $take, 2);

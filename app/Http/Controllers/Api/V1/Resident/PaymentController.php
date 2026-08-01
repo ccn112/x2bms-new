@@ -7,6 +7,7 @@ use App\Http\Resources\Api\V1\PaymentResource;
 use App\Models\Apartment;
 use App\Models\Payment;
 use App\Models\Statement;
+use App\Models\StatementLine;
 use App\Services\Resident\ResidentContextService;
 use App\Support\Api\ApiResponse;
 use Illuminate\Http\JsonResponse;
@@ -106,6 +107,11 @@ class PaymentController extends ApiController
             'note' => ['nullable', 'string', 'max:500'],
             'attachment_ids' => ['required', 'array', 'min:1', 'max:5'],
             'attachment_ids.*' => ['integer'],
+            // D10 — cư dân chọn từng dòng phí muốn trả (kèm số tiền mỗi dòng).
+            // Chỉ có nghĩa khi kèm statement_id. Bỏ trống = trả cả bảng kê theo D4.
+            'line_items' => ['nullable', 'array'],
+            'line_items.*.statement_line_id' => ['required_with:line_items', 'integer'],
+            'line_items.*.amount' => ['required_with:line_items', 'numeric', 'min:1'],
         ], [
             'attachment_ids.required' => 'Vui lòng đính kèm ảnh chứng từ chuyển khoản.',
         ]);
@@ -130,6 +136,44 @@ class PaymentController extends ApiController
                 return ApiResponse::error('statement_not_found',
                     'Không tìm thấy hoá đơn này trong căn hộ của bạn.', 404);
             }
+        }
+
+        // D10 — dòng phí cư dân chọn: phải kèm hoá đơn, mọi dòng thuộc đúng bảng
+        // kê (đã xác nhận thuộc căn ở trên), số tiền mỗi dòng ≤ phần còn nợ của
+        // dòng, tổng ≤ số tiền khai (phần dư để chưa phân bổ).
+        $lineItems = null;
+        if (! empty($data['line_items'])) {
+            if ($statementId === null) {
+                return ApiResponse::error('line_items_need_statement',
+                    'Chọn dòng phí thì phải kèm hoá đơn.', 422);
+            }
+            $lineIds = collect($data['line_items'])
+                ->pluck('statement_line_id')->map(fn ($v) => (int) $v);
+            $lines = StatementLine::query()
+                ->whereIn('id', $lineIds)
+                ->where('statement_id', $statementId)
+                ->get()->keyBy('id');
+            if ($lines->count() !== $lineIds->unique()->count()) {
+                return ApiResponse::error('line_not_found',
+                    'Có dòng phí không thuộc hoá đơn này.', 404);
+            }
+            $sum = '0';
+            $normalized = [];
+            foreach ($data['line_items'] as $li) {
+                $line = $lines[(int) $li['statement_line_id']];
+                $amt = (string) $li['amount'];
+                if (bccomp($amt, $line->outstanding(), 2) > 0) {
+                    return ApiResponse::error('line_over_outstanding',
+                        'Số tiền một dòng phí vượt phần còn nợ của dòng đó.', 422);
+                }
+                $sum = bcadd($sum, $amt, 2);
+                $normalized[] = ['statement_line_id' => (int) $line->id, 'amount' => (float) $amt];
+            }
+            if (bccomp($sum, (string) $data['amount'], 2) > 0) {
+                return ApiResponse::error('line_sum_over_amount',
+                    'Tổng các dòng phí vượt số tiền chuyển khoản.', 422);
+            }
+            $lineItems = $normalized;
         }
 
         // `config('app.timezone')` là **UTC**, còn cư dân ở giờ Việt Nam. Một chuỗi
@@ -192,6 +236,7 @@ class PaymentController extends ApiController
             'submitted_by_id' => $user->id,
             'submitted_at' => now(),
             'claimed_statement_id' => $statementId,
+            'claimed_line_items' => $lineItems,
             'claimed_bank_account_id' => $data['bank_account_id'] ?? null,
             'note' => $data['note'] ?? null,
         ]);

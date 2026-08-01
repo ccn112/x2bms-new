@@ -54,6 +54,7 @@ class Payment extends Model
         'reviewed_at' => 'datetime',
         'ai_checked_at' => 'datetime',
         'ai_extraction' => 'array',
+        'claimed_line_items' => 'array',
     ];
 
     /** Cư dân khai báo, BQL chưa quyết. */
