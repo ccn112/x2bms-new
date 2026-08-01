@@ -4213,6 +4213,11 @@ class DemoDataSeeder extends Seeder
             'type' => 'apartment',
             'status' => 'active',
             'city' => 'TP. Hồ Chí Minh',
+            // Toạ độ cấp thành phố (TP.HCM) — đủ cho card thời tiết/AQI Home
+            // (WeatherService/AqiService proxy Open-Meteo theo project). Thiếu 2
+            // cột này thì card Home ẩn ("Đang cập nhật" mãi).
+            'latitude' => 10.7769000,
+            'longitude' => 106.7009000,
         ]);
         $building2 = Building::create([
             'tenant_id' => $tenant2->id,
