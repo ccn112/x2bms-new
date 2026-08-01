@@ -243,7 +243,7 @@ Route::prefix('v1')->group(function () {
         Route::get('feedback', [FeedbackController::class, 'index']);
         Route::post('feedback', [FeedbackController::class, 'store']);
         Route::get('feedback/{feedback}', [FeedbackController::class, 'show']);
-        Route::put('feedback/{feedback}', [FeedbackController::class, 'update']);
+        Route::match(['put', 'patch'], 'feedback/{feedback}', [FeedbackController::class, 'update']);
         Route::get('feedback/{feedback}/comments', [FeedbackController::class, 'comments']);
         Route::post('feedback/{feedback}/comments', [FeedbackController::class, 'storeComment']);
 
