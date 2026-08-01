@@ -145,13 +145,19 @@ class ApartmentWalletService
         }
     }
 
-    /** Dòng phí còn nợ của căn hộ, đã sắp theo khoá phân bổ dùng chung (B3). */
+    /**
+     * Dòng phí còn nợ của căn hộ, đã sắp theo khoá phân bổ dùng chung (B3).
+     * Nợ dồn nhiều kỳ nên các dòng có thể thuộc NHIỀU statement khác nhau (khác
+     * `ResidentPaymentClaimReviewer`, không cùng MỘT statement) — eager-load
+     * `statement.building` theo từng dòng để `effectivePaymentPriority()` (B4)
+     * suy được dự án mà không phát sinh N+1.
+     */
     public function outstandingLines(int $apartmentId)
     {
         return StatementLine::query()
             ->whereHas('statement', fn ($q) => $q->where('apartment_id', $apartmentId))
             ->outstanding()
-            ->with('feeType')
+            ->with(['feeType', 'statement.building'])
             ->get()
             ->sortBy(fn (StatementLine $l) => $l->allocationSortKey())
             ->values();

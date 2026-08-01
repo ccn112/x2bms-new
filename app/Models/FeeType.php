@@ -18,6 +18,7 @@ class FeeType extends Model
         'is_recurring' => 'boolean',
         'is_critical' => 'boolean',
         'payment_priority' => 'integer',
+        'payment_priority_locked_at' => 'datetime',
         'is_complex' => 'boolean',
         'vat_percent' => 'decimal:2',
         'effective_from' => 'date',
@@ -36,5 +37,10 @@ class FeeType extends Model
     public function scopeAssignments(): HasMany
     {
         return $this->hasMany(FeeScopeAssignment::class);
+    }
+
+    public function priorityOverrides(): HasMany
+    {
+        return $this->hasMany(FeeTypePriorityOverride::class);
     }
 }
