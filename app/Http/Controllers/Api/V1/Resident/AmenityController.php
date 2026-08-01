@@ -13,6 +13,7 @@ use App\Services\Resident\ResidentContextService;
 use App\Support\Api\ApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Str;
 
 /**
@@ -56,6 +57,57 @@ class AmenityController extends ApiController
         $amenity->load(['slots' => fn ($q) => $q->orderBy('day_of_week')->orderBy('start_time')]);
 
         return ApiResponse::success(AmenityResource::make($amenity)->resolve($request));
+    }
+
+    /**
+     * GET /resident/amenities/{amenity}/availability?date=YYYY-MM-DD — khung giờ
+     * ÁP DỤNG cho ngày đó kèm số đã giữ chỗ / còn trống, để app báo bận khi hết
+     * slot. `booked` = tổng party_size các booking còn hiệu lực (pending/confirmed)
+     * — cancelled/rejected/no_show không giữ chỗ.
+     */
+    public function availability(Request $request, Amenity $amenity): JsonResponse
+    {
+        $projectIds = $this->context->projectIds($request->user(), $request->header('X-Context-Id'));
+        if (! in_array($amenity->project_id, $projectIds, true)) {
+            return ApiResponse::error('not_found', 'Không tìm thấy tiện ích.', 404);
+        }
+
+        $data = $request->validate(['date' => ['required', 'date_format:Y-m-d']]);
+        $date = Carbon::createFromFormat('Y-m-d', $data['date'])->startOfDay();
+        $dow = $date->dayOfWeek; // 0=CN .. 6=T7
+
+        // Slot cho ngày này: mọi ngày (day_of_week null) hoặc đúng thứ, đang mở.
+        $slots = $amenity->slots()
+            ->where('status', 'open')
+            ->where(fn ($q) => $q->whereNull('day_of_week')->orWhere('day_of_week', $dow))
+            ->orderBy('start_time')
+            ->get();
+
+        // Số đã giữ chỗ theo slot cho NGÀY đó.
+        $used = $amenity->bookings()
+            ->whereDate('booking_date', $date->toDateString())
+            ->whereIn('status', ['pending', 'confirmed'])
+            ->whereNotNull('amenity_slot_id')
+            ->selectRaw('amenity_slot_id, COALESCE(SUM(party_size),0) as used')
+            ->groupBy('amenity_slot_id')
+            ->pluck('used', 'amenity_slot_id');
+
+        $out = $slots->map(function ($s) use ($used) {
+            $booked = (int) ($used[$s->id] ?? 0);
+            $remaining = max(0, (int) $s->capacity - $booked);
+
+            return [
+                'slot_id' => (string) $s->id,
+                'start_time' => $s->start_time,
+                'end_time' => $s->end_time,
+                'capacity' => (int) $s->capacity,
+                'booked' => $booked,
+                'remaining' => $remaining,
+                'is_full' => $remaining <= 0,
+            ];
+        })->all();
+
+        return ApiResponse::success(['date' => $date->toDateString(), 'slots' => $out]);
     }
 
     /**

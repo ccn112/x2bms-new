@@ -233,6 +233,7 @@ Route::prefix('v1')->group(function () {
 
         // Đặt tiện ích nội khu (amenities/amenity_bookings).
         Route::get('amenities', [AmenityController::class, 'index']);
+        Route::get('amenities/{amenity}/availability', [AmenityController::class, 'availability']);
         Route::get('amenities/{amenity}', [AmenityController::class, 'show']);
         Route::get('amenity-bookings', [AmenityController::class, 'bookings']);
         Route::post('amenity-bookings', [AmenityController::class, 'book']);
