@@ -234,8 +234,15 @@ class CommunityPostController extends ApiController
         $nextCursor = $hasMore ? (string) $items->last()->id : null;
 
         $user = $request->user();
-        $items->each(function ($c) use ($user): void {
+        // Cảm xúc CỦA NGƯỜI XEM cho các bình luận đang hiện — một query gộp thay
+        // vì N truy vấn (GĐ7).
+        $myReactions = $user === null ? collect() : CommunityCommentReaction::query()
+            ->where('user_id', $user->id)
+            ->whereIn('community_comment_id', $items->pluck('id'))
+            ->pluck('emoji', 'community_comment_id');
+        $items->each(function ($c) use ($user, $myReactions): void {
             $c->is_mine = $user?->id !== null && $c->user_id === $user->id;
+            $c->my_reaction = $myReactions[$c->id] ?? null;
         });
 
         return ApiResponse::paginated(

@@ -38,6 +38,9 @@ class CommentResource extends JsonResource
             'created_at' => $this->created_at?->toIso8601String(),
             // @mention (GĐ7, chỉ bình luận cộng đồng): [{user_id, name}] để app link.
             'mentions' => $this->mentions ?? null,
+            // Cảm xúc cấp bình luận (GĐ7, cộng đồng): tổng + cảm xúc của người xem.
+            'reaction_count' => (int) ($this->reaction_count ?? 0),
+            'my_reaction' => $this->my_reaction ?? null,
             'attachments' => AttachmentResource::collection($this->whenLoaded('attachments')),
         ];
     }
