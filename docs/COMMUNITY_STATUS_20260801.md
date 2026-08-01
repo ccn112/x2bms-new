@@ -31,13 +31,15 @@
 | GĐ6 | Ảnh | 🟡 `POST resident/uploads` có; ảnh trong bài/bình luận dùng được |
 | GĐ7 | **Tách module bình luận cộng đồng riêng** (phân trang, reply đa cấp, nhắc tên, cảm xúc trên bình luận, kiểm duyệt quy mô) | ❌ chưa (điều kiện tiên quyết: seed khối lượng lớn — xem Mass Seed) |
 | GĐ8 | Kiểm duyệt tổng quát hơn | 🟡 Web BQL moderation (B6) xong; app moderation qua `can{}` |
-| GĐ9 | Scale/performance | ❌ chưa — xem mục C |
+| GĐ9 | Scale/performance | 🟡 **Mass Seed toolkit XONG 01/08** (command + index + test, 155 pass) — xem mục C. Còn: bảng comment chuyên dụng cho scale 25M (thuộc GĐ7) |
 
 ## C. Mass Seed Handoff (26/07) — GĐ9 / doc 15
 
 Bộ công cụ: command `community:seed-scale --profile={demo|ux|load|full}`, batch insert + resume checkpoint, index MySQL, k6 load test, test tenant-isolation + cursor-pagination + counter-consistency. Quy mô demo (2k bài) → full (1 triệu bài, ~25 triệu comment).
 
-**Trạng thái: ❌ CHƯA tích hợp.** Repo hiện chỉ có seeder demo nhỏ (`CommunityFeedDemoSeeder`, `CommunityRefPostsSeeder`, `SecondProjectDemoSeeder`), không có `community:seed-scale`, không có index/k6/test scale của gói. → Đây là **điều kiện tiên quyết của GĐ7** (thiết kế phân trang/scale module bình luận cần dữ liệu lớn để đối chiếu) và của GĐ9.
+**Trạng thái: 🟡 ĐÃ tích hợp 01/08.** `community:seed-scale --profile={demo|ux|load|full}` (`app/Console/Commands/CommunitySeedScale.php` + `app/Support/CommunitySeed/`), map schema THẬT (bài→`community_posts`, cảm xúc→`community_post_reactions`, comment→bảng polymorphic `comments`), batch insert + resume + idempotent qua `seed_tag` (reset KHÔNG xoá data demo/thật), migration additive (seed_tag + 5 index feed cursor), 4 test (isolation/cursor/counter/deterministic) — full suite 155 pass. Chạy demo dev: 2.000 bài/14.872 comment ~1.3s. Tài liệu `docs/dev/03_data_arch/community-mass-seed.md`.
+
+⚠️ **Còn thiếu cho scale FULL (25 triệu comment):** bảng comment CHUYÊN DỤNG `community_comments` (thuộc **GĐ7**, chưa tạo). Bảng `comments` polymorphic dùng chung chỉ chịu được demo/ux, không phải 25M. `load`/`full` chỉ chạy staging. → Vẫn là **điều kiện tiên quyết của GĐ7**.
 
 ## D. Mới xong trong phiên 2026-08-01
 
