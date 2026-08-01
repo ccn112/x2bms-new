@@ -120,15 +120,29 @@ class SlipCommentController extends ApiController
         if (! $class) {
             return null;
         }
-        $apartmentIds = $this->context->apartmentIds($request->user(), $request->header('X-Context-Id'));
-        if (empty($apartmentIds)) {
+        $user = $request->user();
+        $apartmentIds = $this->context->apartmentIds($user, $request->header('X-Context-Id'));
+        // Sở hữu = căn hộ HOẶC resident, khớp đúng cách list/detail của phiếu quyết
+        // định (PaymentController / AmenityController). Trước đây chỉ lọc
+        // `apartment_id` nên phiếu thuộc về cư dân qua `resident_id` (apartment_id
+        // null/khác — hay gặp với phiếu BQL tạo) hiện trong danh sách nhưng mở bình
+        // luận lại 404.
+        $residentIds = $user->residentMemberships()->pluck('id')->all();
+        if (empty($apartmentIds) && empty($residentIds)) {
             return null;
         }
 
         /** @var Model|null $model */
         $model = $class::query()
             ->whereKey($id)
-            ->whereIn('apartment_id', $apartmentIds)
+            ->where(function ($q) use ($apartmentIds, $residentIds): void {
+                if (! empty($apartmentIds)) {
+                    $q->orWhereIn('apartment_id', $apartmentIds);
+                }
+                if (! empty($residentIds)) {
+                    $q->orWhereIn('resident_id', $residentIds);
+                }
+            })
             ->first();
 
         return $model;
