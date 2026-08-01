@@ -86,4 +86,13 @@ return [
         'return_url' => env('MOMO_RETURN_URL'),
     ],
 
+    // Firebase Cloud Messaging (push notification cho app cư dân — GĐ notify).
+    // Dùng HTTP v1: cần service account JSON (Project settings → Service accounts
+    // → Generate new private key) đặt ở `credentials`, và project_id.
+    'firebase' => [
+        'project_id' => env('FIREBASE_PROJECT_ID'),
+        'credentials' => env('FIREBASE_CREDENTIALS', storage_path('app/firebase/service-account.json')),
+        'enabled' => (bool) env('FCM_ENABLED', false),
+    ],
+
 ];
