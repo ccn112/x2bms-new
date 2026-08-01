@@ -15,6 +15,7 @@ use App\Http\Controllers\Api\V1\Resident\ArticleController;
 use App\Http\Controllers\Api\V1\Resident\BillingSummaryController;
 use App\Http\Controllers\Api\V1\Resident\CommunityController;
 use App\Http\Controllers\Api\V1\Resident\CommunityPostController;
+use App\Http\Controllers\Api\V1\Resident\DeviceTokenController;
 use App\Http\Controllers\Api\V1\Resident\EmergencyAlertController;
 use App\Http\Controllers\Api\V1\Resident\FeedbackController;
 use App\Http\Controllers\Api\V1\Resident\HomeController;
@@ -279,6 +280,9 @@ Route::prefix('v1')->group(function () {
             // docblock trên): BQL app dùng chung token 'staff'.
             Route::post('listings/{listing}/moderate', [ListingController::class, 'moderate'])
                 ->whereNumber('listing');
+            // Đăng ký / gỡ token push (FCM) — app cư dân + WEB ADMIN (staff).
+            Route::post('device-tokens', [DeviceTokenController::class, 'store']);
+            Route::delete('device-tokens', [DeviceTokenController::class, 'destroy']);
         });
 });
 
