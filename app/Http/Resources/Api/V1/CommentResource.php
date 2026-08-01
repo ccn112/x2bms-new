@@ -36,6 +36,8 @@ class CommentResource extends JsonResource
                 ? null
                 : (int) $this->replies_count,
             'created_at' => $this->created_at?->toIso8601String(),
+            // @mention (GĐ7, chỉ bình luận cộng đồng): [{user_id, name}] để app link.
+            'mentions' => $this->mentions ?? null,
             'attachments' => AttachmentResource::collection($this->whenLoaded('attachments')),
         ];
     }

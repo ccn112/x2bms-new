@@ -21,6 +21,7 @@ class CommunityComment extends Model
 
     protected $casts = [
         'is_staff' => 'boolean',
+        'mentions' => 'array',
     ];
 
     public function post(): BelongsTo

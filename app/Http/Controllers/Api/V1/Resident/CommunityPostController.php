@@ -252,6 +252,9 @@ class CommunityPostController extends ApiController
             'parent_id' => ['nullable', 'integer'],
             'attachment_ids' => ['nullable', 'array', 'max:10'],
             'attachment_ids.*' => ['integer'],
+            // @mention (GĐ7): id cư dân được nhắc trong bình luận — app render/link.
+            'mentioned_user_ids' => ['nullable', 'array', 'max:20'],
+            'mentioned_user_ids.*' => ['integer'],
         ]);
 
         $model = $this->findVisible($request, $post);
@@ -261,6 +264,13 @@ class CommunityPostController extends ApiController
         if ($locked = $this->rejectIfLocked($model)) {
             return $locked;
         }
+
+        // Nhắc tên: chỉ giữ id có thật (chống bịa tên người không tồn tại).
+        $mentions = empty($data['mentioned_user_ids']) ? null : \App\Models\User::query()
+            ->whereIn('id', $data['mentioned_user_ids'])
+            ->get(['id', 'name'])
+            ->map(fn ($u) => ['user_id' => (string) $u->id, 'name' => $u->name])
+            ->all();
 
         // Chỉ 1 cấp lồng — reply-của-reply gộp về bình luận cha.
         $parentId = null;
@@ -284,6 +294,7 @@ class CommunityPostController extends ApiController
             'author_kind' => $author['is_staff'] ? 'staff' : 'resident',
             'is_staff' => $author['is_staff'],
             'body' => trim($data['body']),
+            'mentions' => $mentions,
         ]);
         $comment->linkAttachments($data['attachment_ids'] ?? [], $user->id);
         $comment->setRelation('user', $user);
