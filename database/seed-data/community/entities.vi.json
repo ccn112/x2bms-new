@@ -1,0 +1,97 @@
+{
+  "facilities": [
+    "phòng gym",
+    "hồ bơi",
+    "sân tennis",
+    "phòng sinh hoạt cộng đồng",
+    "khu BBQ",
+    "khu vui chơi trẻ em"
+  ],
+  "services": [
+    "vệ sinh hành lang",
+    "phun côn trùng",
+    "bảo trì thang máy",
+    "thu gom rác",
+    "kiểm tra PCCC",
+    "rửa bể nước"
+  ],
+  "locations": [
+    "sảnh A1",
+    "công viên nội khu",
+    "tầng hầm B1",
+    "khu tiện ích tầng 3",
+    "quảng trường trung tâm",
+    "đường dạo ven hồ"
+  ],
+  "procedures": [
+    "khách qua đêm",
+    "chuyển đồ",
+    "thẻ ra vào",
+    "xe máy mới",
+    "tạm trú",
+    "sử dụng phòng cộng đồng"
+  ],
+  "items": [
+    "ví da màu nâu",
+    "chùm chìa khóa",
+    "thẻ cư dân",
+    "ô gấp màu xanh",
+    "bình nước trẻ em",
+    "xe đạp trẻ em",
+    "ghế ăn dặm",
+    "máy lọc không khí"
+  ],
+  "issues": [
+    "nền trơn do nước",
+    "đèn chiếu sáng chưa hoạt động",
+    "mùi bất thường",
+    "cửa ra vào đóng chưa kín",
+    "thang máy chờ lâu",
+    "tiếng ồn trong giờ nghỉ"
+  ],
+  "events": [
+    "Ngày hội gia đình X2",
+    "Workshop trồng cây ban công",
+    "Lớp bơi an toàn cho trẻ",
+    "Giải chạy bộ cư dân",
+    "Đêm nhạc Acoustic",
+    "Phiên chợ cuối tuần"
+  ],
+  "groups": [
+    "Chạy bộ buổi sáng",
+    "Yêu cây ban công",
+    "Bóng đá cư dân",
+    "Nuôi dạy con",
+    "Nhiếp ảnh",
+    "Cầu lông"
+  ],
+  "pet_names": [
+    "Milo",
+    "Bông",
+    "Mít",
+    "Mochi",
+    "Bơ",
+    "Nâu"
+  ],
+  "plants": [
+    "hoa giấy",
+    "hương thảo",
+    "trầu bà",
+    "hoa hồng",
+    "cà chua bi",
+    "sen đá"
+  ],
+  "projects": [
+    "The Maris Vũng Tàu",
+    "Sunshine Garden",
+    "Meyhomes Capital Phú Quốc",
+    "X2 Riverside"
+  ],
+  "buildings": [
+    "A1",
+    "A2",
+    "B1",
+    "B2",
+    "C1"
+  ]
+}

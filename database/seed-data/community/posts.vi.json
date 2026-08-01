@@ -1,0 +1,46 @@
+{
+  "questions": [
+    "Cả nhà cho mình hỏi {facility} hôm nay mở cửa đến mấy giờ ạ?",
+    "Nhà mình có ai biết lịch {service} tuần này không, cho mình xin thông tin với.",
+    "Mọi người cho mình hỏi khu {location} có cho gửi xe qua đêm không ạ?",
+    "Có anh/chị nào đã dùng dịch vụ {service} của dự án chưa, cho mình xin đánh giá.",
+    "Cho mình hỏi thủ tục đăng ký {procedure} cần chuẩn bị những giấy tờ gì?"
+  ],
+  "sharing": [
+    "Sáng nay khuôn viên rất đẹp, mình chia sẻ vài khoảnh khắc để cả nhà cùng ngắm nhé 🌿",
+    "Cuối tuần vừa rồi gia đình mình tham gia {event}, các bé rất vui. Cảm ơn ban tổ chức!",
+    "Mình vừa hoàn thiện góc ban công nhỏ, gửi mọi người một chút cảm hứng xanh 🌱",
+    "Chiều nay trời mát, ai chạy bộ quanh {location} thì hẹn nhau lúc {time} nhé.",
+    "Một ngày bình yên tại {project}. Chúc cả nhà buổi tối vui vẻ!"
+  ],
+  "lost_found": [
+    "Mình nhặt được {item} tại {location} lúc {time}. Chủ nhân liên hệ mình nhận lại nhé.",
+    "Nhà mình bị thất lạc {item}, có thể rơi ở khu {location}. Ai thấy cho mình xin thông tin.",
+    "Ban quản lý đang lưu giữ {item} cư dân bỏ quên. Vui lòng mang thông tin xác nhận khi nhận lại."
+  ],
+  "maintenance": [
+    "Khu vực {location} đang có {issue}. Mọi người chú ý di chuyển và chờ BQL xử lý nhé.",
+    "Sáng nay mình thấy {issue} tại {location}, đã gửi phản ánh trên ứng dụng.",
+    "BQL thông báo tạm thời hạn chế sử dụng {facility} để kiểm tra và bảo trì từ {time}."
+  ],
+  "events": [
+    "Mời cư dân đăng ký tham gia {event} vào {date}. Số lượng có hạn, ưu tiên đăng ký sớm.",
+    "Nhóm {group} tổ chức buổi sinh hoạt tại {location} lúc {time}. Rất vui được chào đón thành viên mới.",
+    "Cuối tuần này có {event} dành cho gia đình và các bé. Cả nhà cùng tham gia nhé!"
+  ],
+  "market": [
+    "Mình cần thanh lý {item} còn sử dụng tốt, ưu tiên cư dân cùng dự án đến xem trực tiếp.",
+    "Nhà mình có dư {item}, xin tặng gia đình nào đang cần. Nhận tại sảnh {building}.",
+    "Có anh/chị nào cần đặt chung {item} để được giá tốt hơn không ạ?"
+  ],
+  "pets_green": [
+    "Bé {pet_name} nhà mình đi lạc gần {location}. Ai thấy vui lòng nhắn giúp mình.",
+    "Mọi người có kinh nghiệm chăm {plant} ở ban công nhiều gió không, chia sẻ giúp mình nhé.",
+    "Nhóm yêu cây tổ chức đổi cây và chậu vào {date} tại {location}."
+  ],
+  "management": [
+    "BQL kính gửi cư dân lịch {service} tại {location} từ {time}. Mong cư dân phối hợp.",
+    "Thông báo: {facility} sẽ tạm ngừng hoạt động để bảo trì trong khung giờ {time}.",
+    "BQL ghi nhận phản ánh về {issue} và đã chuyển bộ phận phụ trách xử lý."
+  ]
+}

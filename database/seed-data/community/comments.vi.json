@@ -1,0 +1,40 @@
+{
+  "positive": [
+    "Cảm ơn bạn đã chia sẻ nhé!",
+    "Thông tin rất hữu ích ạ.",
+    "Nhà mình cũng đang quan tâm nội dung này.",
+    "Cảm ơn BQL đã cập nhật kịp thời.",
+    "Tuyệt vời quá, gia đình mình sẽ tham gia.",
+    "Mình đã đăng ký rồi nhé.",
+    "Bài viết rất thiết thực cho cư dân.",
+    "Cảm ơn cả nhà đã hỗ trợ."
+  ],
+  "question": [
+    "Bạn cho mình xin thêm thời gian cụ thể được không?",
+    "Cho mình hỏi đăng ký ở đâu vậy ạ?",
+    "Nội dung này áp dụng cho toàn dự án hay riêng tòa mình?",
+    "Có cần mang theo thẻ cư dân không ạ?",
+    "Trẻ em có thể tham gia cùng bố mẹ không?",
+    "Chi phí đã bao gồm trong phí dịch vụ chưa ạ?"
+  ],
+  "answer": [
+    "Mình vừa kiểm tra, thông tin đã có trong mục Thông báo nhé.",
+    "Bạn vào Tiện ích → Đăng ký dịch vụ là thấy ạ.",
+    "BQL đã phản hồi là đang xử lý trong hôm nay.",
+    "Theo mình biết thì cần đăng ký trước trên ứng dụng.",
+    "Mình đã dùng rồi, trải nghiệm khá tốt và đúng giờ.",
+    "Bạn có thể liên hệ lễ tân để được hỗ trợ nhanh hơn."
+  ],
+  "neutral": [
+    "Mình theo dõi thêm thông tin.",
+    "Đã nhận được thông báo.",
+    "Cảm ơn bạn.",
+    "Mình lưu lại để xem sau.",
+    "Nhà mình cũng gặp tình trạng tương tự.",
+    "Hy vọng sớm được xử lý."
+  ],
+  "moderation": [
+    "Bình luận này được ẩn để chờ kiểm duyệt.",
+    "Nội dung đã được chỉnh sửa để bảo vệ thông tin cá nhân."
+  ]
+}
