@@ -2649,3 +2649,146 @@ tất cả 200.
 đồng loạt 100 cho MỌI loại phí (chưa backfill theo family QL→Nước→Điện→Xe→Khác);
 override theo từng dự án; UI kéo-thả sắp thứ tự. Không có B4, thứ tự phân bổ
 hiện tại chỉ phân biệt được nhờ `is_critical`, không phải gia đình phí.
+
+## 2026-08-01 — Community Domain: Giai đoạn 3 (grants & membership)
+
+Tiếp `COMMUNITY_IMPLEMENTATION_PLAN.md`. GĐ2 (nhóm) và GĐ4 (follow) đã xong 31/07;
+hôm nay làm GĐ3 (grants) — đúng thứ tự kế hoạch (GĐ3 phụ thuộc GĐ2 để biết
+`group_type=official_resident_group`). Đọc lại `docs/05_MEMBERSHIP_AND_GRANTS.md`
+(handoff) + `COMMUNITY_DB_MAPPING.md` §3 + `COMMUNITY_RISK_ROLLBACK.md` R2 trước khi
+code — R2 định nghĩa chính xác test bắt buộc.
+
+### Schema
+
+Migration `2026_08_01_100000_create_community_membership_grants.php`: bảng mới đúng
+7 cột theo đề bài (`membership_id`, `source_type`, `source_id`, `granted_by_user_id`,
+`status`, `granted_at`/`revoked_at`/`expires_at`), unique
+`(membership_id,source_type,source_id)`, 2 index phụ. `source_id` là id của
+**quan hệ** `resident_apartment_relations`, KHÔNG phải apartment id — nhắc lại vì đây
+chính là chỗ dễ nhầm nhất trong cả thiết kế.
+
+Kèm 2 đổi additive trên `community_group_members` mà lúc đọc DB_MAPPING không thấy
+ghi rõ nhưng bắt buộc phải làm mới thực hiện được mục 5 (auto-enroll X2Living cho
+MỌI `member`, không chỉ cư dân): `resident_id` từ bắt buộc → NULLABLE (dùng
+`->nullable()->change()`, mẫu có sẵn ở 3 migration khác trong repo), và thêm unique
+`(community_group_id,user_id)` song song unique cũ `(community_group_id,resident_id)`
+— an toàn vì NULL không đụng NULL trong unique index (MySQL lẫn SQLite), dữ liệu cũ
+toàn `user_id IS NULL` nên không vỡ gì khi thêm.
+
+### `MembershipService` — một chỗ duy nhất
+
+`app/Services/Community/MembershipService.php`. Hai hàm lõi `grant()`/`revoke()`
+(transaction + `lockForUpdate` trên cả membership lẫn grant, idempotent thật —
+không chỉ `firstOrCreate` hời hợt) rồi 3 cặp tiện ích gọi vào đó:
+`grantResidentRelation()`/`revokeResidentRelation()` (nhóm cư dân chính thức theo
+quan hệ căn hộ), `grantManualJoin()`/`revokeManualJoin()` (tự tham gia/rời),
+`enrollPlatformCommunity()` (auto-enroll, ghi theo `user_id` chứ không
+`resident_id` — tier `member` gọi hàm này có thể chưa có Resident nào).
+
+Bất biến cốt lõi (COM-007, R2): **membership chỉ chuyển `left_at` khi KHÔNG còn grant
+`active` nào** — `revoke()` luôn đếm lại toàn bộ grant active còn sống trước khi
+quyết định có đóng membership hay không, không suy diễn từ việc "vừa revoke 1 cái".
+
+**Quyết định khi thiết kế `officialGroupForRelation()`**: dùng
+`Apartment::withoutGlobalScopes()` + truy `buildings.project_id` thẳng bằng query
+(không qua `$apartment->building` lazy-load) — vì hàm này được gọi từ
+`ResidentApprovalQueue::approve()`, chạy trong ngữ cảnh nhân sự BQL đã đăng nhập, nơi
+`Apartment`/`Resident` có global scope `BelongsToProject` lọc theo
+`accessibleProjectIds()` của người đang thao tác. Một nhân sự cấp dự án duyệt đúng hồ
+sơ của dự án mình thì thường không sao, nhưng đây là service dùng chung, không nên
+phụ thuộc ngữ cảnh gọi — bypass hẳn cho chắc.
+
+**`enrollPlatformCommunity()` không lọc `tenant_id IS NULL`** dù đó là đích cuối của
+`COMMUNITY_DB_MAPPING.md` §8 — vì nhóm `platform_community` thật trong seed
+(`CommunityGroupLadderSeeder`) vẫn mang `tenant_id=1`, chưa null hoá. Lọc theo
+`group_type=platform_community` không kèm điều kiện tenant vẫn đúng vì hệ thống chỉ có
+đúng 1 nhóm loại này — null hoá cột là nợ riêng của GĐ2/§8, không phải việc của GĐ3.
+
+### Wiring — 3 call site, 1 khoảng trống ghi nhận rõ
+
+1. **`ResidentApprovalQueue::approve()`** (WEB-02-04, duyệt cư dân) — sau
+   `ResidentApartmentRelation::create()`, gọi ngay `grantResidentRelation($relation)`.
+   Đây là **call site DUY NHẤT** trong repo tạo mới quan hệ căn hộ cho một cư dân được
+   kích hoạt lần đầu qua hàng đợi duyệt (đã `grep` toàn bộ repo để xác nhận, xem danh
+   sách trong `MembershipService`/`PROGRESS_TRACKER`).
+2. **`BootstrapController::me()`** — gọi `enrollPlatformCommunity($user)` ngay đầu
+   hàm. Chọn `bootstrap` vì đây là điểm HỘI TỤ duy nhất mọi phiên app đăng nhập đều
+   chạm tới (không phân biệt đăng ký qua OTP/mật khẩu/social) — rẻ hơn và ít rủi ro sót
+   hơn là thêm hook riêng ở từng luồng đăng ký. Có guard rẻ (query tồn tại trước khi
+   vào transaction) để việc mở app hàng ngày không phải lock hàng mỗi lần.
+3. **`CommunityController::joinGroup()`/`leaveGroup()`** — đổi từ thao tác trần
+   (`firstOrCreate`/`delete`) sang gọi `grantManualJoin()`/`revokeManualJoin()`. Hệ quả
+   dây chuyền: `leaveGroup()` không còn XOÁ CỨNG dòng `community_group_members` (chỉ
+   set `left_at`, giữ lịch sử) → `CommunityController::groups()` phải thêm
+   `whereNull('left_at')` vào điều kiện tính cờ `joined`, nếu không thì rời nhóm xong
+   app vẫn hiện đã tham gia (không ai gặp lỗi này trước đây vì bản cũ xoá cứng nên
+   không cần điều kiện đó — chỉ lộ ra khi đổi sang left_at).
+   Tác dụng phụ có lợi: gọi `leaveGroup()` lên một nhóm `is_default` (auto-join qua
+   quan hệ căn hộ, không hề có grant `manual_join`) nay là no-op an toàn ở tầng
+   server, không phải chỉ dựa vào Flutter ẩn nút theo `capabilities.can_leave`.
+
+**Khoảng trống cố ý để lại**: repo **không có luồng "kết thúc quan hệ căn hộ"** nào —
+`resident_apartment_relations` (migration gốc `2026_06_28_000007`) không có cột
+`end_date`/`status`, và không có code nào archive/xoá một quan hệ. Vì vậy
+`revokeResidentRelation()` viết đầy đủ, có 2 test cách ly (bao gồm đúng kịch bản R2),
+nhưng CHƯA có call site sản xuất thật nào gọi tới nó — ghi rõ để không ai tưởng nhầm
+là đã wire xong cả hai chiều. Khi tính năng "chấm dứt hợp đồng/bán căn" được xây (rõ
+ràng ngoài phạm vi GĐ3), đó là nơi gọi hàm này. `ResidentImportProfile` (nhập Excel
+hàng loạt) cũng tạo `ResidentApartmentRelation` nhưng CHƯA wire theo — luồng nhập
+hàng loạt khác về ngữ cảnh transaction/hiệu năng, để dành xem xét riêng thay vì
+chèn ẩu vào profile import.
+
+### Backfill
+
+`community:backfill-membership-grants` (`--dry-run`/`--rollback`, khuôn theo
+`BackfillProjectFollows`): mỗi `community_group_members` hiện có → 1 grant —
+`is_default=true` → `system_enrollment`, còn lại → `manual_join`, `source_id=null` cho
+cả hai (dữ liệu cũ không biết quan hệ cụ thể nào đã dẫn tới lượt tham gia).
+
+### Test — đúng yêu cầu R2
+
+`tests/Feature/CommunityMembershipGrantsTest.php`, 9 test:
+- **R2 chính**: tài khoản 2 căn 2 dự án (mô phỏng tài khoản demo #6) — gỡ quan hệ dự
+  án A chỉ mất quyền nhóm A (`hasActiveGrant()=false`, `left_at` set,
+  `member_count` giảm), nhóm B nguyên vẹn hoàn toàn.
+- **2 grant cùng membership**: (a) 2 căn CÙNG dự án → cùng 1 membership, 2 grant
+  `resident_relation` khác `source_id`; thu hồi 1 → còn active; thu hồi nốt → mới mất.
+  (b) `resident_relation` + `manual_join` cùng nhóm — cùng kịch bản, khác nguồn.
+- Idempotency của `grant()`/`revoke()` (gọi lại không tăng/giảm `member_count` sai).
+- Join/leave qua HTTP dùng `left_at` thay vì xoá cứng + tham gia lại hồi sinh đúng
+  dòng cũ (không tạo dòng thứ hai) + danh sách nhóm phản ánh đúng "đã rời".
+- Rời nhóm `is_default` qua endpoint là no-op (không có grant `manual_join` để thu hồi).
+- Bootstrap auto-enroll `platform_community` cho tier `member` thuần, gọi lại
+  không nhân đôi.
+- Backfill: gán đúng `source_type` theo `is_default`, idempotent, rollback không đụng
+  `community_group_members`.
+
+### Ghi chú hạ tầng chạy test (không phải Community, nhưng tốn thời gian tìm ra)
+
+Worktree phiên này KHÔNG có sẵn `vendor/` — phải `composer install --ignore-platform-req=ext-pcntl --ignore-platform-req=ext-posix`
+(Windows không có 2 extension này, Horizon yêu cầu) rồi `php artisan key:generate`
+(APP_KEY trống làm 401/500 hàng loạt test dùng encryption). `php artisan test` tự
+spawn subprocess PHPUnit với `memory_limit=128M` mặc định của Herd bất kể cờ `-d` ở
+tiến trình cha → OOM giữa chừng khi chạy hết bộ test; chạy thẳng
+`php -d memory_limit=1024M vendor/bin/phpunit` thay thế thì qua.
+
+Verify: **146/147 pass** (138 cũ + 9 mới `CommunityMembershipGrantsTest`, 477
+assertion). 1 lỗi còn lại **không liên quan** —
+`ScreenTelemetryTest::test_tong_hop_theo_ngay_dem_dung_va_chay_lai_khong_nhan_doi`
+phụ thuộc giờ đồng hồ thật lúc chạy (`app.timezone=UTC`, `now()->subHours(2)` lúc chạy
+sát khung 00:00–02:00 UTC lệch sang ngày UTC hôm trước trong khi lệnh tổng hợp gộp
+theo ngày UTC của "hôm nay" — test không `Carbon::setTestNow()`), có từ trước phiên
+này, không đụng file nào của Community Domain, tái hiện được bằng cách chạy lại đúng
+file test đó độc lập ở cùng khung giờ.
+
+**Chưa làm trong phiên này (ghi rõ để phiên sau không đoán nhầm là đã xong)**: GĐ1 nền
+(`CommunityAccessService`, capability resolver hợp nhất, error code, idempotency
+middleware) vẫn chưa động tới — GĐ2-4 vẫn đang tự tính quyền rải rác ở
+Resource/Controller. GĐ5 (`content_type`/feed/**bootstrap endpoint**) — mục ưu tiên
+cao nhất theo kế hoạch (`communityGroupLadderProvider` ở Flutter đang tự đoán bậc
+thang, vi phạm quy tắc 3 "business logic không ở client") — **cố ý bỏ qua stretch goal
+này trong phiên**: Giai đoạn 3 đã tốn đủ ngân sách để làm chắc (schema mới + đổi
+nullable một cột đang dùng + 3 call site + 9 test), thêm một endpoint tổng hợp lớn
+nữa trong cùng phiên tăng rủi ro review dồn cục — để nguyên cho phiên kế tiếp bắt đầu
+sạch từ GĐ5. `community_group_verification_history` (tạo từ GĐ2) vẫn chưa có service
+nâng cấp gold→blue dùng tới — vẫn là chỗ chứa trống.

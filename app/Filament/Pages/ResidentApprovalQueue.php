@@ -6,6 +6,7 @@ use App\Models\AuditLog;
 use App\Models\Resident;
 use App\Models\ResidentApartmentRelation;
 use App\Models\ResidentApprovalRequest;
+use App\Services\Community\MembershipService;
 use App\Support\Rules\ApprovalRiskRules;
 use BackedEnum;
 use Filament\Notifications\Notification;
@@ -14,6 +15,21 @@ use Filament\Pages\Page;
 /**
  * WEB-02-04 — Duyệt cư dân. Approval queue with working decisions.
  * Approve creates a Resident + apartment relation and writes an audit log.
+ *
+ * Giai đoạn 3 Community Domain (2026-08-01): đây là điểm DUY NHẤT hiện có
+ * trong repo tạo mới `ResidentApartmentRelation` cho một cư dân được kích
+ * hoạt lần đầu (khác `ResidentImportProfile`, vốn là nhập hàng loạt từ Excel
+ * — cân nhắc wiring riêng nếu cần sau). Sau khi tạo quan hệ, cấp grant vào
+ * nhóm cư dân chính thức (`official_resident_group`) của dự án chứa căn hộ đó
+ * — nếu dự án chưa có nhóm chính thức nào thì `grantResidentRelation()` no-op
+ * (không tạo nhóm mới, ngoài phạm vi service này).
+ *
+ * **Khoảng trống đã biết**: repo hiện KHÔNG có luồng "kết thúc quan hệ căn hộ"
+ * nào (`resident_apartment_relations` không có `end_date`/`status`, không nơi
+ * nào xoá hay archive quan hệ) — nên `MembershipService::revokeResidentRelation()`
+ * viết sẵn, có test cách ly, nhưng CHƯA có call site sản xuất nào gọi tới. Khi
+ * tính năng "chấm dứt hợp đồng/bán nhà" được xây (ngoài phạm vi Giai đoạn 3),
+ * đó là nơi phải gọi `revokeResidentRelation()`.
  */
 class ResidentApprovalQueue extends Page
 {
@@ -69,13 +85,15 @@ class ResidentApprovalQueue extends Page
         ]);
 
         if ($req->apartment_id) {
-            ResidentApartmentRelation::create([
+            $relation = ResidentApartmentRelation::create([
                 'resident_id' => $resident->id,
                 'apartment_id' => $req->apartment_id,
                 'role' => $req->requested_role,
                 'is_primary' => $req->requested_role === 'owner',
                 'start_date' => now(),
             ]);
+
+            app(MembershipService::class)->grantResidentRelation($relation);
         }
 
         $req->update(['status' => 'approved']);

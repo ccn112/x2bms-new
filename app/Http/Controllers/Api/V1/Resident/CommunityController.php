@@ -30,6 +30,7 @@ class CommunityController extends ApiController
     public function __construct(
         private readonly ResidentContextService $context,
         private readonly \App\Services\Resident\CommunityModerationService $moderation,
+        private readonly \App\Services\Community\MembershipService $membership,
     ) {
     }
 
@@ -447,10 +448,16 @@ class CommunityController extends ApiController
             ->orderBy('name')
             ->get();
 
+        // "Đã tham gia" phải loại các membership đã `left_at` (Giai đoạn 3,
+        // 2026-08-01) — từ khi `leaveGroup()` không còn XOÁ CỨNG dòng
+        // `community_group_members` (đi qua `MembershipService::revokeManualJoin()`,
+        // chỉ đánh dấu `left_at`), thiếu điều kiện này thì rời nhóm xong app
+        // vẫn thấy `joined=true`.
         $residentIds = $this->residentIds($request);
         $joinedIds = empty($residentIds) ? [] : CommunityGroupMember::query()
             ->whereIn('resident_id', $residentIds)
             ->whereIn('community_group_id', $groups->pluck('id'))
+            ->whereNull('left_at')
             ->pluck('community_group_id')
             ->all();
 
@@ -459,29 +466,24 @@ class CommunityController extends ApiController
         return ApiResponse::success(CommunityGroupResource::collection($groups)->resolve($request));
     }
 
-    /** POST /resident/community/groups/{group}/join */
+    /**
+     * POST /resident/community/groups/{group}/join — tham gia thủ công
+     * (`manual_join` grant, Giai đoạn 3). Đi qua `MembershipService` thay vì
+     * tự `firstOrCreate`/`delete` để bất biến "còn active grant thì còn
+     * membership" luôn đúng cho MỌI đường vào, không chỉ đường quan hệ căn hộ.
+     */
     public function joinGroup(Request $request, CommunityGroup $group): JsonResponse
     {
         if (! in_array($group->project_id, $this->projectIds($request), true)) {
             return ApiResponse::error('not_found', 'Không tìm thấy nhóm.', 404);
         }
 
-        $residentId = $request->user()->residentMemberships()->value('id');
-        if ($residentId === null) {
+        $resident = $request->user()->residentMemberships()->first();
+        if ($resident === null) {
             return ApiResponse::error('no_resident', 'Tài khoản chưa gắn cư dân.', 403);
         }
 
-        $created = false;
-        DB::transaction(function () use ($group, $residentId, &$created) {
-            $member = CommunityGroupMember::firstOrCreate(
-                ['community_group_id' => $group->id, 'resident_id' => $residentId],
-                ['role' => 'member', 'joined_at' => now()],
-            );
-            if ($member->wasRecentlyCreated) {
-                $group->increment('member_count');
-                $created = true;
-            }
-        });
+        $this->membership->grantManualJoin($group, $resident);
 
         $group->refresh();
         $group->joined = true;
@@ -489,23 +491,23 @@ class CommunityController extends ApiController
         return ApiResponse::success(CommunityGroupResource::make($group)->resolve($request));
     }
 
-    /** DELETE /resident/community/groups/{group}/join — rời nhóm. */
+    /**
+     * DELETE /resident/community/groups/{group}/join — rời nhóm.
+     *
+     * Chỉ thu hồi grant loại `manual_join`. Một nhóm `is_default` (vd
+     * `official_resident_group` cấp qua quan hệ căn hộ) không có grant
+     * `manual_join` nào để thu hồi — gọi vào đây là no-op (client đúng chuẩn
+     * đã ẩn nút rời cho nhóm `is_default` qua `capabilities.can_leave`, đây là
+     * lớp phòng thủ phía server cho request gọi thẳng).
+     */
     public function leaveGroup(Request $request, CommunityGroup $group): JsonResponse
     {
-        $residentId = $request->user()->residentMemberships()->value('id');
-        if ($residentId === null) {
+        $resident = $request->user()->residentMemberships()->first();
+        if ($resident === null) {
             return ApiResponse::error('no_resident', 'Tài khoản chưa gắn cư dân.', 403);
         }
 
-        DB::transaction(function () use ($group, $residentId) {
-            $deleted = CommunityGroupMember::query()
-                ->where('community_group_id', $group->id)
-                ->where('resident_id', $residentId)
-                ->delete();
-            if ($deleted > 0 && $group->member_count > 0) {
-                $group->decrement('member_count');
-            }
-        });
+        $this->membership->revokeManualJoin($group, $resident);
 
         $group->refresh();
         $group->joined = false;

@@ -76,10 +76,22 @@ class BootstrapController extends ApiController
     }
 
     /** GET /api/v1/me/bootstrap — auth:sanctum. Resolves the person's contexts + mode. */
-    public function me(Request $request, \App\Services\Resident\ResidentNotificationService $notifications): JsonResponse
-    {
+    public function me(
+        Request $request,
+        \App\Services\Resident\ResidentNotificationService $notifications,
+        \App\Services\Community\MembershipService $membership,
+    ): JsonResponse {
         /** @var User $user */
         $user = $request->user();
+
+        // Auto-enroll X2Living (Giai đoạn 3 Community Domain, COM-002) — MỌI
+        // tài khoản đã đăng nhập là thành viên `platform_community`, kể cả
+        // tier `member` thuần chưa gắn căn hộ nào. `bootstrap` là điểm hội tụ
+        // duy nhất mọi phiên app đều gọi ngay sau đăng nhập (mọi luồng đăng ký
+        // — OTP/social/mật khẩu — đều dẫn tới đây), nên chọn làm nơi enroll
+        // thay vì thêm hook riêng ở từng luồng đăng ký. Idempotent — gọi lại
+        // mỗi lần mở app không tạo trùng (xem `MembershipService::grant()`).
+        $membership->enrollPlatformCommunity($user);
 
         // Nạp sẵn căn hộ → toà → dự án: bảng chọn căn hộ ở app cần NHÃN đọc
         // được, không phải mỗi id. Thiếu nhãn thì app phải gọi thêm một vòng
