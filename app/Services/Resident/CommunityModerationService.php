@@ -138,6 +138,48 @@ class CommunityModerationService
         return $out;
     }
 
+    /**
+     * Danh sách NGƯỜI ĐÃ THẢ CẢM XÚC từng bài (để app dựng gợi ý @mention: người
+     * đã thích + người đã bình luận + tác giả). Gộp một lượt cho cả trang feed —
+     * cùng triết lý "tránh N+1" với {@see tallyMany()}.
+     *
+     * Chỉ CƯ DÂN (bỏ nhân sự BQL — họ không phải người để nhắc, đồng bộ với
+     * `author.user_id = null` cho bài staff). Chặn phình payload bằng `$capPerPost`
+     * (bài quá nhiều like thì cắt bớt — gợi ý @ không cần đủ mọi người).
+     *
+     * @param  array<int|string>  $postIds
+     * @return array<int, list<array{user_id:string,name:string}>>  postId → [{user_id,name}]
+     */
+    public function reactorPeopleMany(array $postIds, int $capPerPost = 100): array
+    {
+        if (empty($postIds)) {
+            return [];
+        }
+
+        $rows = CommunityPostReaction::query()
+            ->whereIn('community_post_reactions.community_post_id', $postIds)
+            ->join('users', 'users.id', '=', 'community_post_reactions.user_id')
+            ->where('users.account_type', '!=', 'staff')
+            ->orderBy('community_post_reactions.id')
+            ->get([
+                'community_post_reactions.community_post_id as pid',
+                'users.id as uid',
+                'users.name as name',
+            ]);
+
+        $out = [];
+        foreach ($rows as $r) {
+            $pid = (int) $r->pid;
+            $out[$pid] ??= [];
+            if (count($out[$pid]) >= $capPerPost) {
+                continue;
+            }
+            $out[$pid][] = ['user_id' => (string) $r->uid, 'name' => (string) $r->name];
+        }
+
+        return $out;
+    }
+
     /** Đồng bộ `like_count` = TỔNG mọi cảm xúc (giữ cột cũ khỏi vỡ code cũ). */
     public function syncLikeCount(CommunityPost $post, int $total): void
     {

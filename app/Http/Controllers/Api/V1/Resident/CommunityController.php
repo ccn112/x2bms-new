@@ -116,10 +116,14 @@ class CommunityController extends ApiController
 
         // Cảm xúc + quyền gộp MỘT lượt cho cả trang (tránh N+1 trên feed).
         $posts = $paginator->getCollection();
-        $tallies = $this->moderation->tallyMany($posts->pluck('id')->all(), $user);
+        $postIds = $posts->pluck('id')->all();
+        $tallies = $this->moderation->tallyMany($postIds, $user);
+        // Người đã thả cảm xúc từng bài → gợi ý @mention (kèm người đã bình luận + tác giả).
+        $reactors = $this->moderation->reactorPeopleMany($postIds);
         foreach ($posts as $p) {
             $p->post_meta = [
                 'reactions' => $tallies[$p->id] ?? ['summary' => [], 'total' => 0, 'mine' => null],
+                'reactor_people' => $reactors[$p->id] ?? [],
                 'can' => $this->moderation->abilities($user, $p),
             ];
         }

@@ -77,6 +77,9 @@ class CommunityPostResource extends JsonResource
                 'total' => (int) $tally['total'],
                 'mine' => $tally['mine'],
             ],
+            // Người đã thả cảm xúc (cư dân) — app gộp vào gợi ý @mention cùng
+            // người đã bình luận + tác giả. [{user_id, name}], có thể rỗng.
+            'reactors' => array_values($meta['reactor_people'] ?? []),
             'locked' => $this->locked_at !== null,
             'hidden' => $this->status === 'hidden',
             'moderation_reason' => $this->moderation_reason,

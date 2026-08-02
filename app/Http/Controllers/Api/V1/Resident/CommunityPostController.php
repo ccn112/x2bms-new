@@ -716,6 +716,7 @@ class CommunityPostController extends ApiController
 
         $post->post_meta = [
             'reactions' => $this->moderation->tally($post, $user),
+            'reactor_people' => $this->moderation->reactorPeopleMany([$post->id])[$post->id] ?? [],
             'can' => $this->moderation->abilities($user, $post),
         ];
 
