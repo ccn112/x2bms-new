@@ -163,6 +163,7 @@ Route::prefix('v1')->group(function () {
         // dưới. Hợp đồng: x2mobile/docs/API_REQUIREMENTS_COMMUNITY_WRITE_20260727.md
         Route::post('community/posts', [CommunityPostController::class, 'store']);
         Route::get('community/posts/{post}', [CommunityPostController::class, 'show'])->whereNumber('post');
+        Route::match(['put', 'patch'], 'community/posts/{post}', [CommunityPostController::class, 'update'])->whereNumber('post');
         Route::delete('community/posts/{post}', [CommunityPostController::class, 'destroy'])->whereNumber('post');
         Route::post('community/posts/{post}/reactions', [CommunityPostController::class, 'react'])->whereNumber('post');
         Route::delete('community/posts/{post}/reactions', [CommunityPostController::class, 'unreact'])->whereNumber('post');

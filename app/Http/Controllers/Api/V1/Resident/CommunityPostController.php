@@ -98,6 +98,54 @@ class CommunityPostController extends ApiController
             : ApiResponse::error('not_found', 'Bài viết không còn khả dụng.', 404);
     }
 
+    /**
+     * PUT|PATCH /resident/community/posts/{post} — TÁC GIẢ tự sửa nội dung bài.
+     *
+     * Chỉ đổi `body` (+ đính thêm ảnh mới nếu gửi `attachment_ids`). BQL không
+     * sửa lời người khác — họ ẩn/xóa qua `moderate`, nên ở đây chặn cả moderator
+     * không-phải-tác-giả. Ảnh cũ giữ nguyên: `linkAttachments` chỉ gắn ảnh chưa
+     * gắn, không gỡ — xóa/đổi ảnh chưa mở (ngữ nghĩa detach chưa chốt).
+     */
+    public function update(Request $request, int $post): JsonResponse
+    {
+        $data = $request->validate([
+            'body' => ['nullable', 'string', 'max:5000'],
+            'attachment_ids' => ['nullable', 'array', 'max:10'],
+            'attachment_ids.*' => ['integer'],
+        ]);
+
+        $model = $this->findInScope($request, $post);
+        if (! $model) {
+            return ApiResponse::error('not_found', 'Bài viết không còn khả dụng.', 404);
+        }
+
+        $user = $request->user();
+        if (! $this->moderation->isAuthor($user, $model)) {
+            return ApiResponse::error('forbidden', 'Chỉ tác giả mới sửa được bài này.', 403);
+        }
+        if ($model->isHidden() || $model->isLocked()) {
+            return ApiResponse::error('locked', 'Bài đã bị khóa hoặc ẩn nên không thể sửa.', 423);
+        }
+
+        $body = trim((string) ($data['body'] ?? ''));
+        $newAttachmentIds = $data['attachment_ids'] ?? [];
+        $hasExistingImages = $model->attachments()->exists();
+        if ($body === '' && empty($newAttachmentIds) && ! $hasExistingImages) {
+            return ApiResponse::error(
+                'validation_failed',
+                'Bài viết cần có nội dung hoặc ảnh.',
+                422,
+                ['body' => ['Nhập nội dung hoặc chọn ít nhất một ảnh.']],
+            );
+        }
+
+        $model->body = $body;
+        $model->save();
+        $model->linkAttachments($newAttachmentIds, $user->id);
+
+        return $this->respondWithPost($request, $model->fresh(), 200);
+    }
+
     /** DELETE /resident/community/posts/{post} — tác giả tự xóa (soft). */
     public function destroy(Request $request, int $post): JsonResponse
     {

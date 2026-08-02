@@ -57,6 +57,9 @@ class CommunityModerationService
         return [
             'comment' => $open,
             'react' => $open,
+            // Chỉ tác giả tự sửa nội dung bài mình; BQL kiểm duyệt (ẩn/xóa) chứ
+            // không viết lại lời người khác. Bài đã bị khóa/ẩn thì không cho sửa.
+            'edit' => $isAuthor && $open,
             'delete' => $isAuthor || $canModerate,
             'moderate' => $canModerate,
             // Không cho tự báo cáo bài của chính mình.
