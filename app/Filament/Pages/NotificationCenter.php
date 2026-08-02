@@ -208,6 +208,14 @@ class NotificationCenter extends Page implements HasTable
             };
         }
         $n->update(['recipient_count' => $count, 'published_at' => $n->published_at ?? now(), 'status' => 'published', 'published_by_id' => auth()->id()]);
+
+        // Đẩy PUSH tới thiết bị cư dân đích (nếu có chọn kênh 'push'). Bọc try:
+        // FCM tắt/lỗi KHÔNG được làm việc phát hành thông báo thất bại.
+        try {
+            app(\App\Services\Resident\NotificationPushDispatcher::class)->dispatch($n);
+        } catch (\Throwable $e) {
+            report($e);
+        }
     }
 
     public function table(Table $table): Table
