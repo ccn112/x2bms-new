@@ -50,13 +50,15 @@ class ApartmentWalletService
         $reference = null,
         ?string $description = null,
         ?int $userId = null,
+        ?string $subjectType = null,
+        ?int $subjectId = null,
     ): ApartmentWalletTransaction {
-        return DB::transaction(function () use ($wallet, $amount, $type, $feeCategory, $feeTypeId, $reference, $description, $userId) {
+        return DB::transaction(function () use ($wallet, $amount, $type, $feeCategory, $feeTypeId, $reference, $description, $userId, $subjectType, $subjectId) {
             if ($feeCategory === null) {
                 $wallet->balance = bcadd((string) $wallet->balance, $amount, 2);
                 $wallet->save();
             } else {
-                $bucket = $this->bucket($wallet, $feeCategory, $feeTypeId);
+                $bucket = $this->bucket($wallet, $feeCategory, $feeTypeId, $subjectType, $subjectId);
                 $bucket->balance = bcadd((string) $bucket->balance, $amount, 2);
                 $bucket->save();
             }
@@ -189,12 +191,102 @@ class ApartmentWalletService
         return array_values($grouped);
     }
 
+    /**
+     * D6 Slice B — trả công nợ cho MỘT tài sản (claim-by-asset). Nạp `amount` vào
+     * NGĂN theo chiều tài sản rồi rút đúng các dòng đã chọn theo thứ tự
+     * `StatementLine::allocationSortKey()` (khoá phân bổ DÙNG CHUNG với
+     * `ResidentPaymentClaimReviewer` — không tự chọn thứ tự khác). Tiền thừa Ở LẠI
+     * ngăn tài sản để LẦN SAU tự trừ tiếp cho đúng tài sản đó — không mất, không
+     * lẫn sang tài sản khác cùng loại phí.
+     *
+     * Cố ý đi qua ngăn (nạp IN → trả nợ OUT → phần dư earmark) thay vì gán thẳng
+     * vào dòng: ledger `apartment_wallet_transactions` khép kín, `balance_after`
+     * liền mạch, và phần dư nằm sẵn ở ngăn nên lần trả sau chỉ việc nạp thêm rồi
+     * rút tiếp — dư cũ được tiêu trước một cách tự nhiên.
+     *
+     * @param  iterable<StatementLine>  $lines  các dòng ĐÃ SẮP theo allocationSortKey
+     * @return array{allocated:string, bucket_balance:string, per_line:array<int,string>}
+     */
+    public function settleAssetLines(
+        ApartmentWallet $wallet,
+        iterable $lines,
+        string $amount,
+        string $feeCategory,
+        ?int $feeTypeId,
+        ?string $subjectType,
+        ?int $subjectId,
+        ?int $userId = null,
+    ): array {
+        return DB::transaction(function () use ($wallet, $lines, $amount, $feeCategory, $feeTypeId, $subjectType, $subjectId, $userId) {
+            // 1) Nạp toàn bộ tiền vào ngăn tài sản (cộng lên phần dư CŨ của ngăn nếu có).
+            $bucket = $this->bucket($wallet, $feeCategory, $feeTypeId, $subjectType, $subjectId);
+            $bucket->balance = bcadd((string) $bucket->balance, $amount, 2);
+            $bucket->save();
+            $this->log($wallet, 'in', 'topup', $amount, $feeCategory, $feeTypeId, null,
+                'Nạp trả trước tài sản', $userId);
+
+            // 2) Rút ngăn trả từng dòng đã chọn, cap ở phần còn nợ mỗi dòng.
+            $allocated = '0';
+            $perLine = [];
+            $touchedStatementIds = [];
+
+            foreach ($lines as $line) {
+                if (bccomp((string) $bucket->balance, '0', 2) <= 0) {
+                    break;
+                }
+                $owed = $line->outstanding();
+                if (bccomp($owed, '0', 2) <= 0) {
+                    $perLine[$line->id] = '0';
+                    continue;
+                }
+                $take = bccomp((string) $bucket->balance, $owed, 2) >= 0 ? $owed : (string) $bucket->balance;
+
+                $bucket->balance = bcsub((string) $bucket->balance, $take, 2);
+                $bucket->save();
+
+                $line->paid_amount = bcadd((string) ($line->paid_amount ?? 0), $take, 2);
+                $line->status = bccomp($line->outstanding(), '0', 2) <= 0 ? 'paid' : 'partial';
+                $line->save();
+
+                $this->log($wallet, 'out', 'debt_settlement', $take, $feeCategory, $feeTypeId, $line,
+                    "Trả phí #{$line->id}", $userId);
+
+                $allocated = bcadd($allocated, $take, 2);
+                $perLine[$line->id] = $take;
+                $touchedStatementIds[$line->statement_id] = true;
+            }
+
+            foreach (array_keys($touchedStatementIds) as $statementId) {
+                Statement::find($statementId)?->recomputePaidAmount();
+            }
+
+            return [
+                'allocated' => $allocated,
+                'bucket_balance' => (string) $bucket->balance,
+                'per_line' => $perLine,
+            ];
+        });
+    }
+
     // ---- helpers ----
 
-    private function bucket(ApartmentWallet $wallet, string $feeCategory, ?int $feeTypeId): ApartmentWalletBucket
-    {
+    private function bucket(
+        ApartmentWallet $wallet,
+        string $feeCategory,
+        ?int $feeTypeId,
+        ?string $subjectType = null,
+        ?int $subjectId = null,
+    ): ApartmentWalletBucket {
+        // subject_type/subject_id NULL = ngăn theo fee_type NHƯ CŨ (D6 giữ nguyên
+        // hành vi cho phí không gắn tài sản).
         return ApartmentWalletBucket::firstOrCreate(
-            ['wallet_id' => $wallet->id, 'fee_category' => $feeCategory, 'fee_type_id' => $feeTypeId],
+            [
+                'wallet_id' => $wallet->id,
+                'fee_category' => $feeCategory,
+                'fee_type_id' => $feeTypeId,
+                'subject_type' => $subjectType,
+                'subject_id' => $subjectId,
+            ],
             ['tenant_id' => $wallet->tenant_id, 'balance' => 0],
         );
     }
@@ -204,9 +296,14 @@ class ApartmentWalletService
         if (bccomp($remaining, '0', 2) <= 0) {
             return $remaining;
         }
+        // Chỉ rút ngăn KHÔNG gắn tài sản (subject NULL). Ngăn earmark theo tài sản
+        // (D6) chỉ được settleAssetLines rút cho đúng tài sản của nó — hạch toán
+        // chung (autoSettle) không được tiêu lẹm vào tiền đã dành cho một chiếc xe.
         $bucket = ApartmentWalletBucket::where('wallet_id', $wallet->id)
             ->where('fee_category', $feeCategory)
             ->where('fee_type_id', $feeTypeId)
+            ->whereNull('subject_type')
+            ->whereNull('subject_id')
             ->first();
         if (! $bucket || bccomp((string) $bucket->balance, '0', 2) <= 0) {
             return $remaining;

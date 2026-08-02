@@ -28,4 +28,13 @@ class ApartmentWalletBucket extends Model
     {
         return $this->belongsTo(FeeType::class);
     }
+
+    /**
+     * Tài sản mà ngăn này earmark tiền cho (D6): Vehicle/Meter/…; NULL = ngăn theo
+     * fee_type như cũ (phí không gắn tài sản).
+     */
+    public function subject(): \Illuminate\Database\Eloquent\Relations\MorphTo
+    {
+        return $this->morphTo();
+    }
 }

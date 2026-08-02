@@ -13,6 +13,7 @@ use App\Http\Controllers\Api\V1\Resident\AmenityController;
 use App\Http\Controllers\Api\V1\Resident\ApartmentController;
 use App\Http\Controllers\Api\V1\Resident\ArticleController;
 use App\Http\Controllers\Api\V1\Resident\BillingSummaryController;
+use App\Http\Controllers\Api\V1\Resident\DebtByAssetPaymentController;
 use App\Http\Controllers\Api\V1\Resident\DebtByServiceController;
 use App\Http\Controllers\Api\V1\Resident\CommunityController;
 use App\Http\Controllers\Api\V1\Resident\CommunityPostController;
@@ -129,6 +130,9 @@ Route::prefix('v1')->group(function () {
 
         // Công nợ THEO DỊCH VỤ / TÀI SẢN (D6): family › fee_type › xe/đồng hồ › tháng nợ.
         Route::get('debts/by-service', [DebtByServiceController::class, 'show']);
+        // D6 Slice B — trả trước công nợ theo TÀI SẢN: phân bổ đúng dòng đã chọn,
+        // tiền thừa earmark vào ngăn ví theo chiều tài sản.
+        Route::post('debts/by-service/pay', [DebtByAssetPaymentController::class, 'pay']);
 
         // Ví cư dân theo căn hộ: số dư + các ngăn + nợ per-service, và sổ ví (phiếu thu / hạch toán).
         Route::get('wallet', [WalletController::class, 'show']);
