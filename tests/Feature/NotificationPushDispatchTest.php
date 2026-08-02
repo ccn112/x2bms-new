@@ -33,9 +33,9 @@ class NotificationPushDispatchTest extends TestCase
         {
             public array $calls = [];
 
-            public function toUser(User $user, string $title, string $body, array $data = [], ?ChannelEnum $channel = null): int
+            public function toUser(User $user, string $title, string $body, array $data = [], ?ChannelEnum $channel = null, ?string $imageUrl = null): int
             {
-                $this->calls[] = ['user_id' => $user->id, 'channel' => $channel?->value, 'title' => $title];
+                $this->calls[] = ['user_id' => $user->id, 'channel' => $channel?->value, 'title' => $title, 'image' => $imageUrl];
 
                 return 1;
             }

@@ -47,10 +47,15 @@ class NotificationPushDispatcher
             'notification_id' => (string) $notification->id,
             'category' => (string) $notification->type,
         ];
+        // Ảnh thông báo = ảnh bìa của thông báo BQL (nếu có) → BigPicture; icon
+        // app vẫn hiện nhỏ. URL tương đối/rỗng thì PushService tự bỏ qua.
+        $image = $notification->cover_path
+            ? \Illuminate\Support\Facades\Storage::disk('public')->url($notification->cover_path)
+            : null;
 
         $sent = 0;
         foreach (User::query()->whereIn('id', $userIds)->get() as $user) {
-            $sent += $this->push->toUser($user, $title, $body, $data, $channel);
+            $sent += $this->push->toUser($user, $title, $body, $data, $channel, $image);
         }
 
         return $sent;

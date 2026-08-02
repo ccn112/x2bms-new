@@ -37,6 +37,10 @@ class CommunityPostResource extends JsonResource
         return [
             'id' => (string) $this->id,
             'author' => [
+                // user_id để app cho @mention TÁC GIẢ BÀI trong bình luận. Ẩn với
+                // bài của BQL (nhân sự không phải cư dân để nhắc).
+                'user_id' => ($this->author_kind === 'staff' || $this->author_user_id === null)
+                    ? null : (string) $this->author_user_id,
                 'name' => $this->authorName(),
                 'role' => $role,
                 'avatar_url' => $this->authorAvatar(),

@@ -360,6 +360,8 @@ class CommunityPostController extends ApiController
     ): void {
         $push = app(\App\Services\Push\PushService::class);
         $snippet = mb_substr(trim($data['body']), 0, 80);
+        // Ảnh thông báo = AVATAR người viết bình luận (BQL không lộ avatar cá nhân).
+        $actorAvatar = $author['is_staff'] ? null : $actor->avatarUrl;
         $baseData = [
             'post_id' => (string) $model->id,
             'comment_id' => (string) $comment->id,
@@ -393,7 +395,7 @@ class CommunityPostController extends ApiController
                 continue;
             }
             $push->toUser($u, $title, $snippet, ['type' => $type] + $baseData,
-                \App\Enums\NotificationChannel::Community);
+                \App\Enums\NotificationChannel::Community, $actorAvatar);
         }
     }
 
@@ -411,7 +413,7 @@ class CommunityPostController extends ApiController
             return;
         }
         app(\App\Services\Push\PushService::class)
-            ->toUser($u, $title, $body, $data, \App\Enums\NotificationChannel::Community);
+            ->toUser($u, $title, $body, $data, \App\Enums\NotificationChannel::Community, $actor->avatarUrl);
     }
 
     /** POST /resident/community/posts/{post}/comments/{comment}/reactions — GĐ7. */

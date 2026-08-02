@@ -41,6 +41,7 @@ class PushService
         string $body,
         array $data = [],
         ?NotificationChannel $channel = null,
+        ?string $imageUrl = null,
     ): int {
         if ($channel !== null && ! $this->userAllows($user, $channel)) {
             return 0;
@@ -51,6 +52,7 @@ class PushService
             $title,
             $body,
             $channel === null ? $data : $data + ['channel' => $channel->value],
+            $imageUrl,
         );
     }
 
@@ -68,16 +70,27 @@ class PushService
         return $pref === null ? $channel->defaultOn() : (bool) $pref;
     }
 
-    /** @param array<string> $tokens */
-    public function toTokens(array $tokens, string $title, string $body, array $data = []): int
+    /**
+     * @param  array<string>  $tokens
+     * @param  ?string  $imageUrl  Ảnh lớn của thông báo (BigPicture Android) — avatar
+     *                             người viết / ảnh đính kèm. Icon app vẫn hiện nhỏ.
+     */
+    public function toTokens(array $tokens, string $title, string $body, array $data = [], ?string $imageUrl = null): int
     {
         $tokens = array_values(array_filter($tokens));
         if (empty($tokens) || ! $this->enabled()) {
             return 0;
         }
 
+        $notification = Notification::create($title, $body);
+        // Chỉ nhận URL http(s) tuyệt đối — FCM + máy tự tải ảnh; URL rỗng/tương đối
+        // làm thông báo lỗi ảnh nên bỏ qua.
+        if ($imageUrl !== null && preg_match('#^https?://#', $imageUrl)) {
+            $notification = $notification->withImageUrl($imageUrl);
+        }
+
         $message = CloudMessage::new()
-            ->withNotification(Notification::create($title, $body))
+            ->withNotification($notification)
             ->withData(array_map(fn ($v) => (string) $v, $data));
 
         try {
