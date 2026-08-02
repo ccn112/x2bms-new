@@ -13,6 +13,7 @@ use App\Http\Controllers\Api\V1\Resident\AmenityController;
 use App\Http\Controllers\Api\V1\Resident\ApartmentController;
 use App\Http\Controllers\Api\V1\Resident\ArticleController;
 use App\Http\Controllers\Api\V1\Resident\BillingSummaryController;
+use App\Http\Controllers\Api\V1\Resident\DebtByServiceController;
 use App\Http\Controllers\Api\V1\Resident\CommunityController;
 use App\Http\Controllers\Api\V1\Resident\CommunityPostController;
 use App\Http\Controllers\Api\V1\Resident\DeviceTokenController;
@@ -125,6 +126,9 @@ Route::prefix('v1')->group(function () {
         // Công nợ tổng hợp (card Tiện ích) + xu hướng phí 6 tháng (CD-PAY-01).
         Route::get('billing/summary', [BillingSummaryController::class, 'show']);
         Route::get('billing/summary/trend', [BillingSummaryController::class, 'trend']);
+
+        // Công nợ THEO DỊCH VỤ / TÀI SẢN (D6): family › fee_type › xe/đồng hồ › tháng nợ.
+        Route::get('debts/by-service', [DebtByServiceController::class, 'show']);
 
         // Ví cư dân theo căn hộ: số dư + các ngăn + nợ per-service, và sổ ví (phiếu thu / hạch toán).
         Route::get('wallet', [WalletController::class, 'show']);

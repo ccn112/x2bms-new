@@ -113,4 +113,10 @@ class StatementLine extends Model
     {
         return $this->belongsTo(FeeType::class);
     }
+
+    /** Cấp 3 của mô hình phí (D6): tài sản sinh ra phí — vehicles | meters | … */
+    public function subject(): \Illuminate\Database\Eloquent\Relations\MorphTo
+    {
+        return $this->morphTo();
+    }
 }
