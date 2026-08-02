@@ -660,7 +660,8 @@ class CommunityPostController extends ApiController
     private function respondWithPost(Request $request, CommunityPost $post, int $status = 200): JsonResponse
     {
         $post->loadMissing(['author.apartmentRelations.apartment', 'attachments']);
-        $post->loadCount('comments');
+        // Đếm bình luận THẬT (community_comments visible), không phải polymorphic cũ.
+        $post->loadCount(['communityComments as comments_count' => fn ($q) => $q->where('status', 'visible')]);
         $user = $request->user();
 
         $post->post_meta = [

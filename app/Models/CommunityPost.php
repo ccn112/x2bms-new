@@ -50,6 +50,13 @@ class CommunityPost extends Model
         return $this->belongsTo(User::class, 'author_user_id');
     }
 
+    /** Bình luận GĐ7 (bảng chuyên dụng community_comments) — KHÁC comments()
+     *  polymorphic của HasComments. Dùng để đếm số bình luận THẬT của bài. */
+    public function communityComments(): HasMany
+    {
+        return $this->hasMany(CommunityComment::class);
+    }
+
     public function reactions(): HasMany
     {
         return $this->hasMany(CommunityPostReaction::class);

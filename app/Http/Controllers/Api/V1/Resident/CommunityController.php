@@ -95,7 +95,9 @@ class CommunityController extends ApiController
 
         $paginator = CommunityPost::withoutGlobalScopes()
             ->with(['author.apartmentRelations.apartment', 'attachments'])
-            ->withCount('comments')
+            // Đếm bình luận THẬT (bảng community_comments GĐ7, chỉ visible) — KHÔNG
+            // dùng withCount('comments') polymorphic cũ (luôn 0 với bài GĐ7).
+            ->withCount(['communityComments as comments_count' => fn ($q) => $q->where('status', 'visible')])
             ->when($types !== null, fn ($q) => $q->whereIn('content_type', $types))
             ->when($groupId !== null,
                 fn ($q) => $q->where('community_group_id', $groupId),
