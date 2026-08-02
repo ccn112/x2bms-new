@@ -162,6 +162,7 @@ Route::prefix('v1')->group(function () {
         Route::delete('community/posts/{post}', [CommunityPostController::class, 'destroy'])->whereNumber('post');
         Route::post('community/posts/{post}/reactions', [CommunityPostController::class, 'react'])->whereNumber('post');
         Route::delete('community/posts/{post}/reactions', [CommunityPostController::class, 'unreact'])->whereNumber('post');
+        Route::post('community/posts/{post}/share', [CommunityPostController::class, 'sharePost'])->whereNumber('post');
         Route::get('community/posts/{post}/comments', [CommunityPostController::class, 'comments'])->whereNumber('post');
         Route::post('community/posts/{post}/comments', [CommunityPostController::class, 'storeComment'])->whereNumber('post');
         // GĐ7 — cảm xúc trên bình luận cộng đồng.

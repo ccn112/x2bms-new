@@ -59,6 +59,7 @@ class CommunityPostResource extends JsonResource
             // này không vỡ khi chuyển sang hệ reaction nhiều loại.
             'likes' => (int) $tally['total'],
             'comments' => (int) ($this->comments_count ?? $this->comment_count ?? 0),
+            'shares' => (int) ($this->share_count ?? 0),
             'pinned' => (bool) $this->is_pinned,
             'important' => (bool) $this->is_important,
             // `image_urls` giữ nguyên cho app bản cũ; `images` là bản giàu có

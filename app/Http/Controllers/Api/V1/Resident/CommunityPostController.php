@@ -160,6 +160,25 @@ class CommunityPostController extends ApiController
         return $this->respondWithTally($model, $request);
     }
 
+    /**
+     * POST /resident/community/posts/{post}/share — đếm lượt chia sẻ (GĐ7).
+     *
+     * "Chia sẻ" ở app là copy link; trước không lưu nên feed không hiện số. Ghi
+     * nhận mỗi lần chia sẻ để hiện + bump realtime. Bài khóa vẫn chia sẻ được
+     * (chỉ là chia sẻ link đọc), nên KHÔNG chặn theo lock.
+     */
+    public function sharePost(Request $request, int $post): JsonResponse
+    {
+        $model = $this->findVisible($request, $post);
+        if (! $model) {
+            return ApiResponse::error('not_found', 'Bài viết không còn khả dụng.', 404);
+        }
+
+        $model->increment('share_count');
+
+        return ApiResponse::success(['shares' => (int) $model->share_count]);
+    }
+
     // ── Bình luận (module polymorphic dùng chung) ──────────────────────────────
 
     /**
@@ -309,6 +328,30 @@ class CommunityPostController extends ApiController
         $comment->is_mine = true;
 
         $model->increment('comment_count');
+
+        // @mention → đẩy push cho người được nhắc (kênh cộng đồng; ai tắt kênh
+        // thì PushService tự bỏ qua). Không tự nhắc chính mình.
+        if (! empty($data['mentioned_user_ids'])) {
+            $push = app(\App\Services\Push\PushService::class);
+            $snippet = mb_substr(trim($data['body']), 0, 80);
+            $targets = \App\Models\User::query()
+                ->whereIn('id', $data['mentioned_user_ids'])
+                ->where('id', '!=', $user->id)
+                ->get();
+            foreach ($targets as $target) {
+                $push->toUser(
+                    $target,
+                    $author['name'].' đã nhắc bạn trong một bình luận',
+                    $snippet,
+                    [
+                        'type' => 'community_mention',
+                        'post_id' => (string) $model->id,
+                        'comment_id' => (string) $comment->id,
+                    ],
+                    \App\Enums\NotificationChannel::Community,
+                );
+            }
+        }
 
         return ApiResponse::success(CommentResource::make($comment)->resolve($request), [], 201);
     }

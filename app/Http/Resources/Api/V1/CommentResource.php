@@ -24,6 +24,9 @@ class CommentResource extends JsonResource
             'body' => $this->body,
             'is_staff' => $staff,
             'author' => [
+                // user_id để app dựng danh sách @mention (nhắc người đã bình luận).
+                // Nhân sự BQL không cho nhắc (không phải cư dân trong feed).
+                'user_id' => $staff ? null : ($this->user_id ? (string) $this->user_id : null),
                 'name' => $this->author_name ?? $this->user?->name ?? 'Cư dân',
                 'subtitle' => $this->author_subtitle,
                 'avatar_url' => $staff ? null : $this->user?->avatar_url,
