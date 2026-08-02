@@ -32,18 +32,27 @@ use Illuminate\Support\Carbon;
  */
 class DebtByServiceDemoSeeder extends Seeder
 {
-    private const EMAIL = 'test.cudan1@x2bms.vn';
+    /** Cả hai TK test (Samsung = cudan2) — mỗi TK một biển số để test được ngay. */
+    private const ACCOUNTS = [
+        ['email' => 'test.cudan1@x2bms.vn', 'name' => 'Cư dân Test 1', 'plate' => '51K-838888'],
+        ['email' => 'test.cudan2@x2bms.vn', 'name' => 'Cư dân Test 2', 'plate' => '30F-686868'],
+    ];
 
     /** Ba kỳ dịch vụ đang nợ. */
     private const MONTHS = ['2026-05', '2026-06', '2026-07'];
 
     private const AMOUNT = 1_500_000;
 
-    private const PLATE = '51K-838888';
-
     public function run(): void
     {
-        [$tenantId, $building, $apartment, $resident] = $this->resolveContext();
+        foreach (self::ACCOUNTS as $acc) {
+            $this->seedFor($acc['email'], $acc['name'], $acc['plate']);
+        }
+    }
+
+    private function seedFor(string $email, string $name, string $plate): void
+    {
+        [$tenantId, $building, $apartment, $resident] = $this->resolveContext($email, $name);
 
         // Loại phí gửi ô tô (family = parking → "Phương tiện"), đơn vị per_vehicle.
         $feeType = FeeType::withoutGlobalScopes()->firstOrCreate(
@@ -61,7 +70,7 @@ class DebtByServiceDemoSeeder extends Seeder
 
         // Chiếc xe sinh ra phí.
         $vehicle = Vehicle::withoutGlobalScopes()->firstOrCreate(
-            ['tenant_id' => $tenantId, 'plate_no' => self::PLATE],
+            ['tenant_id' => $tenantId, 'plate_no' => $plate],
             [
                 'building_id' => $building->id,
                 'apartment_id' => $apartment->id,
@@ -135,7 +144,7 @@ class DebtByServiceDemoSeeder extends Seeder
 
         $this->command?->info(sprintf(
             'D6 demo: %s › %s › %s › %d tháng = %s đ (căn #%d)',
-            'Phương tiện', 'Phí gửi ô tô', self::PLATE, count(self::MONTHS),
+            'Phương tiện', 'Phí gửi ô tô', $plate, count(self::MONTHS),
             number_format(self::AMOUNT * count(self::MONTHS)), $apartment->id,
         ));
     }
@@ -146,12 +155,12 @@ class DebtByServiceDemoSeeder extends Seeder
      *
      * @return array{0:int,1:Building,2:Apartment,3:?Resident}
      */
-    private function resolveContext(): array
+    private function resolveContext(string $email, string $name): array
     {
         $user = User::firstOrCreate(
-            ['email' => self::EMAIL],
+            ['email' => $email],
             [
-                'name' => 'Cư dân Test 1',
+                'name' => $name,
                 'password' => bcrypt('Test@2026!'),
                 'account_type' => 'resident',
                 'kyc_status' => 'verified',
