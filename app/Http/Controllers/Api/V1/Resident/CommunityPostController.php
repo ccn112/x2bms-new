@@ -133,9 +133,15 @@ class CommunityPostController extends ApiController
             return $locked;
         }
 
-        CommunityPostReaction::updateOrCreate(
+        $reaction = CommunityPostReaction::updateOrCreate(
             ['community_post_id' => $model->id, 'user_id' => $request->user()->id],
             ['emoji' => $data['emoji']],
+        );
+        $this->notifyReaction(
+            $model->author_user_id, $request->user(), $reaction->wasRecentlyCreated,
+            $request->user()->name.' đã bày tỏ cảm xúc về bài của bạn',
+            mb_substr(strip_tags((string) $model->body), 0, 80),
+            ['type' => 'community_reaction', 'post_id' => (string) $model->id],
         );
 
         return $this->respondWithTally($model, $request);
@@ -300,6 +306,7 @@ class CommunityPostController extends ApiController
 
         // Chỉ 1 cấp lồng — reply-của-reply gộp về bình luận cha.
         $parentId = null;
+        $parent = null;
         if (! empty($data['parent_id'])) {
             $parent = CommunityComment::where('community_post_id', $model->id)
                 ->whereKey($data['parent_id'])->first();
@@ -329,31 +336,82 @@ class CommunityPostController extends ApiController
 
         $model->increment('comment_count');
 
-        // @mention → đẩy push cho người được nhắc (kênh cộng đồng; ai tắt kênh
-        // thì PushService tự bỏ qua). Không tự nhắc chính mình.
-        if (! empty($data['mentioned_user_ids'])) {
-            $push = app(\App\Services\Push\PushService::class);
-            $snippet = mb_substr(trim($data['body']), 0, 80);
-            $targets = \App\Models\User::query()
-                ->whereIn('id', $data['mentioned_user_ids'])
-                ->where('id', '!=', $user->id)
-                ->get();
-            foreach ($targets as $target) {
-                $push->toUser(
-                    $target,
-                    $author['name'].' đã nhắc bạn trong một bình luận',
-                    $snippet,
-                    [
-                        'type' => 'community_mention',
-                        'post_id' => (string) $model->id,
-                        'comment_id' => (string) $comment->id,
-                    ],
-                    \App\Enums\NotificationChannel::Community,
-                );
-            }
-        }
+        // Đẩy push cho các bên liên quan (kênh cộng đồng; PushService tự bỏ ai
+        // đã tắt kênh). KHÔNG tự báo mình; mỗi người chỉ 1 push (mention ưu tiên
+        // > trả lời > bình luận-bài). Data mang post_id/comment_id để app mở
+        // đúng bài khi bấm vào thông báo.
+        $this->notifyComment($model, $comment, $parent, $author, $user, $data);
 
         return ApiResponse::success(CommentResource::make($comment)->resolve($request), [], 201);
+    }
+
+    /**
+     * Đẩy push khi có bình luận mới: người được @mention, chủ bình luận CHA (được
+     * trả lời), và tác giả BÀI (có bình luận mới). Mỗi người tối đa 1 push, ưu
+     * tiên mention > trả lời > bình luận-bài; không tự báo mình.
+     */
+    private function notifyComment(
+        CommunityPost $model,
+        CommunityComment $comment,
+        ?CommunityComment $parent,
+        array $author,
+        \App\Models\User $actor,
+        array $data,
+    ): void {
+        $push = app(\App\Services\Push\PushService::class);
+        $snippet = mb_substr(trim($data['body']), 0, 80);
+        $baseData = [
+            'post_id' => (string) $model->id,
+            'comment_id' => (string) $comment->id,
+        ];
+        $done = [$actor->id]; // không tự báo mình
+
+        // Thu thập đích theo thứ tự ưu tiên, mỗi user chỉ lấy lần đầu.
+        $targets = []; // uid => [type, title]
+        foreach ((array) ($data['mentioned_user_ids'] ?? []) as $mid) {
+            $mid = (int) $mid;
+            if ($mid > 0 && ! in_array($mid, $done, true) && ! isset($targets[$mid])) {
+                $targets[$mid] = ['community_mention', $author['name'].' đã nhắc bạn trong một bình luận'];
+            }
+        }
+        if ($parent && $parent->user_id && ! in_array((int) $parent->user_id, $done, true)
+            && ! isset($targets[(int) $parent->user_id])) {
+            $targets[(int) $parent->user_id] = ['community_reply', $author['name'].' đã trả lời bình luận của bạn'];
+        }
+        if ($model->author_user_id && ! in_array((int) $model->author_user_id, $done, true)
+            && ! isset($targets[(int) $model->author_user_id])) {
+            $targets[(int) $model->author_user_id] = ['community_comment', $author['name'].' đã bình luận về bài của bạn'];
+        }
+        if (empty($targets)) {
+            return;
+        }
+
+        $users = \App\Models\User::query()->whereIn('id', array_keys($targets))->get()->keyBy('id');
+        foreach ($targets as $uid => [$type, $title]) {
+            $u = $users->get($uid);
+            if (! $u) {
+                continue;
+            }
+            $push->toUser($u, $title, $snippet, ['type' => $type] + $baseData,
+                \App\Enums\NotificationChannel::Community);
+        }
+    }
+
+    /**
+     * Báo cho chủ bài/bình luận khi được thả cảm xúc — chỉ khi cảm xúc MỚI (đổi
+     * loại không báo lại), không tự báo mình.
+     */
+    private function notifyReaction(?int $targetUserId, \App\Models\User $actor, bool $isNew, string $title, string $body, array $data): void
+    {
+        if (! $isNew || ! $targetUserId || (int) $targetUserId === $actor->id) {
+            return;
+        }
+        $u = \App\Models\User::find($targetUserId);
+        if (! $u) {
+            return;
+        }
+        app(\App\Services\Push\PushService::class)
+            ->toUser($u, $title, $body, $data, \App\Enums\NotificationChannel::Community);
     }
 
     /** POST /resident/community/posts/{post}/comments/{comment}/reactions — GĐ7. */
@@ -367,9 +425,15 @@ class CommunityPostController extends ApiController
             return ApiResponse::error('not_found', 'Bình luận không còn khả dụng.', 404);
         }
 
-        CommunityCommentReaction::updateOrCreate(
+        $reaction = CommunityCommentReaction::updateOrCreate(
             ['community_comment_id' => $c->id, 'user_id' => $request->user()->id],
             ['emoji' => $data['emoji']],
+        );
+        $this->notifyReaction(
+            $c->user_id, $request->user(), $reaction->wasRecentlyCreated,
+            $request->user()->name.' đã bày tỏ cảm xúc về bình luận của bạn',
+            mb_substr((string) $c->body, 0, 80),
+            ['type' => 'community_reaction', 'post_id' => (string) $post, 'comment_id' => (string) $c->id],
         );
 
         return $this->commentTally($c, $request);
