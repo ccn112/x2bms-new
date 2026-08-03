@@ -132,12 +132,13 @@ class ApartmentWalletService
             if (bccomp($owed, '0', 2) <= 0) {
                 continue;
             }
+            // P1a/ADR-003: chốt legacy base TRƯỚC khi debit() tạo wallet-out ledger row.
+            $line->ensureLegacyBase();
             $category = $line->fee_category ?? optional($line->feeType)->category ?? 'other';
             $settled = $this->debit($wallet, $owed, $category, $line->fee_type_id, 'debt_settlement', $line, "Trả phí #{$line->id}");
             if (bccomp($settled, '0', 2) > 0) {
-                $line->paid_amount = bcadd((string) ($line->paid_amount ?? 0), $settled, 2);
-                $line->status = bccomp($line->outstanding(), '0', 2) <= 0 ? 'paid' : 'partial';
-                $line->save();
+                // `paid_amount` = legacy + Σ ledger; KHÔNG cộng tay (ledger row do debit() ghi).
+                $line->recomputePaidFromLedger();
                 $touchedStatementIds[$line->statement_id] = true;
             }
         }
@@ -241,15 +242,17 @@ class ApartmentWalletService
                 }
                 $take = bccomp((string) $bucket->balance, $owed, 2) >= 0 ? $owed : (string) $bucket->balance;
 
+                // P1a/ADR-003: chốt legacy base TRƯỚC khi ghi wallet-out ledger row.
+                $line->ensureLegacyBase();
+
                 $bucket->balance = bcsub((string) $bucket->balance, $take, 2);
                 $bucket->save();
 
-                $line->paid_amount = bcadd((string) ($line->paid_amount ?? 0), $take, 2);
-                $line->status = bccomp($line->outstanding(), '0', 2) <= 0 ? 'paid' : 'partial';
-                $line->save();
-
                 $this->log($wallet, 'out', 'debt_settlement', $take, $feeCategory, $feeTypeId, $line,
                     "Trả phí #{$line->id}", $userId);
+
+                // `paid_amount` = legacy + Σ ledger; recompute từ ledger vừa ghi, KHÔNG cộng tay.
+                $line->recomputePaidFromLedger();
 
                 $allocated = bcadd($allocated, $take, 2);
                 $perLine[$line->id] = $take;

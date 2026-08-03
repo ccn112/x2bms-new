@@ -199,6 +199,9 @@ class ResidentPaymentClaimReviewer
 
             $take = bccomp($remaining, $owed, 2) >= 0 ? $owed : $remaining;
 
+            // P1a/ADR-003: chốt legacy base TRƯỚC khi tạo allocation ledger row.
+            $line->ensureLegacyBase();
+
             PaymentAllocation::create([
                 'payment_id' => $payment->id,
                 'statement_id' => $statement->id,
@@ -206,7 +209,8 @@ class ResidentPaymentClaimReviewer
                 'amount' => $take,
             ]);
 
-            $line->forceFill(['paid_amount' => bcadd((string) $line->paid_amount, $take, 2)])->save();
+            // `paid_amount` = legacy + Σ ledger; recompute từ allocation vừa tạo, KHÔNG cộng tay.
+            $line->recomputePaidFromLedger();
 
             $remaining = bcsub($remaining, $take, 2);
             $allocated = bcadd($allocated, $take, 2);
@@ -254,13 +258,15 @@ class ResidentPaymentClaimReviewer
                 continue;
             }
 
+            $line->ensureLegacyBase();
+
             PaymentAllocation::create([
                 'payment_id' => $payment->id,
                 'statement_id' => $statement->id,
                 'statement_line_id' => $line->id,
                 'amount' => $take,
             ]);
-            $line->forceFill(['paid_amount' => bcadd((string) $line->paid_amount, $take, 2)])->save();
+            $line->recomputePaidFromLedger();
 
             $remaining = bcsub($remaining, $take, 2);
             $allocated = bcadd($allocated, $take, 2);
