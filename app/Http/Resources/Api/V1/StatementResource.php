@@ -33,9 +33,22 @@ class StatementResource extends JsonResource
             ? $due->format('Y-m-d')
             : ($due !== null ? substr((string) $due, 0, 10) : null);
 
+        // Server-driven capability: app KHÔNG tự suy diễn "được thanh toán" từ số
+        // dư (handoff Billing §server-driven). Còn nợ + đã phát hành ⇒ cho phép
+        // thanh toán và nộp chứng từ. Detail đã chặn bảng kê chưa phát hành ở
+        // controller; list chỉ trả bảng kê cư dân được thấy.
+        $total = (int) ($this->total_amount ?? 0);
+        $paid = (int) ($this->paid_amount ?? 0);
+        $balance = max(0, $total - $paid);
+        $canPay = $balance > 0;
+
         return [
             'id' => $this->id,
             'code' => $this->code,
+            'capabilities' => [
+                'can_pay' => $canPay,
+                'can_submit_claim' => $canPay,
+            ],
             'apartment_id' => $this->apartment_id,
             'billing_period_id' => $this->billing_period_id,
             'period' => $period,

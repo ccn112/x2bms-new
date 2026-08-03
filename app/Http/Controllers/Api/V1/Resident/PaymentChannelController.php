@@ -60,9 +60,17 @@ class PaymentChannelController extends ApiController
     public function index(Request $request): JsonResponse
     {
         $channels = $this->enabledChannels($request)->map(function (PaymentChannel $c) {
+            $name = $c->display_name ?? $this->defaultName($c->channel);
             $out = [
                 'channel' => $c->channel,
-                'display_name' => $c->display_name ?? $this->defaultName($c->channel),
+                'display_name' => $name,
+                // Contract server-driven (handoff Billing §methods): mỗi method có
+                // enabled + label + reason_disabled để app render trạng thái "Chưa
+                // khả dụng" thay vì tự suy diễn. Ở đây chỉ trả cổng đã bật nên
+                // enabled=true; khi có catalog cổng tắt sẽ trả kèm reason_disabled.
+                'enabled' => true,
+                'label' => $name,
+                'reason_disabled' => null,
                 'sort' => $c->sort,
             ];
             if ($c->channel === 'vietqr') {

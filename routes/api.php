@@ -133,9 +133,11 @@ Route::prefix('v1')->group(function () {
         Route::get('debts/by-service', [DebtByServiceController::class, 'show']);
         // D6 Slice B — trả trước công nợ theo TÀI SẢN: phân bổ đúng dòng đã chọn,
         // tiền thừa earmark vào ngăn ví theo chiều tài sản.
-        Route::post('debts/by-service/pay', [DebtByAssetPaymentController::class, 'pay']);
+        Route::post('debts/by-service/pay', [DebtByAssetPaymentController::class, 'pay'])
+            ->middleware('idempotency');
         // P4 — Preview phân bổ TRƯỚC khi thanh toán (read-only): chọn dòng + số tiền → mỗi dòng trừ bao nhiêu.
-        Route::post('billing/payment-preview', [PaymentPreviewController::class, 'preview']);
+        Route::post('billing/payment-preview', [PaymentPreviewController::class, 'preview'])
+            ->middleware('idempotency');
 
         // Ví cư dân theo căn hộ: số dư + các ngăn + nợ per-service, và sổ ví (phiếu thu / hạch toán).
         Route::get('wallet', [WalletController::class, 'show']);
@@ -232,12 +234,13 @@ Route::prefix('v1')->group(function () {
         Route::get('payments', [PaymentController::class, 'index']);
         // Cổng thanh toán: liệt kê cổng bật + tạo intent (VietQR/VNPay/MoMo).
         Route::get('payment-methods', [PaymentChannelController::class, 'index']);
-        Route::post('payments/intent', [PaymentChannelController::class, 'intent']);
+        Route::post('payments/intent', [PaymentChannelController::class, 'intent'])
+            ->middleware('idempotency');
         // Cư dân tự chuyển khoản → nộp ảnh chứng từ, BQL duyệt (chốt 30/07).
         // Đặt TRƯỚC `payments/{payment}` vì route số cụ thể phải ăn trước tham số;
         // whereNumber ở dưới đã chặn, nhưng thứ tự này là hàng rào thứ hai.
         Route::post('payments/claim', [PaymentController::class, 'claim'])
-            ->middleware('throttle:20,1');
+            ->middleware(['throttle:20,1', 'idempotency']);
         Route::get('payments/{payment}', [PaymentController::class, 'show'])
             ->whereNumber('payment');
 

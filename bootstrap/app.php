@@ -29,6 +29,8 @@ return Application::configure(basePath: dirname(__DIR__))
             // Sanctum token-ability gates for /api/v1 (resident vs staff).
             'abilities' => Laravel\Sanctum\Http\Middleware\CheckAbilities::class,
             'ability' => Laravel\Sanctum\Http\Middleware\CheckForAnyAbility::class,
+            // Chống double-submit POST tài chính qua header Idempotency-Key.
+            'idempotency' => App\Http\Middleware\EnsureIdempotency::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
