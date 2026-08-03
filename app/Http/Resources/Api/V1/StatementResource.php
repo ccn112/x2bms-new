@@ -26,6 +26,13 @@ class StatementResource extends JsonResource
             ];
         });
 
+        // Hạn thanh toán HIỆU LỰC: ưu tiên của bảng kê; thiếu thì lấy của kỳ phí
+        // (import cũ chỉ set hạn ở cấp kỳ/dòng) — để app tính "quá hạn" cho chip.
+        $due = $this->due_date ?? $this->billingPeriod?->due_date;
+        $dueStr = $due instanceof \DateTimeInterface
+            ? $due->format('Y-m-d')
+            : ($due !== null ? substr((string) $due, 0, 10) : null);
+
         return [
             'id' => $this->id,
             'code' => $this->code,
@@ -36,7 +43,7 @@ class StatementResource extends JsonResource
             'total_amount' => $this->total_amount === null ? null : (string) $this->total_amount,
             'paid_amount' => $this->paid_amount === null ? null : (string) $this->paid_amount,
             'currency' => $this->currency ?? 'VND',
-            'due_date' => $this->due_date?->toDateString(),
+            'due_date' => $dueStr,
             'issued_at' => $this->issued_at?->toIso8601String(),
             'published_at' => $this->published_at?->toIso8601String(),
             'lines' => StatementLineResource::collection($this->whenLoaded('lines')),

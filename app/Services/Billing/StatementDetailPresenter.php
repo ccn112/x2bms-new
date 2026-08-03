@@ -101,6 +101,7 @@ class StatementDetailPresenter
             'amount' => (string) $amount,
             'paid_amount' => (string) $paid,
             'outstanding' => (string) max($amount - $paid, 0),
+            'note' => $l->note,
         ];
 
         // Điện/nước: chỉ số đầu/cuối + tiêu thụ + bậc (nếu có trong snapshot).
