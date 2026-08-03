@@ -23,6 +23,7 @@ class Notification extends Model
 
     protected $casts = [
         'is_pinned' => 'boolean',
+        'requires_ack' => 'boolean',
         'publish_at' => 'datetime',
         'expires_at' => 'datetime',
         'published_at' => 'datetime',

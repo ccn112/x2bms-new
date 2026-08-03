@@ -24,6 +24,14 @@ class NotificationResource extends JsonResource
         return [
             'id' => (string) $this->id,
             'kind' => $this->type,
+            // Trục taxonomy hộp thư hợp nhất (fallback type khi chưa backfill).
+            'category' => $this->category ?? $this->type,
+            'subtype' => $this->subtype,
+            'action_key' => $this->action_key,
+            'entity' => ($this->entity_type === null && $this->entity_id === null)
+                ? null
+                : ['type' => $this->entity_type, 'id' => $this->entity_id === null ? null : (string) $this->entity_id],
+            'requires_ack' => (bool) $this->requires_ack,
             'title' => $this->title,
             'summary' => $this->summary,
             'cover_url' => $cover,

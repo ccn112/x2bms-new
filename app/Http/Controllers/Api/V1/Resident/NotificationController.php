@@ -31,9 +31,22 @@ class NotificationController extends ApiController
         $user = $request->user();
         $contextId = $request->header('X-Context-Id');
         $perPage = min((int) $request->integer('per_page', 20), 50);
+        // Bộ lọc hộp thư hợp nhất: theo nhóm (category, fallback type) + chỉ chưa đọc.
+        $category = $request->string('category')->trim()->value();
+        $unreadOnly = $request->boolean('unread');
 
-        $paginator = $this->notifications->visibleQuery($user, $contextId)
-            ->withCount('comments')
+        $query = $this->notifications->visibleQuery($user, $contextId)
+            ->withCount('comments');
+        if ($category !== '') {
+            $query->where(function ($c) use ($category): void {
+                $c->where('category', $category)->orWhere('type', $category);
+            });
+        }
+        if ($unreadOnly && $user->id !== null) {
+            $query->whereDoesntHave('reads', fn ($r) => $r->where('user_id', $user->id)->whereNotNull('read_at'));
+        }
+
+        $paginator = $query
             ->orderByDesc('is_pinned')
             ->orderByDesc('published_at')
             ->orderByDesc('id')
@@ -176,6 +189,27 @@ class NotificationController extends ApiController
             'id' => (string) $notification,
             'is_read' => true,
             'unread_notification_count' => $this->notifications->unreadCount($request->user(), $request->header('X-Context-Id')),
+        ]);
+    }
+
+    /** GET /api/v1/resident/notifications/summary — unread tổng + breakdown nhóm. */
+    public function summary(Request $request): JsonResponse
+    {
+        return ApiResponse::success(
+            $this->notifications->summary($request->user(), $request->header('X-Context-Id')),
+        );
+    }
+
+    /** POST /api/v1/resident/notifications/read-all — đánh dấu đã đọc tất cả (tùy chọn ?category=). */
+    public function readAll(Request $request): JsonResponse
+    {
+        $contextId = $request->header('X-Context-Id');
+        $category = $request->string('category')->trim()->value();
+        $marked = $this->notifications->markAllRead($request->user(), $contextId, $category === '' ? null : $category);
+
+        return ApiResponse::success([
+            'marked' => $marked,
+            'unread_notification_count' => $this->notifications->unreadCount($request->user(), $contextId),
         ]);
     }
 }

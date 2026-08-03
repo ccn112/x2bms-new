@@ -145,6 +145,9 @@ Route::prefix('v1')->group(function () {
 
         // Thông báo cư dân.
         Route::get('notifications', [NotificationController::class, 'index']);
+        // Đặt TRƯỚC route số/{notification} để `summary` không bị nuốt làm id.
+        Route::get('notifications/summary', [NotificationController::class, 'summary']);
+        Route::post('notifications/read-all', [NotificationController::class, 'readAll']);
         Route::post('notifications/{notification}/read', [NotificationController::class, 'read']);
         Route::get('notifications/{notification}/comments', [NotificationController::class, 'comments']);
         Route::post('notifications/{notification}/comments', [NotificationController::class, 'storeComment']);

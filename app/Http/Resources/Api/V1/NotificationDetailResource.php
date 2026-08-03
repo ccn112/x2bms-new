@@ -24,6 +24,13 @@ class NotificationDetailResource extends JsonResource
         return [
             'id' => (string) $this->id,
             'kind' => $this->type,
+            'category' => $this->category ?? $this->type,
+            'subtype' => $this->subtype,
+            'action_key' => $this->action_key,
+            'entity' => ($this->entity_type === null && $this->entity_id === null)
+                ? null
+                : ['type' => $this->entity_type, 'id' => $this->entity_id === null ? null : (string) $this->entity_id],
+            'requires_ack' => (bool) $this->requires_ack,
             'title' => $this->title,
             'summary' => $this->summary,
             'body' => $this->body,
