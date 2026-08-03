@@ -36,12 +36,13 @@ class DebtByAssetPaymentController extends ApiController
     public function pay(Request $request): JsonResponse
     {
         $data = $request->validate([
-            'subject_type' => ['required', 'string', 'in:vehicle,meter,apartment'],
-            // Xe/đồng hồ: bắt buộc id; căn hộ (phí không gắn tài sản): để trống.
+            // TÙY CHỌN: có → trả trước theo MỘT tài sản (earmark dư vào ngăn tài sản);
+            // KHÔNG có → thanh toán XUYÊN nhiều dịch vụ/tháng/tài sản (dư vào quỹ chung).
+            'subject_type' => ['nullable', 'string', 'in:vehicle,meter,apartment'],
             'subject_id' => ['nullable', 'integer'],
             'line_ids' => ['required', 'array', 'min:1'],
             'line_ids.*' => ['integer'],
-            // Đồng (integer); app D6 gửi số nguyên đồng.
+            // Đồng (integer); app gửi số nguyên đồng.
             'amount' => ['required', 'integer', 'min:1000', 'max:5000000000'],
         ]);
 
@@ -51,9 +52,9 @@ class DebtByAssetPaymentController extends ApiController
             return ApiResponse::error('no_apartment', 'Chưa xác định được căn hộ của bạn.', 422);
         }
 
-        $subjectType = $data['subject_type'];
+        $subjectType = $data['subject_type'] ?? null;
         $subjectId = $subjectType === 'apartment' ? null : ($data['subject_id'] ?? null);
-        if ($subjectType !== 'apartment' && $subjectId === null) {
+        if ($subjectType !== null && $subjectType !== 'apartment' && $subjectId === null) {
             return ApiResponse::error('subject_id_required',
                 'Thiếu mã tài sản cần thanh toán.', 422);
         }
@@ -82,59 +83,56 @@ class DebtByAssetPaymentController extends ApiController
             }
         }
 
-        // Mọi dòng phải cùng MỘT tài sản đúng như cư dân khai — nếu không thì phần
-        // dư biết earmark vào ngăn tài sản nào.
-        foreach ($lines as $line) {
-            [$type, $id] = $this->subjectRef($line);
-            if ($type !== $subjectType || (string) $id !== (string) $subjectId) {
-                return ApiResponse::error('subject_mismatch',
-                    'Có dòng phí không thuộc tài sản đã chọn.', 422);
-            }
-        }
-
-        // Ngăn earmark key theo (fee_category, fee_type_id, subject). Trộn nhiều loại
-        // phí trong một lượt trả sẽ không có một ngăn đích rõ ràng cho phần dư.
-        if ($lines->pluck('fee_type_id')->unique()->count() > 1) {
-            return ApiResponse::error('mixed_fee_type',
-                'Chỉ chọn các tháng của cùng một loại phí trong một lần trả.', 422);
-        }
-
+        // Một lượt trả cho MỘT căn hộ (dù nhiều dịch vụ/tháng).
         $first = $lines->first();
-        $feeCategory = $first->fee_category ?? $first->feeType?->category ?? 'other';
-        $feeTypeId = $first->fee_type_id !== null ? (int) $first->fee_type_id : null;
-
-        // Chiều tài sản LƯU vào ngăn = giá trị thô trên dòng (morph class FQCN +
-        // id), khớp `statement_lines.subject_*`; NULL cho phí không gắn tài sản.
-        $bucketSubjectType = $first->subject_type;
-        $bucketSubjectId = $first->subject_id !== null ? (int) $first->subject_id : null;
-
         $apartmentId = (int) $first->statement->apartment_id;
         $apartment = Apartment::query()->whereIn('id', $apartmentIds)->whereKey($apartmentId)->first();
         if ($apartment === null) {
-            return ApiResponse::error('forbidden',
-                'Bạn không phải cư dân của căn hộ này.', 403);
+            return ApiResponse::error('forbidden', 'Bạn không phải cư dân của căn hộ này.', 403);
+        }
+        foreach ($lines as $line) {
+            if ((int) $line->statement?->apartment_id !== $apartmentId) {
+                return ApiResponse::error('mixed_apartment',
+                    'Chỉ chọn các khoản của cùng một căn hộ trong một lần thanh toán.', 422);
+            }
         }
         $wallet = $this->wallets->walletFor($apartment);
 
         // Thứ tự phân bổ DÙNG CHUNG — building đã eager-load để không N+1 khi sắp.
         $sorted = $lines->sortBy(fn (StatementLine $l) => $l->allocationSortKey())->values();
 
-        $result = $this->wallets->settleAssetLines(
-            $wallet,
-            $sorted,
-            (string) $data['amount'],
-            (string) $feeCategory,
-            $feeTypeId,
-            $bucketSubjectType,
-            $bucketSubjectId,
-            $user->id,
-        );
+        if ($subjectType !== null) {
+            // TRẢ TRƯỚC theo MỘT tài sản (D6): dồn cùng tài sản + cùng loại phí, dư
+            // earmark vào ngăn tài sản để lần sau tự trừ đúng tài sản đó.
+            foreach ($lines as $line) {
+                [$type, $id] = $this->subjectRef($line);
+                if ($type !== $subjectType || (string) $id !== (string) $subjectId) {
+                    return ApiResponse::error('subject_mismatch',
+                        'Có dòng phí không thuộc tài sản đã chọn.', 422);
+                }
+            }
+            if ($lines->pluck('fee_type_id')->unique()->count() > 1) {
+                return ApiResponse::error('mixed_fee_type',
+                    'Chỉ chọn các tháng của cùng một loại phí khi trả trước theo tài sản.', 422);
+            }
+            $result = $this->wallets->settleAssetLines(
+                $wallet, $sorted, (string) $data['amount'],
+                (string) ($first->fee_category ?? $first->feeType?->category ?? 'other'),
+                $first->fee_type_id !== null ? (int) $first->fee_type_id : null,
+                $first->subject_type,
+                $first->subject_id !== null ? (int) $first->subject_id : null,
+                $user->id,
+            );
+            $overflow = $result['bucket_balance'];
+        } else {
+            // THANH TOÁN XUYÊN nhiều dịch vụ/tháng/tài sản — phần dư vào quỹ chung.
+            $result = $this->wallets->settleLinesAcross($wallet, $sorted, (string) $data['amount'], $user->id);
+            $overflow = $result['overflow'];
+        }
 
         return ApiResponse::success([
             'allocated' => $this->dong($result['allocated']),
-            // Phần thừa đã earmark vào ngăn tài sản (số dư ngăn sau lượt trả).
-            'overflow' => $this->dong($result['bucket_balance']),
-            'bucket_balance' => $this->dong($result['bucket_balance']),
+            'overflow' => $this->dong($overflow),
             'subject_type' => $subjectType,
             'subject_id' => $subjectId !== null ? (string) $subjectId : null,
             'lines' => $sorted->map(fn (StatementLine $l) => [

@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\Apartment;
+use App\Models\ApartmentWallet;
 use App\Models\ApartmentWalletBucket;
 use App\Models\BillingPeriod;
 use App\Models\Building;
@@ -90,6 +91,39 @@ class DebtByAssetPaymentTest extends TestCase
         }
 
         return compact('user', 'apartment', 'vehicle', 'oto', 'lines');
+    }
+
+    public function test_thanh_toan_xuyen_nhieu_dich_vu_du_vao_quy_chung(): void
+    {
+        $s = $this->scope('MIX', ['2026-05']);
+        $apt = $s['apartment'];
+        $vehLine = $s['lines']['2026-05']; // phí xe 1.500.000
+
+        // Thêm dòng phí quản lý (không gắn tài sản) ở kỳ khác.
+        $ql = FeeType::create(['tenant_id' => $apt->tenant_id, 'code' => 'QL-MIX', 'name' => 'Phí quản lý', 'category' => 'management', 'status' => 'active', 'payment_priority' => 100]);
+        $period = BillingPeriod::create(['tenant_id' => $apt->tenant_id, 'building_id' => $apt->building_id, 'code' => '2026-06', 'label' => 'T6', 'period_month' => '2026-06-01']);
+        $stmt = Statement::create(['tenant_id' => $apt->tenant_id, 'building_id' => $apt->building_id, 'apartment_id' => $apt->id, 'billing_period_id' => $period->id, 'total_amount' => '500000', 'paid_amount' => 0, 'status' => 'issued', 'approval_status' => Statement::APPROVAL_PUBLISHED, 'published_at' => now()]);
+        $qlLine = StatementLine::create(['statement_id' => $stmt->id, 'fee_type' => 'Phí quản lý', 'fee_type_id' => $ql->id, 'fee_category' => 'management', 'service_period_start' => '2026-06-01', 'amount' => 500000, 'paid_amount' => 0, 'status' => 'issued']);
+
+        Sanctum::actingAs($s['user'], ['resident']);
+
+        // Trả 2.100.000 XUYÊN 2 dịch vụ (xe 1.5tr + quản lý 500k = 2tr), KHÔNG gửi
+        // subject_type → phân bổ hết + dư 100k vào QUỸ CHUNG (không earmark tài sản).
+        $res = $this->postJson('/api/v1/resident/debts/by-service/pay', [
+            'line_ids' => [$vehLine->id, $qlLine->id],
+            'amount' => 2_100_000,
+        ])->assertOk();
+
+        $data = $res->json('data');
+        $this->assertSame(2_000_000, $data['allocated']);
+        $this->assertSame(100_000, $data['overflow']);
+        $this->assertSame('paid', $vehLine->fresh()->status);
+        $this->assertSame('paid', $qlLine->fresh()->status);
+
+        // Dư 100k ở QUỸ CHUNG (wallet.balance), KHÔNG vào ngăn tài sản.
+        $wallet = ApartmentWallet::where('apartment_id', $apt->id)->first();
+        $this->assertSame('100000.00', (string) $wallet->balance);
+        $this->assertSame(0, ApartmentWalletBucket::where('wallet_id', $wallet->id)->whereNotNull('subject_id')->count());
     }
 
     public function test_phan_bo_dung_line_da_chon_va_tien_thua_vao_ngan_tai_san(): void

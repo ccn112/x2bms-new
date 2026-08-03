@@ -208,6 +208,72 @@ class ApartmentWalletService
      * @param  iterable<StatementLine>  $lines  các dòng ĐÃ SẮP theo allocationSortKey
      * @return array{allocated:string, bucket_balance:string, per_line:array<int,string>}
      */
+    /**
+     * Thanh toán XUYÊN NHIỀU dịch vụ/tháng/tài sản trong MỘT lượt (không giới hạn
+     * cùng tài sản). Nạp `amount`, phân bổ vào các dòng đã chọn theo thứ tự
+     * `allocationSortKey` (cap ở phần còn nợ mỗi dòng); phần DƯ đưa vào QUỸ CHUNG
+     * của ví (không earmark theo tài sản vì lượt trả gồm nhiều tài sản).
+     *
+     * Mỗi lần trả một dòng ghi một `apartment_wallet_transactions` (out, ref=dòng)
+     * rồi `recomputePaidFromLedger()` — đúng bất biến P1a (paid_amount = Σ ledger).
+     *
+     * @param  iterable<StatementLine>  $lines  các dòng ĐÃ SẮP theo allocationSortKey
+     * @return array{allocated:string, overflow:string, per_line:array<int,string>}
+     */
+    public function settleLinesAcross(
+        ApartmentWallet $wallet,
+        iterable $lines,
+        string $amount,
+        ?int $userId = null,
+    ): array {
+        return DB::transaction(function () use ($wallet, $lines, $amount, $userId) {
+            $remaining = $amount;
+            $allocated = '0';
+            $perLine = [];
+            $touchedStatementIds = [];
+
+            foreach ($lines as $line) {
+                if (bccomp($remaining, '0', 2) <= 0) {
+                    $perLine[$line->id] = '0';
+
+                    continue;
+                }
+                $owed = $line->outstanding();
+                if (bccomp($owed, '0', 2) <= 0) {
+                    $perLine[$line->id] = '0';
+
+                    continue;
+                }
+                $take = bccomp($remaining, $owed, 2) >= 0 ? $owed : $remaining;
+
+                $line->ensureLegacyBase();
+                $category = $line->fee_category ?? optional($line->feeType)->category ?? 'other';
+                $this->log($wallet, 'out', 'debt_settlement', $take, $category, $line->fee_type_id, $line,
+                    "Trả phí #{$line->id}", $userId);
+                $line->recomputePaidFromLedger();
+
+                $remaining = bcsub($remaining, $take, 2);
+                $allocated = bcadd($allocated, $take, 2);
+                $perLine[$line->id] = $take;
+                $touchedStatementIds[$line->statement_id] = true;
+            }
+
+            // Phần dư → QUỸ CHUNG (general balance), có log 'in' để sổ ví liền mạch.
+            if (bccomp($remaining, '0', 2) > 0) {
+                $wallet->balance = bcadd((string) $wallet->balance, $remaining, 2);
+                $wallet->save();
+                $this->log($wallet, 'in', 'topup', $remaining, null, null, null,
+                    'Dư sau thanh toán nhiều khoản', $userId);
+            }
+
+            foreach (array_keys($touchedStatementIds) as $statementId) {
+                Statement::find($statementId)?->recomputePaidAmount();
+            }
+
+            return ['allocated' => $allocated, 'overflow' => $remaining, 'per_line' => $perLine];
+        });
+    }
+
     public function settleAssetLines(
         ApartmentWallet $wallet,
         iterable $lines,
