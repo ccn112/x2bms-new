@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api\V1\Resident;
 
 use App\Http\Controllers\Api\V1\ApiController;
 use App\Http\Resources\Api\V1\StatementResource;
+use App\Services\Billing\StatementDetailPresenter;
 use App\Models\Statement;
 use App\Services\Resident\ResidentContextService;
 use App\Support\Api\ApiResponse;
@@ -62,8 +63,13 @@ class StatementController extends ApiController
             throw new NotFoundHttpException;
         }
 
-        $statement->load(['lines.feeType', 'billingPeriod']);
+        $statement->load(['lines.feeType', 'lines.subject', 'billingPeriod']);
 
-        return ApiResponse::success(StatementResource::make($statement)->resolve($request));
+        // FIN-11: gom 5 billing family + cột tiền + chỉ số điện/nước (presenter thuần,
+        // ledger-backed). Giữ `lines` phẳng cho tương thích client cũ.
+        $payload = StatementResource::make($statement)->resolve($request);
+        $payload['families'] = (new StatementDetailPresenter)->familiesFor($statement);
+
+        return ApiResponse::success($payload);
     }
 }
