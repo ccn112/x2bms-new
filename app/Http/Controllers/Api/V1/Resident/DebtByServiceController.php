@@ -22,10 +22,20 @@ class DebtByServiceController extends ApiController
 {
     public function __construct(private readonly DebtByServiceService $debts) {}
 
-    /** GET /api/v1/resident/debts/by-service */
+    /** GET /api/v1/resident/debts/by-service?family=&from=&to= */
     public function show(Request $request): JsonResponse
     {
-        $tree = $this->debts->tree($request->user(), $request->header('X-Context-Id'));
+        $data = $request->validate([
+            'family' => ['nullable', 'string', 'in:all,management,electricity,water,vehicle,other'],
+            'from' => ['nullable', 'date_format:Y-m-d'],
+            'to' => ['nullable', 'date_format:Y-m-d'],
+        ]);
+
+        $tree = $this->debts->tree(
+            $request->user(),
+            $request->header('X-Context-Id'),
+            ['family' => $data['family'] ?? null, 'from' => $data['from'] ?? null, 'to' => $data['to'] ?? null],
+        );
 
         return ApiResponse::success($tree);
     }

@@ -2,6 +2,7 @@
 
 namespace App\Services\Billing;
 
+use App\Enums\BillingFamily;
 use App\Models\Meter;
 use App\Models\Statement;
 use App\Models\StatementLine;
@@ -33,18 +34,33 @@ class DebtByServiceService
         'other' => 'Khác',
     ];
 
-    /** @return array{families: array, total_outstanding: string} */
-    public function tree(User $user, ?string $contextId): array
+    /**
+     * @param  array{family?:?string, from?:?string, to?:?string}  $filters  Lọc FIN-12:
+     *   `family` = một trong 5 billing family; `from`/`to` = khoảng `service_period_start`
+     *   (YYYY-MM-DD). Bỏ trống = không lọc.
+     * @return array{families: array, total_outstanding: string, filter: array}
+     */
+    public function tree(User $user, ?string $contextId, array $filters = []): array
     {
+        $family = $filters['family'] ?? null;
+        $from = $filters['from'] ?? null;
+        $to = $filters['to'] ?? null;
+
         $apartmentIds = $this->context->apartmentIds($user, $contextId);
         if (empty($apartmentIds)) {
-            return ['families' => [], 'total_outstanding' => '0.00'];
+            return ['families' => [], 'total_outstanding' => '0.00', 'filter' => compact('family', 'from', 'to')];
         }
 
         $lines = StatementLine::query()
             ->whereHas('statement', fn ($q) => $q
                 ->visibleToResident()->whereIn('apartment_id', $apartmentIds))
             ->outstanding()
+            ->when($family !== null && $family !== '' && $family !== 'all',
+                fn ($q) => $q->where('fee_category', $family))
+            ->when($from !== null && $from !== '',
+                fn ($q) => $q->where('service_period_start', '>=', $from))
+            ->when($to !== null && $to !== '',
+                fn ($q) => $q->where('service_period_start', '<=', $to))
             ->with(['feeType:id,name,unit', 'subject', 'statement:id,billing_period_id'])
             ->with('statement.billingPeriod:id,period_month')
             ->orderBy('service_period_start')
@@ -68,7 +84,9 @@ class DebtByServiceService
 
             $families[$famKey] ??= [
                 'family' => $famKey,
-                'label' => self::FAMILY_LABEL[$famKey] ?? ucfirst($famKey),
+                'label' => BillingFamily::tryFrom($famKey)?->label()
+                    ?? self::FAMILY_LABEL[$famKey] ?? ucfirst($famKey),
+                'priority' => BillingFamily::tryFrom($famKey)?->defaultPriority() ?? 950,
                 'outstanding' => '0.00',
                 '_ft' => [],
             ];
@@ -106,6 +124,9 @@ class DebtByServiceService
             ];
         }
 
+        // Sắp family theo thứ tự canonical (management→water→electricity→vehicle→other).
+        uasort($families, fn ($a, $b) => $a['priority'] <=> $b['priority']);
+
         // Bỏ khoá tạm (_ft/_subj) → mảng tuần tự.
         $out = [];
         foreach ($families as $fam) {
@@ -116,11 +137,11 @@ class DebtByServiceService
                 $fts[] = $ft;
             }
             $fam['fee_types'] = $fts;
-            unset($fam['_ft']);
+            unset($fam['_ft'], $fam['priority']);
             $out[] = $fam;
         }
 
-        return ['families' => $out, 'total_outstanding' => $total];
+        return ['families' => $out, 'total_outstanding' => $total, 'filter' => compact('family', 'from', 'to')];
     }
 
     /** @return array{0:string,1:?string,2:string,3:?string} [key, id, label, sublabel] */

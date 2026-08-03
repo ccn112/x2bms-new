@@ -132,6 +132,38 @@ class DebtByServiceTest extends TestCase
         $this->assertSame('500000.00', $aptSubject['outstanding']);
     }
 
+    public function test_loc_theo_family_va_khoang_thoi_gian(): void
+    {
+        $tenant = Tenant::create(['code' => 'TEN-D6F', 'name' => 'T']);
+        $project = Project::create(['tenant_id' => $tenant->id, 'code' => 'PRJ-D6F', 'name' => 'P']);
+        $building = Building::create(['tenant_id' => $tenant->id, 'project_id' => $project->id, 'code' => 'BLD-D6F', 'name' => 'B']);
+        $apartment = Apartment::create(['tenant_id' => $tenant->id, 'building_id' => $building->id, 'code' => 'APT-D6F']);
+        $user = User::create(['name' => 'CD', 'email' => 'd6f@test.vn', 'password' => bcrypt('x'), 'account_type' => 'resident']);
+        $resident = Resident::create(['tenant_id' => $tenant->id, 'building_id' => $building->id, 'user_id' => $user->id, 'code' => 'RES-D6F', 'full_name' => 'CD']);
+        ResidentApartmentRelation::create(['tenant_id' => $tenant->id, 'resident_id' => $resident->id, 'apartment_id' => $apartment->id, 'role' => 'owner', 'is_primary' => true]);
+        $ql = FeeType::create(['tenant_id' => $tenant->id, 'code' => 'QL', 'name' => 'Phí quản lý', 'category' => 'management', 'status' => 'active']);
+        $nuoc = FeeType::create(['tenant_id' => $tenant->id, 'code' => 'NUOC', 'name' => 'Phí nước', 'category' => 'utility', 'status' => 'active']);
+
+        foreach (['2026-06', '2026-07'] as $ym) {
+            $st = $this->publishedStatement($tenant, $building, $apartment, $ym, '700000');
+            StatementLine::create(['statement_id' => $st->id, 'fee_type' => 'Phí quản lý', 'fee_type_id' => $ql->id, 'fee_category' => 'management', 'service_period_start' => $ym.'-01', 'amount' => 500000, 'paid_amount' => 0]);
+            StatementLine::create(['statement_id' => $st->id, 'fee_type' => 'Phí nước', 'fee_type_id' => $nuoc->id, 'fee_category' => 'water', 'service_period_start' => $ym.'-01', 'amount' => 200000, 'paid_amount' => 0]);
+        }
+
+        Sanctum::actingAs($user, ['resident']);
+
+        // Lọc family=management → chỉ còn quản lý (2 tháng × 500k = 1.000.000).
+        $mgmt = $this->getJson('/api/v1/resident/debts/by-service?family=management')->assertOk()->json('data');
+        $this->assertSame(['management'], collect($mgmt['families'])->pluck('family')->all());
+        $this->assertSame('1000000.00', $mgmt['total_outstanding']);
+        $this->assertSame('management', $mgmt['filter']['family']);
+
+        // Lọc from=2026-07-01 → chỉ dòng tháng 7 (500k quản lý + 200k nước = 700.000), thứ tự canonical management→water.
+        $jul = $this->getJson('/api/v1/resident/debts/by-service?from=2026-07-01')->assertOk()->json('data');
+        $this->assertSame('700000.00', $jul['total_outstanding']);
+        $this->assertSame(['management', 'water'], collect($jul['families'])->pluck('family')->all());
+    }
+
     private function publishedStatement(Tenant $tenant, Building $building, Apartment $apartment, string $ym, string $total): Statement
     {
         $period = BillingPeriod::create([
