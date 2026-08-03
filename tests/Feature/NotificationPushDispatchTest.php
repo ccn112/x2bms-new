@@ -12,6 +12,8 @@ use App\Models\NotificationChannel;
 use App\Models\Project;
 use App\Models\Resident;
 use App\Models\ResidentApartmentRelation;
+use App\Models\NotificationDeliveryLog;
+use App\Models\NotificationPreference;
 use App\Models\Tenant;
 use App\Models\User;
 use App\Services\Push\PushService;
@@ -108,5 +110,152 @@ class NotificationPushDispatchTest extends TestCase
 
         $this->assertSame(0, app(NotificationPushDispatcher::class)->dispatch($n));
         $this->assertCount(0, $spy->calls);
+    }
+
+    // ── A2 — persist per-recipient TRƯỚC khi gửi ────────────────────────────────
+
+    public function test_ghi_vet_gui_per_recipient_va_recipient_count(): void
+    {
+        $this->spyPush();
+        $ctx = $this->seedResidentInApartment();
+        $n = $this->publish($ctx, 'announcement', 'apartment', $ctx['apartment']->id, ['app', 'push']);
+
+        app(NotificationPushDispatcher::class)->dispatch($n);
+
+        $log = NotificationDeliveryLog::where('notification_id', $n->id)
+            ->where('user_id', $ctx['user']->id)->where('channel', 'push')->first();
+        $this->assertNotNull($log, 'có vết gửi per-recipient');
+        $this->assertSame('sent', $log->status);
+        $this->assertNotNull($log->sent_at);
+        // N3: audit đầy đủ — nguồn polymorphic + mốc queued.
+        $this->assertSame((new NotificationModel)->getMorphClass(), $log->source_type);
+        $this->assertSame($n->id, (int) $log->source_id);
+        $this->assertNotNull($log->queued_at);
+        $this->assertSame(1, $n->fresh()->recipient_count, 'đếm người nhận dự kiến');
+    }
+
+    public function test_replay_khong_gui_trung_va_khong_nhan_doi_vet(): void
+    {
+        $spy = $this->spyPush();
+        $ctx = $this->seedResidentInApartment();
+        $n = $this->publish($ctx, 'announcement', 'apartment', $ctx['apartment']->id, ['app', 'push']);
+
+        $first = app(NotificationPushDispatcher::class)->dispatch($n);
+        $second = app(NotificationPushDispatcher::class)->dispatch($n); // replay
+
+        $this->assertSame(1, $first);
+        $this->assertSame(0, $second, 'replay bỏ qua dòng đã sent');
+        $this->assertCount(1, $spy->calls, 'FCM chỉ gọi một lần cho cả hai lượt');
+        $this->assertSame(1, NotificationDeliveryLog::where('notification_id', $n->id)->count(),
+            'không nhân đôi vết gửi (unique notification+user+channel)');
+    }
+
+    public function test_kenh_bi_tat_ghi_suppressed_khong_goi_fcm(): void
+    {
+        // Spy đếm lời gọi FCM NHƯNG từ chối kênh cho user (mô phỏng đã tắt kênh).
+        $spy = new class extends PushService
+        {
+            public array $calls = [];
+
+            public function userAllows(User $user, ChannelEnum $channel): bool
+            {
+                return false;
+            }
+
+            public function toUser(User $user, string $title, string $body, array $data = [], ?ChannelEnum $channel = null, ?string $imageUrl = null): int
+            {
+                $this->calls[] = $user->id;
+
+                return 1;
+            }
+        };
+        $this->app->instance(PushService::class, $spy);
+
+        $ctx = $this->seedResidentInApartment();
+        $n = $this->publish($ctx, 'announcement', 'apartment', $ctx['apartment']->id, ['app', 'push']);
+
+        $sent = app(NotificationPushDispatcher::class)->dispatch($n);
+
+        $this->assertSame(0, $sent);
+        $this->assertCount(0, $spy->calls, 'kênh tắt → KHÔNG gọi FCM');
+        $log = NotificationDeliveryLog::where('notification_id', $n->id)
+            ->where('user_id', $ctx['user']->id)->first();
+        $this->assertSame('suppressed', $log->status);
+        $this->assertSame('channel_disabled', $log->error);
+    }
+
+    // ── N1 — broadcast qua FCM topic (không fan-out per-người) ──────────────────
+
+    public function test_broadcast_toa_nha_gui_topic_khong_ghi_per_nguoi(): void
+    {
+        $spy = new class extends PushService
+        {
+            public array $topics = [];
+            public int $userCalls = 0;
+
+            public function toTopic(string $topic, string $title, string $body, array $data = [], ?string $imageUrl = null): bool
+            {
+                $this->topics[] = $topic;
+
+                return true;
+            }
+
+            public function toUser(User $user, string $title, string $body, array $data = [], ?ChannelEnum $channel = null, ?string $imageUrl = null): int
+            {
+                $this->userCalls++;
+
+                return 1;
+            }
+        };
+        $this->app->instance(PushService::class, $spy);
+
+        $ctx = $this->seedResidentInApartment();
+        // Audience = TOÀ NHÀ (broadcast) thay vì căn hộ.
+        $n = $this->publish($ctx, 'announcement', 'building', $ctx['apartment']->building_id, ['app', 'push']);
+
+        app(NotificationPushDispatcher::class)->dispatch($n);
+
+        $this->assertSame(['building_'.$ctx['apartment']->building_id], $spy->topics, 'gửi 1 message tới topic toà');
+        $this->assertSame(0, $spy->userCalls, 'KHÔNG gửi lẻ per-người cho broadcast');
+        // N3: broadcast ghi audit TOPIC-LEVEL (1 dòng, recipient null), KHÔNG per-người.
+        $this->assertSame(0, NotificationDeliveryLog::where('notification_id', $n->id)->whereNotNull('user_id')->count(),
+            'broadcast KHÔNG ghi delivery-log per-người');
+        $topicRow = NotificationDeliveryLog::where('notification_id', $n->id)->whereNull('user_id')->first();
+        $this->assertNotNull($topicRow, 'có 1 dòng audit topic-level');
+        $this->assertSame('building_'.$ctx['apartment']->building_id, $topicRow->topic);
+        $this->assertSame('sent', $topicRow->status);
+    }
+
+    public function test_gui_that_bai_giu_vet_failed_de_gui_lai(): void
+    {
+        // Spy trả 0 (không thiết bị nào nhận) → dòng 'failed', lượt sau thử lại.
+        $spy = new class extends PushService
+        {
+            public int $calls = 0;
+            public int $returns = 0; // đổi được giữa hai lượt
+
+            public function toUser(User $user, string $title, string $body, array $data = [], ?ChannelEnum $channel = null, ?string $imageUrl = null): int
+            {
+                $this->calls++;
+
+                return $this->returns;
+            }
+        };
+        $this->app->instance(PushService::class, $spy);
+
+        $ctx = $this->seedResidentInApartment();
+        $n = $this->publish($ctx, 'announcement', 'apartment', $ctx['apartment']->id, ['app', 'push']);
+
+        $spy->returns = 0;
+        $this->assertSame(0, app(NotificationPushDispatcher::class)->dispatch($n));
+        $log = NotificationDeliveryLog::where('notification_id', $n->id)->first();
+        $this->assertSame('failed', $log->status);
+        $this->assertSame('no_active_token', $log->error);
+
+        // Lượt sau thiết bị đã nhận → dòng 'failed' được thử lại và thành 'sent'.
+        $spy->returns = 1;
+        $this->assertSame(1, app(NotificationPushDispatcher::class)->dispatch($n));
+        $this->assertSame(2, $spy->calls, 'dòng failed được gửi lại lượt sau');
+        $this->assertSame('sent', $log->fresh()->status);
     }
 }

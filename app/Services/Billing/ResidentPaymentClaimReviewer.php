@@ -69,8 +69,44 @@ class ResidentPaymentClaimReviewer
                     : ' — chưa phân bổ vào hoá đơn nào'
             ));
 
+            // N1: báo cư dân "thanh toán đã được xác nhận" (vào chuông). Chỉ chạy
+            // trên lần chuyển pending→confirmed thật (guard ở trên đã lọc no-op).
+            $this->notifyPaymentConfirmed($fresh);
+
             return $fresh;
         });
+    }
+
+    /** N1 — sinh activity xác nhận thanh toán cho chủ chứng từ. */
+    private function notifyPaymentConfirmed(Payment $payment): void
+    {
+        $resident = null;
+        if (! empty($payment->resident_id)) {
+            $resident = \App\Models\Resident::withoutGlobalScopes()->find($payment->resident_id);
+        } elseif (! empty($payment->apartment_id)) {
+            $rid = \App\Models\ResidentApartmentRelation::query()
+                ->where('apartment_id', $payment->apartment_id)
+                ->orderByDesc('is_primary')->orderBy('id')->value('resident_id');
+            $resident = $rid ? \App\Models\Resident::withoutGlobalScopes()->find($rid) : null;
+        }
+        if ($resident === null || $resident->user_id === null) {
+            return;
+        }
+
+        $projectId = \App\Models\Building::withoutGlobalScopes()->whereKey($resident->building_id)->value('project_id');
+        $hasStatement = ! empty($payment->claimed_statement_id);
+
+        app(\App\Services\Notifications\ActivityEmitter::class)->emit([
+            'recipient_user_id' => (int) $resident->user_id,
+            'tenant_id' => (int) ($payment->tenant_id ?? $resident->tenant_id),
+            'project_id' => $projectId,
+            'kind' => 'payment_confirmed',
+            'title' => 'Thanh toán của bạn đã được xác nhận',
+            'body' => 'Chứng từ '.$payment->code.' đã được Ban quản lý duyệt.',
+            'entity_type' => $hasStatement ? 'statement' : 'payment',
+            'entity_id' => $hasStatement ? (int) $payment->claimed_statement_id : (int) $payment->id,
+            'action_key' => $hasStatement ? 'view_statement' : null,
+        ]);
     }
 
     /**

@@ -45,7 +45,9 @@ class PushDemoRound extends Command
 
         $total = 0;
         foreach ($notifications as $n) {
-            $sent = $dispatcher->dispatch($n);
+            // resend: true — công cụ demo cần bắn LẠI mỗi lần chạy (production
+            // dispatch() mặc định idempotent, không đẩy trùng).
+            $sent = $dispatcher->dispatch($n, resend: true);
             $total += $sent;
             $this->line(sprintf('  [%-12s] %-45s → %d thiết bị', $n->type, mb_strimwidth($n->title, 0, 45, '…'), $sent));
         }

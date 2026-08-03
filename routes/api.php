@@ -27,6 +27,7 @@ use App\Http\Controllers\Api\V1\Resident\LinkPreviewController;
 use App\Http\Controllers\Api\V1\Resident\ListingController;
 use App\Http\Controllers\Api\V1\Resident\LoyaltyController;
 use App\Http\Controllers\Api\V1\Resident\MarketController;
+use App\Http\Controllers\Api\V1\Resident\BellController;
 use App\Http\Controllers\Api\V1\Resident\NotificationController;
 use App\Http\Controllers\Api\V1\Resident\OfferController;
 use App\Http\Controllers\Api\V1\Resident\PaymentChannelController;
@@ -143,12 +144,20 @@ Route::prefix('v1')->group(function () {
         Route::get('wallet', [WalletController::class, 'show']);
         Route::get('wallet/transactions', [WalletController::class, 'transactions']);
 
+        // CHUÔNG hợp nhất (N0): broadcast áp cho tôi + activity targeted của tôi.
+        Route::get('bell', [BellController::class, 'index']);
+        Route::post('bell/seen', [BellController::class, 'seen']);
+        Route::post('bell/activities/{activity}/read', [BellController::class, 'readActivity'])
+            ->whereNumber('activity');
+
         // Thông báo cư dân.
         Route::get('notifications', [NotificationController::class, 'index']);
         // Đặt TRƯỚC route số/{notification} để `summary` không bị nuốt làm id.
         Route::get('notifications/summary', [NotificationController::class, 'summary']);
         Route::post('notifications/read-all', [NotificationController::class, 'readAll']);
         Route::post('notifications/{notification}/read', [NotificationController::class, 'read']);
+        Route::post('notifications/{notification}/ack', [NotificationController::class, 'acknowledge'])
+            ->whereNumber('notification');
         Route::get('notifications/{notification}/comments', [NotificationController::class, 'comments']);
         Route::post('notifications/{notification}/comments', [NotificationController::class, 'storeComment']);
 

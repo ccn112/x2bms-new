@@ -7,6 +7,7 @@ use App\Models\Apartment;
 use App\Models\Meter;
 use App\Models\StatementLine;
 use App\Models\Vehicle;
+use App\Services\Billing\ChargeSelectability;
 use App\Services\Resident\ApartmentWalletService;
 use App\Services\Resident\ResidentContextService;
 use App\Support\Api\ApiResponse;
@@ -30,6 +31,7 @@ class DebtByAssetPaymentController extends ApiController
     public function __construct(
         private readonly ResidentContextService $context,
         private readonly ApartmentWalletService $wallets,
+        private readonly ChargeSelectability $selectability,
     ) {}
 
     /** POST /api/v1/resident/debts/by-service/pay */
@@ -80,6 +82,17 @@ class DebtByAssetPaymentController extends ApiController
             if (! in_array($line->statement?->apartment_id, $apartmentIds, true)) {
                 return ApiResponse::error('forbidden',
                     'Bạn không phải cư dân của căn hộ này.', 403);
+            }
+        }
+
+        // A1: KHÔNG tin mỗi UI — dòng đã trả / nợ chủ cũ thì server từ chối dù client
+        // vẫn gửi (cùng một ChargeSelectability với lúc hiển thị nên không lệch nhau).
+        $formerPeriods = $this->selectability->formerOwnerPeriods($apartmentIds);
+        foreach ($lines as $line) {
+            $sel = $this->selectability->evaluate($line, $line->statement?->apartment_id, $formerPeriods);
+            if (! $sel['selectable']) {
+                return ApiResponse::error('charge_not_selectable',
+                    'Có khoản không thể thanh toán ('.$sel['label'].').', 422);
             }
         }
 

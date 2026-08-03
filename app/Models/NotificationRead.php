@@ -12,6 +12,7 @@ class NotificationRead extends Model
 
     protected $casts = [
         'read_at' => 'datetime',
+        'acknowledged_at' => 'datetime',
     ];
 
     public function notification(): BelongsTo

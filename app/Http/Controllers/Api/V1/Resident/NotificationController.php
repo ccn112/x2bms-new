@@ -34,8 +34,10 @@ class NotificationController extends ApiController
         // Bộ lọc hộp thư hợp nhất: theo nhóm (category, fallback type) + chỉ chưa đọc.
         $category = $request->string('category')->trim()->value();
         $unreadOnly = $request->boolean('unread');
+        // A4 — tách nguồn: ?feed=bql → chỉ thông báo chính thống (màn "Thông báo BQL").
+        $feed = $request->string('feed')->trim()->value() === 'bql' ? 'bql' : null;
 
-        $query = $this->notifications->visibleQuery($user, $contextId)
+        $query = $this->notifications->visibleQuery($user, $contextId, $feed)
             ->withCount('comments');
         if ($category !== '') {
             $query->where(function ($c) use ($category): void {
@@ -52,16 +54,17 @@ class NotificationController extends ApiController
             ->orderByDesc('id')
             ->cursorPaginate($perPage);
 
-        // Đọc trạng thái đã đọc của trang hiện tại trong 1 query.
-        $readIds = $user->id === null ? [] : \App\Models\NotificationRead::query()
+        // Đọc trạng thái đã đọc + đã xác nhận (ack) của trang hiện tại trong 1 query.
+        $reads = $user->id === null ? collect() : \App\Models\NotificationRead::query()
             ->where('user_id', $user->id)
-            ->whereNotNull('read_at')
             ->whereIn('notification_id', $paginator->getCollection()->pluck('id'))
-            ->pluck('notification_id')
-            ->all();
+            ->get(['notification_id', 'read_at', 'acknowledged_at']);
+        $readIds = $reads->whereNotNull('read_at')->pluck('notification_id')->all();
+        $ackIds = $reads->whereNotNull('acknowledged_at')->pluck('notification_id')->all();
 
-        $paginator->getCollection()->each(function ($n) use ($readIds): void {
+        $paginator->getCollection()->each(function ($n) use ($readIds, $ackIds): void {
             $n->is_read = in_array($n->id, $readIds, true);
+            $n->is_acknowledged = in_array($n->id, $ackIds, true);
         });
 
         $items = NotificationResource::collection($paginator->getCollection())->resolve($request);
@@ -86,6 +89,9 @@ class NotificationController extends ApiController
         // Đánh dấu đã đọc (idempotent) rồi phản ánh vào response.
         $this->notifications->markRead($user, $model->id, $contextId);
         $model->is_read = true;
+        $model->is_acknowledged = $user->id !== null && \App\Models\NotificationRead::query()
+            ->where('user_id', $user->id)->where('notification_id', $model->id)
+            ->whereNotNull('acknowledged_at')->exists();
 
         return ApiResponse::success(NotificationDetailResource::make($model)->resolve($request));
     }
@@ -190,6 +196,22 @@ class NotificationController extends ApiController
             'is_read' => true,
             'unread_notification_count' => $this->notifications->unreadCount($request->user(), $request->header('X-Context-Id')),
         ]);
+    }
+
+    /** POST /api/v1/resident/notifications/{notification}/ack — xác nhận đã tiếp nhận (A3). */
+    public function acknowledge(Request $request, int $notification): JsonResponse
+    {
+        $result = $this->notifications->acknowledge($request->user(), $notification, $request->header('X-Context-Id'));
+
+        return match ($result) {
+            'not_found' => ApiResponse::error('not_found', 'Không tìm thấy thông báo.', 404),
+            'ack_not_required' => ApiResponse::error('ack_not_required', 'Thông báo này không cần xác nhận.', 422),
+            default => ApiResponse::success([
+                'id' => (string) $notification,
+                'acknowledged' => true,
+                'is_read' => true,
+            ]),
+        };
     }
 
     /** GET /api/v1/resident/notifications/summary — unread tổng + breakdown nhóm. */

@@ -190,6 +190,7 @@ class CommunityPostController extends ApiController
             $request->user()->name.' đã bày tỏ cảm xúc về bài của bạn',
             mb_substr(strip_tags((string) $model->body), 0, 80),
             ['type' => 'community_reaction', 'post_id' => (string) $model->id],
+            (int) $model->tenant_id, $model->project_id, (int) $model->id,
         );
 
         return $this->respondWithTally($model, $request);
@@ -442,16 +443,48 @@ class CommunityPostController extends ApiController
             if (! $u) {
                 continue;
             }
+            // N2: PERSIST thành activity (vào chuông + lịch sử + coalesce) RỒI push.
+            $this->emitCommunityActivity((int) $uid, $type, $title,
+                (int) $model->tenant_id, $model->project_id, (int) $model->id, $actorAvatar);
             $push->toUser($u, $title, $snippet, ['type' => $type] + $baseData,
                 \App\Enums\NotificationChannel::Community, $actorAvatar);
         }
     }
 
     /**
+     * N2 — ghi một activity_notifications cho tương tác cộng đồng (song song push).
+     * Bình luận-bài & thả-cảm-xúc COALESCE theo (bài × loại × người nhận) để "X và N
+     * người khác…" là 1 dòng; nhắc tên & trả lời giữ riêng từng dòng (đích danh).
+     */
+    private function emitCommunityActivity(int $recipientId, string $pushType, string $title, int $tenantId, ?int $projectId, int $postId, ?string $avatar): void
+    {
+        [$kind, $coalesce] = match ($pushType) {
+            'community_mention' => ['mention', false],
+            'community_reply' => ['comment_reply', false],
+            'community_comment' => ['post_comment', true],
+            'community_reaction' => ['reaction', true],
+            default => ['community_activity', false],
+        };
+
+        app(\App\Services\Notifications\ActivityEmitter::class)->emit([
+            'recipient_user_id' => $recipientId,
+            'tenant_id' => $tenantId,
+            'project_id' => $projectId,
+            'kind' => $kind,
+            'title' => $title,
+            'image_url' => $avatar,
+            'entity_type' => 'community_post',
+            'entity_id' => $postId,
+            'action_key' => 'view_post',
+            'group_key' => $coalesce ? sprintf('post:%d:%s:%d', $postId, $kind, $recipientId) : null,
+        ]);
+    }
+
+    /**
      * Báo cho chủ bài/bình luận khi được thả cảm xúc — chỉ khi cảm xúc MỚI (đổi
      * loại không báo lại), không tự báo mình.
      */
-    private function notifyReaction(?int $targetUserId, \App\Models\User $actor, bool $isNew, string $title, string $body, array $data): void
+    private function notifyReaction(?int $targetUserId, \App\Models\User $actor, bool $isNew, string $title, string $body, array $data, int $tenantId, ?int $projectId, int $postId): void
     {
         if (! $isNew || ! $targetUserId || (int) $targetUserId === $actor->id) {
             return;
@@ -460,6 +493,8 @@ class CommunityPostController extends ApiController
         if (! $u) {
             return;
         }
+        // N2: persist activity (coalesce theo bài × người) rồi push.
+        $this->emitCommunityActivity((int) $targetUserId, 'community_reaction', $title, $tenantId, $projectId, $postId, $actor->avatarUrl);
         app(\App\Services\Push\PushService::class)
             ->toUser($u, $title, $body, $data, \App\Enums\NotificationChannel::Community, $actor->avatarUrl);
     }
@@ -484,6 +519,7 @@ class CommunityPostController extends ApiController
             $request->user()->name.' đã bày tỏ cảm xúc về bình luận của bạn',
             mb_substr((string) $c->body, 0, 80),
             ['type' => 'community_reaction', 'post_id' => (string) $post, 'comment_id' => (string) $c->id],
+            (int) $c->tenant_id, $c->project_id, (int) $c->community_post_id,
         );
 
         return $this->commentTally($c, $request);

@@ -31,6 +31,7 @@ class NotificationDetailResource extends JsonResource
                 ? null
                 : ['type' => $this->entity_type, 'id' => $this->entity_id === null ? null : (string) $this->entity_id],
             'requires_ack' => (bool) $this->requires_ack,
+            'acknowledged' => (bool) ($this->is_acknowledged ?? false),
             'title' => $this->title,
             'summary' => $this->summary,
             'body' => $this->body,

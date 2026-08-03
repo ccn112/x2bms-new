@@ -4,6 +4,8 @@ namespace App\Http\Controllers\Api\V1\Resident;
 
 use App\Http\Controllers\Api\V1\ApiController;
 use App\Models\DeviceToken;
+use App\Services\Notifications\ResidentTopics;
+use App\Services\Push\PushService;
 use App\Support\Api\ApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -32,6 +34,14 @@ class DeviceTokenController extends ApiController
                 'device_label' => $data['device_label'] ?? null,
                 'last_used_at' => now(),
             ],
+        );
+
+        // N1: đăng ký thiết bị vào topic theo tenant/dự án/toà để broadcast bằng topic.
+        // App đăng ký lại token mỗi lần mở → topic tự cập nhật khi cư dân đổi căn.
+        // No-op khi FCM tắt (dev/test). Không chặn response nếu FCM lỗi.
+        app(PushService::class)->subscribeToTopics(
+            [$data['token']],
+            app(ResidentTopics::class)->for($request->user(), $request->header('X-Context-Id')),
         );
 
         return ApiResponse::success(['registered' => true]);

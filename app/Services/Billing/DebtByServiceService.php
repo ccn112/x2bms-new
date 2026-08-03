@@ -21,7 +21,10 @@ use Illuminate\Support\Carbon;
  */
 class DebtByServiceService
 {
-    public function __construct(private readonly ResidentContextService $context) {}
+    public function __construct(
+        private readonly ResidentContextService $context,
+        private readonly ChargeSelectability $selectability,
+    ) {}
 
     private const FAMILY_LABEL = [
         'management' => 'Phí quản lý',
@@ -61,10 +64,13 @@ class DebtByServiceService
                 fn ($q) => $q->where('service_period_start', '>=', $from))
             ->when($to !== null && $to !== '',
                 fn ($q) => $q->where('service_period_start', '<=', $to))
-            ->with(['feeType:id,name,unit', 'subject', 'statement:id,billing_period_id'])
+            ->with(['feeType:id,name,unit', 'subject', 'statement:id,apartment_id,billing_period_id'])
             ->with('statement.billingPeriod:id,period_month')
             ->orderBy('service_period_start')
             ->get();
+
+        // A1: nạp sẵn các kỳ chủ-cũ cho mọi căn để đánh cờ non-selectable không N+1.
+        $formerPeriods = $this->selectability->formerOwnerPeriods($apartmentIds);
 
         // Gom: family → fee_type → subject → [tháng nợ].
         $families = [];
@@ -112,6 +118,7 @@ class DebtByServiceService
                 'months' => [],
             ];
             $subj[$groupKey]['outstanding'] = bcadd($subj[$groupKey]['outstanding'], $out, 2);
+            $sel = $this->selectability->evaluate($line, $line->statement?->apartment_id, $formerPeriods);
             $subj[$groupKey]['months'][] = [
                 'line_id' => (string) $line->id,
                 'statement_id' => (string) $line->statement_id,
@@ -121,6 +128,9 @@ class DebtByServiceService
                 'amount' => (string) $line->amount,
                 'paid' => (string) ($line->paid_amount ?? 0),
                 'outstanding' => $out,
+                'selectable' => $sel['selectable'],
+                'non_selectable_reason' => $sel['reason'],
+                'non_selectable_label' => $sel['label'],
             ];
         }
 

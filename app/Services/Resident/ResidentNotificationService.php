@@ -18,13 +18,19 @@ class ResidentNotificationService
     public function __construct(private readonly ResidentContextService $context) {}
 
     /** Query các thông báo cư dân được xem (chưa sort). */
-    public function visibleQuery(User $user, ?string $contextId = null): Builder
+    /**
+     * @param  ?string  $feed  A4 — tách nguồn: 'bql' = chỉ thông báo chính thống do
+     *   quản lý soạn (màn "Thông báo BQL"); null/'all' = mọi nguồn kể cả item tương
+     *   tác đẩy sau này (Hộp thư hợp nhất/chuông).
+     */
+    public function visibleQuery(User $user, ?string $contextId = null, ?string $feed = null): Builder
     {
         $apartmentIds = $this->context->apartmentIds($user, $contextId);
         $buildingIds = $this->context->buildingIds($user, $contextId);
 
         return Notification::query()
             ->where('status', 'published')
+            ->when($feed === 'bql', fn (Builder $q) => $q->where('source', 'bql'))
             ->where(fn (Builder $q) => $q->whereNull('expires_at')->orWhere('expires_at', '>', now()))
             ->whereHas('audiences', function (Builder $a) use ($apartmentIds, $buildingIds): void {
                 $a->where(function (Builder $inner) use ($apartmentIds, $buildingIds): void {
@@ -70,10 +76,14 @@ class ResidentNotificationService
             $byCategory[(string) $cat] = (int) $c;
         }
 
+        // A4 — badge "Thông báo BQL" = mọi thông báo CHÍNH THỐNG chưa đọc (source=bql),
+        // gồm cả Phí/Bảo trì/PCCC, không chỉ riêng nhóm announcement.
+        $unreadBql = (int) (clone $base)->where('source', 'bql')->count();
+
         return [
             'unread_total' => $total,
             'unread_by_category' => $byCategory,
-            'unread_bql' => ($byCategory['announcement'] ?? 0) + ($byCategory['bql'] ?? 0),
+            'unread_bql' => $unreadBql,
         ];
     }
 
@@ -117,5 +127,32 @@ class ResidentNotificationService
         );
 
         return true;
+    }
+
+    /**
+     * A3 — Cư dân XÁC NHẬN đã tiếp nhận thông báo khẩn (`requires_ack`). Ack bao
+     * hàm cả đã đọc. GIỮ NGUYÊN thời điểm ack đầu tiên (idempotent — bấm lại không
+     * dời mốc). Chỉ nhận với thông báo yêu cầu ack; còn lại 422 để app không lạm dụng.
+     *
+     * @return 'ok'|'not_found'|'ack_not_required'
+     */
+    public function acknowledge(User $user, int $notificationId, ?string $contextId = null): string
+    {
+        $notification = $this->visibleQuery($user, $contextId)->whereKey($notificationId)->first();
+        if ($notification === null) {
+            return 'not_found';
+        }
+        if (! $notification->requires_ack) {
+            return 'ack_not_required';
+        }
+
+        $read = NotificationRead::query()->firstOrNew([
+            'notification_id' => $notificationId, 'user_id' => $user->id,
+        ]);
+        $read->read_at ??= now();
+        $read->acknowledged_at ??= now();
+        $read->save();
+
+        return 'ok';
     }
 }

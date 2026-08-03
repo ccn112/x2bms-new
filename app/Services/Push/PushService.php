@@ -71,6 +71,75 @@ class PushService
     }
 
     /**
+     * BROADCAST tới một FCM TOPIC — MỘT message cho cả topic thay vì gửi lẻ triệu
+     * thiết bị (ADR-001). Trả true nếu đã gửi (FCM nhận), false nếu tắt/ lỗi.
+     */
+    public function toTopic(string $topic, string $title, string $body, array $data = [], ?string $imageUrl = null): bool
+    {
+        if (! $this->enabled()) {
+            return false;
+        }
+
+        $notification = Notification::create($title, $body);
+        if ($imageUrl !== null && preg_match('#^https?://#', $imageUrl)) {
+            $notification = $notification->withImageUrl($imageUrl);
+        }
+        $message = CloudMessage::new()
+            ->withNotification($notification)
+            ->withData(array_map(fn ($v) => (string) $v, $data))
+            ->toTopic($topic);
+
+        try {
+            $this->messaging()->send($message);
+
+            return true;
+        } catch (\Throwable $e) {
+            report($e);
+
+            return false;
+        }
+    }
+
+    /**
+     * Đăng ký các thiết bị vào các topic (theo tenant/dự án/toà của cư dân) — để
+     * broadcast bằng topic. Idempotent phía FCM. No-op khi FCM tắt.
+     *
+     * @param  array<string>  $tokens
+     * @param  array<string>  $topics
+     */
+    public function subscribeToTopics(array $tokens, array $topics): void
+    {
+        $tokens = array_values(array_filter($tokens));
+        $topics = array_values(array_filter($topics));
+        if (empty($tokens) || empty($topics) || ! $this->enabled()) {
+            return;
+        }
+        try {
+            $this->messaging()->subscribeToTopics($topics, $tokens);
+        } catch (\Throwable $e) {
+            report($e);
+        }
+    }
+
+    /**
+     * @param  array<string>  $tokens
+     * @param  array<string>  $topics
+     */
+    public function unsubscribeFromTopics(array $tokens, array $topics): void
+    {
+        $tokens = array_values(array_filter($tokens));
+        $topics = array_values(array_filter($topics));
+        if (empty($tokens) || empty($topics) || ! $this->enabled()) {
+            return;
+        }
+        try {
+            $this->messaging()->unsubscribeFromTopics($topics, $tokens);
+        } catch (\Throwable $e) {
+            report($e);
+        }
+    }
+
+    /**
      * @param  array<string>  $tokens
      * @param  ?string  $imageUrl  Ảnh lớn của thông báo (BigPicture Android) — avatar
      *                             người viết / ảnh đính kèm. Icon app vẫn hiện nhỏ.

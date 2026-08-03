@@ -106,11 +106,65 @@ class SlipCommentController extends ApiController
         $comment->load('attachments');
         $comment->is_mine = true;
 
+        // N1: BQL trả lời phiếu → báo CHỦ PHIẾU (vào chuông). Coalesce theo phiếu
+        // để nhiều lượt trả lời gộp một dòng. Cư dân tự bình luận thì không báo.
+        if ($isStaff) {
+            $this->notifySlipOwner($model, $resource);
+        }
+
         return ApiResponse::success(
             CommentResource::make($comment)->resolve($request),
             [],
             201,
         );
+    }
+
+    /** N1 — sinh activity cho chủ phiếu khi BQL trả lời. */
+    private function notifySlipOwner(Model $model, string $resource): void
+    {
+        $owner = $this->slipOwnerResident($model);
+        if ($owner === null || $owner->user_id === null) {
+            return;
+        }
+
+        [$kind, $entityType, $actionKey, $title] = match ($resource) {
+            'payments' => ['debt_reply', 'payment', 'view_statement', 'Ban quản lý đã trả lời thắc mắc công nợ của bạn'],
+            'amenity-bookings' => ['booking_reply', 'amenity_booking', 'view_booking', 'Ban quản lý đã trả lời phiếu đặt tiện ích của bạn'],
+            'visitor-registrations' => ['visitor_reply', 'visitor_registration', null, 'Ban quản lý đã trả lời phiếu đăng ký khách của bạn'],
+            default => ['slip_reply', 'slip', null, 'Ban quản lý đã trả lời phiếu của bạn'],
+        };
+
+        $projectId = \App\Models\Building::withoutGlobalScopes()->whereKey($owner->building_id)->value('project_id');
+
+        app(\App\Services\Notifications\ActivityEmitter::class)->emit([
+            'recipient_user_id' => (int) $owner->user_id,
+            'tenant_id' => (int) $owner->tenant_id,
+            'project_id' => $projectId,
+            'kind' => $kind,
+            'title' => $title,
+            'entity_type' => $entityType,
+            'entity_id' => (int) $model->id,
+            'action_key' => $actionKey,
+            'group_key' => sprintf('slip:%s:%d:%d', $resource, $model->id, $owner->user_id),
+        ]);
+    }
+
+    /** Chủ phiếu (resident) — ưu tiên resident_id, không thì cư dân chính của căn. */
+    private function slipOwnerResident(Model $model): ?\App\Models\Resident
+    {
+        if (! empty($model->resident_id)) {
+            return \App\Models\Resident::withoutGlobalScopes()->find($model->resident_id);
+        }
+        if (! empty($model->apartment_id)) {
+            $residentId = \App\Models\ResidentApartmentRelation::query()
+                ->where('apartment_id', $model->apartment_id)
+                ->orderByDesc('is_primary')->orderBy('id')
+                ->value('resident_id');
+
+            return $residentId ? \App\Models\Resident::withoutGlobalScopes()->find($residentId) : null;
+        }
+
+        return null;
     }
 
     /** Tìm phiếu và kiểm tra thuộc căn hộ của cư dân (không lộ phiếu căn khác). */

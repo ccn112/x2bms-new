@@ -26,12 +26,22 @@ class StatementDetailPresenter
     /** Thứ tự hiển thị family theo content contract FIN-11. */
     private const DISPLAY_ORDER = ['management', 'electricity', 'water', 'vehicle', 'other'];
 
+    /** A1 — kỳ chủ-cũ của căn đang xem (nạp một lần/statement). */
+    private \Illuminate\Support\Collection $formerPeriods;
+
+    private ?int $apartmentId = null;
+
+    public function __construct(private readonly ChargeSelectability $selectability = new ChargeSelectability) {}
+
     /** @return list<array<string,mixed>> */
     public function familiesFor(Statement $statement): array
     {
         $statement->loadMissing(['lines.feeType', 'billingPeriod']);
         $lines = $statement->lines;
         $previousDebt = $this->previousDebtByFamily($statement);
+
+        $this->apartmentId = $statement->apartment_id;
+        $this->formerPeriods = $this->selectability->formerOwnerPeriods([$statement->apartment_id]);
 
         $sections = [];
         foreach (self::DISPLAY_ORDER as $familyCode) {
@@ -103,6 +113,12 @@ class StatementDetailPresenter
             'outstanding' => (string) max($amount - $paid, 0),
             'note' => $l->note,
         ];
+
+        // A1: khoản có trả được không (paid/former_owner). App khoá tick + hiện lý do.
+        $sel = $this->selectability->evaluate($l, $this->apartmentId, $this->formerPeriods);
+        $row['selectable'] = $sel['selectable'];
+        $row['non_selectable_reason'] = $sel['reason'];
+        $row['non_selectable_label'] = $sel['label'];
 
         // Điện/nước: chỉ số đầu/cuối + tiêu thụ + bậc (nếu có trong snapshot).
         if ($snapshot !== null && ($snapshot['method'] ?? null) === 'metered') {
