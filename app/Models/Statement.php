@@ -35,6 +35,8 @@ class Statement extends Model
         'published_at' => 'datetime',
         'viewed_at' => 'datetime',
         'due_date' => 'date',
+        'snapshot' => 'array',
+        'snapshot_at' => 'datetime',
     ];
 
     /**

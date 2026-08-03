@@ -118,10 +118,19 @@ class StatementApprovalService
             }
 
             $now = now();
+
+            // Snapshot BẤT BIẾN (D15): chụp nội dung bảng kê tại thời điểm phát hành —
+            // đây là bản gốc cư dân nhận, không đổi kể cả dòng phí bị sửa về sau.
+            $builder = new StatementSnapshotBuilder;
+            $snapshot = $builder->build($fresh);
+
             $fresh->update([
                 'approval_status' => Statement::APPROVAL_PUBLISHED,
                 'published_at' => $now,
                 'issued_at' => $fresh->issued_at ?? $now,
+                'snapshot' => $snapshot,
+                'snapshot_checksum' => $builder->checksum($snapshot),
+                'snapshot_at' => $now,
             ]);
 
             StatementPublishLog::create([
