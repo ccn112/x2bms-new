@@ -263,6 +263,36 @@ class FeedbackController extends ApiController
         return ApiResponse::success($this->commentPayload($comment, $user->id), [], 201);
     }
 
+    /**
+     * POST /resident/feedback/{feedback}/rating — cư dân CHẤM SAO sau khi BQL đã xử lý.
+     * Chỉ chủ phản ánh, chỉ khi trạng thái đã `resolved`/`closed` (không chấm khi còn mở).
+     */
+    public function rate(Request $request, FeedbackRequest $feedback): JsonResponse
+    {
+        if (! $this->owns($request, $feedback)) {
+            return ApiResponse::error('not_found', 'Không tìm thấy phản ánh.', 404);
+        }
+        if (! in_array($this->statusValue($feedback), ['resolved', 'closed'], true)) {
+            return ApiResponse::error('not_rateable', 'Chỉ chấm sao khi phản ánh đã được xử lý xong.', 409);
+        }
+
+        $data = $request->validate([
+            'rating' => ['required', 'integer', 'between:1,5'],
+            'rating_comment' => ['nullable', 'string', 'max:1000'],
+        ]);
+
+        $feedback->forceFill([
+            'rating' => $data['rating'],
+            'rating_comment' => $data['rating_comment'] ?? null,
+        ])->save();
+
+        return ApiResponse::success([
+            'id' => (string) $feedback->id,
+            'rating' => (int) $feedback->rating,
+            'rating_comment' => $feedback->rating_comment,
+        ]);
+    }
+
     /** Sở hữu = căn hộ HOẶC resident HOẶC người tạo (khớp index/show). */
     private function owns(Request $request, FeedbackRequest $feedback): bool
     {

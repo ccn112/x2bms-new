@@ -3092,3 +3092,13 @@ CÒN LÀM (ưu tiên gợi ý khi quay lại):
 - Test `NotificationAnalyticsServiceTest` 3/3 (open-rate, phễu kênh, cô lập tenant).
 - Ghi chú: chưa track event CLICK riêng → "CTR" dùng read-rate làm proxy; bổ sung sau nếu cần.
 - PROGRESS_TRACKER 07-10 → 🟢.
+
+## 2026-08-04 — Feature B8: Phản ánh cư dân — chấm sao
+
+Kiểm thực tế (doc plan 31/07 nói "cư dân chỉ đọc" đã cũ): **reply** (`storeComment`) và
+**đính ảnh** (`attachment_ids`+`attachFiles`, cả trên phản ánh lẫn bình luận) ĐÃ có sẵn +
+`owns()` chặn BOLA. Gap thật duy nhất = **chấm sao**.
+- Thêm `POST resident/feedback/{feedback}/rating` → `FeedbackController::rate()`: chỉ chủ
+  (owns), chỉ khi status `resolved`/`closed` (không chấm khi còn mở), điểm 1–5 + rating_comment.
+- `FeedbackRequestResource`: +`rating_comment`, +`can_rate` (app biết khi nào hiện UI sao).
+- Test `FeedbackRatingTest` 4/4 (chấm khi resolved, chặn khi mở 409, người khác 404, điểm ngoài 1–5 → 422).

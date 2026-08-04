@@ -280,6 +280,7 @@ Route::prefix('v1')->group(function () {
         Route::match(['put', 'patch'], 'feedback/{feedback}', [FeedbackController::class, 'update']);
         Route::get('feedback/{feedback}/comments', [FeedbackController::class, 'comments']);
         Route::post('feedback/{feedback}/comments', [FeedbackController::class, 'storeComment']);
+        Route::post('feedback/{feedback}/rating', [FeedbackController::class, 'rate']);
 
         // Tuỳ chọn bật/tắt kênh thông báo push (màn Cá nhân → Thông báo).
         Route::get('notification-preferences', [NotificationPreferenceController::class, 'index']);

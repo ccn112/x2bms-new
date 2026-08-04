@@ -44,6 +44,9 @@ class FeedbackRequestResource extends JsonResource
             'sla_due_at' => optional($this->sla_due_at)->toIso8601String(),
             'resolved_at' => optional($this->resolved_at)->toIso8601String(),
             'rating' => $this->rating === null ? null : (int) $this->rating,
+            'rating_comment' => $this->rating_comment,
+            // Chỉ chấm sao khi BQL đã xử lý xong (resolved/closed).
+            'can_rate' => in_array($status, ['resolved', 'closed'], true),
             'created_at' => optional($this->created_at)->toIso8601String(),
             'timeline' => $this->when(
                 isset($this->timeline),
