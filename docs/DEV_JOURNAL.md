@@ -3058,3 +3058,26 @@ Bắt đầu việc số 1 trong điểm dừng (audit data-leak). Giao subagent
 
 Bài học: cùng file `CommunityController` có `findEventInScope`/`joinGroup` kiểm scope đúng
 nhưng `vote` quên → khi có mẫu scope sẵn, phải soát MỌI đường ghi dùng nhất quán (G9).
+
+## 2026-08-04 — CHỐT: kế hoạch BẢO MẬT còn làm (tạm dừng mảng security ở đây)
+
+Owner tạm dừng mảng security để phát triển feature khác. Ghi lại kế hoạch để phiên sau
+tiếp đúng chỗ (nguồn theo dõi: `docs/security/DATA_LEAK_AUDIT_20260804.md` + SECURITY_CONTROLS §5
++ TECH_DEBT T9 + memory `x2bms-noti-multichannel-and-tenant-hardlock`).
+
+ĐÃ XONG mảng cô lập tenant + BOLA cư dân:
+- Hard-lock DB: composite FK (notifications + 14 quan hệ tiền) + trigger payment_allocations.
+- Cổng đọc ratchet ③; ADR-001; tài liệu chuẩn (SECURITY_CONTROLS + ASVS checklist).
+- Audit BOLA API cư dân: vá poll-vote + @mention xuyên tenant.
+
+CÒN LÀM (ưu tiên gợi ý khi quay lại):
+1. **Over-exposure** — rà API Resource (`app/Http/Resources/Api/**`) xem có trả field nhạy cảm/nội
+   bộ thừa không (token, hash, cột kế toán nội bộ, tenant khác). Nhanh, giá trị cao.
+2. **BOLA API panel BQL/HQ/SA** — Filament server-rendered đã có scopeVisibleTo/canManageBy nhưng
+   chưa rà toàn diện từng Resource/Page/Action (đường vòng gọi trực tiếp).
+3. **PII trong log** — rà `Log::`/`report()`/telemetry xem có ghi email/sđt/CCCD/token không.
+4. **RBAC chi tiết trong-tenant** — phân quyền theo vai trò trong cùng công ty (kế toán vs bảo vệ…).
+5. **MFA cho admin** (ASVS 4.3.1) — chưa bắt buộc.
+6. **Roll out composite FK** cho quan hệ tenant còn lại ngoài nhóm tiền (nếu cần) + lan test
+   MUST_NOT_LEAK ra mọi bề mặt đọc.
+7. (chiến lược) Postgres RLS — hoãn, chỉ khi có compliance mandate.
