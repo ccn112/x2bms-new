@@ -34,9 +34,17 @@
 - Test tenant-isolation: `NotificationAudienceScopeTest`, `TenantScopeRatchetTest`, `TenantCompositeFkTest` (mysql-only → skip sqlite).
 - Local đã bật FCM (service-account `x2bms-a37d2` + `kreait/firebase-php` — vendor local trước thiếu, chính là lý do push từng không gửi). App debug qua `php artisan serve :8000` + `adb reverse tcp:8000`.
 
-## 3. LÀM TIẾP (điểm dừng, ưu tiên)
-1. **Audit data-leak RỘNG** (chưa làm): IDOR từng endpoint · over-exposure API · PII trong log · RBAC trong-tenant · MFA admin. (SECURITY_CONTROLS §5)
-2. **Lan test MUST_NOT_LEAK** ra mọi bề mặt đọc tenant.
+## 3. Batch feature 04/08 (sau bảo mật) — ĐÃ XONG
+- **07-10** Analytics thông báo: `NotificationAnalyticsService` + page `/admin/notifications/analytics` (open-rate + phễu kênh + chi phí). Test 3/3.
+- **BOLA/IDOR API cư dân** (audit): vá poll-vote + @mention xuyên tenant. `docs/security/DATA_LEAK_AUDIT_20260804.md`. Test CommunityPollScopeTest + CommunityCommentMentionTest.
+- **B8** Phản ánh: cư dân **chấm sao** (`POST feedback/{id}/rating`). Test 4/4.
+- **B5** Công nợ theo dịch vụ + ngăn tiền thừa theo tài sản (D6): xác minh đã xong + test cross-asset.
+- **B6** Kiểm duyệt cộng đồng + đóng vòng report: xác minh đã xong (9 test).
+- **C (P2.1)** Engine tính phí: khung + `ManagementFeeGenerator` + `BillingRunner` + `billing:run` + `billing:reconcile-engine` + `docs/BILLING_FEE_ENGINE_TEST_PLAN.md` + `FeeEngineDemoSeeder` (test trên tòa HPO). Test 3+1.
+
+## 4. LÀM TIẾP (điểm dừng, ưu tiên)
+1. **Engine tính phí P2.2–P2.5**: xe · điện/nước bậc thang · per-use · phạt/lãi (mỗi cái test thuần + đối soát vàng). Điền `area_sqm` cho căn import HPO + giá khớp để đối chiếu kỳ 2026-05 thật.
+2. **Audit data-leak RỘNG (còn)**: BOLA API panel BQL/HQ/SA · over-exposure API · PII trong log · RBAC trong-tenant · MFA admin. (SECURITY_CONTROLS §5)
 3. **N4 provider THẬT** (Zalo ZNS/WhatsApp/Telegram/X.Space) — **chờ owner chốt** nhà cung cấp + template + phí.
-4. Feature **07-10 analytics thông báo** (CTR/open-rate) ⬜.
-5. **iOS build** trên Mac (`flutter build ipa ... -t lib/main_prod.dart`); APK release đã cài Samsung.
+4. **iOS build** trên Mac (`flutter build ipa ... -t lib/main_prod.dart`); APK release đã cài Samsung.
+5. Deploy server: `git pull && php artisan migrate --force` (migration tenant-hardlock 000002/03/04).
