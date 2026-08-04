@@ -52,9 +52,10 @@ tenant** (một công ty đọc/sửa/nhắm dữ liệu của công ty khác) �
 - ✅ **payment_allocations** (L4): đã có trigger chặn allocation nối payment↔statement/statement_line
   **lai-tenant** (chứng minh reject SQLSTATE 45000 trên MySQL). 🟡 Các bảng junction không-`tenant_id`
   khác (nếu phát sinh) cần rà tương tự.
-- ⬜ **Audit data-leak TOÀN DIỆN**: mới phủ *một chiều cô lập tenant*. Chưa rà hệ thống: **IDOR từng
-  endpoint**, **API trả field thừa** (over-exposure), **PII trong log**, **luồng xuất/nhập dữ liệu**,
-  phân quyền theo vai trò **trong cùng tenant** (RBAC chi tiết).
+- 🟡 **Audit data-leak**: đã rà **BOLA/IDOR API cư dân** (29 controller) 2026-08-04 → 1 HIGH + 2 MEDIUM,
+  đã sửa 2 (poll vote + @mention xuyên tenant), 1 ghi nhận (articles — editorial platform-global). Xem
+  `docs/security/DATA_LEAK_AUDIT_20260804.md`. **CÒN:** API panel BQL/HQ/SA, **over-exposure** (Resource
+  trả field thừa), **PII trong log**, RBAC chi tiết trong-tenant, luồng xuất/nhập.
 - ⬜ **Hard-lock ĐỌC tầng DB (RLS)**: MySQL không có RLS; đã đánh giá migrate Postgres (~4–8 tuần) → **hoãn**.
   Hiện cô lập đọc dựa L1+L2+L5+L6 (tầng app + test), không phải DB-enforced đọc.
 - ⬜ **Chứng nhận bên thứ ba / tuân thủ pháp lý**: chưa map hình thức SOC 2 / ISO 27001 / PCI-DSS /

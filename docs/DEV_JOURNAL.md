@@ -3040,3 +3040,21 @@ số tiền). Fix làm data đúng hơn (paid_amount = Σ line), không hại; c
   Saltzer-Schroeder/AWS SaaS Lens/G9-G10 + bằng chứng + trạng thái + phần CHƯA phủ) và
   `docs/security/OWASP_ASVS_V4_ACCESS_CONTROL_CHECKLIST.md` (checklist V4). Có tuyên bố
   "tự đánh giá, chưa chứng nhận bên thứ 3" để không nói quá khi đưa khách.
+
+## 2026-08-04 (tiếp) — Audit BOLA/IDOR API cư dân + vá
+
+Bắt đầu việc số 1 trong điểm dừng (audit data-leak). Giao subagent quét 29 controller
+`Api/V1/Resident/*` cho BOLA/IDOR (OWASP API1/A01), tự xác minh + vá:
+- **HIGH** `POST community/polls/{poll}/vote`: poll bind trần, không kiểm project scope →
+  cư dân dự án A bóp méo khảo sát dự án/tenant B. VÁ: check `project_id ∈ projectIds` → 404.
+- **MEDIUM** `@mention` trong storeComment: `mentioned_user_ids` chỉ kiểm tồn tại → chèn
+  push xuyên tenant. VÁ: chỉ giữ cư dân cùng dự án (`residentMemberships.building.project_id`).
+- **MEDIUM→LOW** `ArticleController`: trả mọi PlatformContent published; nhưng bảng không có
+  cột tenant/project target → editorial platform-global, ghi nhận (cần feature target).
+- Còn lại SAFE (tiền/công nợ/ví/thông báo/phiếu/chợ đều scope đúng — xem báo cáo).
+- Test: `CommunityPollScopeTest` (mới), `CommunityCommentMentionTest` (siết theo luật mới);
+  sửa `CommunityTestResidentsSeederTest` theo email test mới. Nhóm Community 44/44 xanh.
+- Báo cáo: `docs/security/DATA_LEAK_AUDIT_20260804.md`. Cập nhật SECURITY_CONTROLS §5 + ASVS 4.2.1.
+
+Bài học: cùng file `CommunityController` có `findEventInScope`/`joinGroup` kiểm scope đúng
+nhưng `vote` quên → khi có mẫu scope sẵn, phải soát MỌI đường ghi dùng nhất quán (G9).
