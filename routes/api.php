@@ -23,6 +23,7 @@ use App\Http\Controllers\Api\V1\Resident\NotificationPreferenceController;
 use App\Http\Controllers\Api\V1\Resident\EmergencyAlertController;
 use App\Http\Controllers\Api\V1\Resident\FeedbackController;
 use App\Http\Controllers\Api\V1\Resident\HomeController;
+use App\Http\Controllers\Api\V1\Resident\InteractionController;
 use App\Http\Controllers\Api\V1\Resident\LinkPreviewController;
 use App\Http\Controllers\Api\V1\Resident\ListingController;
 use App\Http\Controllers\Api\V1\Resident\LoyaltyController;
@@ -281,6 +282,10 @@ Route::prefix('v1')->group(function () {
         Route::get('feedback/{feedback}/comments', [FeedbackController::class, 'comments']);
         Route::post('feedback/{feedback}/comments', [FeedbackController::class, 'storeComment']);
         Route::post('feedback/{feedback}/rating', [FeedbackController::class, 'rate']);
+
+        // Trung tâm tương tác (handoff v1.1) — read-model hợp nhất phiếu cư dân.
+        Route::get('interactions/summary', [InteractionController::class, 'summary']);
+        Route::get('interactions', [InteractionController::class, 'index']);
 
         // Tuỳ chọn bật/tắt kênh thông báo push (màn Cá nhân → Thông báo).
         Route::get('notification-preferences', [NotificationPreferenceController::class, 'index']);

@@ -3164,3 +3164,18 @@ Owner yêu cầu tài liệu test nghiệp vụ phần C + tự seed dữ liệu
   `billing:run 10 2026-08` → TỔNG 3.382.500; `billing:reconcile-engine 10 2026-08` → 2 khớp +
   1 lệch thật (bắt đúng ENG-03). Toàn bộ nghiệp vụ đối soát chạy thông.
 - CÒN: điền area cho 1314 căn import HPO + giá khớp để đối chiếu quy mô thật kỳ 2026-05.
+
+## 2026-08-04 — Interaction Center (handoff v1.1): NỀN BACKEND (read-model hợp nhất)
+
+Xử lý handoff `X2_BMS_RESIDENT_INTERACTION_CENTER_HANDOFF_V1.1` — audit + nền backend (UI Flutter cần API này trước).
+- Audit `docs/INTERACTION_CENTER_AUDIT_20260804.md`: current→target mapping. Nguồn resident thật:
+  feedback_requests · payments (xác nhận TT) · visitor/amenity/binding (yêu cầu dịch vụ 3 subtype).
+  support_tickets = hệ SA (không có chủ resident) → bỏ; access_request không có nguồn.
+- `InteractionAggregator` (union theo query, scope apartment/resident/user — BOLA-safe): map 5 status
+  family, capabilities theo type/family, SLA từ feedback.sla_due_at, KPI theo context (không theo filter).
+- `InteractionController` + routes `GET interactions/summary` + `GET interactions` (q/type/subtype/
+  status_family/sort/cursor) — envelope chuẩn.
+- Test `InteractionCenterTest` 4/4: gom đa nguồn + KPI, lọc type/status, cô lập tenant, HTTP.
+- CÒN (slice sau): detail resolver + common actions (comment/cancel/reopen/rating định tuyến nguồn);
+  **UI Flutter** (Trung tâm tương tác) theo layout override + acceptance + screenshot. Quy mô lớn →
+  cân nhắc projection table `resident_interactions` (TECH_DEBT) khi nhiều phiếu.
