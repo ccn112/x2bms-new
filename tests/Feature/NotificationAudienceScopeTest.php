@@ -75,6 +75,10 @@ class NotificationAudienceScopeTest extends TestCase
 
     public function test_bql_bi_chan_khi_soan_ra_toa_ngoai_pham_vi(): void
     {
+        // Render trang Filament trong Livewire test tốn bộ nhớ — tự nâng để chạy được
+        // cả dưới `artisan test` (child process mặc định 128MB ở Herd/Windows).
+        ini_set('memory_limit', '1024M');
+
         [$tA, $pA] = $this->tenantProject('CA');
         [$tB, $pB] = $this->tenantProject('CB');
         $buildingB = Building::where('code', 'BLD-CB')->first();   // tòa của tenant B
