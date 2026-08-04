@@ -62,7 +62,7 @@
 | T6 | `StatementApprovalQueue::audit()` **không ghi `subject_type`/`subject_id`** → không truy được bản ghi nào bị duyệt | `StatementApprovalQueue.php:200` | G10 |
 | T7 | Lệch seed cực lớn: FEE_BILLING 8.720 rows vs domain khác < 50; 23 bảng `_archive` rỗng | `ERD_CURRENT_20260703.md:307` | G4 |
 | T8 | DB chỉ có **7 bình luận thật** ⇒ chưa thể chứng minh migration tách bảng bình luận đúng. Gói mass seed có ở `handoff/` nhưng **chưa copy vào repo** | | G4 |
-| T9 | Hard-lock tenant tầng DB — ĐANG LÀM theo ①③ (MySQL): ③ cổng ratchet xong; ① POC composite FK `notifications↔buildings` xong (chứng minh chặn lai-tenant). **Còn:** roll out composite FK cho nhóm tiền (statements/payments↔building/apartment); ② trigger cho quan hệ polymorphic (audience). Postgres RLS: hoãn (4–8 tuần). Xem `docs/adr/ADR-001-tenant-scope-discipline.md` | `database/migrations/..._000002_add_tenant_composite_fk_notifications_building.php` | G9 |
+| T9 | Hard-lock tenant tầng DB — theo ①③ (MySQL): ③ cổng ratchet xong; ① composite FK xong cho notifications + **NHÓM TIỀN 13 quan hệ** (statements/payments/receipts/debts/apartment_wallets/liability_periods → buildings/apartments/billing_periods/payments/residents). DB chặn lai-tenant (1452). **CÒN:** ② trigger cho quan hệ **KHÔNG có tenant_id** — `statement_lines`(→statement) và **`payment_allocations`** (→payment/statement_line): rủi ro CAO nhất là allocation nối payment↔line **lai-tenant** mà FK không chặn được. Postgres RLS: hoãn. Xem `docs/adr/ADR-001-tenant-scope-discipline.md` | `..._000003_add_tenant_composite_fk_money_group.php` | G10 |
 
 ## Nhóm 5 — HỢP ĐỒNG APP ↔ BACKEND LỆCH
 

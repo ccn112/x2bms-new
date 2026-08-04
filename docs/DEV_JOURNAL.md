@@ -3007,3 +3007,23 @@ rủi ro cutover: 77 raw-query, 30 migration MySQL-specific, 4 FULLTEXT, case-se
 
 Việc tiếp đề xuất: roll out composite FK cho statements/payments↔building/apartment (nhóm
 tiền, ưu tiên G10); hoặc quay lại feature (07-10 analytics thông báo).
+
+## 2026-08-04 (khuya, tiếp) — Roll out ① composite FK cho NHÓM TIỀN
+
+- Audit 13 quan hệ tiền (con có tenant_id): statements/payments/receipts/debts/
+  apartment_wallets/liability_periods → buildings/apartments/billing_periods/payments/
+  residents. **Kiểm data: 0 lệch cả 13** trước khi thêm.
+- Migration `..._000003_add_tenant_composite_fk_money_group` (MySQL-only): +UNIQUE
+  (tenant_id,id) cho apartments/billing_periods/payments/residents + 13 composite FK.
+  Áp trên MySQL dev OK (validate 2682 statements + 1270 liability… đều pass).
+- Chứng minh: insert statement tenant=14 + apartment tenant=2 → DB CHẶN (1452); đúng
+  tenant → OK.
+- **CÒN (② trigger):** `statement_lines` & `payment_allocations` KHÔNG có tenant_id →
+  không đặt composite FK; rủi ro cao nhất: allocation nối payment↔statement_line lai-
+  tenant. Ghi TECH_DEBT T9.
+
+⚠️ Minh bạch: khi "verify" mình lỡ chạy `billing:reconcile-statement-balances` — đây là
+lệnh SỬA (không read-only), nó auto-sửa 1090 bảng kê lệch `paid_amount` trong DATA DEMO
+LOCAL. Đây là **drift sẵn có của seed** (DemoDataSeeder), **KHÔNG do FK** (FK không đụng
+số tiền). Fix làm data đúng hơn (paid_amount = Σ line), không hại; chỉ là mutation ngoài
+ý định khi verify — ghi lại để rút kinh nghiệm (verify FK nên dùng lệnh read-only).
