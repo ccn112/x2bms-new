@@ -3081,3 +3081,14 @@ CÒN LÀM (ưu tiên gợi ý khi quay lại):
 6. **Roll out composite FK** cho quan hệ tenant còn lại ngoài nhóm tiền (nếu cần) + lan test
    MUST_NOT_LEAK ra mọi bề mặt đọc.
 7. (chiến lược) Postgres RLS — hoãn, chỉ khi có compliance mandate.
+
+## 2026-08-04 — Feature 07-10: Analytics hiệu quả thông báo
+
+- `NotificationAnalyticsService` (query test độc lập): open-rate (read/recipients), phễu
+  giao nhận per-kênh từ `notification_delivery_logs` (gửi/đọc/thất bại/bỏ + tỉ lệ), chi phí
+  kênh trả phí; scope `Notification::visibleTo` (không lộ tenant khác).
+- Page `/admin/notifications/analytics` (Vận hành) — KPI + bảng phễu kênh + bảng per-thông-báo
+  (tỉ lệ đọc màu theo ngưỡng). READ-ONLY.
+- Test `NotificationAnalyticsServiceTest` 3/3 (open-rate, phễu kênh, cô lập tenant).
+- Ghi chú: chưa track event CLICK riêng → "CTR" dùng read-rate làm proxy; bổ sung sau nếu cần.
+- PROGRESS_TRACKER 07-10 → 🟢.
