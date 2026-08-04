@@ -3027,3 +3027,16 @@ lệnh SỬA (không read-only), nó auto-sửa 1090 bảng kê lệch `paid_amo
 LOCAL. Đây là **drift sẵn có của seed** (DemoDataSeeder), **KHÔNG do FK** (FK không đụng
 số tiền). Fix làm data đúng hơn (paid_amount = Σ line), không hại; chỉ là mutation ngoài
 ý định khi verify — ghi lại để rút kinh nghiệm (verify FK nên dùng lệnh read-only).
+
+## 2026-08-04 (khuya, tiếp) — ② trigger payment_allocations + tài liệu chuẩn bảo mật
+
+- **② Trigger** `payment_allocations` (mig `..._000004`, MySQL-only): junction không có
+  tenant_id → trigger BEFORE INSERT/UPDATE ép payment.tenant = statement.tenant =
+  statement_line→statement.tenant. Chứng minh trên MySQL dev: allocation lai-tenant bị
+  reject SQLSTATE 45000; cùng-tenant OK. Data kiểm 0 lệch trước. Test (skip sqlite) xác
+  nhận trigger được cài. → bịt mắt xích tiền hở cuối cùng.
+- **Tài liệu chuẩn (owner yêu cầu — cho audit + cam kết khách hàng):**
+  `docs/security/SECURITY_CONTROLS_AND_STANDARDS.md` (ánh xạ kiểm soát ↔ OWASP A01/ASVS/
+  Saltzer-Schroeder/AWS SaaS Lens/G9-G10 + bằng chứng + trạng thái + phần CHƯA phủ) và
+  `docs/security/OWASP_ASVS_V4_ACCESS_CONTROL_CHECKLIST.md` (checklist V4). Có tuyên bố
+  "tự đánh giá, chưa chứng nhận bên thứ 3" để không nói quá khi đưa khách.

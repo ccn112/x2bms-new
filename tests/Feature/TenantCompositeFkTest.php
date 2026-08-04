@@ -64,6 +64,20 @@ class TenantCompositeFkTest extends TestCase
         $this->assertIsInt($ok2);
     }
 
+    public function test_trigger_chong_lai_tenant_payment_allocations_da_cai(): void
+    {
+        // ② Trigger BEFORE INSERT/UPDATE trên payment_allocations phải tồn tại (guard
+        // payment.tenant = statement.tenant = statement_line→statement.tenant).
+        // Hành vi (reject SQLSTATE 45000 khi lai-tenant) đã chứng minh tay trên MySQL dev
+        // — xem DEV_JOURNAL 2026-08-04. Ở đây xác nhận trigger được migration cài đặt.
+        $triggers = collect(DB::select(
+            "select trigger_name n from information_schema.triggers where trigger_schema=database() and event_object_table='payment_allocations'"
+        ))->pluck('n')->all();
+
+        $this->assertContains('payment_allocations_tenant_guard_ins', $triggers);
+        $this->assertContains('payment_allocations_tenant_guard_upd', $triggers);
+    }
+
     /** @return array{0:Tenant,1:Building} */
     private function tenantBuilding(string $tag): array
     {
