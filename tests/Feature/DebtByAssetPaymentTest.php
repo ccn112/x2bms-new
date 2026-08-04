@@ -246,4 +246,42 @@ class DebtByAssetPaymentTest extends TestCase
             'line_ids' => [$s['lines']['2026-05']->id], 'amount' => 1_500_000,
         ])->assertStatus(422);
     }
+
+    public function test_du_earmark_xe_X_khong_tra_no_xe_Y(): void
+    {
+        // Đúng nghĩa "ngăn tiền thừa theo tài sản": dư của xe X earmark riêng, KHÔNG
+        // được auto-trả nợ xe Y (ngăn khác subject) — tránh rò chéo tài sản.
+        $s = $this->scope('ISOX', ['2026-05']);
+        $apt = $s['apartment'];
+        $xLine = $s['lines']['2026-05'];
+
+        // Xe Y cùng căn, nợ riêng kỳ 2026-06 (1.5tr).
+        $vehicleY = Vehicle::create([
+            'tenant_id' => $apt->tenant_id, 'building_id' => $apt->building_id, 'apartment_id' => $apt->id,
+            'plate_no' => '99Y-000009', 'type' => 'car', 'monthly_fee' => 1_500_000, 'status' => 'active',
+        ]);
+        $periodY = BillingPeriod::create(['tenant_id' => $apt->tenant_id, 'building_id' => $apt->building_id, 'code' => '2026-06', 'label' => 'T6', 'period_month' => '2026-06-01']);
+        $stmtY = Statement::create(['tenant_id' => $apt->tenant_id, 'building_id' => $apt->building_id, 'apartment_id' => $apt->id, 'billing_period_id' => $periodY->id, 'total_amount' => '1500000', 'paid_amount' => 0, 'status' => 'issued', 'approval_status' => Statement::APPROVAL_PUBLISHED, 'published_at' => now()]);
+        $yLine = StatementLine::create(['statement_id' => $stmtY->id, 'fee_type' => 'Phí gửi ô tô', 'fee_type_id' => $s['oto']->id, 'fee_category' => 'parking', 'subject_type' => $vehicleY->getMorphClass(), 'subject_id' => $vehicleY->id, 'service_period_start' => '2026-06-01', 'service_period_end' => '2026-06-28', 'amount' => 1_500_000, 'paid_amount' => 0, 'status' => 'issued']);
+
+        Sanctum::actingAs($s['user'], ['resident']);
+
+        // Trả DƯ xe X: 2tr cho line 1.5tr → dư 500k vào NGĂN xe X.
+        $this->postJson('/api/v1/resident/debts/by-service/pay', [
+            'subject_type' => 'vehicle', 'subject_id' => $s['vehicle']->id,
+            'line_ids' => [$xLine->id], 'amount' => 2_000_000,
+        ])->assertOk();
+        $xBucket = ApartmentWalletBucket::where('subject_type', $s['vehicle']->getMorphClass())->where('subject_id', $s['vehicle']->id)->first();
+        $this->assertSame('500000.00', (string) $xBucket->balance);
+
+        // Trả xe Y chỉ 1tr (thiếu 500k) — KHÔNG được lấy từ ngăn xe X.
+        $this->postJson('/api/v1/resident/debts/by-service/pay', [
+            'subject_type' => 'vehicle', 'subject_id' => $vehicleY->id,
+            'line_ids' => [$yLine->id], 'amount' => 1_000_000,
+        ])->assertOk();
+
+        $this->assertSame('1000000.00', (string) $yLine->fresh()->paid_amount, 'Y chỉ trả bằng tiền mới nạp');
+        $this->assertNotSame('paid', $yLine->fresh()->status, 'Y vẫn còn nợ 500k');
+        $this->assertSame('500000.00', (string) $xBucket->fresh()->balance, 'ngăn xe X KHÔNG bị xe Y rút');
+    }
 }

@@ -3102,3 +3102,16 @@ Kiểm thực tế (doc plan 31/07 nói "cư dân chỉ đọc" đã cũ): **rep
   (owns), chỉ khi status `resolved`/`closed` (không chấm khi còn mở), điểm 1–5 + rating_comment.
 - `FeedbackRequestResource`: +`rating_comment`, +`can_rate` (app biết khi nào hiện UI sao).
 - Test `FeedbackRatingTest` 4/4 (chấm khi resolved, chặn khi mở 409, người khác 404, điểm ngoài 1–5 → 422).
+
+## 2026-08-04 — B5: Công nợ theo dịch vụ + ngăn tiền thừa theo tài sản (D6)
+
+Kiểm thực tế: B5 **đã hiện thực** (doc plan 31/07 nói "chưa" đã cũ):
+- Màn/tree by-service: `DebtByServiceService` (family→fee_type→tài sản→tháng), endpoint
+  `GET debts/by-service`.
+- Ngăn tiền thừa theo tài sản: `apartment_wallet_buckets` có `subject_type/subject_id`;
+  `ApartmentWalletService::settleAssetLines` nạp tiền vào NGĂN tài sản, dư giữ TRONG ngăn
+  (không về quỹ chung); endpoint `POST debts/by-service/pay` (`DebtByAssetPaymentController`).
+- Test sẵn có `DebtByAssetPaymentTest` (earmark, dư quỹ chung khi đa dịch vụ, lần sau trừ ngăn,
+  lệch tài sản 422).
+Bổ sung: test bất biến **cross-asset isolation** — dư earmark xe X KHÔNG bị dùng trả nợ xe Y.
+`DebtByAssetPaymentTest` 7/7 xanh. (App dropdown 3 cấp là việc mobile.)
