@@ -144,7 +144,12 @@ class NotificationCenter extends Page implements HasTable
                 ->visible(fn (Get $get) => $get('audience_scope') && $get('audience_scope') !== 'all')
                 ->required(fn (Get $get) => in_array($get('audience_scope'), ['tenant', 'project', 'building', 'apartment'], true)),
             CheckboxList::make('channels')->label('Kênh gửi')
-                ->options(['app' => 'App', 'email' => 'Email', 'sms' => 'SMS', 'zalo' => 'Zalo'])->default(['app'])->columns(4),
+                ->options([
+                    'app' => 'App (hộp thư)', 'push' => 'Đẩy về máy (Push)',
+                    'email' => 'Email', 'zalo' => 'Zalo', 'whatsapp' => 'WhatsApp',
+                    'telegram' => 'Telegram', 'xspace' => 'X.Space (xhub)',
+                ])->default(['app', 'push'])->columns(3)
+                ->helperText('Push cần cư dân đã cài app. Email gửi thật; Zalo/WhatsApp/Telegram/X.Space là cổng chờ, cấu hình tham số theo tòa. Kênh ngoài chỉ tự gửi khi phạm vi là căn hộ/cư dân.'),
             Toggle::make('publish_now')->label('Phát hành ngay')->default(false)->live(),
             DateTimePicker::make('publish_at')->label('Hẹn giờ phát hành')->visible(fn (Get $get) => ! $get('publish_now')),
         ];
@@ -213,6 +218,14 @@ class NotificationCenter extends Page implements HasTable
         // FCM tắt/lỗi KHÔNG được làm việc phát hành thông báo thất bại.
         try {
             app(\App\Services\Resident\NotificationPushDispatcher::class)->dispatch($n);
+        } catch (\Throwable $e) {
+            report($e);
+        }
+
+        // Gửi KÊNH NGOÀI (email thật + Zalo/WhatsApp/Telegram/X.Space cổng chờ) cho
+        // audience targeted — ADR-002. Bọc try cùng lý do như trên.
+        try {
+            app(\App\Services\Notifications\NotificationExternalChannelDispatcher::class)->dispatch($n);
         } catch (\Throwable $e) {
             report($e);
         }

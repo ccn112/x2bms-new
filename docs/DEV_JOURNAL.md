@@ -2925,3 +2925,39 @@ rủi ro cao hơn lợi ích. Để nguyên cho phiên sau, đọc `statement_li
 subject_id` (migration `2026_07_31_100000_...`) và
 `Support/Import/Profiles/BillingChargeImportProfile.php` (đã có resolve tài sản
 xe/đồng hồ) làm điểm bắt đầu.
+
+---
+
+## 2026-08-04 — Mail thật + cổng chờ đa kênh theo tòa (ADR-002) + fix push từ UI
+
+**Bối cảnh:** owner đã gắn Elastic Email ở local; yêu cầu: luồng mail chạy thật; các
+kênh Zalo/WhatsApp/Telegram/X.Space (hệ sinh thái xhub) để **cổng chờ + cấu hình tham
+số theo TÒA**; seed dữ liệu test; hướng dẫn test luồng BQL push xuống cư dân.
+
+**Đã làm:**
+- **ADR-002** (`docs/modules/notifications-multichannel/ADR-002-provider-gateways-per-building.md`):
+  email = kênh gửi thật duy nhất; 4 kênh kia = cổng chờ; tham số khai theo tòa; 3 trạng
+  thái cổng chờ (`provider_not_configured` / `provider_pending` / `channel_disabled`).
+- **Data:** migration `create_building_notification_channels` (unique tòa×kênh, config json) +
+  model `BuildingNotificationChannel`.
+- **Service:** `ChannelConfigResolver` (cache per-request) + `MultiChannelNotifier` thành
+  **building-aware** (thêm `?int $buildingId`); `EmailChannelDispatcher` override from/reply-to
+  theo tòa; `PendingProviderChannelDispatcher` phân biệt pending vs not-configured. Thêm kênh
+  whatsapp/telegram/xspace vào registry. `NotificationExternalChannelDispatcher` mới — phát hành
+  thông báo BQL tự gửi kênh ngoài cho audience **targeted** (email thật, còn lại cổng chờ),
+  KHÔNG auto-gửi broadcast (tránh phí per-người).
+- **Fix quan trọng:** form Soạn thông báo (`NotificationCenter`) trước chỉ có app/email/sms/zalo,
+  **thiếu 'push'** → BQL soạn từ UI không đẩy push được. Đã thêm kênh **“Đẩy về máy (Push)”**
+  (+ whatsapp/telegram/xspace) và wire `NotificationExternalChannelDispatcher` vào `applyPublish`.
+- **Surface:** trang Filament `/admin/notifications/channel-settings` (BQL khai/sửa tham số kênh
+  theo tòa). Cập nhật CHANNEL map ở màn delivery-audit.
+- **Seed:** `BuildingChannelConfigDemoSeeder` (tòa test: email active + 4 kênh cổng chờ) + mở rộng
+  `X2NotificationsDemoSeeder` (thêm audit whatsapp/telegram/xspace + thông báo BQL push+email demo).
+- **Test:** `MultiChannelNotifierTest` (4) + `NotificationExternalChannelDispatcherTest` (2) xanh;
+  nhóm Notification(39)/Push(12)/Bell(4) xanh — không hồi quy.
+- **Verify thật:** migrate + seed chạy trên DB dev `x2bms`; **gửi email thật qua Elastic Email
+  thành công** (Mail::raw → chtchinh@gmail.com).
+- **Hướng dẫn test:** `docs/test0408.md` (deploy + push BQL→cư dân + mail + cổng chờ theo tòa).
+
+**Còn lại:** adapter provider THẬT cho Zalo/WhatsApp/Telegram/X.Space (chờ chốt hợp đồng +
+template + phí). Chưa push code lên remote (chờ owner duyệt).

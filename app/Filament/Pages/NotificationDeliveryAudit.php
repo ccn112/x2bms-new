@@ -49,7 +49,8 @@ class NotificationDeliveryAudit extends Page implements HasTable
 
     public const CHANNEL = [
         'push' => 'Push', 'app' => 'Trong app', 'email' => 'Email',
-        'sms' => 'SMS', 'zalo' => 'Zalo', 'postal' => 'Thư tay',
+        'zalo' => 'Zalo', 'whatsapp' => 'WhatsApp', 'telegram' => 'Telegram',
+        'xspace' => 'X.Space', 'sms' => 'SMS', 'postal' => 'Thư tay',
     ];
 
     public function table(Table $table): Table
