@@ -15,8 +15,8 @@ use Illuminate\Database\Seeder;
  * Cộng đồng giữa 2 máy (iPhone + Samsung): cùng project ⇒ cùng feed cộng đồng.
  *
  * Idempotent (firstOrCreate). Mật khẩu chung: Test@2026!.
- *  - test.cudan1@x2bms.vn
- *  - test.cudan2@x2bms.vn
+ *  - chtchinh@gmail.com   (Cư dân Test 1 — nhận email full luồng)
+ *  - chatto.vn@gmail.com  (Cư dân Test 2 — nhận email full luồng)
  */
 class CommunityTestResidentsSeeder extends Seeder
 {
@@ -40,8 +40,8 @@ class CommunityTestResidentsSeeder extends Seeder
         $tenantId = $project->tenant_id;
 
         $accounts = [
-            ['email' => 'test.cudan1@x2bms.vn', 'name' => 'Cư dân Test 1', 'apt' => 'DP-TEST-1', 'phone' => '0900000101'],
-            ['email' => 'test.cudan2@x2bms.vn', 'name' => 'Cư dân Test 2', 'apt' => 'DP-TEST-2', 'phone' => '0900000102'],
+            ['email' => 'chtchinh@gmail.com', 'name' => 'Cư dân Test 1', 'apt' => 'DP-TEST-1', 'phone' => '0900000101'],
+            ['email' => 'chatto.vn@gmail.com', 'name' => 'Cư dân Test 2', 'apt' => 'DP-TEST-2', 'phone' => '0900000102'],
         ];
 
         foreach ($accounts as $a) {
@@ -80,6 +80,6 @@ class CommunityTestResidentsSeeder extends Seeder
         }
 
         $this->command?->info('2 TK test cộng đồng (cùng Đại Phúc): '
-            .'test.cudan1@x2bms.vn / test.cudan2@x2bms.vn — mật khẩu '.self::PASSWORD);
+            .'chtchinh@gmail.com / chatto.vn@gmail.com — mật khẩu '.self::PASSWORD);
     }
 }
