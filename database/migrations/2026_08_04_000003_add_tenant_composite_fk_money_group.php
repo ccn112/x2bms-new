@@ -59,11 +59,21 @@ return new class extends Migration
             if ($this->hasFk($c, $comp)) {
                 continue;   // idempotent
             }
+            // Reconcile drift TRƯỚC khi khoá: một số DB (đã seed nhiều tenant) còn
+            // bản ghi tiền trỏ tài sản khác/thiếu tenant → FK sẽ 1452. Cột nullable
+            // thì gỡ liên kết mồ côi (NULL); cột bắt buộc mà lệch thì dừng có thông
+            // điệp rõ để chủ dữ liệu xử lý, thay vì lỗi FK khó hiểu.
+            $this->reconcileOrphans($c, $fk, $p);
             if ($this->hasFk($c, "{$c}_{$fk}_foreign")) {
                 Schema::table($c, fn (Blueprint $t) => $t->dropForeign("{$c}_{$fk}_foreign"));
             }
-            Schema::table($c, function (Blueprint $t) use ($c, $fk, $p, $comp) {
-                $t->index(['tenant_id', $fk], "{$c}_{$fk}_tenant_idx");
+            // Index có thể đã thêm ở lần chạy trước bị lỗi FK → chỉ thêm nếu chưa có
+            // (tránh "Duplicate key name" khi migrate lại).
+            $needIdx = ! $this->hasIndex($c, "{$c}_{$fk}_tenant_idx");
+            Schema::table($c, function (Blueprint $t) use ($c, $fk, $p, $comp, $needIdx) {
+                if ($needIdx) {
+                    $t->index(['tenant_id', $fk], "{$c}_{$fk}_tenant_idx");
+                }
                 $t->foreign(['tenant_id', $fk], $comp)
                     ->references(['tenant_id', 'id'])->on($p)
                     ->restrictOnDelete()->cascadeOnUpdate();
@@ -93,6 +103,51 @@ return new class extends Migration
                 Schema::table($p, fn (Blueprint $t) => $t->dropUnique("{$p}_tenant_id_id_unique"));
             }
         }
+    }
+
+    /**
+     * Gỡ/chặn bản ghi con trỏ cha KHÁC tenant hoặc cha không tồn tại (orphan), để
+     * composite FK add được. Cột nullable → set NULL (gỡ liên kết sai). Cột bắt buộc
+     * còn orphan → ném lỗi rõ ràng (không tự xoá dữ liệu tiền).
+     */
+    private function reconcileOrphans(string $child, string $fk, string $parent): void
+    {
+        $orphanWhere = "c.`{$fk}` is not null and p.id is null";
+        $count = (int) (DB::selectOne(
+            "select count(*) as n from `{$child}` c
+             left join `{$parent}` p on p.tenant_id = c.tenant_id and p.id = c.`{$fk}`
+             where {$orphanWhere}"
+        )->n ?? 0);
+        if ($count === 0) {
+            return;
+        }
+
+        if ($this->isNullable($child, $fk)) {
+            DB::statement(
+                "update `{$child}` c
+                 left join `{$parent}` p on p.tenant_id = c.tenant_id and p.id = c.`{$fk}`
+                 set c.`{$fk}` = null
+                 where {$orphanWhere}"
+            );
+            fwrite(STDERR, "  [tenant-fk] {$child}.{$fk}: gỡ {$count} liên kết mồ côi (khác/thiếu tenant) → NULL\n");
+
+            return;
+        }
+
+        throw new \RuntimeException(
+            "Không thể khoá {$child}.{$fk} (bắt buộc): còn {$count} bản ghi trỏ {$parent} khác/thiếu tenant. "
+            .'Cần sửa dữ liệu (đúng tenant_id hoặc dời) trước khi chạy lại migrate.'
+        );
+    }
+
+    private function isNullable(string $table, string $column): bool
+    {
+        $row = DB::selectOne(
+            'select is_nullable from information_schema.columns where table_schema=database() and table_name=? and column_name=? limit 1',
+            [$table, $column],
+        );
+
+        return $row !== null && strtoupper((string) $row->is_nullable) === 'YES';
     }
 
     private function hasIndex(string $table, string $index): bool
