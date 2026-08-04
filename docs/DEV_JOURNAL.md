@@ -2985,3 +2985,25 @@ Nối tiếp phần siết quyền Trung tâm thông báo. Owner hỏi thẳng: 
 
 Còn nợ (ngoài phiên): adapter provider thật N4 (Zalo/WhatsApp/Telegram/X.Space);
 analytics CTR/open-rate thông báo (07-10 ⬜); hard-lock tenant tầng DB (T9).
+
+---
+
+## 2026-08-04 (khuya) — Hard-lock tenant ①③ trên MySQL (chốt thay vì Postgres)
+
+Owner cân nhắc migrate Postgres để có RLS; đánh giá chi phí thật của repo (~4–8 tuần +
+rủi ro cutover: 77 raw-query, 30 migration MySQL-specific, 4 FULLTEXT, case-sensitivity,
+đối soát tiền G10) → **chốt đi ①③ trên MySQL**, hoãn Postgres.
+
+- **③ cổng đọc (xong):** audit 83 chỗ bỏ-tenant-scope trên đường web (nhiều cái hợp lệ:
+  chợ BĐS/cộng đồng cross-tenant). `TenantScopeRatchetTest` + `tenant_scope_baseline.json`
+  khóa baseline theo số-lần/file → CI fail nếu sinh cửa-sau mới. Chỉ giảm dần.
+- **① write-integrity (POC xong):** migration composite FK
+  `notifications(tenant_id,building_id)→buildings(tenant_id,id)` (MySQL-only, guard driver).
+  Chứng minh trên MySQL dev: insert lai-tenant bị DB chặn (1452) dù ghi thẳng bỏ mọi app
+  scope; đúng-tenant/null vẫn ghi. `TenantCompositeFkTest` (skip sqlite). Suite sqlite không
+  hồi quy (43 pass + 1 skip).
+- Cập nhật ADR-001 + TECH_DEBT T9 (còn: roll out FK nhóm tiền; ② trigger cho audience
+  polymorphic).
+
+Việc tiếp đề xuất: roll out composite FK cho statements/payments↔building/apartment (nhóm
+tiền, ưu tiên G10); hoặc quay lại feature (07-10 analytics thông báo).

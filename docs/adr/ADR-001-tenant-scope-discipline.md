@@ -38,10 +38,21 @@
 - Test: `tests/Feature/NotificationAudienceScopeTest.php` (đọc, quản trị, và Livewire compose
   bypass đều bị chặn).
 
-## Hệ quả & còn nợ (chưa hard-lock tầng DB)
-- Cô lập hiện vẫn ở tầng **query/scope + test**, CHƯA có ràng buộc tầng DB (CHECK/FK/RLS) chặn
-  tuyệt đối mọi code path. Đây là bước "hard-lock" mạnh hơn — đưa vào TECH_DEBT để làm dần cho
-  các bảng nhạy cảm.
+## Hard-lock tầng DB — chốt hướng (2026-08-04): ① write-integrity + ③ cổng đọc trên MySQL
+MySQL 8 KHÔNG có RLS (đó là Postgres) → "hard-lock" ở đây = **toàn vẹn ghi bằng composite FK**
+(①) + **kỷ luật đọc có cổng CI** (③), KHÔNG phải RLS. Đánh giá migrate Postgres: ~4–8 tuần +
+rủi ro cutover trên SaaS đang chạy → hoãn, chỉ làm khi có compliance mandate.
+
+- **③ (xong):** `TenantScopeRatchetTest` khóa baseline 83 chỗ bỏ-tenant-scope trên đường web;
+  chặn sinh cửa-sau mới. Chỉ giảm dần.
+- **① (POC xong):** migration `..._000002_add_tenant_composite_fk_notifications_building` —
+  `notifications(tenant_id,building_id)→buildings(tenant_id,id)`. Đã chứng minh trên MySQL dev:
+  insert lai-tenant bị DB chặn (SQLSTATE 1452) dù ghi thẳng. Test `TenantCompositeFkTest`
+  (skip trên sqlite). **Template để roll out** cho nhóm quan hệ tiền (statements/payments/
+  statement_lines ↔ building/apartment) + các aggregate khác.
+- **Giới hạn:** audience nhắm-đối-tượng là POLYMORPHIC (`notification_audiences.scope_id`) →
+  không đặt composite FK được; chỗ đó dựa validate server (đã có) + cổng ③; hard-lock cần
+  TRIGGER (②) — việc tiếp.
 - Bảng thiếu `tenant_id` (vd `comments` — T1) cô lập gián tiếp qua quan hệ: mọi truy vấn PHẢI đi
   qua khoá quan hệ đã scope, không được `withoutGlobalScopes()` trần.
 - Khi thêm bảng/đường đọc tenant mới: bắt buộc kèm test `MUST_NOT_LEAK` (điểm 5) — coi như một
