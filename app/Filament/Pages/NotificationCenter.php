@@ -111,14 +111,48 @@ class NotificationCenter extends Page implements HasTable
     private function scopeOptions(): array
     {
         $u = auth()->user();
+        // Bỏ "Toàn hệ thống": không có FCM topic toàn hệ nên push không đi đâu; buộc
+        // chọn phạm vi cụ thể (Công ty/Dự án/Tòa/Căn hộ).
         if ($u->isPlatformAdmin()) {
-            return ['all' => 'Toàn hệ thống', 'tenant' => 'Công ty', 'project' => 'Dự án', 'building' => 'Tòa nhà'];
+            return ['tenant' => 'Công ty', 'project' => 'Dự án', 'building' => 'Tòa nhà', 'apartment' => 'Căn hộ'];
         }
         if ($u->isTenantOperator()) {
             return ['project' => 'Dự án', 'building' => 'Tòa nhà', 'apartment' => 'Căn hộ'];
         }
 
         return ['building' => 'Tòa nhà', 'apartment' => 'Căn hộ'];
+    }
+
+    /**
+     * Đối tượng nhận — BÓ THEO QUYỀN người soạn (không lộ toàn hệ thống):
+     *  - platform admin (SA): toàn hệ.
+     *  - tenant operator (HQ): mọi dự án/tòa/căn TRONG công ty mình (tenant scope lo).
+     *  - BQL cấp dự án: chỉ dự án được giao (accessibleProjectIds) → tòa/căn trong đó.
+     */
+    private function audienceTargetOptions(?string $scope): array
+    {
+        $u = auth()->user();
+
+        // Chỉ hạn theo dự án với BQL cấp dự án; SA & HQ không hạn ở tầng dự án.
+        $projectIds = (! $u->isPlatformAdmin() && ! $u->isTenantOperator())
+            ? ($u->accessibleProjectIds() ?? [])
+            : null;
+
+        $buildings = fn () => Building::query()
+            ->when($projectIds !== null, fn ($q) => $q->whereIn('project_id', $projectIds));
+
+        return match ($scope) {
+            'tenant' => ($u->isPlatformAdmin() ? Tenant::query() : Tenant::whereKey($u->tenant_id))
+                ->orderBy('name')->pluck('name', 'id')->all(),
+            'project' => Project::query()
+                ->when($projectIds !== null, fn ($q) => $q->whereIn('id', $projectIds))
+                ->orderBy('name')->pluck('name', 'id')->all(),
+            'building' => $buildings()->orderBy('name')->pluck('name', 'id')->all(),
+            'apartment' => Apartment::query()
+                ->when($projectIds !== null, fn ($q) => $q->whereIn('building_id', $buildings()->select('id')))
+                ->orderBy('code')->pluck('code', 'id')->all(),
+            default => [],
+        };
     }
 
     /** @return array<int, \Filament\Forms\Components\Component> */
@@ -134,13 +168,7 @@ class NotificationCenter extends Page implements HasTable
             Select::make('audience_scope')->label('Phạm vi nhận')->options($this->scopeOptions())->required()->live()
                 ->default(array_key_first($this->scopeOptions())),
             Select::make('audience_target')->label('Chọn đối tượng')->searchable()
-                ->options(fn (Get $get) => match ($get('audience_scope')) {
-                    'tenant' => Tenant::orderBy('name')->pluck('name', 'id')->all(),
-                    'project' => Project::orderBy('name')->pluck('name', 'id')->all(),
-                    'building' => Building::orderBy('name')->pluck('name', 'id')->all(),
-                    'apartment' => Apartment::orderBy('code')->pluck('code', 'id')->all(),
-                    default => [],
-                })
+                ->options(fn (Get $get) => $this->audienceTargetOptions($get('audience_scope')))
                 ->visible(fn (Get $get) => $get('audience_scope') && $get('audience_scope') !== 'all')
                 ->required(fn (Get $get) => in_array($get('audience_scope'), ['tenant', 'project', 'building', 'apartment'], true)),
             CheckboxList::make('channels')->label('Kênh gửi')
