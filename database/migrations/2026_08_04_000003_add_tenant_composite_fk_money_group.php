@@ -142,12 +142,14 @@ return new class extends Migration
 
     private function isNullable(string $table, string $column): bool
     {
+        // Alias tường minh: MySQL trả tên cột information_schema viết HOA
+        // (IS_NULLABLE) khi không đặt alias → $row->is_nullable sẽ undefined.
         $row = DB::selectOne(
-            'select is_nullable from information_schema.columns where table_schema=database() and table_name=? and column_name=? limit 1',
+            'select is_nullable as nn from information_schema.columns where table_schema=database() and table_name=? and column_name=? limit 1',
             [$table, $column],
         );
 
-        return $row !== null && strtoupper((string) $row->is_nullable) === 'YES';
+        return $row !== null && strtoupper((string) $row->nn) === 'YES';
     }
 
     private function hasIndex(string $table, string $index): bool
