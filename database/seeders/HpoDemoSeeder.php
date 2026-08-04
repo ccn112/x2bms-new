@@ -6,8 +6,12 @@ use App\Models\Building;
 use App\Models\Company;
 use App\Models\Project;
 use App\Models\Tenant;
+use App\Models\User;
+use App\Models\UserRoleScope;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\Hash;
+use Spatie\Permission\Models\Role;
 
 /**
  * Seed tòa HPO (Happy One) — onboarding CHUẨN một khách hàng demo rồi nạp file thông
@@ -76,12 +80,16 @@ class HpoDemoSeeder extends Seeder
             'investor' => $project->investor ?? 'Happy One',
         ])->save();
 
-        Building::withoutGlobalScopes()->firstOrCreate(
+        $building = Building::withoutGlobalScopes()->firstOrCreate(
             ['tenant_id' => $tenant->id, 'project_id' => $project->id, 'code' => 'BLD-HPO-DEMO'],
             ['name' => 'Happy One — Tòa A'],
         );
 
         $this->command?->info("Onboarding HPO: tenant #{$tenant->id} · company #{$company->id} (Công ty vận hành) · project #{$project->id} (đã gắn company_id).");
+
+        // 1b) Tài khoản vận hành RIÊNG cho tenant HPO (không dùng superadmin nền):
+        //     HQ (công ty, /hq) + BQL (dự án, /admin) — để test đúng phân quyền.
+        $this->seedStaffAccounts($tenant, $project, $building);
 
         // 2) Nạp phí thật từ file đã commit (import tìm thấy scaffold sẵn → chỉ ghi lines).
         $path = database_path(self::FILE);
@@ -97,5 +105,63 @@ class HpoDemoSeeder extends Seeder
             '--commit' => true,
             '--force' => true,
         ], $this->command?->getOutput());
+    }
+
+    /**
+     * TK vận hành riêng của HPO (mật khẩu chung: Bms@2026!):
+     *   - HQ  hq.hpo@x2bms.vn   : company_admin, scope TENANT → cổng /hq của công ty HPO.
+     *   - BQL bql.hpo@x2bms.vn  : building_manager, scope PROJECT → cổng /admin của dự án.
+     * Cần cả assignRole (canAccessPanel = roles()->exists()) lẫn UserRoleScope
+     * (isTenantOperator / accessibleProjectIds / data scope). Idempotent.
+     */
+    private function seedStaffAccounts(Tenant $tenant, Project $project, Building $building): void
+    {
+        $companyAdmin = Role::findOrCreate('company_admin', 'web');
+        $buildingManager = Role::findOrCreate('building_manager', 'web');
+
+        // HQ — cấp công ty (tenant).
+        $hq = User::firstOrCreate(
+            ['email' => 'hq.hpo@x2bms.vn'],
+            [
+                'tenant_id' => $tenant->id,
+                'name' => 'HQ Happy One',
+                'title' => 'Quản trị HQ',
+                'account_type' => 'staff',
+                'is_platform_admin' => false,
+                'password' => Hash::make('Bms@2026!'),
+                'email_verified_at' => now(),
+            ],
+        );
+        $hq->assignRole($companyAdmin);
+        UserRoleScope::firstOrCreate(
+            ['user_id' => $hq->id, 'scope_type' => UserRoleScope::SCOPE_TENANT, 'tenant_id' => $tenant->id],
+            ['role_id' => $companyAdmin->id],
+        );
+
+        // BQL — cấp dự án.
+        $bql = User::firstOrCreate(
+            ['email' => 'bql.hpo@x2bms.vn'],
+            [
+                'tenant_id' => $tenant->id,
+                'project_id' => $project->id,
+                'name' => 'BQL Happy One',
+                'title' => 'Trưởng BQL',
+                'account_type' => 'staff',
+                'is_platform_admin' => false,
+                'password' => Hash::make('Bms@2026!'),
+                'email_verified_at' => now(),
+            ],
+        );
+        // Đảm bảo project_id đúng cả khi TK đã tồn tại từ lần chạy trước.
+        if ($bql->project_id !== $project->id) {
+            $bql->forceFill(['project_id' => $project->id])->save();
+        }
+        $bql->assignRole($buildingManager);
+        UserRoleScope::firstOrCreate(
+            ['user_id' => $bql->id, 'scope_type' => UserRoleScope::SCOPE_PROJECT, 'project_id' => $project->id],
+            ['role_id' => $buildingManager->id, 'tenant_id' => $tenant->id, 'building_id' => $building->id],
+        );
+
+        $this->command?->info('TK HPO: hq.hpo@x2bms.vn (HQ) + bql.hpo@x2bms.vn (BQL) — mật khẩu Bms@2026!');
     }
 }

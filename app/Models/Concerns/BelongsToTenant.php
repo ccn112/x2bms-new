@@ -38,7 +38,18 @@ trait BelongsToTenant
             return null;
         }
 
-        return auth()->user()?->tenant_id;
+        $user = auth()->user();
+
+        // Platform admin (super_admin / nhà cung cấp) KHÔNG thuộc một tenant — quản lý
+        // toàn hệ (cross-tenant). Không lọc theo tenant_id để họ thấy mọi công ty/dự án/
+        // tòa (khớp Gate::before bypass + isPlatformAdmin ở các panel). Nếu bị ràng
+        // tenant_id (do dữ liệu seed), sẽ vô tình ẩn tenant khác — đó là lý do dự án
+        // HPO (tenant khác) không hiện với superadmin trước đây.
+        if ($user?->isPlatformAdmin()) {
+            return null;
+        }
+
+        return $user?->tenant_id;
     }
 
     public function tenant(): BelongsTo
