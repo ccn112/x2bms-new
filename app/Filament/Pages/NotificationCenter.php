@@ -198,6 +198,23 @@ class NotificationCenter extends Page implements HasTable
 
     private function createNotification(array $data): void
     {
+        // CHỐT CHẶN PHÍA SERVER (G9 anti-bypass): không tin lựa chọn ở form — phạm vi
+        // và đối tượng nhận PHẢI nằm trong quyền người soạn, chặn cả khi POST trực tiếp.
+        $scope = $data['audience_scope'] ?? null;
+        if (! array_key_exists($scope, $this->scopeOptions())) {
+            Notification::make()->title('Phạm vi nhận không hợp lệ với quyền của bạn')->danger()->send();
+
+            return;
+        }
+        if (in_array($scope, ['tenant', 'project', 'building', 'apartment'], true)) {
+            $allowed = array_map('intval', array_keys($this->audienceTargetOptions($scope)));
+            if (! in_array((int) ($data['audience_target'] ?? 0), $allowed, true)) {
+                Notification::make()->title('Đối tượng nhận nằm ngoài phạm vi bạn được phép')->danger()->send();
+
+                return;
+            }
+        }
+
         $now = $data['publish_now'] ?? false;
         $scheduledAt = $data['publish_at'] ?? null;
         $status = $now ? 'published' : ($scheduledAt ? 'scheduled' : 'draft');
@@ -294,6 +311,11 @@ class NotificationCenter extends Page implements HasTable
                     ->visible(fn (NotificationModel $r) => in_array($r->status, ['draft', 'scheduled'], true) && $r->canManageBy(auth()->user()))
                     ->requiresConfirmation()
                     ->action(function (NotificationModel $r): void {
+                        if (! $r->canManageBy(auth()->user())) {
+                            Notification::make()->title('Bạn không có quyền phát hành thông báo này')->danger()->send();
+
+                            return;
+                        }
                         $this->applyPublish($r->load('audiences'));
                         $this->audit('notification.publish', 'Phát hành: '.$r->title, NotificationModel::class, $r->id);
                         Notification::make()->title('Đã phát hành ('.number_format($r->fresh()->recipient_count).' người nhận)')->success()->send();
@@ -303,6 +325,11 @@ class NotificationCenter extends Page implements HasTable
                     ->visible(fn (NotificationModel $r) => $r->status !== 'archived' && $r->canManageBy(auth()->user()))
                     ->requiresConfirmation()
                     ->action(function (NotificationModel $r): void {
+                        if (! $r->canManageBy(auth()->user())) {
+                            Notification::make()->title('Bạn không có quyền lưu trữ thông báo này')->danger()->send();
+
+                            return;
+                        }
                         $r->update(['status' => 'archived']);
                         $this->audit('notification.archive', 'Lưu trữ: '.$r->title, NotificationModel::class, $r->id);
                         Notification::make()->title('Đã lưu trữ')->success()->send();
