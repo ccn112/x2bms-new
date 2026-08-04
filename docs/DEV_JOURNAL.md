@@ -3127,3 +3127,25 @@ Doc plan 31/07 nói "chưa 1 dòng code / 0 test backend" đã CŨ. Thực tế 
 - Test `CommunityModerationTest` 9/9: hide/lock/soft-delete/restore/lý do/HTTP 422 +
   **cô lập dự án khác** + **resolve/dismiss ghi đúng người+mốc**.
 → B6 coi như hoàn tất; không thêm code.
+
+## 2026-08-04 — C (Phase 2): Engine tính phí — KHUNG + P2.1 phí quản lý
+
+Kiểm điều kiện tiên quyết (plan §6): D2 backfill family ✔, statement_lines subject/service_period ✔,
+D1 maker-checker (StatementApprovalQueue) ✔, D3 phân bổ dòng ✔, invariant tiền có test ✔. (Đối soát
+số vàng ≥2 kỳ import là điều kiện BẬT engine, không phải điều kiện viết khung.)
+
+Build theo kiến trúc §4:
+- `Engine/ChargeDraft` — value object THUẦN (không chạm DB), có naturalKey (upsert idempotent).
+- `Engine/ManagementFeeGenerator` — P2.1 THUẦN: amount=round_half_up(area×unit_price×factor)+VAT,
+  số nguyên đồng (D7), snapshot công thức+input; null khi thiếu giá/diện tích. KHÔNG eval chuỗi (§4-3).
+- `Engine/BillingRunner` — orchestrator: đọc fee_type/fee_rate hiệu lực + căn của tòa → gọi generator
+  → ghi statement `approval_status=pending` (§4-4, engine KHÔNG phát hành) + line `source=engine` +
+  `calculation_snapshot`; idempotent theo (statement_id,fee_type_id,subject,service_period_start) (§4-5);
+  cập nhật billing_run. Transaction.
+- Command `billing:run <building> <period> [--commit]` — mặc định DRY-RUN (đối soát), --commit mới ghi.
+- Test `BillingEngineManagementTest` 3/3: generator (half-up/VAT/null), runner dry-run (không ghi),
+  commit (pending + source=engine + idempotent không nhân đôi).
+
+CÒN (theo plan, làm sau + đối soát số vàng): P2.2 xe (bậc số lượng, prorate), P2.3 điện/nước bậc
+thang (chỗ dễ sai nhất), P2.4 per-use, P2.5 phạt/lãi (chốt nghiệp vụ trước). Bật engine theo family,
+management trước, chạy song song dry-run ≥2 kỳ vs kế toán import. PROGRESS_TRACKER 03-03 → 🟡.
