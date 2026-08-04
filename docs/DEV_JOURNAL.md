@@ -2961,3 +2961,27 @@ số theo TÒA**; seed dữ liệu test; hướng dẫn test luồng BQL push xu
 
 **Còn lại:** adapter provider THẬT cho Zalo/WhatsApp/Telegram/X.Space (chờ chốt hợp đồng +
 template + phí). Chưa push code lên remote (chờ owner duyệt).
+
+---
+
+## 2026-08-04 (tối) — Chuẩn hoá G9 cho quyền thông báo + kỷ luật tenant scope
+
+Nối tiếp phần siết quyền Trung tâm thông báo. Owner hỏi thẳng: đã nâng lên chuẩn
+"lock cứng" (with/withoutGlobalScope) mà audit ghi chưa → trả lời trung thực là CHƯA
+(mới siết code, thiếu test + tài liệu). Phiên này đóng nốt:
+
+- **Test anti-bypass** `tests/Feature/NotificationAudienceScopeTest.php` (4 test):
+  scopeVisibleTo (BQL không thấy tenant khác), platform admin thấy tất, canManageBy
+  chặn ngoài phạm vi, và **Livewire compose bypass** (BQL callAction soạn ra tòa
+  tenant khác → chốt server chặn, không tạo notification/audience). Lưu ý: test
+  Livewire render trang Filament nặng → chạy `phpunit -d memory_limit=2G` (local
+  Windows/Herd mặc định 128MB không đủ).
+- **ADR** `docs/adr/ADR-001-tenant-scope-discipline.md`: chốt khi nào dùng
+  `withoutGlobalScopes()` (chỉ console hoặc có re-scope tường minh), platform-admin
+  bypass gated `is_platform_admin`, validate chéo-aggregate phía server, bằng chứng
+  bằng test MUST_NOT_LEAK.
+- **Rule** `.claude/rules/x2bms-laravel-domain.md`: +3 dòng chuẩn thường trực.
+- **TECH_DEBT T9**: cô lập tenant chưa hard-lock tầng DB (CHECK/FK/RLS) — việc còn nợ.
+
+Còn nợ (ngoài phiên): adapter provider thật N4 (Zalo/WhatsApp/Telegram/X.Space);
+analytics CTR/open-rate thông báo (07-10 ⬜); hard-lock tenant tầng DB (T9).

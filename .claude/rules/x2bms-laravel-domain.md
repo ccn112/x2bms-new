@@ -18,4 +18,6 @@ globs:
 - Use events/jobs only when asynchronous behavior is justified and testable.
 - Use Resources/DTOs for API; do not expose Eloquent models directly.
 - Any query returning tenant/business data must show its scope mechanism in code and tests.
+- `withoutGlobalScopes()` only in console (seed/migration/command) or when code re-applies an explicit scope right after; never on a web/API path serving tenant data unscoped. Platform-admin cross-tenant access is gated on `is_platform_admin` only (see ADR `docs/adr/ADR-001-tenant-scope-discipline.md`).
+- Cross-aggregate targeting (audience/assignment pickers) must be validated server-side against the actor's accessible scope, not just filtered in the form; cover with a `MUST_NOT_LEAK` test (tenant A cannot read/act on tenant B; platform admin can).
 - Dashboard totals must come from query/service classes that can be tested independently.
