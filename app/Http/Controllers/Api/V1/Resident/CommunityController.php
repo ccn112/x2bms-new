@@ -387,6 +387,12 @@ class CommunityController extends ApiController
             'option_id' => ['required', 'integer'],
         ]);
 
+        // BOLA/IDOR: poll bind trần → PHẢI kiểm thuộc dự án của cư dân (như findEventInScope).
+        // Không tin id client: bình chọn poll dự án khác = bóp méo khảo sát nội bộ (có thể tenant khác).
+        if (! in_array($poll->project_id, $this->projectIds($request), true)) {
+            return ApiResponse::error('not_found', 'Không tìm thấy khảo sát.', 404);
+        }
+
         if ($poll->status !== 'open') {
             return ApiResponse::error('poll_closed', 'Khảo sát đã đóng.', 422);
         }

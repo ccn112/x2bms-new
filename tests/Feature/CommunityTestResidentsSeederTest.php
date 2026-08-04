@@ -24,9 +24,9 @@ class CommunityTestResidentsSeederTest extends TestCase
         (new CommunityTestResidentsSeeder())->run();
         (new CommunityTestResidentsSeeder())->run(); // idempotent
 
-        $this->assertNotNull(User::where('email', 'test.cudan1@x2bms.vn')->first());
-        $this->assertNotNull(User::where('email', 'test.cudan2@x2bms.vn')->first());
-        $this->assertSame(2, User::whereIn('email', ['test.cudan1@x2bms.vn', 'test.cudan2@x2bms.vn'])->count());
+        $this->assertNotNull(User::where('email', 'chtchinh@gmail.com')->first());
+        $this->assertNotNull(User::where('email', 'chatto.vn@gmail.com')->first());
+        $this->assertSame(2, User::whereIn('email', ['chtchinh@gmail.com', 'chatto.vn@gmail.com'])->count());
         // 2 quan hệ căn hộ trong CÙNG dự án → cùng cộng đồng.
         $this->assertSame(2, ResidentApartmentRelation::count());
     }

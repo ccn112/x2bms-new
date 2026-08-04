@@ -346,12 +346,20 @@ class CommunityPostController extends ApiController
             return $locked;
         }
 
-        // Nhắc tên: chỉ giữ id có thật (chống bịa tên người không tồn tại).
-        $mentions = empty($data['mentioned_user_ids']) ? null : \App\Models\User::query()
-            ->whereIn('id', $data['mentioned_user_ids'])
-            ->get(['id', 'name'])
-            ->map(fn ($u) => ['user_id' => (string) $u->id, 'name' => $u->name])
-            ->all();
+        // Nhắc tên: chỉ giữ id có thật VÀ là cư dân CÙNG DỰ ÁN của người nhắc.
+        // BOLA/xuyên-tenant: nếu chỉ kiểm "user tồn tại" thì có thể nhắc user bất kỳ
+        // toàn hệ → chèn activity/push tới người ở tenant khác (spam có định hướng).
+        $mentions = null;
+        if (! empty($data['mentioned_user_ids'])) {
+            $projectIds = $this->context->projectIds($request->user(), $request->header('X-Context-Id'));
+            $mentions = \App\Models\User::query()
+                ->whereIn('id', $data['mentioned_user_ids'])
+                ->whereHas('residentMemberships.building', fn ($q) => $q->whereIn('project_id', $projectIds))
+                ->get(['id', 'name'])
+                ->map(fn ($u) => ['user_id' => (string) $u->id, 'name' => $u->name])
+                ->all();
+            $mentions = $mentions ?: null;
+        }
 
         // Chỉ 1 cấp lồng — reply-của-reply gộp về bình luận cha.
         $parentId = null;
