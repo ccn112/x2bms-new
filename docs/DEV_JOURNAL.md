@@ -3115,3 +3115,15 @@ Kiểm thực tế: B5 **đã hiện thực** (doc plan 31/07 nói "chưa" đã 
   lệch tài sản 422).
 Bổ sung: test bất biến **cross-asset isolation** — dư earmark xe X KHÔNG bị dùng trả nợ xe Y.
 `DebtByAssetPaymentTest` 7/7 xanh. (App dropdown 3 cấp là việc mobile.)
+
+## 2026-08-04 — B6: Kiểm duyệt cộng đồng — XÁC MINH đã xong (không cần code mới)
+
+Doc plan 31/07 nói "chưa 1 dòng code / 0 test backend" đã CŨ. Thực tế đã có:
+- Page `CommunityModeration` (KPI gồm "Chờ xử lý report", table sort report_count desc,
+  actions lock/unlock/hide/unhide/softDelete/restore + viewReports + resolveReport).
+- `ModerateCommunityPostAction` (hide/unhide/lock/unlock/delete/restore, bắt lý do).
+- Đóng vòng report: `CommunityPostReport::markResolved/markDismissed` (status+resolved_by+resolved_at).
+- `canModerate` scope theo accessibleProjectIds (platform admin = all) — BOLA-safe.
+- Test `CommunityModerationTest` 9/9: hide/lock/soft-delete/restore/lý do/HTTP 422 +
+  **cô lập dự án khác** + **resolve/dismiss ghi đúng người+mốc**.
+→ B6 coi như hoàn tất; không thêm code.
