@@ -3149,3 +3149,18 @@ Build theo kiến trúc §4:
 CÒN (theo plan, làm sau + đối soát số vàng): P2.2 xe (bậc số lượng, prorate), P2.3 điện/nước bậc
 thang (chỗ dễ sai nhất), P2.4 per-use, P2.5 phạt/lãi (chốt nghiệp vụ trước). Bật engine theo family,
 management trước, chạy song song dry-run ≥2 kỳ vs kế toán import. PROGRESS_TRACKER 03-03 → 🟡.
+
+## 2026-08-04 — C: tài liệu test nghiệp vụ engine + công cụ đối soát vàng + seed HPO
+
+Owner yêu cầu tài liệu test nghiệp vụ phần C + tự seed dữ liệu test trên tòa HPO.
+- `docs/BILLING_FEE_ENGINE_TEST_PLAN.md`: nguyên tắc nghiệm thu (số kế toán = chuẩn vàng,
+  engine không phát hành, family-by-family, song song ≥2 kỳ), quy trình đối soát 3 mức lệch,
+  bảng kịch bản P2.1 (10 ca), khung P2.2–P2.5, checklist bật engine.
+- Công cụ `billing:reconcile-engine <building> <period>`: engine dry-run so TỪNG dòng vs số
+  kế toán import → khớp / lệch ≤1đ / lệch thật. `BillingRunner::managementDrafts` tách ra để
+  dùng chung. Test `BillingEngineReconcileTest`.
+- `FeeEngineDemoSeeder` (trên tòa HPO): 3 căn ENG-01/02/03 (area 100/75,5/50) + giá 15.000/m²
+  + số kế toán vàng kỳ 2026-08 (ENG-03 lệch cố ý 150.000). Chạy thật:
+  `billing:run 10 2026-08` → TỔNG 3.382.500; `billing:reconcile-engine 10 2026-08` → 2 khớp +
+  1 lệch thật (bắt đúng ENG-03). Toàn bộ nghiệp vụ đối soát chạy thông.
+- CÒN: điền area cho 1314 căn import HPO + giá khớp để đối chiếu quy mô thật kỳ 2026-05.

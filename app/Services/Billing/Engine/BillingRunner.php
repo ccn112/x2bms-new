@@ -28,6 +28,44 @@ class BillingRunner
     public function __construct(private readonly ManagementFeeGenerator $management) {}
 
     /**
+     * Sinh ChargeDraft phí quản lý cho từng căn của tòa (THUẦN — không ghi DB).
+     * Dùng cho cả dry-run/commit lẫn công cụ đối soát `billing:reconcile-engine`.
+     *
+     * @return array{drafts:array<int,ChargeDraft>,unit_price?:int,error?:string}
+     */
+    public function managementDrafts(int $tenantId, int $buildingId, string $periodStart, string $periodEnd): array
+    {
+        $feeType = FeeType::withoutGlobalScopes()
+            ->where('tenant_id', $tenantId)->where('category', 'management')
+            ->where('status', 'active')->orderBy('id')->first();
+        if ($feeType === null) {
+            return ['drafts' => [], 'error' => 'no_management_fee_type'];
+        }
+
+        $rate = FeeRate::withoutGlobalScopes()
+            ->where('tenant_id', $tenantId)->where('fee_type_id', $feeType->id)->where('status', 'active')
+            ->where('effective_from', '<=', $periodStart)
+            ->where(fn ($q) => $q->whereNull('effective_to')->orWhere('effective_to', '>=', $periodStart))
+            ->orderByDesc('effective_from')->first();
+        if ($rate === null) {
+            return ['drafts' => [], 'error' => 'no_active_rate'];
+        }
+
+        $unitPrice = (int) round((float) $rate->amount, 0, PHP_ROUND_HALF_UP);
+        $ftMeta = ['fee_type_id' => (int) $feeType->id, 'fee_type_name' => (string) $feeType->name, 'vat_percent' => (float) ($feeType->vat_percent ?? 0)];
+
+        $drafts = [];
+        foreach (Apartment::withoutGlobalScopes()->where('building_id', $buildingId)->get() as $apt) {
+            $draft = $this->management->generate($ftMeta, (float) $apt->area_sqm, $unitPrice, $periodStart, $periodEnd, (int) $rate->id);
+            if ($draft !== null) {
+                $drafts[(int) $apt->id] = $draft;
+            }
+        }
+
+        return ['drafts' => $drafts, 'unit_price' => $unitPrice];
+    }
+
+    /**
      * Chạy family MANAGEMENT cho một tòa + kỳ.
      *
      * @return array{family:string,unit_price?:int,apartments:int,total:int,committed:bool,error?:string}
@@ -41,36 +79,13 @@ class BillingRunner
         bool $commit = false,
         ?int $userId = null,
     ): array {
-        $feeType = FeeType::withoutGlobalScopes()
-            ->where('tenant_id', $tenantId)->where('category', 'management')
-            ->where('status', 'active')->orderBy('id')->first();
-        if ($feeType === null) {
-            return ['family' => 'management', 'apartments' => 0, 'total' => 0, 'committed' => false, 'error' => 'no_management_fee_type'];
+        $gen = $this->managementDrafts($tenantId, $buildingId, $periodStart, $periodEnd);
+        if (isset($gen['error'])) {
+            return ['family' => 'management', 'apartments' => 0, 'total' => 0, 'committed' => false, 'error' => $gen['error']];
         }
-
-        $rate = FeeRate::withoutGlobalScopes()
-            ->where('tenant_id', $tenantId)->where('fee_type_id', $feeType->id)->where('status', 'active')
-            ->where('effective_from', '<=', $periodStart)
-            ->where(fn ($q) => $q->whereNull('effective_to')->orWhere('effective_to', '>=', $periodStart))
-            ->orderByDesc('effective_from')->first();
-        if ($rate === null) {
-            return ['family' => 'management', 'apartments' => 0, 'total' => 0, 'committed' => false, 'error' => 'no_active_rate'];
-        }
-
-        $unitPrice = (int) round((float) $rate->amount, 0, PHP_ROUND_HALF_UP);
-        $ftMeta = ['fee_type_id' => (int) $feeType->id, 'fee_type_name' => (string) $feeType->name, 'vat_percent' => (float) ($feeType->vat_percent ?? 0)];
-
-        /** @var array<int,ChargeDraft> $drafts */
-        $drafts = [];
-        $total = 0;
-        foreach (Apartment::withoutGlobalScopes()->where('building_id', $buildingId)->get() as $apt) {
-            $draft = $this->management->generate($ftMeta, (float) $apt->area_sqm, $unitPrice, $periodStart, $periodEnd, (int) $rate->id);
-            if ($draft === null) {
-                continue;
-            }
-            $drafts[$apt->id] = $draft;
-            $total += $draft->amount;
-        }
+        $drafts = $gen['drafts'];
+        $unitPrice = $gen['unit_price'];
+        $total = array_sum(array_map(fn (ChargeDraft $d) => $d->amount, $drafts));
 
         if (! $commit) {
             return ['family' => 'management', 'unit_price' => $unitPrice, 'apartments' => count($drafts), 'total' => $total, 'committed' => false];
