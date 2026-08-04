@@ -221,7 +221,9 @@ class InteractionAggregator
         $due = \Illuminate\Support\Carbon::parse($dueAt);
         $hours = now()->diffInHours($due, false);
         $status = $hours < 0 ? 'overdue' : ($hours <= 24 ? 'near_due' : 'on_track');
-        $label = $hours < 0 ? 'Quá hạn SLA' : ($hours <= 24 ? "SLA còn {$hours} giờ" : 'Trong hạn');
+        // Nhãn hiển thị số giờ NGUYÊN (làm tròn) — tránh đuôi thập phân dài.
+        $intHours = (int) round(abs($hours));
+        $label = $hours < 0 ? 'Quá hạn SLA' : ($hours <= 24 ? "SLA còn {$intHours} giờ" : 'Trong hạn');
 
         return ['status' => $status, 'due_at' => $due->toIso8601String(), 'label' => $label];
     }
