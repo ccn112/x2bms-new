@@ -152,7 +152,7 @@ class FeePriorityOrder extends Page implements HasTable
         $projectId = $this->projectId();
 
         return $table
-            ->query(
+            ->query(fn () => 
                 FeeTypePriorityOverride::withoutGlobalScopes()
                     ->where('project_id', $projectId ?? 0)
                     ->with('feeType')

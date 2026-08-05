@@ -3208,3 +3208,11 @@ Xử lý handoff `X2_BMS_RESIDENT_INTERACTION_CENTER_HANDOFF_V1.1` — audit + n
   AI duyệt cư dân = rủi ro Cao BẮT BUỘC người duyệt, suggestion/insight) + lưu ý luật VN 2025 (91/356/134/116)
   + ánh xạ SAGOS. Đóng plan G-1/G-2 (feed XHub Audit Room, không xây lại governance ở x2bms).
 - Còn nợ: PII masking trong log (DSAR sau pilot), AI impact assessment cho use-case duyệt.
+
+## 2026-08-05 — Chuẩn hóa listing /admin (phương án 3, hoàn tất)
+- Concern AdminListingBreadcrumbs → breadcrumb "Tổng quan → <tên>" cho 17 trang.
+- Query → closure (fn () =>) cho 14/14 trang non-closure (9 lô đầu + 5 lô sau: BuildingChannel,
+  NotificationDeliveryAudit, FeePriorityOrder, ListingPostingGrants, ListingApprovalQueue).
+  Xác nhận arrow fn capture đúng $projectId/$this. Load-check 17 class OK.
+- CÒN (backlog): phần visual full-form (filter-bar f* + KPI-row + column-toggle + blade riêng) —
+  nặng per-trang, làm batch. Skill: x2bms-admin-listing-page.

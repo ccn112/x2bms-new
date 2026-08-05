@@ -179,7 +179,7 @@ class ListingApprovalQueue extends Page implements HasTable
     public function table(Table $table): Table
     {
         return $table
-            ->query($this->scopedQuery()->with(['project', 'apartment', 'createdBy']))
+            ->query(fn () => $this->scopedQuery()->with(['project', 'apartment', 'createdBy']))
             ->headerActions([$this->autoApproveSettingAction()])
             ->defaultSort('created_at', 'desc')
             ->columns([

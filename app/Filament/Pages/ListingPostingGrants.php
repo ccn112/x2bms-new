@@ -126,7 +126,7 @@ class ListingPostingGrants extends Page implements HasTable
             // Sub-select thay vì pluck rồi whereIn mảng: cùng kiểu với
             // BelongsToProject::bootBelongsToProject để tránh chạy hai lượt
             // truy vấn apartments không cần thiết trên mỗi lần render bảng.
-            ->query(
+            ->query(fn () => 
                 ListingPostingGrant::query()
                     ->whereIn('apartment_id', function ($q) use ($projectId) {
                         $q->select('apartments.id')->from('apartments')

@@ -60,7 +60,7 @@ class NotificationDeliveryAudit extends Page implements HasTable
         $visibleIds = NotificationModel::query()->visibleTo(auth()->user())->select('id');
 
         return $table
-            ->query(
+            ->query(fn () => 
                 NotificationDeliveryLog::query()
                     ->whereIn('notification_id', $visibleIds)
                     ->with(['notification:id,title,type', 'user:id,name'])

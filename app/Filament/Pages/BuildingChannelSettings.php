@@ -115,7 +115,7 @@ class BuildingChannelSettings extends Page implements HasTable
     public function table(Table $table): Table
     {
         return $table
-            ->query(BuildingNotificationChannel::query()->with('building:id,name'))
+            ->query(fn () => BuildingNotificationChannel::query()->with('building:id,name'))
             ->defaultSort('building_id')
             ->columns([
                 TextColumn::make('building.name')->label('Tòa')->searchable()->weight('medium'),
