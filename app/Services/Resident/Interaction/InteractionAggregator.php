@@ -245,7 +245,8 @@ class InteractionAggregator
             'status_label' => self::FAMILY_LABEL[$family] ?? $family,
             'capabilities' => [
                 'view' => true, 'edit' => false, 'delete' => false,
-                'cancel' => ! $terminal && ($x['can_cancel'] ?? true),
+                // Hủy: chỉ nguồn có endpoint resident-cancel thật (visitor/amenity); feedback/payment không.
+                'cancel' => ! $terminal && in_array($x['source_type'] ?? '', ['visitor', 'amenity'], true),
                 // Bình luận: mọi nguồn có endpoint comment (feedback + slip visitor/payment/amenity); trừ binding.
                 'comment' => in_array($x['source_type'] ?? '', ['feedback', 'visitor', 'payment', 'amenity'], true),
                 'supplement' => false,
