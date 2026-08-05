@@ -14,11 +14,11 @@ class VehiclesAndCards extends Page
 {
     protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-truck';
 
-    protected static string|\UnitEnum|null $navigationGroup = 'Cư dân & Căn hộ';
+    protected static string|\UnitEnum|null $navigationGroup = 'An ninh & Kiểm soát';
 
     protected static ?string $navigationLabel = 'Phương tiện & thẻ';
 
-    protected static ?int $navigationSort = 3;
+    protected static ?int $navigationSort = 23;
 
     protected static ?string $title = 'Phương tiện & thẻ';
 

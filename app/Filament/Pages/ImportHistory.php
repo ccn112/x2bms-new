@@ -36,7 +36,7 @@ class ImportHistory extends Page implements HasTable
 
     protected static ?string $navigationLabel = 'Nhật ký Import/Export';
 
-    protected static ?int $navigationSort = 20;
+    protected static ?int $navigationSort = 21;
 
     protected static ?string $title = 'Nhật ký Import/Export';
 

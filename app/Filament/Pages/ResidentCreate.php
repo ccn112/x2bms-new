@@ -32,7 +32,7 @@ class ResidentCreate extends Page implements HasForms
 
     protected static ?string $navigationLabel = 'Thêm cư dân';
 
-    protected static ?int $navigationSort = 3;
+    protected static ?int $navigationSort = 5;
 
     protected static ?string $slug = 'residents/create';
 

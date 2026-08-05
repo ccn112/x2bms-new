@@ -47,11 +47,11 @@ class PaymentClaimQueue extends Page implements HasTable
 
     protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-banknotes';
 
-    protected static string|\UnitEnum|null $navigationGroup = 'Tài chính';
+    protected static string|\UnitEnum|null $navigationGroup = 'Tài chính – Phí';
 
     protected static ?string $navigationLabel = 'Duyệt chứng từ CK';
 
-    protected static ?int $navigationSort = 30;
+    protected static ?int $navigationSort = 25;
 
     protected static ?string $title = 'Duyệt chứng từ chuyển khoản của cư dân';
 

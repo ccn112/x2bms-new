@@ -31,7 +31,7 @@ class StatementList extends Page
 
     protected static ?string $navigationLabel = 'Hóa đơn & thanh toán';
 
-    protected static ?int $navigationSort = 20;
+    protected static ?int $navigationSort = 21;
 
     protected static ?string $title = 'Bảng kê phí cư dân';
 
