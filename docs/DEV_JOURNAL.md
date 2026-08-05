@@ -3216,3 +3216,8 @@ Xử lý handoff `X2_BMS_RESIDENT_INTERACTION_CENTER_HANDOFF_V1.1` — audit + n
   Xác nhận arrow fn capture đúng $projectId/$this. Load-check 17 class OK.
 - CÒN (backlog): phần visual full-form (filter-bar f* + KPI-row + column-toggle + blade riêng) —
   nặng per-trang, làm batch. Skill: x2bms-admin-listing-page.
+
+## 2026-08-05 — HANDOFF phiên
+Xem `docs/SESSION_HANDOFF_20260805.md`: Đợt C tương tác (cư dân xong) · vòng đời xóa mềm/cascade/archive ·
+governance register + plan · chuẩn hóa menu + skill listing + breadcrumb/closure 17 trang. Còn: visual full-form
+listing (batch) + owner-driven (đối soát/ký/UAT) + nợ kỹ thuật (PII log/DSAR/AI impact).
