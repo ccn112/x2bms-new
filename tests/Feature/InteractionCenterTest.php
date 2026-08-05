@@ -120,6 +120,39 @@ class InteractionCenterTest extends TestCase
         $this->getJson("/api/v1/resident/interactions/feedback/{$fb->id}")->assertStatus(404);
     }
 
+    public function test_capabilities_va_detail_theo_nguon(): void
+    {
+        [$user, $ctx] = $this->resident('IJ');
+        $fb = $this->feedback($ctx, $user, 'in_progress');
+        $pm = $this->payment($ctx, $user, 'pending');
+        $vid = \DB::table('visitor_registrations')->insertGetId([
+            'tenant_id' => $ctx['tenant']->id, 'building_id' => $ctx['building']->id,
+            'apartment_id' => $ctx['apartment']->id, 'resident_id' => $ctx['resident']->id,
+            'code' => 'VS-IJ', 'visitor_name' => 'Khách IJ', 'purpose' => 'Thăm cuối tuần',
+            'status' => 'pending', 'created_at' => now(), 'updated_at' => now(),
+        ]);
+        $agg = app(InteractionAggregator::class);
+
+        // feedback: bình luận được, KHÔNG hủy (không có endpoint resident-cancel).
+        $fbD = $agg->detail($user, 'feedback', (string) $fb->id);
+        $this->assertTrue($fbD['capabilities']['comment']);
+        $this->assertFalse($fbD['capabilities']['cancel']);
+
+        // payment: bình luận được, KHÔNG hủy.
+        $pmD = $agg->detail($user, 'payment', (string) $pm->id);
+        $this->assertTrue($pmD['capabilities']['comment']);
+        $this->assertFalse($pmD['capabilities']['cancel']);
+
+        // visitor: bình luận + HỦY được; mô tả = purpose.
+        $vsD = $agg->detail($user, 'visitor', (string) $vid);
+        $this->assertTrue($vsD['capabilities']['comment']);
+        $this->assertTrue($vsD['capabilities']['cancel']);
+        $this->assertSame('Thăm cuối tuần', $vsD['description']);
+
+        // nguồn lạ → null (controller → 404).
+        $this->assertNull($agg->detail($user, 'unknown', '1'));
+    }
+
     /** @return array{0:User,1:array{tenant:Tenant,building:Building,apartment:Apartment,resident:Resident}} */
     private function resident(string $tag): array
     {
