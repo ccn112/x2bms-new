@@ -3194,3 +3194,10 @@ Xử lý handoff `X2_BMS_RESIDENT_INTERACTION_CENTER_HANDOFF_V1.1` — audit + n
   khôi phục → cascade restore theo cửa sổ 10s. Thêm SoftDeletes cho `resident_apartment_relations`.
   Bỏ cascade trùng ở Filament action (observer lo). Test `SoftDeleteCascadeTest` 2/2.
 - Đầy đủ chuỗi: **xóa mềm (UI) → cảnh báo ràng buộc → cascade → restore (admin) → archive (định kỳ) → purge (tay)**.
+
+## 2026-08-05 — Verify sweep G1/G5 (slice tài chính)
+- `ResidentStatementIsolationTest`: cư dân chỉ thấy bảng kê căn hộ mình; truy cập trực tiếp
+  {statement} của tenant khác → 404. Khóa hành vi BOLA (controller đã đúng: check apartmentIds
+  + isVisibleToResident). Đóng phần tài chính của gate G5.
+- Đã có MUST_NOT_LEAK: notifications, nhóm tiền (ratchet), interaction center, nay + statements.
+  CÒN lan tiếp: amenities/community/feedback/offers show-by-id + panel BQL/HQ resources.
