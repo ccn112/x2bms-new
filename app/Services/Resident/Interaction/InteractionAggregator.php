@@ -246,7 +246,8 @@ class InteractionAggregator
             'capabilities' => [
                 'view' => true, 'edit' => false, 'delete' => false,
                 'cancel' => ! $terminal && ($x['can_cancel'] ?? true),
-                'comment' => $x['type'] === 'feedback',
+                // Bình luận: mọi nguồn có endpoint comment (feedback + slip visitor/payment/amenity); trừ binding.
+                'comment' => in_array($x['source_type'] ?? '', ['feedback', 'visitor', 'payment', 'amenity'], true),
                 'supplement' => false,
                 'rate' => $x['type'] === 'feedback' && $family === 'done',
                 'reopen' => false,
