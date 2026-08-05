@@ -3179,3 +3179,18 @@ Xử lý handoff `X2_BMS_RESIDENT_INTERACTION_CENTER_HANDOFF_V1.1` — audit + n
 - CÒN (slice sau): detail resolver + common actions (comment/cancel/reopen/rating định tuyến nguồn);
   **UI Flutter** (Trung tâm tương tác) theo layout override + acceptance + screenshot. Quy mô lớn →
   cân nhắc projection table `resident_interactions` (TECH_DEBT) khi nhiều phiếu.
+
+---
+
+## 2026-08-05 — Vòng đời xóa mềm/archive + cascade observer (go-live G1 data integrity)
+
+- **Delete-safety (concern `SafeDeleteActions`)**: UI xóa MỀM + `before()` cảnh báo/chặn nếu còn ràng
+  buộc (căn hộ: bảng kê/công nợ) + bỏ ForceDelete. Bảng TIỀN (CashVoucher/BillingPayment) bỏ hẳn delete
+  (điều chỉnh qua đảo/hoàn). Commit `b003163`.
+- **Archive lifecycle** (`records:archive --days=90 [--purge]` + bảng `archived_records` + schedule tuần):
+  snapshot bất biến bản ghi xóa mềm quá hạn (whitelist KHÔNG-tiền); --purge chỉ force-delete an toàn
+  (còn con → giữ). Commit `51b456c`.
+- **Cascade qua Observer** (Apartment/Resident): xóa mềm → cascade quan hệ cư dân↔căn hộ (+ liên hệ khẩn);
+  khôi phục → cascade restore theo cửa sổ 10s. Thêm SoftDeletes cho `resident_apartment_relations`.
+  Bỏ cascade trùng ở Filament action (observer lo). Test `SoftDeleteCascadeTest` 2/2.
+- Đầy đủ chuỗi: **xóa mềm (UI) → cảnh báo ràng buộc → cascade → restore (admin) → archive (định kỳ) → purge (tay)**.

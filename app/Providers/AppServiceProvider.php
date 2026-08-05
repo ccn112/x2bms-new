@@ -26,6 +26,10 @@ class AppServiceProvider extends ServiceProvider
         // super_admin bypasses all authorization (reproducible without shield:generate).
         Gate::before(fn ($user, $ability) => $user->hasRole('super_admin') ? true : null);
 
+        // Cascade xóa mềm / khôi phục nhất quán ở MỌI code path (không chỉ Filament).
+        \App\Models\Apartment::observe(\App\Observers\ApartmentObserver::class);
+        \App\Models\Resident::observe(\App\Observers\ResidentObserver::class);
+
         $this->registerApiRateLimiters();
     }
 

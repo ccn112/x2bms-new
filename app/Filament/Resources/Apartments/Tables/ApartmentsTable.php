@@ -41,11 +41,10 @@ class ApartmentsTable
             ])
             ->recordActions([
                 RestoreAction::make(),
+                // Cascade quan hệ căn hộ do ApartmentObserver xử lý (mọi code path).
                 self::safeSoftDelete('căn hộ', blockers: [
                     'statements' => 'bảng kê',
                     'debts' => 'khoản công nợ',
-                ], cascades: [
-                    'apartmentRelations',
                 ]),
                 EditAction::make(),
             ])

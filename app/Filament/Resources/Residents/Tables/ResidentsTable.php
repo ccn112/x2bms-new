@@ -50,10 +50,8 @@ class ResidentsTable
             ])
             ->recordActions([
                 RestoreAction::make(),
-                self::safeSoftDelete('cư dân', cascades: [
-                    'apartmentRelations',
-                    'emergencyContacts',
-                ]),
+                // Cascade quan hệ căn hộ + liên hệ khẩn do ResidentObserver xử lý.
+                self::safeSoftDelete('cư dân'),
                 EditAction::make(),
             ])
             ->toolbarActions([
