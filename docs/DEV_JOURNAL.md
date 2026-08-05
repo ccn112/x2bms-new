@@ -3201,3 +3201,10 @@ Xử lý handoff `X2_BMS_RESIDENT_INTERACTION_CENTER_HANDOFF_V1.1` — audit + n
   + isVisibleToResident). Đóng phần tài chính của gate G5.
 - Đã có MUST_NOT_LEAK: notifications, nhóm tiền (ratchet), interaction center, nay + statements.
   CÒN lan tiếp: amenities/community/feedback/offers show-by-id + panel BQL/HQ resources.
+
+## 2026-08-05 — Governance additive: Privacy + AI register
+- `docs/security/PRIVACY_AND_AI_GOVERNANCE_REGISTER_20260805.md`: PII inventory (full_name/id_no/phone/
+  email/address/plate/avatar; sinh trắc chỉ ở máy; bảng tiền không xóa) + AI use-case register (X2AI chat,
+  AI duyệt cư dân = rủi ro Cao BẮT BUỘC người duyệt, suggestion/insight) + lưu ý luật VN 2025 (91/356/134/116)
+  + ánh xạ SAGOS. Đóng plan G-1/G-2 (feed XHub Audit Room, không xây lại governance ở x2bms).
+- Còn nợ: PII masking trong log (DSAR sau pilot), AI impact assessment cho use-case duyệt.
