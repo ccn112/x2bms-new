@@ -7,6 +7,7 @@ use App\Models\NotificationDeliveryLog;
 use BackedEnum;
 use Filament\Pages\Page;
 use Filament\Tables\Columns\TextColumn;
+use App\Filament\Concerns\AdminListingBreadcrumbs;
 use Filament\Tables\Concerns\InteractsWithTable;
 use Filament\Tables\Contracts\HasTable;
 use Filament\Tables\Filters\SelectFilter;
@@ -21,6 +22,7 @@ use Filament\Tables\Table;
  */
 class NotificationDeliveryAudit extends Page implements HasTable
 {
+    use AdminListingBreadcrumbs;
     use InteractsWithTable;
 
     protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-clipboard-document-check';

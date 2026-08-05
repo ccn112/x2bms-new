@@ -13,6 +13,7 @@ use Filament\Forms\Components\Textarea;
 use Filament\Notifications\Notification;
 use Filament\Pages\Page;
 use Filament\Tables\Columns\TextColumn;
+use App\Filament\Concerns\AdminListingBreadcrumbs;
 use Filament\Tables\Concerns\InteractsWithTable;
 use Filament\Tables\Contracts\HasTable;
 use Filament\Tables\Filters\Filter;
@@ -37,6 +38,7 @@ use InvalidArgumentException;
  */
 class CommunityModeration extends Page implements HasTable
 {
+    use AdminListingBreadcrumbs;
     use InteractsWithTable;
     use WritesAudit;
 

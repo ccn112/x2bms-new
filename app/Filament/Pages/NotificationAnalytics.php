@@ -7,6 +7,7 @@ use App\Services\Notifications\NotificationAnalyticsService;
 use BackedEnum;
 use Filament\Pages\Page;
 use Filament\Tables\Columns\TextColumn;
+use App\Filament\Concerns\AdminListingBreadcrumbs;
 use Filament\Tables\Concerns\InteractsWithTable;
 use Filament\Tables\Contracts\HasTable;
 use Filament\Tables\Filters\SelectFilter;
@@ -19,6 +20,7 @@ use Filament\Tables\Table;
  */
 class NotificationAnalytics extends Page implements HasTable
 {
+    use AdminListingBreadcrumbs;
     use InteractsWithTable;
 
     protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-chart-bar';
@@ -68,7 +70,7 @@ class NotificationAnalytics extends Page implements HasTable
     public function table(Table $table): Table
     {
         return $table
-            ->query($this->service()->base(auth()->user())->with('audiences'))
+            ->query(fn () => $this->service()->base(auth()->user())->with('audiences'))
             ->defaultSort('published_at', 'desc')
             ->columns([
                 TextColumn::make('title')->label('Thông báo')->wrap()->searchable()->weight('medium')

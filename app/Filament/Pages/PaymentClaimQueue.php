@@ -11,6 +11,7 @@ use Filament\Forms\Components\Textarea;
 use Filament\Notifications\Notification;
 use Filament\Pages\Page;
 use Filament\Tables\Columns\TextColumn;
+use App\Filament\Concerns\AdminListingBreadcrumbs;
 use Filament\Tables\Concerns\InteractsWithTable;
 use Filament\Tables\Contracts\HasTable;
 use Filament\Tables\Filters\SelectFilter;
@@ -43,6 +44,7 @@ use Illuminate\Database\Eloquent\Builder;
  */
 class PaymentClaimQueue extends Page implements HasTable
 {
+    use AdminListingBreadcrumbs;
     use InteractsWithTable;
 
     protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-banknotes';
@@ -125,7 +127,7 @@ class PaymentClaimQueue extends Page implements HasTable
     public function table(Table $table): Table
     {
         return $table
-            ->query($this->tableQueryBase()->with(['apartment', 'submittedBy', 'claimedStatement', 'attachments']))
+            ->query(fn () => $this->tableQueryBase()->with(['apartment', 'submittedBy', 'claimedStatement', 'attachments']))
             ->defaultSort('submitted_at', 'asc')  // cũ nhất trước: ai chờ lâu nhất được xử lý trước
             ->columns([
                 TextColumn::make('code')->label('Mã')->searchable(),

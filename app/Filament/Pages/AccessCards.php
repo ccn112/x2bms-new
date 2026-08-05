@@ -16,6 +16,7 @@ use Filament\Notifications\Notification;
 use Filament\Pages\Page;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
+use App\Filament\Concerns\AdminListingBreadcrumbs;
 use Filament\Tables\Concerns\InteractsWithTable;
 use Filament\Tables\Contracts\HasTable;
 use Filament\Tables\Filters\SelectFilter;
@@ -30,6 +31,7 @@ use Illuminate\Database\Eloquent\Builder;
  */
 class AccessCards extends Page implements HasTable
 {
+    use AdminListingBreadcrumbs;
     use InteractsWithTable;
 
     protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-credit-card';
@@ -79,7 +81,7 @@ class AccessCards extends Page implements HasTable
     public function table(Table $table): Table
     {
         return $table
-            ->query($this->scoped()->with(['apartment', 'resident']))
+            ->query(fn () => $this->scoped()->with(['apartment', 'resident']))
             ->defaultSort('created_at', 'desc')
             ->headerActions([
                 Action::make('issue')->label('Cấp thẻ mới')->icon('heroicon-m-plus')->button()

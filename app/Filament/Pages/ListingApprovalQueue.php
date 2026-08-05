@@ -16,6 +16,7 @@ use Filament\Forms\Components\Toggle;
 use Filament\Notifications\Notification;
 use Filament\Pages\Page;
 use Filament\Tables\Columns\TextColumn;
+use App\Filament\Concerns\AdminListingBreadcrumbs;
 use Filament\Tables\Concerns\InteractsWithTable;
 use Filament\Tables\Contracts\HasTable;
 use Filament\Tables\Filters\SelectFilter;
@@ -48,6 +49,7 @@ use Illuminate\Database\Eloquent\Collection;
  */
 class ListingApprovalQueue extends Page implements HasTable
 {
+    use AdminListingBreadcrumbs;
     use InteractsWithTable;
     use ModeratesRealEstateListings;
 

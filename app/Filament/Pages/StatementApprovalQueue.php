@@ -16,6 +16,7 @@ use Filament\Forms\Components\Textarea;
 use Filament\Notifications\Notification;
 use Filament\Pages\Page;
 use Filament\Tables\Columns\TextColumn;
+use App\Filament\Concerns\AdminListingBreadcrumbs;
 use Filament\Tables\Concerns\InteractsWithTable;
 use Filament\Tables\Contracts\HasTable;
 use Filament\Tables\Filters\SelectFilter;
@@ -30,6 +31,7 @@ use Illuminate\Support\Collection;
  */
 class StatementApprovalQueue extends Page implements HasTable
 {
+    use AdminListingBreadcrumbs;
     use InteractsWithTable;
     use ProvidesAiContext;
 
@@ -111,7 +113,7 @@ class StatementApprovalQueue extends Page implements HasTable
     public function table(Table $table): Table
     {
         return $table
-            ->query($this->scopedRuns()->with(['building', 'billingPeriod', 'creator', 'approver']))
+            ->query(fn () => $this->scopedRuns()->with(['building', 'billingPeriod', 'creator', 'approver']))
             ->defaultSort('created_at', 'desc')
             ->columns([
                 TextColumn::make('code')->label('Mã bảng kê')->searchable()->sortable()->color('primary'),

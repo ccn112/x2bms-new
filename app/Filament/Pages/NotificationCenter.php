@@ -25,6 +25,7 @@ use Filament\Notifications\Notification;
 use Filament\Pages\Page;
 use Filament\Schemas\Components\Utilities\Get;
 use Filament\Tables\Columns\TextColumn;
+use App\Filament\Concerns\AdminListingBreadcrumbs;
 use Filament\Tables\Concerns\InteractsWithTable;
 use Filament\Tables\Contracts\HasTable;
 use Filament\Tables\Filters\SelectFilter;
@@ -38,6 +39,7 @@ use Illuminate\Support\Str;
  */
 class NotificationCenter extends Page implements HasTable
 {
+    use AdminListingBreadcrumbs;
     use InteractsWithTable;
     use ProvidesAiContext;
     use WritesAudit;
@@ -279,7 +281,7 @@ class NotificationCenter extends Page implements HasTable
     public function table(Table $table): Table
     {
         return $table
-            ->query($this->visible()->with(['audiences', 'channels']))
+            ->query(fn () => $this->visible()->with(['audiences', 'channels']))
             ->defaultSort('created_at', 'desc')
             ->columns([
                 TextColumn::make('title')->label('Tiêu đề')->searchable()->wrap()->color('primary')->weight('medium')

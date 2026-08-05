@@ -13,6 +13,7 @@ use Filament\Forms\Components\Textarea;
 use Filament\Notifications\Notification;
 use Filament\Pages\Page;
 use Filament\Tables\Columns\TextColumn;
+use App\Filament\Concerns\AdminListingBreadcrumbs;
 use Filament\Tables\Concerns\InteractsWithTable;
 use Filament\Tables\Contracts\HasTable;
 use Filament\Tables\Table;
@@ -30,6 +31,7 @@ use Illuminate\Database\Eloquent\Builder;
 class BillingChargeImport extends Page implements HasTable
 {
     use ImportsBillingChargesFromExcel;
+    use AdminListingBreadcrumbs;
     use InteractsWithTable;
     use WritesAudit;
 

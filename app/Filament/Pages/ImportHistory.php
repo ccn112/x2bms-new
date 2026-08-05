@@ -13,6 +13,7 @@ use Filament\Actions\Action;
 use Filament\Notifications\Notification;
 use Filament\Pages\Page;
 use Filament\Tables\Columns\TextColumn;
+use App\Filament\Concerns\AdminListingBreadcrumbs;
 use Filament\Tables\Concerns\InteractsWithTable;
 use Filament\Tables\Contracts\HasTable;
 use Filament\Tables\Table;
@@ -28,6 +29,7 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 class ImportHistory extends Page implements HasTable
 {
     use ExportsCsv;
+    use AdminListingBreadcrumbs;
     use InteractsWithTable;
 
     protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-clock';

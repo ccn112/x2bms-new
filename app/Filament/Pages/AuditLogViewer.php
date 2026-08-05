@@ -9,6 +9,7 @@ use Filament\Actions\Action;
 use Filament\Notifications\Notification;
 use Filament\Pages\Page;
 use Filament\Tables\Columns\TextColumn;
+use App\Filament\Concerns\AdminListingBreadcrumbs;
 use Filament\Tables\Concerns\InteractsWithTable;
 use Filament\Tables\Contracts\HasTable;
 use Filament\Tables\Filters\Filter;
@@ -24,6 +25,7 @@ use Illuminate\Database\Eloquent\Builder;
  */
 class AuditLogViewer extends Page implements HasTable
 {
+    use AdminListingBreadcrumbs;
     use InteractsWithTable;
 
     protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-clipboard-document-list';
@@ -78,7 +80,7 @@ class AuditLogViewer extends Page implements HasTable
     public function table(Table $table): Table
     {
         return $table
-            ->query($this->scoped()->with(['user', 'building']))
+            ->query(fn () => $this->scoped()->with(['user', 'building']))
             ->defaultSort('created_at', 'desc')
             ->columns([
                 TextColumn::make('created_at')->label('Thời gian')->dateTime('d/m/Y H:i:s')->sortable(),
