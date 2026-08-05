@@ -46,7 +46,7 @@ class CommunityModeration extends Page implements HasTable
 
     protected static ?string $navigationLabel = 'Kiểm duyệt cộng đồng';
 
-    protected static ?int $navigationSort = 6;
+    protected static ?int $navigationSort = 7;
 
     protected static ?string $title = 'Kiểm duyệt cộng đồng';
 
