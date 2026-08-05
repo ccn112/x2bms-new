@@ -65,15 +65,13 @@ class CashVouchersTable
                 //
             ])
             ->recordActions([
+                // Bảng TIỀN: không xóa (kể cả mềm) — điều chỉnh qua nghiệp vụ đảo/hoàn.
                 RestoreAction::make(),
-                ForceDeleteAction::make(),
                 EditAction::make(),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([
                     RestoreBulkAction::make(),
-                    ForceDeleteBulkAction::make(),
-                    DeleteBulkAction::make(),
                 ]),
             ]);
     }

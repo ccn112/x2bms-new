@@ -2,16 +2,10 @@
 
 namespace App\Filament\Resources\Residents\Tables;
 
-use Filament\Actions\ForceDeleteBulkAction;
-
+use App\Filament\Concerns\SafeDeleteActions;
 use Filament\Actions\RestoreBulkAction;
-
-use Filament\Actions\ForceDeleteAction;
-
 use Filament\Actions\RestoreAction;
-
 use Filament\Tables\Filters\TrashedFilter;
-
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
@@ -21,6 +15,8 @@ use Filament\Tables\Table;
 
 class ResidentsTable
 {
+    use SafeDeleteActions;
+
     public static function configure(Table $table): Table
     {
         return $table
@@ -54,13 +50,15 @@ class ResidentsTable
             ])
             ->recordActions([
                 RestoreAction::make(),
-                ForceDeleteAction::make(),
+                self::safeSoftDelete('cư dân', cascades: [
+                    'apartmentRelations',
+                    'emergencyContacts',
+                ]),
                 EditAction::make(),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([
                     RestoreBulkAction::make(),
-                    ForceDeleteBulkAction::make(),
                     DeleteBulkAction::make(),
                 ]),
             ]);
