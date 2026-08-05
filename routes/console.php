@@ -14,6 +14,13 @@ Schedule::command('logs:archive')
     ->withoutOverlapping()
     ->onOneServer();
 
+// Weekly: snapshot bản ghi (không-tiền) đã xóa mềm > 90 ngày vào archived_records
+// (bằng chứng + khôi phục thủ công). KHÔNG purge tự động — chạy tay `--purge` khi cần.
+Schedule::command('records:archive --days=90')
+    ->weeklyOn(1, '03:00')
+    ->withoutOverlapping()
+    ->onOneServer();
+
 // Số lượt cài app từ Google Play + App Store. Chạy 03:15 chứ không sớm hơn: cả hai
 // store chốt số liệu theo giờ Mỹ nên số của "hôm qua" chỉ có vào rạng sáng giờ VN.
 // Lệnh này KHÔNG fail khi chưa cấu hình credential (in `not_configured`), nên bật
