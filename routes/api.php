@@ -286,6 +286,9 @@ Route::prefix('v1')->group(function () {
         // Trung tâm tương tác (handoff v1.1) — read-model hợp nhất phiếu cư dân.
         Route::get('interactions/summary', [InteractionController::class, 'summary']);
         Route::get('interactions', [InteractionController::class, 'index']);
+        Route::get('interactions/{sourceType}/{sourceId}', [InteractionController::class, 'show'])
+            ->whereIn('sourceType', ['feedback', 'payment', 'visitor', 'amenity', 'binding'])
+            ->whereNumber('sourceId');
 
         // Tuỳ chọn bật/tắt kênh thông báo push (màn Cá nhân → Thông báo).
         Route::get('notification-preferences', [NotificationPreferenceController::class, 'index']);

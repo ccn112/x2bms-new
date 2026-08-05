@@ -105,6 +105,105 @@ class InteractionAggregator
         );
     }
 
+    /** Nguồn hợp lệ cho chi tiết (khớp source_type ở list). */
+    private const DETAIL_SOURCES = ['feedback', 'payment', 'visitor', 'amenity', 'binding'];
+
+    /**
+     * Chi tiết HỢP NHẤT 1 phiếu: item chuẩn hoá (như list) + mô tả đầy đủ + timeline
+     * trao đổi (bình luận cư dân↔BQL). Dùng {@see all()} để đảm bảo CÙNG scope cư dân
+     * (BOLA-safe) — phiếu ngoài phạm vi trả null → controller 404.
+     *
+     * @return array<string,mixed>|null
+     */
+    public function detail(Authenticatable $user, string $sourceType, string $sourceId): ?array
+    {
+        if (! in_array($sourceType, self::DETAIL_SOURCES, true)) {
+            return null;
+        }
+        $item = null;
+        foreach ($this->all($user) as $row) {
+            if ($row['source_type'] === $sourceType && $row['source_id'] === (string) $sourceId) {
+                $item = $row;
+                break;
+            }
+        }
+        if ($item === null) {
+            return null;
+        }
+
+        $item['description'] = $this->description($sourceType, (int) $sourceId);
+        $item['timeline'] = $this->timeline($sourceType, (int) $sourceId);
+
+        return $item;
+    }
+
+    private function description(string $src, int $id): string
+    {
+        return match ($src) {
+            'feedback' => (string) (DB::table('feedback_requests')->where('id', $id)->value('description') ?? ''),
+            'payment' => (function () use ($id): string {
+                $p = DB::table('payments')->where('id', $id)->first();
+                if (! $p) {
+                    return '';
+                }
+                $parts = ['Số tiền '.number_format((float) $p->amount).' đ'];
+                if (! empty($p->reference_no)) {
+                    $parts[] = 'Mã tham chiếu '.$p->reference_no;
+                }
+                if (! empty($p->note)) {
+                    $parts[] = (string) $p->note;
+                }
+
+                return implode(' • ', $parts);
+            })(),
+            'visitor' => (string) (DB::table('visitor_registrations')->where('id', $id)->value('purpose') ?? ''),
+            'amenity' => (string) (DB::table('amenity_bookings')->where('id', $id)->value('note') ?? ''),
+            'binding' => (string) (DB::table('resident_binding_requests')->where('id', $id)->value('note') ?? ''),
+            default => '',
+        };
+    }
+
+    /**
+     * Timeline = bình luận cư dân↔BQL, cũ→mới. Feedback dùng `feedback_comments`
+     * (ẩn ghi chú nội bộ); visitor/payment/amenity dùng `comments` polymorphic.
+     *
+     * @return array<int,array<string,mixed>>
+     */
+    private function timeline(string $src, int $id): array
+    {
+        if ($src === 'feedback') {
+            return DB::table('feedback_comments')->whereNull('deleted_at')
+                ->where('feedback_request_id', $id)->where('is_internal', false)
+                ->orderBy('created_at')->get()
+                ->map(fn ($r) => [
+                    'at' => (string) $r->created_at,
+                    'author' => (string) ($r->author_name ?? ''),
+                    'is_staff' => $r->resident_id === null,
+                    'body' => (string) $r->body,
+                ])->all();
+        }
+
+        $class = match ($src) {
+            'visitor' => \App\Models\VisitorRegistration::class,
+            'payment' => \App\Models\Payment::class,
+            'amenity' => \App\Models\AmenityBooking::class,
+            default => null,
+        };
+        if ($class === null) {
+            return [];
+        }
+
+        return DB::table('comments')->whereNull('deleted_at')
+            ->where('commentable_type', $class)->where('commentable_id', $id)
+            ->orderBy('created_at')->get()
+            ->map(fn ($r) => [
+                'at' => (string) $r->created_at,
+                'author' => (string) ($r->author_name ?? ''),
+                'is_staff' => (bool) $r->is_staff,
+                'body' => (string) $r->body,
+            ])->all();
+    }
+
     /** @return array{0:array<int>,1:array<int>,2:int} */
     private function scope(Authenticatable $user): array
     {

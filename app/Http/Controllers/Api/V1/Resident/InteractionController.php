@@ -33,4 +33,18 @@ class InteractionController extends ApiController
 
         return ApiResponse::paginated($result['items'], $result['next_cursor']);
     }
+
+    /**
+     * GET /api/v1/resident/interactions/{sourceType}/{sourceId} — chi tiết hợp nhất
+     * (item + mô tả + timeline). Phiếu ngoài phạm vi cư dân → 404 (BOLA-safe).
+     */
+    public function show(Request $request, string $sourceType, string $sourceId): JsonResponse
+    {
+        $detail = $this->aggregator->detail($request->user(), $sourceType, $sourceId);
+        if ($detail === null) {
+            return ApiResponse::error('NOT_FOUND', 'Không tìm thấy phiếu.', 404);
+        }
+
+        return ApiResponse::success($detail);
+    }
 }

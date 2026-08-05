@@ -80,6 +80,46 @@ class InteractionCenterTest extends TestCase
             ->assertOk()->assertJsonPath('data.0.type', 'feedback');
     }
 
+    public function test_http_chi_tiet_hop_nhat_va_timeline(): void
+    {
+        [$user, $ctx] = $this->resident('IF');
+        $fb = $this->feedback($ctx, $user, 'in_progress');
+        \DB::table('feedback_comments')->insert([
+            'feedback_request_id' => $fb->id, 'resident_id' => $ctx['resident']->id,
+            'author_name' => 'CD IF', 'body' => 'Cho hỏi tiến độ', 'is_internal' => false,
+            'created_at' => now(), 'updated_at' => now(),
+        ]);
+        \DB::table('feedback_comments')->insert([
+            'feedback_request_id' => $fb->id, 'user_id' => $user->id, // giả lập BQL: resident_id null → is_staff
+            'author_name' => 'BQL', 'body' => 'Đang xử lý', 'is_internal' => false,
+            'created_at' => now()->addMinute(), 'updated_at' => now()->addMinute(),
+        ]);
+        \DB::table('feedback_comments')->insert([
+            'feedback_request_id' => $fb->id, 'author_name' => 'BQL', 'body' => 'ghi chú nội bộ',
+            'is_internal' => true, 'created_at' => now(), 'updated_at' => now(),
+        ]);
+
+        Sanctum::actingAs($user, ['resident']);
+        $res = $this->getJson("/api/v1/resident/interactions/feedback/{$fb->id}")->assertOk();
+        $res->assertJsonPath('data.source_type', 'feedback')
+            ->assertJsonPath('data.description', 'Nội dung')
+            ->assertJsonPath('data.timeline.0.body', 'Cho hỏi tiến độ')
+            ->assertJsonPath('data.timeline.1.body', 'Đang xử lý');
+        $this->assertCount(2, $res->json('data.timeline'), 'ẩn ghi chú nội bộ');
+        $this->assertFalse($res->json('data.timeline.0.is_staff'));
+        $this->assertTrue($res->json('data.timeline.1.is_staff'));
+    }
+
+    public function test_chi_tiet_khong_lo_phieu_cu_dan_khac(): void
+    {
+        [$me] = $this->resident('IG');
+        [$other, $ctxB] = $this->resident('IH');
+        $fb = $this->feedback($ctxB, $other, 'new');
+
+        Sanctum::actingAs($me, ['resident']);
+        $this->getJson("/api/v1/resident/interactions/feedback/{$fb->id}")->assertStatus(404);
+    }
+
     /** @return array{0:User,1:array{tenant:Tenant,building:Building,apartment:Apartment,resident:Resident}} */
     private function resident(string $tag): array
     {
