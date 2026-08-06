@@ -73,8 +73,10 @@ return new class extends Migration
             $table->text('failure_reason')->nullable();
             $table->timestamps();
 
-            $table->index(['recipient_user_id', 'created_at']);
-            $table->index(['template_code', 'locale', 'channel']);
+            // Explicit short names: the auto-generated names exceed MySQL's 64-char
+            // identifier limit (fine on sqlite, fatal on MySQL).
+            $table->index(['recipient_user_id', 'created_at'], 'nds_recipient_created_idx');
+            $table->index(['template_code', 'locale', 'channel'], 'nds_tpl_locale_channel_idx');
         });
     }
 
