@@ -3285,3 +3285,12 @@ Additive, feature-flag, rollback được, không đụng billing.
 - 6 agent song song migrate notifications/home · billing/payment · feedback/interaction · amenity/visitor · community/profile · auth/settings → context.tr.
 - Gộp 6 fragment → +802 key vào ui_translation_keys.csv (0 đụng key cũ, 1 dup chéo). Tổng 1142 key / 2284 value. Re-seed + export baseline (assets app 1142 key/locale). LocalizationSeederTest cập nhật count.
 - Backend localization 31/31 pass. Mobile analyze lib sạch; mỗi file test màn migrate pass khi cô lập (4 fail chỉ khi chạy gộp nhiều file 1 lệnh = flaky/ô nhiễm chéo, CI isolate không dính). Chuỗi chưa có key để lại (P2).
+
+## 2026-08-06 — I18N tổng kết + merge main
+Hoàn tất gói đa ngôn ngữ X2 (Phase 0 → I18N-006 đủ domain go-live + P2). Test log: `docs/dev/i18n/I18N_TEST_LOG.md`.
+- Schema/seed/resolver/preference API/bootstrap/pack API + ETag/Trung tâm dịch `/sa` (locales/keys inline/releases publish+rollback, kind+category) + notification l10n.
+- **1433 key** (vi-VN + en-US), quản lý ở Trung tâm dịch; pipeline remote pack tự cập nhật (proven trên máy thật).
+- Fix bug môi trường thật: index MySQL >64, cache Collection→Incomplete_Class, pack_versions cache, mobile refreshNow/_rebuildMerged dùng baseline namespaces.
+- Backend localization 31/31 pass; mobile analyze sạch; loop end-to-end proven Samsung.
+- CÒN (P2 nhỏ, đã ghi chú): enum-label domain, list search/filter so-chuỗi, FAQ/legal dài, chuỗi nội bộ package x2_resident_ui.
+- Merge `feat/i18n-localization` → `main` (fast-forward) + push origin. App BQL/App tương lai + XHub federation: giai đoạn sau.
