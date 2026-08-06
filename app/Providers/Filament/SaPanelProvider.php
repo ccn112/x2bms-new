@@ -47,6 +47,7 @@ class SaPanelProvider extends PanelProvider
             ->globalSearch(false)
             ->navigationGroups([
                 NavigationGroup::make('Nền tảng (SuperAdmin)')->icon('heroicon-o-building-library'),
+                NavigationGroup::make('Trung tâm dịch')->icon('heroicon-o-language'),
                 NavigationGroup::make('SaaS Billing')->icon('heroicon-o-banknotes'),
                 NavigationGroup::make('Lưu trữ & Sao lưu')->icon('heroicon-o-archive-box'),
                 NavigationGroup::make('Integration Center')->icon('heroicon-o-bolt'),
