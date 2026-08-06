@@ -76,6 +76,10 @@ class ResidentApprovalQueue extends Page
         $user = auth()->user();
 
         $resident = Resident::create([
+            // tenant_id/building_id set explicitly from the approving staff — the
+            // BelongsToTenant auto-fill does not fire in this Filament action context
+            // (residents.tenant_id is NOT NULL), matching ResidentCreate/AccountApprovalDetail.
+            'tenant_id' => $user->tenant_id,
             'building_id' => $user->building_id,
             'code' => 'CD-'.str_pad((string) (Resident::max('id') + 1), 4, '0', STR_PAD_LEFT),
             'full_name' => $req->full_name,
@@ -86,6 +90,7 @@ class ResidentApprovalQueue extends Page
 
         if ($req->apartment_id) {
             $relation = ResidentApartmentRelation::create([
+                'tenant_id' => $user->tenant_id,
                 'resident_id' => $resident->id,
                 'apartment_id' => $req->apartment_id,
                 'role' => $req->requested_role,
