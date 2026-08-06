@@ -1,0 +1,51 @@
+file,line_or_symbol,surface,current_string_sample,suggested_namespace,suggested_key,disposition,notes
+config/app.php,81,config,"'locale' => env('APP_LOCALE','en')",x2.shared,config.locale,EXTEND,"App default is 'en' but all UI is Vietnamese — mismatch. Set default 'vi', add supported-locales config. faker_locale=en_US too."
+config/app.php,83,config,"'fallback_locale' => 'en'",x2.shared,config.fallback_locale,EXTEND,Fallback should resolve to a language that actually has strings.
+config/localization.php,ABSENT,config,,x2.shared,-,CREATE,"Does NOT exist — reference migration/config won't collide. Create to hold supported_locales + default."
+lang/,vendor-only,infra,"only lang/vendor/filament-shield/vi/filament-shield.php",x2.shared,-,CREATE,"No app lang files. resources/lang absent. All app __() keys need a home."
+app/Http/Controllers/Api/V1/AuthController.php,34,api-error,"__('Thông tin đăng nhập không đúng.')",x2.api,auth.invalid_credentials,EXTEND,"Only real __() usage in codebase; VN literal is the key. Move to keyed lang file so it can be translated."
+app/Http/Controllers/Api/V1/AuthController.php,69,api-error,"__('Mã OTP không hợp lệ.')",x2.api,auth.otp_invalid,EXTEND,Repeated at 161 and OtpController:51.
+app/Http/Controllers/Api/V1/AuthController.php,76,api-error,"__('Email đã được đăng ký.')",x2.api,auth.email_taken,EXTEND,
+app/Http/Controllers/Api/V1/AuthController.php,169,api-error,"__('Không tìm thấy tài khoản.')",x2.api,auth.user_not_found,EXTEND,
+app/Http/Controllers/Api/V1/AuthController.php,231,api-error,"__('Thiếu X-Device-Id.')",x2.api,auth.missing_device_id,EXTEND,
+app/Http/Controllers/Api/V1/OtpController.php,58,api-error,"__('Chưa có tài khoản.')",x2.api,auth.no_account,EXTEND,
+app/Http/Middleware/EnsureIdempotency.php,45,api-error,"__('Idempotency-Key đã dùng cho một yêu cầu khác.')",x2.api,common.idempotency_conflict,EXTEND,
+app/Http/Middleware/EnsureIdempotency.php,59,api-error,"__('Yêu cầu đang được xử lý, vui lòng chờ.')",x2.api,common.request_in_progress,EXTEND,Also line 79.
+app/Http/Controllers/Api/V1/BootstrapController.php,112-117,api-payload,"role_label match(): 'Chủ sở hữu','Người thuê','Thành viên hộ','Cư dân'",x2.api,resident.role.owner|tenant|member|resident,CREATE,"Hardcoded VN labels returned to Flutter in me/bootstrap. Prefer returning role code + localizing client-side OR trans() here."
+app/Http/Controllers/Api/V1/BootstrapController.php,142-162,api-payload,"me() success block (experience_mode,user,enabled_modules...)",x2.api,-,CREATE,"ADD localization block here: {locale, supported_locales, fallback}. THIS is the resident bootstrap injection point."
+app/Http/Controllers/Api/V1/BootstrapController.php,67-75,api-payload,"public() success block",x2.api,-,CREATE,"Also add localization block to public/bootstrap (unauthenticated app start)."
+app/Filament/Resources/Statements/StatementResource.php,29,nav-label,"navigationLabel = 'Bảng kê phí'",x2.bql_web,statement.nav_label,CREATE,Billing/statements go-live P0.
+app/Filament/Resources/Payments/PaymentResource.php,28,nav-label,"navigationLabel = 'Thanh toán'",x2.bql_web,payment.nav_label,CREATE,Payments go-live P0.
+app/Filament/Resources/Residents/ResidentResource.php,29,nav-label,"navigationLabel = 'Cư dân'",x2.bql_web,resident.nav_label,CREATE,Residents/profile go-live P0.
+app/Filament/Pages/NotificationCenter.php,105,action-label,"->label('Soạn thông báo')",x2.bql_web,notification.action.compose,CREATE,Notifications go-live P0.
+app/Filament/Pages/NotificationCenter.php,164,form-label,"Select 'type' ->label('Loại')",x2.bql_web,notification.field.type,CREATE,
+app/Filament/Pages/NotificationCenter.php,165,form-label,"TextInput 'title' ->label('Tiêu đề')",x2.bql_web,notification.field.title,CREATE,
+app/Filament/Pages/NotificationCenter.php,166,form-label,"->label('Tóm tắt')",x2.bql_web,notification.field.summary,CREATE,
+app/Filament/Pages/NotificationCenter.php,167,form-label,"RichEditor 'body' ->label('Nội dung')",x2.bql_web,notification.field.body,CREATE,
+app/Filament/Pages/NotificationCenter.php,169,form-options,"priority options 'Thấp','Thường','Cao','Khẩn'",x2.bql_web,notification.priority.low|normal|high|urgent,CREATE,Inline option maps — many across pages.
+app/Filament/Pages/NotificationCenter.php,170,form-label,"->label('Phạm vi nhận')",x2.bql_web,notification.field.audience_scope,CREATE,
+app/Filament/Pages/NotificationCenter.php,176,form-label,"CheckboxList 'channels' ->label('Kênh gửi')",x2.bql_web,notification.field.channels,CREATE,
+app/Filament/Pages/NotificationCenter.php,183,form-label,"Toggle ->label('Phát hành ngay')",x2.bql_web,notification.field.publish_now,CREATE,
+app/Filament/Pages/FeedbackQueue.php,115,column-label,"TextColumn 'code' ->label('Mã')",x2.bql_web,feedback.col.code,CREATE,Feedback go-live P0.
+app/Filament/Pages/FeedbackQueue.php,117,column-label,"->label('Danh mục')",x2.bql_web,feedback.col.category,CREATE,
+app/Filament/Pages/FeedbackQueue.php,118,column-label,"->label('Căn hộ')",x2.bql_web,common.apartment,CREATE,Reusable common key.
+app/Filament/Pages/FeedbackQueue.php,119,column-label,"->label('Kênh')",x2.bql_web,common.channel,CREATE,
+app/Filament/Pages/FeedbackQueue.php,120,column-label,"->label('Ưu tiên')",x2.bql_web,common.priority,CREATE,
+app/Filament/Pages/FeedbackQueue.php,122,column-label,"->label('Trạng thái')",x2.bql_web,common.status,CREATE,High-frequency reusable key.
+app/Filament/Pages/FeedbackQueue.php,125,column-placeholder,"->placeholder('Chưa giao')",x2.bql_web,feedback.unassigned,CREATE,
+app/Filament/Pages/ResidentCreate.php,178,notif-title,"Notification::make()->title('Đã lưu nháp hồ sơ')",x2.bql_web,resident.notif.draft_saved,CREATE,
+app/Filament/Pages/AccountActivationQueue.php,85,notif-title,"->title('Đã gửi lời mời kích hoạt')",x2.bql_web,resident.notif.activation_invited,CREATE,Auth/activation go-live P0.
+app/Filament/Pages/AccountActivationQueue.php,96,notif-title,"->title('Đã khóa tài khoản')",x2.bql_web,resident.notif.account_locked,CREATE,Duplicated in ResidentDirectory:410 — dedupe to one key.
+app/Filament/Pages/AccountActivationQueue.php,107,notif-title,"->title('Đã mở khóa tài khoản')",x2.bql_web,resident.notif.account_unlocked,CREATE,
+app/Filament/Pages/PaymentClaimQueue.php,194,notif-title,"->title('Đã ghi nhận thanh toán')",x2.bql_web,payment.notif.recorded,CREATE,Payments go-live P0.
+app/Filament/Pages/PaymentClaimQueue.php,208,notif-title,"->title('Đã từ chối chứng từ')",x2.bql_web,payment.notif.rejected,CREATE,
+app/Filament/Pages/ResidentBindingQueue.php,166,notif-title,"->title('Đã phân công')",x2.bql_web,common.assigned,CREATE,
+app/Filament/Pages/ResidentBindingQueue.php,218,notif-title,"->title('Đã duyệt & tạo liên kết cư dân')",x2.bql_web,resident.notif.binding_approved,CREATE,
+app/Filament/Pages/ResidentDirectory.php,466,notif-title,"->title('Đã kích hoạt '.$eligible->count().' cư dân')",x2.bql_web,resident.notif.activated_count,CREATE,"Interpolated count — use trans_choice / :count placeholder, not string concat."
+app/Models/User.php,column,infra,"users table: NO locale column (has account_type,phone,gender,nationality,kyc_status)",x2.shared,users.preferred_locale,CREATE,"Add nullable preferred_locale to users for per-user preference. See migration 2026_06_30_000005."
+database/migrations/2026_07_18_000001_create_mobile_devices_table.php,24,infra,"$table->string('locale')->nullable()",x2.shared,-,REUSE,"Per-device locale ALREADY captured — reuse for anon/device default before user pref exists."
+database/migrations/2026_07_30_190000_create_app_telemetry_tables.php,111,infra,"$table->string('locale',20)->nullable()",x2.shared,-,REUSE,Telemetry already records locale; reuse for analytics of language mix.
+database/migrations/2026_07_01_000019_create_platform_content.php,38,infra,"$table->string('language')->default('vi')",x2.content,-,REUSE,"Platform content already has language column — dynamic-content translation path exists; extend rather than new."
+database/seeders/DatabaseSeeder.php,17-18,infra,"call(DemoDataSeeder), call(DocsPermissionSeeder)",n/a,-,EXTEND,"Register translation-namespace + base-string seeder here (catalog), keep out of DemoDataSeeder (demo)."
+app/Services/Notifications/MultiChannelNotifier.php,class,infra,"multi-channel per-person delivery (email/zalo/sms/...)",x2.notifications,-,EXTEND,"Bridge point: resolve recipient locale before rendering template body per channel."
+app/Services/Resident/ResidentNotificationService.php,class,infra,resident notification read/unread + feed,x2.notifications,-,EXTEND,Feeds bootstrap unread_count; localize any inline strings.

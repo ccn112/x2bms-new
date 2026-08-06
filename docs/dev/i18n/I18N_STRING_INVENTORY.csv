@@ -1,0 +1,13 @@
+area,count,go_live_priority,notes
+Filament ->label() (form fields / table columns / actions) all panels,1433,P0,"Split: Resources=223, Pages=415, Sa=688, Hq=55. Hardcoded Vietnamese. Sa (SuperAdmin) is lower go-live priority than /admin BQL surfaces."
+Filament Notification::make() titles/bodies (toasts),257,P0,"Split: Sa=123, Pages=102, Hq=16, Resources=1. ->title() count also 257. User-visible action feedback on billing/payment/resident/notification workflows."
+Filament navigationLabel / getNavigationLabel,152,P0,"Nav menu + breadcrumb source. e.g. 'Bảng kê phí', 'Thanh toán', 'Cư dân'."
+Filament ->placeholder() (empty-state cell text),100,P1,"e.g. '—', 'Chưa giao'. Some are just dash; real text ones need keys."
+Filament ->helperText() (form field help),28,P1,Form guidance strings on admin forms.
+Filament ->body() (notification/section bodies),28,P1,Longer notification bodies paired with titles.
+Filament modelLabel / pluralModelLabel,12,P0,"Singular/plural entity names shown in headers, create buttons, breadcrumbs."
+API error/status messages via __() (AuthController/OtpController/EnsureIdempotency),13,P0,"Only place __() is used today; Vietnamese literal passed as key with NO lang file backing it. e.g. 'Thông tin đăng nhập không đúng.'"
+API inline role_label / status strings (BootstrapController etc.),6,P0,"Hardcoded match() labels e.g. 'Chủ sở hữu','Người thuê' returned in bootstrap payload — served to Flutter, must localize."
+Notification demo/template content (X2NotificationsDemoSeeder + notifications.title/body/summary),n/a,P1,"Content is DATA in notifications table (title/summary/body), not code strings; localization is per-record via content-translation, not lang files."
+Enum ->label() methods (FeedbackStatus, WorkOrderStatus, etc.),n/a,P1,"Status labels returned via ->formatStateUsing(fn($state)=>$state->label()); labels live in app/Enums, localize there."
+Flutter resident app strings (out of scope of this repo),n/a,P1,Lives in x2/x2mobile; covered by x2.resident_app namespace. Not counted here.
