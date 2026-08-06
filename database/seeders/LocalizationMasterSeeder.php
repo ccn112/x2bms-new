@@ -78,12 +78,16 @@ final class LocalizationMasterSeeder extends Seeder
 
             $locked = $this->toBool($row['locked'] ?? false);
 
+            $category = $this->nullable($row['category'] ?? null);
+
             DB::table('translation_keys')->updateOrInsert(
                 [
                     'namespace_id' => $namespaceId,
                     'key' => $row['key'],
                 ],
                 [
+                    'category' => $category,
+                    'kind' => \App\Services\Localization\TranslationKeyKind::classify($category, $row['key']),
                     'description' => $this->nullable($row['description'] ?? null),
                     'placeholders' => json_encode($this->extractPlaceholders(
                         ($row['vi-VN'] ?? '').' '.($row['en-US'] ?? '')
