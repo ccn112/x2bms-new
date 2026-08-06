@@ -6,6 +6,7 @@ namespace App\Services\Localization;
 
 use App\Models\AuditLog;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use RuntimeException;
 
@@ -95,8 +96,11 @@ final class PublishTranslationRelease
 
             DB::table('translation_release_items')->insert($rows);
 
-            // Bust cached pack so the delivery API + /me/bootstrap surface the new version.
+            // Bust cached pack AND the bootstrap pack_versions map so the delivery API and
+            // /me/bootstrap both surface the new version immediately (the app detects the
+            // change from pack_versions, so this cache must not lag behind a publish).
             $this->packService->forget($namespaceCode, $locale);
+            Cache::forget("i18n:pack_versions:{$locale}");
 
             AuditLog::create([
                 'tenant_id' => Auth::user()?->tenant_id,
@@ -145,6 +149,7 @@ final class PublishTranslationRelease
                 ->update(['status' => 'rolled_back', 'updated_at' => now()]);
 
             $this->packService->forget($release->namespace_code, $release->locale);
+            Cache::forget("i18n:pack_versions:{$release->locale}");
 
             AuditLog::create([
                 'tenant_id' => Auth::user()?->tenant_id,

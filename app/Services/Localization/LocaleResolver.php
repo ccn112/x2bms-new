@@ -48,7 +48,10 @@ final class LocaleResolver
     {
         $cacheKey = sprintf('i18n:supported:%s:%s', $tenantId ?? 'platform', $projectId ?? 'all');
 
-        return Cache::remember($cacheKey, 300, function () use ($tenantId, $projectId): Collection {
+        // Cache a plain array, not a Collection: serializing-cache drivers (file/database/
+        // redis) round-trip a cached Collection object into an __PHP_Incomplete_Class on
+        // read (the array cache driver used in tests hides this). Wrap in collect() after.
+        $codes = Cache::remember($cacheKey, 300, function () use ($tenantId, $projectId): array {
             if ($projectId !== null) {
                 $project = DB::table('project_locale_settings')
                     ->where('project_id', $projectId)
@@ -58,7 +61,7 @@ final class LocaleResolver
                 $projectLocales = $this->decodeLocales($project?->supported_locales ?? null);
 
                 if ($projectLocales->isNotEmpty()) {
-                    return $this->onlyEnabled($projectLocales);
+                    return $this->onlyEnabled($projectLocales)->all();
                 }
             }
 
@@ -67,15 +70,18 @@ final class LocaleResolver
                 $tenantLocales = $this->decodeLocales($tenant?->supported_locales ?? null);
 
                 if ($tenantLocales->isNotEmpty()) {
-                    return $this->onlyEnabled($tenantLocales);
+                    return $this->onlyEnabled($tenantLocales)->all();
                 }
             }
 
             return DB::table('locales')
                 ->where('enabled', true)
                 ->orderBy('sort_order')
-                ->pluck('code');
+                ->pluck('code')
+                ->all();
         });
+
+        return collect($codes);
     }
 
     public function assertSupported(string $locale, ?int $tenantId, ?int $projectId): string
