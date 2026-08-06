@@ -1,0 +1,57 @@
+﻿source_locale,target_locale,source_term,target_term,note,locked
+vi-VN,en-US,Ban quản lý,Building Management,Tổ chức vận hành dự án/tòa nhà,True
+vi-VN,en-US,Ban quản trị,Management Board,Tổ chức đại diện cư dân,True
+vi-VN,en-US,Chủ đầu tư,Developer,Đơn vị phát triển dự án,True
+vi-VN,en-US,Cư dân,Resident,Người sử dụng App cư dân,True
+vi-VN,en-US,Chủ sở hữu,Owner,Vai trò theo căn hộ,True
+vi-VN,en-US,Người thuê,Tenant,Không nhầm tenant SaaS,True
+vi-VN,en-US,Căn hộ,Apartment,Có thể dùng Unit trong ngữ cảnh kỹ thuật,False
+vi-VN,en-US,Tòa nhà,Building,,True
+vi-VN,en-US,Dự án,Project,,True
+vi-VN,en-US,Bảng kê,Statement,Không dùng Invoice,True
+vi-VN,en-US,Công nợ,Outstanding balance,Số tiền còn phải thu,True
+vi-VN,en-US,Gạch nợ,Payment allocation,Phân bổ tiền vào dòng phí,True
+vi-VN,en-US,Khoản phí,Charge,Nghĩa vụ tài chính,True
+vi-VN,en-US,Kỳ phí,Billing period,,True
+vi-VN,en-US,Phí quản lý,Management fee,,True
+vi-VN,en-US,Phí điện,Electricity fee,,True
+vi-VN,en-US,Phí nước,Water fee,,True
+vi-VN,en-US,Phí phương tiện,Parking fee,,True
+vi-VN,en-US,Phí khác,Other fee,,True
+vi-VN,en-US,Biên lai,Receipt,Không dùng Invoice,True
+vi-VN,en-US,Hóa đơn điện tử,Electronic invoice,,True
+vi-VN,en-US,Xác nhận thanh toán,Payment confirmation,Claim do cư dân gửi,True
+vi-VN,en-US,Đối soát,Reconciliation,,True
+vi-VN,en-US,Số dư có,Credit balance,,True
+vi-VN,en-US,Ví căn hộ,Apartment wallet,Chờ quyết định phạm vi ví,True
+vi-VN,en-US,Phản ánh,Service request,Feedback chỉ dùng khi là góp ý,False
+vi-VN,en-US,Phiếu,Ticket,,False
+vi-VN,en-US,Tiện ích,Amenity,Tiện ích nội khu có đặt chỗ,True
+vi-VN,en-US,Đặt chỗ,Booking,,True
+vi-VN,en-US,Mã khách,Visitor pass,,True
+vi-VN,en-US,Trung tâm tương tác,Interaction Center,Read model hợp nhất phiếu nguồn,True
+vi-VN,en-US,Ban lễ tân,Front Desk,,False
+vi-VN,en-US,Bộ phận kỹ thuật,Engineering team,,False
+vi-VN,en-US,Bảo vệ,Security staff,,False
+vi-VN,en-US,Khẩn cấp,Emergency,,True
+vi-VN,en-US,Cảnh báo PCCC,Fire safety alert,,True
+vi-VN,en-US,Sơ tán,Evacuation,,True
+vi-VN,en-US,Nhà thầu,Contractor,,True
+vi-VN,en-US,Nhà cung cấp dịch vụ,Service provider,,True
+vi-VN,en-US,Nhân sự vận hành,Operations staff,,True
+vi-VN,en-US,Chờ duyệt,Pending approval,,True
+vi-VN,en-US,Đã phát hành,Published,,True
+vi-VN,en-US,Đã gạch nợ,Allocated,,True
+vi-VN,en-US,Quá hạn,Overdue,,True
+vi-VN,en-US,Tạm ứng,Prepayment,,True
+vi-VN,en-US,Dịch tự động,Machine translation,,True
+vi-VN,en-US,Bản dịch đã duyệt,Approved translation,,True
+vi-VN,en-US,Ngôn ngữ gốc,Source language,,True
+vi-VN,en-US,Ngôn ngữ đích,Target language,,True
+vi-VN,en-US,Gói ngôn ngữ,Translation pack,,True
+vi-VN,en-US,Khóa dịch,Translation key,,True
+vi-VN,en-US,Ghi đè,Override,Tenant/project override,True
+vi-VN,en-US,Bản phát hành,Release,,True
+vi-VN,en-US,Từ điển thuật ngữ,Glossary,,True
+vi-VN,en-US,Độ phủ bản dịch,Translation coverage,,True
+vi-VN,en-US,Bản dịch lỗi thời,Outdated translation,Source changed,True

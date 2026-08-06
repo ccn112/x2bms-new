@@ -1,0 +1,341 @@
+﻿namespace,key,category,description,locked,vi-VN,en-US
+x2.api,api.approved_translation_required,api,,True,Nội dung này yêu cầu bản dịch được phê duyệt,This content requires an approved translation
+x2.api,api.content_not_translatable,api,,True,Nội dung này không hỗ trợ dịch tự động,This content cannot be machine translated
+x2.api,api.invalid_locale,api,,True,Ngôn ngữ không được hỗ trợ,Unsupported locale
+x2.api,api.locale_updated,api,,True,Đã cập nhật ngôn ngữ,Language preference updated
+x2.api,api.success,api,,True,Thao tác thành công,Operation completed successfully
+x2.api,api.translation_queued,api,,True,Yêu cầu dịch đã được đưa vào hàng đợi,Translation request queued
+x2.api,api.translation_ready,api,,True,Bản dịch đã sẵn sàng,Translation is ready
+x2.bql_app,action.accept_task,action,,False,Nhận việc,Accept task
+x2.bql_app,action.add_evidence,action,,False,Thêm bằng chứng,Add evidence
+x2.bql_app,action.assign,action,,False,Phân công,Assign
+x2.bql_app,action.complete,action,,False,Hoàn thành,Complete
+x2.bql_app,action.escalate,action,,False,Chuyển cấp xử lý,Escalate
+x2.bql_app,action.scan_qr,action,,False,Quét mã QR,Scan QR code
+x2.bql_app,action.start,action,,False,Bắt đầu xử lý,Start
+x2.bql_app,dashboard.shift_summary,dashboard,,False,Tóm tắt ca trực,Shift summary
+x2.bql_app,dashboard.today_tasks,dashboard,,False,Việc cần làm hôm nay,Tasks for today
+x2.bql_app,dashboard.urgent_alerts,dashboard,,False,Cảnh báo khẩn,Urgent alerts
+x2.bql_app,navigation.approvals,navigation,,False,Phê duyệt,Approvals
+x2.bql_app,navigation.dashboard,navigation,,False,Bảng điều hành,Dashboard
+x2.bql_app,navigation.feedback,navigation,,False,Phản ánh cư dân,Resident requests
+x2.bql_app,navigation.notifications,navigation,,False,Truyền thông,Communications
+x2.bql_app,navigation.patrol,navigation,,False,An ninh & tuần tra,Security & patrol
+x2.bql_app,navigation.profile,navigation,,False,Cá nhân,Profile
+x2.bql_app,navigation.work_orders,navigation,,False,Công việc,Work orders
+x2.bql_app,offline.pending_sync,offline,,False,Dữ liệu đang chờ đồng bộ,Data waiting to sync
+x2.bql_app,offline.title,offline,,False,Chế độ ngoại tuyến,Offline mode
+x2.bql_app,sla.overdue,sla,,False,Đã quá hạn SLA,SLA overdue
+x2.bql_web,action.approve,action,,False,Phê duyệt,Approve
+x2.bql_web,action.assign,action,,False,Phân công,Assign
+x2.bql_web,action.bulk_translate,action,,False,Dịch hàng loạt,Bulk translate
+x2.bql_web,action.escalate,action,,False,Chuyển cấp xử lý,Escalate
+x2.bql_web,action.generate_ai_draft,action,,False,Tạo bản dịch nháp bằng AI,Generate AI draft
+x2.bql_web,action.publish,action,,False,Phát hành,Publish
+x2.bql_web,action.reject,action,,False,Từ chối,Reject
+x2.bql_web,action.rollback_release,action,,False,Khôi phục bản phát hành,Rollback release
+x2.bql_web,navigation.billing,navigation,,False,"Phí, Công nợ & Thanh toán","Fees, Billing & Payments"
+x2.bql_web,navigation.dashboard,navigation,,False,Bảng điều hành,Dashboard
+x2.bql_web,navigation.interaction,navigation,,False,Trung tâm tương tác,Interaction center
+x2.bql_web,navigation.master_data,navigation,,False,Dữ liệu nền,Master data
+x2.bql_web,navigation.operations,navigation,,False,Công việc & Vận hành,Work & Operations
+x2.bql_web,navigation.reports,navigation,,False,Báo cáo,Reports
+x2.bql_web,navigation.residents,navigation,,False,Cư dân & Căn hộ,Residents & Apartments
+x2.bql_web,navigation.settings,navigation,,False,Thiết lập,Settings
+x2.bql_web,table.apartment,table,,False,Căn hộ,Apartment
+x2.bql_web,table.building,table,,False,Tòa nhà,Building
+x2.bql_web,table.language,table,,False,Ngôn ngữ,Language
+x2.bql_web,table.project,table,,False,Dự án,Project
+x2.bql_web,table.resident,table,,False,Cư dân,Resident
+x2.bql_web,table.translation_status,table,,False,Trạng thái dịch,Translation status
+x2.content,translation.approved_required,translation,,True,Nội dung này cần bản dịch đã duyệt,This content requires an approved translation
+x2.content,translation.failed,translation,,False,Không thể dịch nội dung,Unable to translate content
+x2.content,translation.helpful,translation,,False,Bản dịch hữu ích,Translation is helpful
+x2.content,translation.human_label,translation,,False,Bản dịch đã kiểm duyệt,Reviewed translation
+x2.content,translation.machine_label,translation,,False,Được dịch tự động,Machine translated
+x2.content,translation.not_available,translation,,False,Chưa có bản dịch,Translation not available
+x2.content,translation.not_helpful,translation,,False,Bản dịch chưa hữu ích,Translation is not helpful
+x2.content,translation.original_preserved,translation,,False,Nội dung gốc luôn được giữ lại,Original content is always preserved
+x2.content,translation.outdated,translation,,False,Bản dịch đã cũ,Translation outdated
+x2.content,translation.report_issue,translation,,False,Báo bản dịch chưa chính xác,Report translation issue
+x2.content,translation.source_language,translation,,False,Ngôn ngữ gốc,Source language
+x2.content,translation.target_language,translation,,False,Ngôn ngữ đích,Target language
+x2.content,translation.translate,translation,,False,Dịch nội dung,Translate content
+x2.content,translation.translating,translation,,False,Đang dịch nội dung,Translating content
+x2.content,translation.view_original,translation,,False,Xem bản gốc,View original
+x2.content,translation.view_translation,translation,,False,Xem bản dịch,View translation
+x2.hq_web,action.apply_to_projects,action,,False,Áp dụng xuống dự án,Apply to projects
+x2.hq_web,dashboard.active_residents,dashboard,,False,Cư dân đang hoạt động,Active residents
+x2.hq_web,dashboard.collection_rate,dashboard,,False,Tỷ lệ thu phí,Collection rate
+x2.hq_web,dashboard.open_requests,dashboard,,False,Phản ánh đang mở,Open requests
+x2.hq_web,dashboard.total_outstanding,dashboard,,False,Tổng công nợ,Total outstanding balance
+x2.hq_web,dashboard.total_projects,dashboard,,False,Tổng số dự án,Total projects
+x2.hq_web,filter.all_projects,filter,,False,Tất cả dự án,All projects
+x2.hq_web,navigation.dashboard,navigation,,False,Tổng quan công ty,Company overview
+x2.hq_web,navigation.finance,navigation,,False,Tài chính hợp nhất,Consolidated finance
+x2.hq_web,navigation.policies,navigation,,False,Chính sách dùng chung,Shared policies
+x2.hq_web,navigation.projects,navigation,,False,Dự án & tòa nhà,Projects & buildings
+x2.hq_web,navigation.reports,navigation,,False,Báo cáo so sánh,Comparative reports
+x2.hq_web,navigation.staff,navigation,,False,Nhân sự & phân công,Staff & assignments
+x2.hq_web,navigation.subscriptions,navigation,,False,Gói dịch vụ,Subscriptions
+x2.hq_web,navigation.templates,navigation,,False,Biểu mẫu dùng chung,Shared templates
+x2.hq_web,report.compare_projects,report,,False,So sánh giữa các dự án,Compare projects
+x2.hq_web,report.localization_coverage,report,,False,Độ phủ đa ngôn ngữ,Localization coverage
+x2.hq_web,staff.cross_project_assignment,staff,,False,Phân công liên dự án,Cross-project assignment
+x2.notifications,center.title,center,,False,Trung tâm mẫu thông báo,Notification Template Center
+x2.notifications,delivery.delivered,delivery,,False,Đã nhận,Delivered
+x2.notifications,delivery.failed,delivery,,False,Gửi thất bại,Failed
+x2.notifications,delivery.fallback_used,delivery,,False,Đã dùng ngôn ngữ dự phòng,Fallback language used
+x2.notifications,delivery.queued,delivery,,False,Đang chờ gửi,Queued
+x2.notifications,delivery.sent,delivery,,False,Đã gửi,Sent
+x2.notifications,template.approval_required,template,,True,Yêu cầu phê duyệt,Approval required
+x2.notifications,template.category,template,,False,Nhóm thông báo,Notification category
+x2.notifications,template.channel,template,,False,Kênh gửi,Delivery channel
+x2.notifications,template.code,template,,False,Mã mẫu,Template code
+x2.notifications,template.missing_translation,template,,False,Thiếu bản dịch,Missing translation
+x2.notifications,template.preview,template,,False,Xem trước theo kênh,Preview by channel
+x2.notifications,template.recipient_distribution,template,,False,Phân bố ngôn ngữ người nhận,Recipient language distribution
+x2.notifications,template.risk,template,,False,Mức rủi ro,Risk level
+x2.notifications,template.variables,template,,False,Biến dữ liệu,Template variables
+x2.notifications,template.version,template,,False,Phiên bản mẫu,Template version
+x2.resident_app,amenity.available_slots,amenity,,False,Khung giờ còn trống,Available time slots
+x2.resident_app,amenity.book,amenity,,False,Đặt ngay,Book now
+x2.resident_app,amenity.booking_confirmed,amenity,,False,Đặt tiện ích thành công,Amenity booking confirmed
+x2.resident_app,amenity.booking_detail,amenity,,False,Chi tiết đặt chỗ,Booking details
+x2.resident_app,amenity.cancel_booking,amenity,,False,Hủy đặt chỗ,Cancel booking
+x2.resident_app,amenity.check_in_code,amenity,,False,Mã check-in,Check-in code
+x2.resident_app,amenity.title,amenity,,False,Đặt tiện ích,Amenities
+x2.resident_app,auth.account_activated,auth,,False,Tài khoản đã được kích hoạt,Your account has been activated
+x2.resident_app,auth.account_pending,auth,,False,Tài khoản đang chờ Ban quản lý phê duyệt,Your account is awaiting Building Management approval
+x2.resident_app,auth.enter_otp,auth,,False,Nhập mã OTP,Enter OTP
+x2.resident_app,auth.forgot_password,auth,,False,Quên mật khẩu?,Forgot password?
+x2.resident_app,auth.password,auth,,False,Mật khẩu,Password
+x2.resident_app,auth.phone_or_email,auth,,False,Số điện thoại hoặc email,Phone number or email
+x2.resident_app,auth.resend_otp,auth,,False,Gửi lại mã,Resend code
+x2.resident_app,auth.send_otp,auth,,False,Gửi mã OTP,Send OTP
+x2.resident_app,auth.sign_in,auth,,False,Đăng nhập,Sign in
+x2.resident_app,auth.sign_out,auth,,False,Đăng xuất,Sign out
+x2.resident_app,auth.verify,auth,,False,Xác thực,Verify
+x2.resident_app,billing.credit_balance,billing,,True,Số dư có,Credit balance
+x2.resident_app,billing.due_date,billing,,True,Hạn thanh toán,Due date
+x2.resident_app,billing.electricity_fee,billing,,True,Phí điện,Electricity fee
+x2.resident_app,billing.management_fee,billing,,True,Phí quản lý,Management fee
+x2.resident_app,billing.only_published_visible,billing,,True,Cư dân chỉ xem được bảng kê đã phát hành,Residents can only view published statements
+x2.resident_app,billing.original_amount,billing,,True,Số tiền phát sinh,Original amount
+x2.resident_app,billing.other_fee,billing,,True,Phí khác,Other fees
+x2.resident_app,billing.paid_amount,billing,,True,Đã thanh toán,Paid amount
+x2.resident_app,billing.period,billing,,True,Kỳ phí,Billing period
+x2.resident_app,billing.previous_balance,billing,,True,Nợ kỳ trước,Previous balance
+x2.resident_app,billing.remaining_amount,billing,,True,Còn phải trả,Remaining amount
+x2.resident_app,billing.statement,billing,,True,Bảng kê,Statement
+x2.resident_app,billing.statement_detail,billing,,True,Chi tiết bảng kê,Statement details
+x2.resident_app,billing.statements,billing,,True,Danh sách bảng kê,Statements
+x2.resident_app,billing.title,billing,,True,Công nợ & Bảng kê,Billing & Statements
+x2.resident_app,billing.total_due,billing,,True,Tổng cần thanh toán,Total amount due
+x2.resident_app,billing.vehicle_fee,billing,,True,Phí phương tiện,Parking fee
+x2.resident_app,billing.water_fee,billing,,True,Phí nước,Water fee
+x2.resident_app,community.comment,community,,False,Bình luận,Comment
+x2.resident_app,community.create_post,community,,False,Tạo bài viết,Create post
+x2.resident_app,community.original_language,community,,False,Ngôn ngữ gốc: {language},Original language: {language}
+x2.resident_app,community.reaction,community,,False,Cảm xúc,Reaction
+x2.resident_app,community.reply,community,,False,Trả lời,Reply
+x2.resident_app,community.title,community,,False,Cộng đồng cư dân,Resident community
+x2.resident_app,community.translate_comments,community,,False,Dịch bình luận,Translate comments
+x2.resident_app,community.translate_post,community,,False,Dịch bài viết,Translate post
+x2.resident_app,community.write_post,community,,False,Chia sẻ điều gì đó với cộng đồng…,Share something with the community…
+x2.resident_app,feedback.add_photo,feedback,,False,Thêm ảnh hoặc video,Add photo or video
+x2.resident_app,feedback.category,feedback,,False,Loại phản ánh,Request category
+x2.resident_app,feedback.content,feedback,,False,Nội dung phản ánh,Request details
+x2.resident_app,feedback.create,feedback,,False,Tạo phản ánh,Create request
+x2.resident_app,feedback.rate_service,feedback,,False,Đánh giá chất lượng xử lý,Rate the service
+x2.resident_app,feedback.received,feedback,,False,Ban quản lý đã tiếp nhận phản ánh,Your request has been received by Building Management
+x2.resident_app,feedback.subject,feedback,,False,Tiêu đề,Subject
+x2.resident_app,feedback.submit,feedback,,False,Gửi phản ánh,Submit request
+x2.resident_app,feedback.timeline,feedback,,False,Tiến trình xử lý,Resolution timeline
+x2.resident_app,feedback.title,feedback,,False,Phản ánh & Hỗ trợ,Service Requests & Support
+x2.resident_app,home.amount_due,home,,False,Công nợ cần thanh toán,Amount due
+x2.resident_app,home.greeting_afternoon,home,,False,"Chào buổi chiều, {name}","Good afternoon, {name}"
+x2.resident_app,home.greeting_evening,home,,False,"Chào buổi tối, {name}","Good evening, {name}"
+x2.resident_app,home.greeting_morning,home,,False,"Chào buổi sáng, {name}","Good morning, {name}"
+x2.resident_app,home.latest_news,home,,False,Tin mới từ Ban quản lý,Latest from Building Management
+x2.resident_app,home.open_requests,home,,False,Phản ánh đang xử lý,Open requests
+x2.resident_app,home.quick_actions,home,,False,Thao tác nhanh,Quick actions
+x2.resident_app,home.upcoming_bookings,home,,False,Lịch đặt sắp tới,Upcoming bookings
+x2.resident_app,navigation.amenities,navigation,,False,Đặt tiện ích,Amenities
+x2.resident_app,navigation.billing,navigation,,False,Công nợ,Billing
+x2.resident_app,navigation.community,navigation,,False,Cộng đồng,Community
+x2.resident_app,navigation.feedback,navigation,,False,Phản ánh,Service requests
+x2.resident_app,navigation.handbook,navigation,,False,Cẩm nang & Quy định,Handbook & Rules
+x2.resident_app,navigation.home,navigation,,False,Trang chủ,Home
+x2.resident_app,navigation.marketplace,navigation,,False,Chợ nội khu,Marketplace
+x2.resident_app,navigation.notifications,navigation,,False,Thông báo,Notifications
+x2.resident_app,navigation.offers,navigation,,False,Ưu đãi,Offers
+x2.resident_app,navigation.payments,navigation,,False,Thanh toán,Payments
+x2.resident_app,navigation.profile,navigation,,False,Cá nhân,Profile
+x2.resident_app,navigation.residents,navigation,,False,Cư dân,Residents
+x2.resident_app,navigation.utilities,navigation,,False,Tiện ích,Utilities
+x2.resident_app,navigation.visitors,navigation,,False,Đăng ký khách,Visitors
+x2.resident_app,notifications.center,notifications,,False,Trung tâm thông báo,Notification center
+x2.resident_app,notifications.emergency,notifications,,False,Khẩn cấp,Emergency
+x2.resident_app,notifications.events,notifications,,False,Sự kiện,Events
+x2.resident_app,notifications.fees,notifications,,False,Phí & công nợ,Fees & billing
+x2.resident_app,notifications.mark_all_read,notifications,,False,Đánh dấu tất cả đã đọc,Mark all as read
+x2.resident_app,notifications.system,notifications,,False,Hệ thống,System
+x2.resident_app,notifications.unread,notifications,,False,Chưa đọc,Unread
+x2.resident_app,payment.amount,payment,,True,Số tiền thanh toán,Payment amount
+x2.resident_app,payment.bank_transfer,payment,,True,Chuyển khoản ngân hàng,Bank transfer
+x2.resident_app,payment.cash,payment,,True,Tiền mặt,Cash
+x2.resident_app,payment.claim,payment,,True,Gửi xác nhận thanh toán,Submit payment confirmation
+x2.resident_app,payment.claim_received,payment,,True,Đã tiếp nhận xác nhận thanh toán,Payment confirmation received
+x2.resident_app,payment.failed,payment,,True,Thanh toán không thành công,Payment failed
+x2.resident_app,payment.gateway,payment,,True,Cổng thanh toán,Payment gateway
+x2.resident_app,payment.history,payment,,True,Lịch sử thanh toán,Payment history
+x2.resident_app,payment.pay_now,payment,,True,Thanh toán ngay,Pay now
+x2.resident_app,payment.pending_reconciliation,payment,,True,Đang chờ đối soát,Pending reconciliation
+x2.resident_app,payment.receipt,payment,,True,Biên lai,Receipt
+x2.resident_app,payment.reference,payment,,True,Nội dung chuyển khoản,Transfer reference
+x2.resident_app,payment.select_method,payment,,True,Chọn phương thức thanh toán,Select payment method
+x2.resident_app,payment.success,payment,,True,Thanh toán thành công,Payment successful
+x2.resident_app,payment.title,payment,,True,Thanh toán,Payment
+x2.resident_app,profile.apartments,profile,,False,Căn hộ & thành viên,Apartments & household members
+x2.resident_app,profile.current_apartment,profile,,False,Căn hộ hiện tại,Current apartment
+x2.resident_app,profile.household_member,profile,,False,Thành viên hộ gia đình,Household member
+x2.resident_app,profile.owner,profile,,False,Chủ sở hữu,Owner
+x2.resident_app,profile.switch_apartment,profile,,False,Chuyển căn hộ,Switch apartment
+x2.resident_app,profile.tenant,profile,,False,Người thuê,Tenant
+x2.resident_app,profile.title,profile,,False,Hồ sơ của tôi,My profile
+x2.resident_app,settings.appearance,settings,,False,Giao diện,Appearance
+x2.resident_app,settings.auto_translate,settings,,False,Tự động dịch nội dung,Automatically translate content
+x2.resident_app,settings.auto_translate_description,settings,,False,"Dịch bài viết, bình luận và nội dung khác sang ngôn ngữ của bạn","Translate posts, comments and other content into your language"
+x2.resident_app,settings.follow_device,settings,,False,Theo ngôn ngữ thiết bị,Follow device language
+x2.resident_app,settings.language,settings,,False,Ngôn ngữ,Language
+x2.resident_app,settings.language_description,settings,,False,Chọn ngôn ngữ hiển thị cho ứng dụng,Choose the display language for the app
+x2.resident_app,settings.notification_preferences,settings,,False,Cài đặt thông báo,Notification preferences
+x2.resident_app,settings.privacy,settings,,False,Quyền riêng tư,Privacy
+x2.resident_app,settings.security,settings,,False,Bảo mật,Security
+x2.resident_app,settings.title,settings,,False,Cài đặt,Settings
+x2.resident_app,visitor.arrived,visitor,,False,Khách đã đến sảnh,Your visitor has arrived at the lobby
+x2.resident_app,visitor.create,visitor,,False,Đăng ký khách mới,Register a visitor
+x2.resident_app,visitor.full_name,visitor,,False,Họ tên khách,Visitor name
+x2.resident_app,visitor.pass_code,visitor,,False,Mã khách,Visitor pass
+x2.resident_app,visitor.phone,visitor,,False,Số điện thoại khách,Visitor phone number
+x2.resident_app,visitor.share_pass,visitor,,False,Chia sẻ mã khách,Share visitor pass
+x2.resident_app,visitor.title,visitor,,False,Đăng ký khách,Visitor registration
+x2.resident_app,visitor.visit_time,visitor,,False,Thời gian đến,Visit time
+x2.shared,common.actions,common,,False,Thao tác,Actions
+x2.shared,common.advanced_filter,common,,False,Lọc nâng cao,Advanced filters
+x2.shared,common.all,common,,False,Tất cả,All
+x2.shared,common.app_name,common,,False,X2-BMS,X2-BMS
+x2.shared,common.apply,common,,False,Áp dụng,Apply
+x2.shared,common.archive,common,,False,Lưu trữ,Archive
+x2.shared,common.attachments,common,,False,Tệp đính kèm,Attachments
+x2.shared,common.auto_translated,common,,False,Được dịch tự động từ {language},Auto-translated from {language}
+x2.shared,common.back,common,,False,Quay lại,Back
+x2.shared,common.cancel,common,,False,Hủy,Cancel
+x2.shared,common.clear_filter,common,,False,Xóa bộ lọc,Clear filters
+x2.shared,common.close,common,,False,Đóng,Close
+x2.shared,common.confirm,common,,False,Xác nhận,Confirm
+x2.shared,common.continue,common,,False,Tiếp tục,Continue
+x2.shared,common.created_at,common,,False,Tạo lúc {time},Created at {time}
+x2.shared,common.delete,common,,False,Xóa,Delete
+x2.shared,common.description,common,,False,Mô tả,Description
+x2.shared,common.done,common,,False,Hoàn tất,Done
+x2.shared,common.download,common,,False,Tải xuống,Download
+x2.shared,common.edit,common,,False,Chỉnh sửa,Edit
+x2.shared,common.empty_result,common,,False,Không tìm thấy kết quả phù hợp,No matching results
+x2.shared,common.export,common,,False,Xuất dữ liệu,Export
+x2.shared,common.filter,common,,False,Lọc,Filter
+x2.shared,common.import,common,,False,Nhập dữ liệu,Import
+x2.shared,common.loading,common,,False,Đang tải…,Loading…
+x2.shared,common.month,common,,False,Tháng,Month
+x2.shared,common.next,common,,False,Tiếp theo,Next
+x2.shared,common.no,common,,False,Không,No
+x2.shared,common.no_data,common,,False,Chưa có dữ liệu,No data available
+x2.shared,common.none,common,,False,Không có,None
+x2.shared,common.note,common,,False,Ghi chú,Note
+x2.shared,common.optional,common,,False,Không bắt buộc,Optional
+x2.shared,common.refresh,common,,False,Làm mới,Refresh
+x2.shared,common.report_translation,common,,False,Báo bản dịch chưa chính xác,Report inaccurate translation
+x2.shared,common.required,common,,False,Bắt buộc,Required
+x2.shared,common.restore,common,,False,Khôi phục,Restore
+x2.shared,common.retry,common,,False,Thử lại,Retry
+x2.shared,common.save,common,,False,Lưu,Save
+x2.shared,common.saved,common,,False,Đã lưu,Saved
+x2.shared,common.search,common,,False,Tìm kiếm,Search
+x2.shared,common.status,common,,False,Trạng thái,Status
+x2.shared,common.sync_pending,common,Offline locale preference sync pending,False,"Đã lưu trên thiết bị, đang chờ đồng bộ","Saved on this device, waiting to sync"
+x2.shared,common.today,common,,False,Hôm nay,Today
+x2.shared,common.tomorrow,common,,False,Ngày mai,Tomorrow
+x2.shared,common.translate,common,,False,Dịch,Translate
+x2.shared,common.translating,common,,False,Đang dịch…,Translating…
+x2.shared,common.translation_unavailable,common,,False,Chưa có bản dịch,Translation unavailable
+x2.shared,common.updated_at,common,,False,Cập nhật lúc {time},Updated at {time}
+x2.shared,common.upload,common,,False,Tải lên,Upload
+x2.shared,common.view_all,common,,False,Xem tất cả,View all
+x2.shared,common.view_detail,common,,False,Xem chi tiết,View details
+x2.shared,common.view_original,common,,False,Xem bản gốc,View original
+x2.shared,common.view_translation,common,,False,Xem bản dịch,View translation
+x2.shared,common.year,common,,False,Năm,Year
+x2.shared,common.yes,common,,False,Có,Yes
+x2.shared,common.yesterday,common,,False,Hôm qua,Yesterday
+x2.shared,error.forbidden,error,,True,Bạn không có quyền thực hiện thao tác này.,You do not have permission to perform this action.
+x2.shared,error.generic,error,,True,Đã xảy ra lỗi. Vui lòng thử lại.,Something went wrong. Please try again.
+x2.shared,error.network,error,,True,Không thể kết nối. Vui lòng kiểm tra mạng.,Unable to connect. Please check your network.
+x2.shared,error.not_found,error,,True,Không tìm thấy dữ liệu yêu cầu.,The requested data was not found.
+x2.shared,error.rate_limited,error,,True,Bạn thao tác quá nhanh. Vui lòng thử lại sau.,Too many requests. Please try again later.
+x2.shared,error.timeout,error,,True,Yêu cầu mất quá nhiều thời gian. Vui lòng thử lại.,The request timed out. Please try again.
+x2.shared,error.translation_failed,error,,True,Không thể tạo bản dịch lúc này.,Translation could not be generated at this time.
+x2.shared,error.translation_sensitive,error,,True,Nội dung này cần bản dịch đã được phê duyệt.,This content requires an approved translation.
+x2.shared,error.unauthorized,error,,True,Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.,Your session has expired. Please sign in again.
+x2.shared,error.validation,error,,True,Vui lòng kiểm tra lại thông tin đã nhập.,Please review the information entered.
+x2.shared,locale.chinese_simplified,locale,Simplified Chinese language display name,False,Tiếng Trung giản thể,Simplified Chinese
+x2.shared,locale.chinese_traditional,locale,Traditional Chinese language display name,False,Tiếng Trung phồn thể,Traditional Chinese
+x2.shared,locale.english,locale,English language display name,False,Tiếng Anh,English
+x2.shared,locale.japanese,locale,Japanese language display name,False,Tiếng Nhật,Japanese
+x2.shared,locale.korean,locale,Korean language display name,False,Tiếng Hàn,Korean
+x2.shared,locale.vietnamese,locale,Vietnamese language display name,False,Tiếng Việt,Vietnamese
+x2.shared,status.active,status,,True,Đang hoạt động,Active
+x2.shared,status.approved,status,,True,Đã duyệt,Approved
+x2.shared,status.assigned,status,,True,Đã phân công,Assigned
+x2.shared,status.cancelled,status,,True,Đã hủy,Cancelled
+x2.shared,status.closed,status,,True,Đã đóng,Closed
+x2.shared,status.completed,status,,True,Hoàn thành,Completed
+x2.shared,status.draft,status,,True,Bản nháp,Draft
+x2.shared,status.expired,status,,True,Hết hạn,Expired
+x2.shared,status.failed,status,,True,Thất bại,Failed
+x2.shared,status.hidden,status,,True,Đã ẩn,Hidden
+x2.shared,status.in_review,status,,True,Đang rà soát,In review
+x2.shared,status.inactive,status,,True,Ngừng hoạt động,Inactive
+x2.shared,status.locked,status,,True,Đã khóa,Locked
+x2.shared,status.open,status,,True,Đang mở,Open
+x2.shared,status.outdated,status,,True,Cần cập nhật,Outdated
+x2.shared,status.overdue,status,,True,Quá hạn,Overdue
+x2.shared,status.pending,status,,True,Chờ xử lý,Pending
+x2.shared,status.processing,status,,True,Đang xử lý,Processing
+x2.shared,status.published,status,,True,Đã phát hành,Published
+x2.shared,status.rejected,status,,True,Từ chối,Rejected
+x2.shared,status.resolved,status,,True,Đã xử lý,Resolved
+x2.superadmin,translation_center.ai_review,translation_center,,False,Bản dịch AI chờ duyệt,AI translations awaiting review
+x2.superadmin,translation_center.approved_translation,translation_center,,False,Bản dịch đã duyệt,Approved translation
+x2.superadmin,translation_center.audit,translation_center,,False,Nhật ký thay đổi,Audit log
+x2.superadmin,translation_center.coverage,translation_center,,False,Độ phủ bản dịch,Translation coverage
+x2.superadmin,translation_center.dashboard,translation_center,,False,Tổng quan bản dịch,Translation dashboard
+x2.superadmin,translation_center.glossary,translation_center,,False,Từ điển thuật ngữ,Glossary
+x2.superadmin,translation_center.human_translation,translation_center,,False,Dịch thủ công,Human translation
+x2.superadmin,translation_center.keys,translation_center,,False,Khóa dịch,Translation keys
+x2.superadmin,translation_center.locales,translation_center,,False,Danh mục ngôn ngữ,Locales
+x2.superadmin,translation_center.locked_term,translation_center,,False,Thuật ngữ bị khóa,Locked term
+x2.superadmin,translation_center.machine_translation,translation_center,,False,Dịch máy,Machine translation
+x2.superadmin,translation_center.missing,translation_center,,False,Thiếu bản dịch,Missing translations
+x2.superadmin,translation_center.namespaces,translation_center,,False,Không gian khóa dịch,Translation namespaces
+x2.superadmin,translation_center.notification_templates,translation_center,,False,Mẫu thông báo,Notification templates
+x2.superadmin,translation_center.outdated_warning,translation_center,,False,Nội dung gốc đã thay đổi; bản dịch cần cập nhật,The source content changed; translation must be updated
+x2.superadmin,translation_center.overrides,translation_center,,False,Ghi đè tenant/dự án,Tenant/project overrides
+x2.superadmin,translation_center.publish_release,translation_center,,False,Phát hành gói ngôn ngữ,Publish translation pack
+x2.superadmin,translation_center.release_version,translation_center,,False,Phiên bản phát hành,Release version
+x2.superadmin,translation_center.releases,translation_center,,False,Bản phát hành ngôn ngữ,Translation releases
+x2.superadmin,translation_center.source_locale,translation_center,,False,Ngôn ngữ gốc,Source language
+x2.superadmin,translation_center.target_locale,translation_center,,False,Ngôn ngữ đích,Target language
+x2.superadmin,translation_center.title,translation_center,,False,Trung tâm dịch,Translation Center
+x2.superadmin,translation_center.usage,translation_center,,False,Mức sử dụng & Chi phí,Usage & cost
+x2.superadmin,translation_center.values,translation_center,,False,Nội dung bản dịch,Translation values

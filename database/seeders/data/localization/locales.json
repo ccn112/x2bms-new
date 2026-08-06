@@ -1,0 +1,62 @@
+[
+  {
+    "code": "vi-VN",
+    "name": "Tiếng Việt",
+    "native_name": "Tiếng Việt",
+    "direction": "ltr",
+    "enabled": true,
+    "is_default": true,
+    "fallback_locale": null,
+    "sort_order": 10
+  },
+  {
+    "code": "en-US",
+    "name": "English",
+    "native_name": "English",
+    "direction": "ltr",
+    "enabled": true,
+    "is_default": false,
+    "fallback_locale": "vi-VN",
+    "sort_order": 20
+  },
+  {
+    "code": "ko-KR",
+    "name": "Korean",
+    "native_name": "한국어",
+    "direction": "ltr",
+    "enabled": false,
+    "is_default": false,
+    "fallback_locale": "en-US",
+    "sort_order": 30
+  },
+  {
+    "code": "ja-JP",
+    "name": "Japanese",
+    "native_name": "日本語",
+    "direction": "ltr",
+    "enabled": false,
+    "is_default": false,
+    "fallback_locale": "en-US",
+    "sort_order": 40
+  },
+  {
+    "code": "zh-CN",
+    "name": "Chinese Simplified",
+    "native_name": "简体中文",
+    "direction": "ltr",
+    "enabled": false,
+    "is_default": false,
+    "fallback_locale": "en-US",
+    "sort_order": 50
+  },
+  {
+    "code": "zh-TW",
+    "name": "Chinese Traditional",
+    "native_name": "繁體中文",
+    "direction": "ltr",
+    "enabled": false,
+    "is_default": false,
+    "fallback_locale": "en-US",
+    "sort_order": 60
+  }
+]

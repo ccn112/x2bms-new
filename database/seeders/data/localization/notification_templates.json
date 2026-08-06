@@ -1,0 +1,485 @@
+[
+  {
+    "code": "auth.otp",
+    "category": "auth",
+    "risk": "high",
+    "variables": [
+      "otp",
+      "expires_in_minutes"
+    ],
+    "channels": {
+      "push": {
+        "vi-VN": {
+          "title": "Mã xác thực X2-BMS",
+          "body": "Mã OTP của bạn là {{otp}}. Mã có hiệu lực trong {{expires_in_minutes}} phút."
+        },
+        "en-US": {
+          "title": "X2-BMS verification code",
+          "body": "Your OTP is {{otp}}. It expires in {{expires_in_minutes}} minutes."
+        }
+      },
+      "sms": {
+        "vi-VN": {
+          "body": "X2-BMS: Ma OTP {{otp}}, hieu luc {{expires_in_minutes}} phut. Khong chia se ma nay."
+        },
+        "en-US": {
+          "body": "X2-BMS: OTP {{otp}}, valid for {{expires_in_minutes}} minutes. Do not share this code."
+        }
+      }
+    }
+  },
+  {
+    "code": "auth.account_activated",
+    "category": "auth",
+    "risk": "medium",
+    "variables": [
+      "resident_name",
+      "apartment_code"
+    ],
+    "channels": {
+      "push": {
+        "vi-VN": {
+          "title": "Tài khoản đã được kích hoạt",
+          "body": "Xin chào {{resident_name}}, tài khoản gắn với căn hộ {{apartment_code}} đã được kích hoạt."
+        },
+        "en-US": {
+          "title": "Account activated",
+          "body": "Hello {{resident_name}}, your account for apartment {{apartment_code}} has been activated."
+        }
+      }
+    }
+  },
+  {
+    "code": "auth.password_reset",
+    "category": "auth",
+    "risk": "high",
+    "variables": [
+      "otp",
+      "expires_in_minutes"
+    ],
+    "channels": {
+      "sms": {
+        "vi-VN": {
+          "body": "X2-BMS: Ma dat lai mat khau {{otp}}, hieu luc {{expires_in_minutes}} phut."
+        },
+        "en-US": {
+          "body": "X2-BMS: Password reset code {{otp}}, valid for {{expires_in_minutes}} minutes."
+        }
+      }
+    }
+  },
+  {
+    "code": "announcement.general",
+    "category": "communication",
+    "risk": "medium",
+    "variables": [
+      "title",
+      "summary"
+    ],
+    "channels": {
+      "push": {
+        "vi-VN": {
+          "title": "{{title}}",
+          "body": "{{summary}}"
+        },
+        "en-US": {
+          "title": "{{title}}",
+          "body": "{{summary}}"
+        }
+      },
+      "in_app": {
+        "vi-VN": {
+          "title": "{{title}}",
+          "body": "{{summary}}"
+        },
+        "en-US": {
+          "title": "{{title}}",
+          "body": "{{summary}}"
+        }
+      }
+    }
+  },
+  {
+    "code": "billing.statement_published",
+    "category": "billing",
+    "risk": "high",
+    "variables": [
+      "billing_period",
+      "apartment_code",
+      "amount",
+      "due_date"
+    ],
+    "channels": {
+      "push": {
+        "vi-VN": {
+          "title": "Bảng kê {{billing_period}} đã phát hành",
+          "body": "Căn hộ {{apartment_code}} cần thanh toán {{amount}} trước ngày {{due_date}}."
+        },
+        "en-US": {
+          "title": "{{billing_period}} statement issued",
+          "body": "Apartment {{apartment_code}} has {{amount}} due by {{due_date}}."
+        }
+      },
+      "in_app": {
+        "vi-VN": {
+          "title": "Bảng kê mới",
+          "body": "Bảng kê kỳ {{billing_period}} của căn hộ {{apartment_code}} đã được phát hành. Số tiền còn phải trả: {{amount}}."
+        },
+        "en-US": {
+          "title": "New statement",
+          "body": "The {{billing_period}} statement for apartment {{apartment_code}} has been issued. Remaining amount: {{amount}}."
+        }
+      }
+    }
+  },
+  {
+    "code": "billing.payment_due_reminder",
+    "category": "billing",
+    "risk": "high",
+    "variables": [
+      "apartment_code",
+      "amount",
+      "due_date"
+    ],
+    "channels": {
+      "push": {
+        "vi-VN": {
+          "title": "Sắp đến hạn thanh toán",
+          "body": "Căn hộ {{apartment_code}} còn {{amount}}, hạn thanh toán {{due_date}}."
+        },
+        "en-US": {
+          "title": "Payment due soon",
+          "body": "Apartment {{apartment_code}} has {{amount}} due on {{due_date}}."
+        }
+      }
+    }
+  },
+  {
+    "code": "billing.payment_overdue",
+    "category": "billing",
+    "risk": "high",
+    "variables": [
+      "apartment_code",
+      "amount",
+      "days_overdue"
+    ],
+    "channels": {
+      "push": {
+        "vi-VN": {
+          "title": "Khoản phí đã quá hạn",
+          "body": "Căn hộ {{apartment_code}} còn {{amount}}, quá hạn {{days_overdue}} ngày."
+        },
+        "en-US": {
+          "title": "Payment overdue",
+          "body": "Apartment {{apartment_code}} has {{amount}} overdue by {{days_overdue}} days."
+        }
+      }
+    }
+  },
+  {
+    "code": "billing.payment_received",
+    "category": "billing",
+    "risk": "high",
+    "variables": [
+      "amount",
+      "apartment_code",
+      "receipt_code"
+    ],
+    "channels": {
+      "push": {
+        "vi-VN": {
+          "title": "Đã ghi nhận thanh toán",
+          "body": "Đã ghi nhận {{amount}} cho căn hộ {{apartment_code}}. Biên lai: {{receipt_code}}."
+        },
+        "en-US": {
+          "title": "Payment recorded",
+          "body": "{{amount}} was recorded for apartment {{apartment_code}}. Receipt: {{receipt_code}}."
+        }
+      }
+    }
+  },
+  {
+    "code": "payment.claim_received",
+    "category": "payment",
+    "risk": "high",
+    "variables": [
+      "claim_code",
+      "amount"
+    ],
+    "channels": {
+      "push": {
+        "vi-VN": {
+          "title": "Đã tiếp nhận xác nhận thanh toán",
+          "body": "Phiếu {{claim_code}} với số tiền {{amount}} đang chờ Ban quản lý kiểm tra."
+        },
+        "en-US": {
+          "title": "Payment confirmation received",
+          "body": "Claim {{claim_code}} for {{amount}} is awaiting Building Management review."
+        }
+      }
+    }
+  },
+  {
+    "code": "payment.claim_approved",
+    "category": "payment",
+    "risk": "high",
+    "variables": [
+      "claim_code",
+      "amount"
+    ],
+    "channels": {
+      "push": {
+        "vi-VN": {
+          "title": "Xác nhận thanh toán đã được duyệt",
+          "body": "Phiếu {{claim_code}} với số tiền {{amount}} đã được duyệt."
+        },
+        "en-US": {
+          "title": "Payment confirmation approved",
+          "body": "Claim {{claim_code}} for {{amount}} has been approved."
+        }
+      }
+    }
+  },
+  {
+    "code": "feedback.received",
+    "category": "feedback",
+    "risk": "medium",
+    "variables": [
+      "ticket_code",
+      "subject"
+    ],
+    "channels": {
+      "push": {
+        "vi-VN": {
+          "title": "Đã tiếp nhận phản ánh {{ticket_code}}",
+          "body": "Ban quản lý đã tiếp nhận: {{subject}}."
+        },
+        "en-US": {
+          "title": "Request {{ticket_code}} received",
+          "body": "Building Management received: {{subject}}."
+        }
+      }
+    }
+  },
+  {
+    "code": "feedback.assigned",
+    "category": "feedback",
+    "risk": "medium",
+    "variables": [
+      "ticket_code",
+      "department_name"
+    ],
+    "channels": {
+      "push": {
+        "vi-VN": {
+          "title": "Phản ánh đã được phân công",
+          "body": "Phiếu {{ticket_code}} đã chuyển đến {{department_name}} xử lý."
+        },
+        "en-US": {
+          "title": "Request assigned",
+          "body": "Request {{ticket_code}} was assigned to {{department_name}}."
+        }
+      }
+    }
+  },
+  {
+    "code": "feedback.status_changed",
+    "category": "feedback",
+    "risk": "medium",
+    "variables": [
+      "ticket_code",
+      "status_label"
+    ],
+    "channels": {
+      "push": {
+        "vi-VN": {
+          "title": "Cập nhật phản ánh {{ticket_code}}",
+          "body": "Trạng thái mới: {{status_label}}."
+        },
+        "en-US": {
+          "title": "Request {{ticket_code}} updated",
+          "body": "New status: {{status_label}}."
+        }
+      }
+    }
+  },
+  {
+    "code": "feedback.resolved",
+    "category": "feedback",
+    "risk": "medium",
+    "variables": [
+      "ticket_code"
+    ],
+    "channels": {
+      "push": {
+        "vi-VN": {
+          "title": "Phản ánh đã được xử lý",
+          "body": "Phiếu {{ticket_code}} đã hoàn thành. Vui lòng đánh giá chất lượng xử lý."
+        },
+        "en-US": {
+          "title": "Request resolved",
+          "body": "Request {{ticket_code}} is complete. Please rate the service."
+        }
+      }
+    }
+  },
+  {
+    "code": "amenity.booking_confirmed",
+    "category": "amenity",
+    "risk": "medium",
+    "variables": [
+      "amenity_name",
+      "booking_time",
+      "booking_code"
+    ],
+    "channels": {
+      "push": {
+        "vi-VN": {
+          "title": "Đặt tiện ích thành công",
+          "body": "{{amenity_name}} lúc {{booking_time}}. Mã đặt chỗ: {{booking_code}}."
+        },
+        "en-US": {
+          "title": "Amenity booking confirmed",
+          "body": "{{amenity_name}} at {{booking_time}}. Booking code: {{booking_code}}."
+        }
+      }
+    }
+  },
+  {
+    "code": "amenity.booking_cancelled",
+    "category": "amenity",
+    "risk": "medium",
+    "variables": [
+      "amenity_name",
+      "booking_time"
+    ],
+    "channels": {
+      "push": {
+        "vi-VN": {
+          "title": "Đã hủy đặt tiện ích",
+          "body": "Lịch {{amenity_name}} lúc {{booking_time}} đã được hủy."
+        },
+        "en-US": {
+          "title": "Amenity booking cancelled",
+          "body": "Your {{amenity_name}} booking at {{booking_time}} was cancelled."
+        }
+      }
+    }
+  },
+  {
+    "code": "visitor.pass_created",
+    "category": "visitor",
+    "risk": "medium",
+    "variables": [
+      "visitor_name",
+      "visit_time",
+      "pass_code"
+    ],
+    "channels": {
+      "push": {
+        "vi-VN": {
+          "title": "Đã tạo mã khách",
+          "body": "Khách {{visitor_name}}, thời gian {{visit_time}}, mã {{pass_code}}."
+        },
+        "en-US": {
+          "title": "Visitor pass created",
+          "body": "Visitor {{visitor_name}}, time {{visit_time}}, pass {{pass_code}}."
+        }
+      }
+    }
+  },
+  {
+    "code": "visitor.arrival",
+    "category": "visitor",
+    "risk": "medium",
+    "variables": [
+      "visitor_name",
+      "lobby_name"
+    ],
+    "channels": {
+      "push": {
+        "vi-VN": {
+          "title": "Khách đã đến",
+          "body": "{{visitor_name}} đang chờ tại {{lobby_name}}."
+        },
+        "en-US": {
+          "title": "Visitor arrived",
+          "body": "{{visitor_name}} is waiting at {{lobby_name}}."
+        }
+      }
+    }
+  },
+  {
+    "code": "emergency.fire_alert",
+    "category": "emergency",
+    "risk": "critical",
+    "variables": [
+      "building_name",
+      "instruction"
+    ],
+    "channels": {
+      "push": {
+        "vi-VN": {
+          "title": "CẢNH BÁO HỎA HOẠN",
+          "body": "{{building_name}}: {{instruction}}"
+        },
+        "en-US": {
+          "title": "FIRE ALERT",
+          "body": "{{building_name}}: {{instruction}}"
+        }
+      },
+      "in_app": {
+        "vi-VN": {
+          "title": "CẢNH BÁO HỎA HOẠN",
+          "body": "Giữ bình tĩnh, không sử dụng thang máy và di chuyển theo lối thoát hiểm. {{instruction}}"
+        },
+        "en-US": {
+          "title": "FIRE ALERT",
+          "body": "Stay calm, do not use elevators, and proceed via emergency exits. {{instruction}}"
+        }
+      }
+    }
+  },
+  {
+    "code": "emergency.evacuation",
+    "category": "emergency",
+    "risk": "critical",
+    "variables": [
+      "building_name",
+      "assembly_point"
+    ],
+    "channels": {
+      "push": {
+        "vi-VN": {
+          "title": "YÊU CẦU SƠ TÁN",
+          "body": "Rời {{building_name}} theo lối thoát hiểm và tập trung tại {{assembly_point}}."
+        },
+        "en-US": {
+          "title": "EVACUATION REQUIRED",
+          "body": "Exit {{building_name}} via emergency routes and assemble at {{assembly_point}}."
+        }
+      }
+    }
+  },
+  {
+    "code": "system.maintenance",
+    "category": "system",
+    "risk": "medium",
+    "variables": [
+      "start_time",
+      "end_time"
+    ],
+    "channels": {
+      "push": {
+        "vi-VN": {
+          "title": "Bảo trì hệ thống",
+          "body": "X2-BMS dự kiến bảo trì từ {{start_time}} đến {{end_time}}."
+        },
+        "en-US": {
+          "title": "System maintenance",
+          "body": "X2-BMS maintenance is scheduled from {{start_time}} to {{end_time}}."
+        }
+      }
+    }
+  }
+]

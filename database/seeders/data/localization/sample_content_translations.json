@@ -1,0 +1,38 @@
+[
+  {
+    "translatable_type": "App\\Models\\PlatformContent",
+    "translatable_id": "demo-handbook-001",
+    "source_locale": "vi-VN",
+    "target_locale": "en-US",
+    "source_hash": "demo",
+    "translated_title": "Resident Handbook",
+    "translated_content": "Welcome to the X2-BMS resident handbook. Demo only.",
+    "translation_method": "human",
+    "status": "approved",
+    "demo_only": true
+  },
+  {
+    "translatable_type": "App\\Models\\CommunityPost",
+    "translatable_id": "demo-community-001",
+    "source_locale": "vi-VN",
+    "target_locale": "en-US",
+    "source_hash": "demo",
+    "translated_title": null,
+    "translated_content": "The community swimming pool will reopen at 6:00 AM tomorrow.",
+    "translation_method": "machine",
+    "status": "published",
+    "demo_only": true
+  },
+  {
+    "translatable_type": "App\\Models\\Feedback",
+    "translatable_id": "demo-feedback-001",
+    "source_locale": "en-US",
+    "target_locale": "vi-VN",
+    "source_hash": "demo",
+    "translated_title": "Đèn hành lang không hoạt động",
+    "translated_content": "Đèn tại hành lang tầng 18 đã tắt từ tối qua.",
+    "translation_method": "machine",
+    "status": "published",
+    "demo_only": true
+  }
+]

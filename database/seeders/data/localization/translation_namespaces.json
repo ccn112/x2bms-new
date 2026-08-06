@@ -1,0 +1,47 @@
+[
+  {
+    "code": "x2.shared",
+    "name": "X2 Shared",
+    "description": "Chuỗi dùng chung App và Web"
+  },
+  {
+    "code": "x2.api",
+    "name": "X2 API",
+    "description": "Thông điệp API"
+  },
+  {
+    "code": "x2.resident_app",
+    "name": "Resident App",
+    "description": "Flutter App Cư dân"
+  },
+  {
+    "code": "x2.bql_app",
+    "name": "BQL App",
+    "description": "App BQL mobile"
+  },
+  {
+    "code": "x2.bql_web",
+    "name": "BQL Web",
+    "description": "Laravel Filament BQL"
+  },
+  {
+    "code": "x2.hq_web",
+    "name": "HQ Web",
+    "description": "Cổng công ty/HQ"
+  },
+  {
+    "code": "x2.superadmin",
+    "name": "SuperAdmin",
+    "description": "Translation Center"
+  },
+  {
+    "code": "x2.notifications",
+    "name": "Notifications",
+    "description": "Mẫu thông báo đa kênh"
+  },
+  {
+    "code": "x2.content",
+    "name": "Dynamic Content",
+    "description": "Nội dung động"
+  }
+]

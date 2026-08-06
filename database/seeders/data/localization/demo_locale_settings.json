@@ -1,0 +1,46 @@
+[
+  {
+    "scope_type": "platform",
+    "scope_id": "platform",
+    "locale": "vi-VN",
+    "mode": "explicit",
+    "auto_translate_content": false,
+    "enabled_locales": [
+      "vi-VN",
+      "en-US"
+    ]
+  },
+  {
+    "scope_type": "tenant",
+    "scope_id": "TENANT-001",
+    "locale": "vi-VN",
+    "mode": "explicit",
+    "auto_translate_content": false,
+    "enabled_locales": [
+      "vi-VN",
+      "en-US"
+    ]
+  },
+  {
+    "scope_type": "project",
+    "scope_id": "PROJECT-DEMO-001",
+    "locale": "vi-VN",
+    "mode": "inherit",
+    "auto_translate_content": true,
+    "enabled_locales": [
+      "vi-VN",
+      "en-US"
+    ]
+  },
+  {
+    "scope_type": "user",
+    "scope_id": "RESIDENT-DEMO-EN",
+    "locale": "en-US",
+    "mode": "explicit",
+    "auto_translate_content": true,
+    "enabled_locales": [
+      "vi-VN",
+      "en-US"
+    ]
+  }
+]
