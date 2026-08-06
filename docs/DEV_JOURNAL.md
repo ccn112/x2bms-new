@@ -3251,3 +3251,24 @@ Additive, feature-flag, rollback được, không đụng billing.
 - **Còn (backlog)**: I18N-005 mobile gen_l10n (đang chạy) · I18N-006/007 migrate ~2.400 chuỗi hardcode ·
   I18N-008 pack API · I18N-010 Translation Center Filament · I18N-011/012/013 notification đa ngôn ngữ ·
   I18N-014→018 dịch nội dung động. Nhánh: `feat/i18n-localization` (chưa merge/push).
+
+## 2026-08-06 (tiếp) — I18N-008 pack API + fix MySQL + I18N-010 Trung tâm dịch
+- **I18N-008**: `GET /api/v1/localization/packs/{namespace}/{locale}` (public) trả {version,checksum,values},
+  ETag/If-None-Match → 304. `TranslationPackService` (cache). Rollback = latest published theo published_at.
+  4 test (checksum khớp, 304, lọc namespace, rollback không xóa lịch sử).
+- **FIX MySQL (quan trọng)**: index `notification_delivery_snapshots` auto-name > 64 ký tự → sqlite pass
+  nhưng MySQL fail (SQLSTATE 42000 #1059). Đặt tên tường minh `nds_recipient_created_idx`/`nds_tpl_locale_channel_idx`.
+  Verified migrate+seed sạch trên MySQL local (6/9/340/680/21/18). Nếu không bắt → deploy production fail.
+- **I18N-010 Trung tâm dịch (MVP, /sa, nhóm "Trung tâm dịch", gate EnsurePlatformAdmin)**:
+  - Locales (bật/tắt/mặc định), TranslationKeys (sửa value vi/en; key critical read-only),
+    TranslationReleases (Phát hành gói mới + Khôi phục).
+  - Service `PublishTranslationRelease` (snapshot value published → checksum TranslationPackChecksum
+    [khớp verifier Dart] → release bất biến + items → forget cache); `TranslationValueWriter`.
+    Rollback = status rolled_back (không xóa). Audit qua AuditLog (translation.value.updated/.release.published/.rolled_back).
+  - Model mỏng Locale/TranslationNamespace/TranslationKey/TranslationRelease. Mirror Sa/Developers (Filament v5).
+  - 16 test localization pass; route /sa đăng ký; 3 trang → 302 (không 500).
+  - Hoãn (docs/dev/i18n/TRANSLATION_CENTER_BACKLOG.md): glossary, mẫu thông báo, hàng đợi dịch nội dung,
+    overrides, dashboard chi phí, RBAC shield.
+- **Vòng khép**: sửa value ở "Khóa dịch" → "Phát hành gói mới" → app so pack_versions → tải gói mới.
+  (Chữ trên MÀN app đổi trực tiếp là việc I18N-006 nối call-site vào remoteTranslationsProvider.tr().)
+- Server local `php artisan serve :8123` (chung MySQL với Herd x2bms.test) phục vụ test app trên Samsung qua adb reverse.
