@@ -309,6 +309,7 @@ php artisan optimize:clear           # xóa toàn bộ cache khi nghi cache cũ
 php artisan db:seed --class=CommunityFeedDemoSeeder  --force   # +14 bài cộng đồng nhiều tác giả + cảm xúc
 php artisan db:seed --class=ApartmentWalletDemoSeeder --force   # nạp số dư ví cho mọi căn có cư dân
 php artisan db:seed --class=ResidentArticleSeeder     --force   # bài Quy định / Cẩm nang / Tin tức
+php artisan db:seed --class=LocalizationMasterSeeder  --force   # i18n: locale/namespace/1433 khóa dịch/template/release (BẮT BUỘC — xem §7.3)
 ```
 
 ### 7.2 Lần deploy 2026-07-27 — cần lưu ý
@@ -335,6 +336,32 @@ php artisan filament:optimize
 php artisan queue:restart            # nạp lại worker
 php artisan up
 ```
+
+### 7.3 Lần deploy 2026-08-06 — Đa ngôn ngữ (i18n) + fix `tenant_id`
+
+**Bối cảnh:** gói localization (backend + app cư dân) + 2 lượt fix `tenant_id`. Chi tiết: `docs/SESSION_HANDOFF_20260806.md`, `docs/dev/i18n/I18N_TEST_LOG.md`.
+
+- **5 migration mới** chạy qua `migrate --force` (ADD-ONLY, reversible): `2026_08_06_000001..000003` (bảng localization: core/content/notification), `000004` (thêm `category`+`kind` vào `translation_keys`), `000005` (`ai_prompt_templates.tenant_id` → nullable).
+- **BẮT BUỘC seed localization (deploy.sh KHÔNG tự chạy):**
+  ```bash
+  php artisan db:seed --class=LocalizationMasterSeeder --force   # idempotent + chặn demo trên production
+  ```
+  Nạp 6 locale (bật `vi-VN`+`en-US`), 9 namespace, **1433 khóa dịch** (vi+en), 21 mẫu thông báo, 18 release. Chạy lại nhiều lần KHÔNG nhân bản.
+- **Dọn cache localization** sau seed (gói/`pack_versions`/`supported` được cache):
+  ```bash
+  php artisan cache:clear
+  php artisan config:cache && php artisan route:cache && php artisan filament:optimize
+  ```
+- **KHÔNG** chạy `php artisan i18n:export-app-baseline` trên server prod — lệnh này chỉ dùng ở máy build app (ghi `assets/i18n/*.json` cho repo mobile; baseline đã commit sẵn).
+- **Kiểm tra sau deploy:**
+  ```bash
+  php artisan migrate:status | tail                 # 000001..000005 = Ran
+  curl -s https://x2.fino.vn/api/v1/localization/bootstrap -H "X-Device-Locale: vi-VN" | head -c 300
+  curl -s https://x2.fino.vn/api/v1/localization/packs/x2.shared/vi-VN | grep -o '"version":"[^"]*"'
+  ```
+  Rồi `/sa` → **Trung tâm dịch** hiển thị; thử **duyệt cư dân** ở `/admin` (fix 1364 `tenant_id`); tạo prompt AI ở `/sa` (fix nullable) không lỗi.
+- **App cư dân TÁCH RIÊNG:** deploy backend không làm app đã cài đa ngôn ngữ — cần **phát hành APK/AAB mới từ `main`** (`flutter build apk --release -t lib/main_prod.dart --dart-define=X2_USE_MOCK=false`). Sau khi app mới cài, sửa/publish bản dịch ở `/sa` → app tự nhận qua remote pack (không cần build lại cho thay đổi bản dịch).
+- **Rollback:** `mysqldump` trước khi deploy; nếu lỗi: `php artisan migrate:rollback --step=5` + phục hồi backup + `cache:clear`.
 
 ---
 
