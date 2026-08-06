@@ -3272,3 +3272,11 @@ Additive, feature-flag, rollback được, không đụng billing.
 - **Vòng khép**: sửa value ở "Khóa dịch" → "Phát hành gói mới" → app so pack_versions → tải gói mới.
   (Chữ trên MÀN app đổi trực tiếp là việc I18N-006 nối call-site vào remoteTranslationsProvider.tr().)
 - Server local `php artisan serve :8123` (chung MySQL với Herd x2bms.test) phục vụ test app trên Samsung qua adb reverse.
+
+## 2026-08-06 (tiếp) — I18N-006 nền + phân loại Trung tâm dịch + fix môi trường thật
+- **Trung tâm dịch bổ sung**: cột `kind` (nav/title/action/label/status/notification/error/helper — suy từ category+key, service `TranslationKeyKind`) + `category` (migration 000004, seed backfill); **sửa inline** value vi/en trên bảng; nút **"Phát hành gói"** ngay trang khóa dịch. phpunit.xml memory_limit=1024M (render Filament).
+- **I18N-006 nền**: lệnh `artisan i18n:export-app-baseline` → sinh baseline app từ DB.
+- **FIX bug môi trường thật (test/sqlite/array-cache giấu):**
+  - `LocaleResolver::supportedLocales` cache Collection → serializing cache → `__PHP_Incomplete_Class` → bootstrap 500. Fix: cache array.
+  - `PublishTranslationRelease` bust thêm `i18n:pack_versions:{locale}` (app mới thấy version mới sau publish).
+- **VÒNG LẶP proven trên Samsung**: sửa key /sa → Phát hành → app "Kiểm tra cập nhật" → Home đổi chữ, không build lại.
