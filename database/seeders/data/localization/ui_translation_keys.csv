@@ -1141,3 +1141,320 @@ x2.resident_app,community.listing_not_authorized,community,"Listing not authoriz
 x2.resident_app,community.listing_own,community,"Listing own failure",False,"Đây là tin của chính bạn.","This is your own listing."
 x2.resident_app,community.listing_forbidden,community,"Listing forbidden failure",False,"Bạn không xem được tin rao này.","You can't view this listing."
 x2.resident_app,community.listing_not_found,community,"Listing not found failure",False,"Tin rao không còn khả dụng.","This listing is no longer available."
+x2.resident_app,home.greeting_morning_label,home,"Home greeting label (morning), rendered above the resident's name",False,"Chào buổi sáng,","Good morning,"
+x2.resident_app,home.greeting_noon_label,home,"Home greeting label (around noon)",False,"Chào buổi trưa,","Good afternoon,"
+x2.resident_app,home.greeting_afternoon_label,home,"Home greeting label (afternoon)",False,"Chào buổi chiều,","Good afternoon,"
+x2.resident_app,home.greeting_evening_label,home,"Home greeting label (evening)",False,"Chào buổi tối,","Good evening,"
+x2.resident_app,home.action_articles,home,"Quick action label: resident handbook/articles",False,"Cẩm nang",Handbook
+x2.resident_app,home.action_ai_assistant,home,"Quick action label: AI assistant",False,"Trợ lý X2AI","X2AI assistant"
+x2.resident_app,home.action_household,home,"Quick action label: household members",False,"Hộ khẩu",Household
+x2.resident_app,home.action_access_card,home,"Quick action label: access card (coming soon)",False,"Thẻ ra vào","Access card"
+x2.resident_app,home.action_parcel,home,"Quick action label: parcel/deliveries (coming soon)",False,"Đồ ship",Deliveries
+x2.resident_app,home.action_smart_home,home,"Quick action label: smart home (coming soon)",False,"Smart Home","Smart home"
+x2.resident_app,home.action_more,home,"Quick action label: open the full utilities hub",False,"Xem thêm","See more"
+x2.resident_app,notifications.category_billing,notifications,"Notification taxonomy category label: billing",False,"Hóa đơn",Bills
+x2.resident_app,notifications.category_security,notifications,"Notification taxonomy category label: security",False,"An ninh",Security
+x2.resident_app,notifications.category_feedback,notifications,"Notification taxonomy category label: feedback/requests",False,"Phản ánh",Feedback
+x2.resident_app,notifications.category_announcement,notifications,"Notification taxonomy category label: management board announcements",False,BQL,Management
+x2.resident_app,notifications.action_pay,notifications,"Unified inbox card CTA: pay a statement/charge",False,"Thanh toán",Pay
+x2.resident_app,notifications.action_view_post,notifications,"Unified inbox card CTA: view a community post",False,"Xem bài","View post"
+x2.resident_app,notifications.action_message,notifications,"Unified inbox card CTA: message an interested user",False,"Nhắn tin",Message
+x2.resident_app,notifications.action_view_schedule,notifications,"Unified inbox card CTA: view a maintenance schedule",False,"Xem lịch","View schedule"
+x2.resident_app,notifications.action_acknowledge,notifications,"Unified inbox card CTA: acknowledge an emergency notice",False,"Đã hiểu","Got it"
+x2.resident_app,notifications.action_view_feedback,notifications,"Unified inbox card CTA: view a feedback/request",False,"Xem phản ánh","View request"
+x2.resident_app,notifications.action_view_booking,notifications,"Unified inbox card CTA: view an amenity booking",False,"Xem đặt chỗ","View booking"
+x2.resident_app,settings.reset_default,settings,"Header action to reset a settings screen to its defaults",False,"Mặc định",Default
+x2.resident_app,settings.coming_soon,settings,"Badge for a not-yet-available feature or quick action",False,"Sắp ra mắt","Coming soon"
+x2.resident_app,settings.add,settings,"Tooltip on the add-shortcut button",False,Thêm,Add
+x2.resident_app,settings.remove_from_home,settings,"Tooltip to remove a quick action from Home",False,"Gỡ khỏi Trang chủ","Remove from Home"
+x2.resident_app,settings.receive_channels,settings,"Notification settings section header: delivery channels",False,"Kênh nhận","Delivery channels"
+x2.resident_app,settings.content_types,settings,"Notification settings section header: content types",False,"Loại nội dung","Content types"
+x2.resident_app,settings.all_channels_off_warning,settings,"Warning shown when every delivery channel is turned off",False,"Bạn đã tắt mọi kênh — sẽ không nhận được thông báo nào, kể cả nhắc hạn thanh toán.","You've turned off all channels — you won't receive any notifications, including payment reminders."
+x2.resident_app,settings.notification_storage_hint,settings,"Footer explaining what is stored on-device vs synced to the account",False,"Kênh nhận (đẩy/trong ứng dụng) lưu trên thiết bị này. Loại nội dung được đồng bộ với tài khoản — đổi ở máy này áp dụng mọi nơi.","Delivery channels (push/in-app) are stored on this device. Content types sync with your account — changing them here applies everywhere."
+x2.resident_app,settings.channels_load_error,settings,"Error row when content channels fail to load",False,"Chưa tải được cài đặt kênh. Kéo để thử lại.","Couldn't load channel settings. Pull to retry."
+x2.resident_app,settings.save_failed_retry,settings,"Snackbar when toggling a content channel fails to save",False,"Không lưu được. Vui lòng thử lại.","Couldn't save. Please try again."
+x2.resident_app,settings.channel_unavailable,settings,"Subtitle for a delivery channel that is not yet available; {description} is the channel description",False,"{description} · sắp ra mắt","{description} · coming soon"
+x2.resident_app,settings.channel_push,settings,"Delivery channel label: push notifications",False,"Thông báo đẩy","Push notifications"
+x2.resident_app,settings.channel_push_desc,settings,"Delivery channel description: push",False,"Hiện trên màn hình khoá của điện thoại","Shows on your phone's lock screen"
+x2.resident_app,settings.channel_in_app,settings,"Delivery channel label: in-app",False,"Trong ứng dụng",In-app
+x2.resident_app,settings.channel_in_app_desc,settings,"Delivery channel description: in-app",False,"Chuông và Trung tâm thông báo","Bell and Notification Center"
+x2.resident_app,settings.channel_email,settings,"Delivery channel label: email",False,Email,Email
+x2.resident_app,settings.channel_email_desc,settings,"Delivery channel description: email",False,"Gửi tới email đã đăng ký","Sent to your registered email"
+x2.resident_app,settings.channel_sms,settings,"Delivery channel label: SMS",False,"Tin nhắn SMS",SMS
+x2.resident_app,settings.channel_sms_desc,settings,"Delivery channel description: SMS",False,"Chỉ dùng cho việc khẩn và mã xác thực","Used only for emergencies and verification codes"
+x2.resident_app,settings.content_desc_emergency,settings,"Content channel description: emergency",False,"Cháy, sơ tán, sự cố diện rộng — không thể tắt","Fire, evacuation, major incidents — can't be turned off"
+x2.resident_app,settings.content_desc_billing,settings,"Content channel description: billing",False,"Phiếu thu mới, nhắc hạn, xác nhận thanh toán","New invoices, due reminders, payment confirmations"
+x2.resident_app,settings.content_desc_community,settings,"Content channel description: community",False,"Bình luận, cảm xúc trên bài của bạn, sự kiện","Comments and reactions on your posts, events"
+x2.resident_app,settings.content_desc_maintenance,settings,"Content channel description: maintenance",False,"Bảo trì, cắt điện nước theo lịch","Maintenance, scheduled power/water outages"
+x2.resident_app,settings.content_desc_security,settings,"Content channel description: security",False,"Khách ra vào, cảnh báo an ninh","Visitor entries, security alerts"
+x2.resident_app,settings.content_desc_feedback,settings,"Content channel description: feedback",False,"Cập nhật tiến độ xử lý phản ánh của bạn","Progress updates on your requests"
+x2.resident_app,settings.content_desc_amenity,settings,"Content channel description: amenity",False,"Xác nhận, nhắc lịch, huỷ đặt tiện ích","Booking confirmations, reminders, cancellations"
+x2.resident_app,settings.content_desc_announcement,settings,"Content channel description: management announcements",False,"Thông báo, quy định mới của Ban quản lý","Announcements and new rules from the management board"
+x2.resident_app,settings.content_desc_system,settings,"Content channel description: system",False,"Cập nhật hệ thống, bảo mật tài khoản","System updates, account security"
+x2.resident_app,settings.quick_actions_intro,settings,"Intro text on the quick-action settings screen; {count} is the max shortcuts",False,"Chọn tối đa {count} phím tắt hiện trên Trang chủ và kéo để sắp thứ tự. Ô ""Xem thêm"" luôn ở cuối lưới.","Choose up to {count} shortcuts to show on Home and drag to reorder. The ""See more"" tile always stays at the end."
+x2.resident_app,settings.quick_actions_on_home,settings,"Section header showing chosen shortcut count; {count} chosen, {max} allowed",False,"Trên Trang chủ ({count}/{max})","On Home ({count}/{max})"
+x2.resident_app,settings.quick_actions_empty,settings,"Empty state when no quick actions are chosen",False,"Chưa chọn phím tắt nào — Trang chủ chỉ hiện ô ""Xem thêm"".","No shortcuts selected — Home only shows the ""See more"" tile."
+x2.resident_app,settings.quick_actions_add,settings,"Section header: available shortcuts to add",False,"Thêm phím tắt","Add shortcut"
+x2.resident_app,settings.quick_actions_all_used,settings,"Message when every available shortcut is already added",False,"Đã dùng hết phím tắt có sẵn.","You've used all available shortcuts."
+x2.resident_app,settings.quick_actions_full,settings,"Tooltip when the add button is disabled because the limit is reached; {count} is the max",False,"Đã đủ {count} phím","{count} shortcuts is the maximum"
+x2.resident_app,settings.security_login_title,settings,"Security settings screen title",False,"Bảo mật & đăng nhập","Security & sign-in"
+x2.resident_app,settings.quick_unlock,settings,"Security settings section header: quick unlock",False,"Mở khóa nhanh","Quick unlock"
+x2.resident_app,settings.biometric_login,settings,"Default biometric toggle title (fallback when the service gives none)",False,"Đăng nhập sinh trắc học","Biometric sign-in"
+x2.resident_app,settings.checking_device,settings,"Subtitle while checking biometric support",False,"Đang kiểm tra thiết bị...","Checking your device…"
+x2.resident_app,settings.biometric_unsupported,settings,"Subtitle fallback when the device has no biometric support",False,"Thiết bị này không hỗ trợ mở khóa sinh trắc học.","This device doesn't support biometric unlock."
+x2.resident_app,settings.biometric_hint,settings,"Footer hint under the biometric unlock toggle",False,"Ứng dụng chỉ dùng vân tay/khuôn mặt để mở khóa phiên đã lưu an toàn trên thiết bị này — không lưu mật khẩu của bạn.","The app only uses your fingerprint/face to unlock a session stored securely on this device — it never stores your password."
+x2.resident_app,settings.biometric_enabled,settings,"Snackbar confirming biometric unlock was enabled",False,"Đã bật mở khóa sinh trắc học trên thiết bị này.","Biometric unlock enabled on this device."
+x2.resident_app,settings.biometric_enable_failed,settings,"Snackbar when enabling biometric unlock fails",False,"Không bật được. Vui lòng thử lại.","Couldn't enable it. Please try again."
+x2.resident_app,settings.biometric_disabled,settings,"Snackbar confirming biometric unlock was turned off",False,"Đã tắt mở khóa sinh trắc học.","Biometric unlock turned off."
+x2.resident_app,auth.step_member,auth,"Auth journey stepper label: membership step",False,"Thành viên",Member
+x2.resident_app,auth.step_project,auth,"Auth journey stepper label: project step",False,"Dự án",Project
+x2.resident_app,auth.step_resident,auth,"Auth journey stepper label: resident verification step",False,"Cư dân",Resident
+x2.resident_app,auth.consent_prefix,auth,"Legal consent line leading text before the tappable Terms link",False,"Tôi đồng ý với ","I agree to the "
+x2.resident_app,auth.consent_and,auth,"Conjunction between the Terms and Privacy links in the consent line",False," và "," and "
+x2.resident_app,auth.terms_of_use,auth,"Terms of Use link label and legal sheet title",False,"Điều khoản sử dụng","Terms of Use"
+x2.resident_app,auth.privacy_policy,auth,"Privacy Policy link label and legal sheet title",False,"Chính sách bảo mật","Privacy Policy"
+x2.resident_app,utilities.no_recent_due,utilities,"Utilities debt card fallback when no due date",False,"Chưa có hạn thanh toán gần nhất","No upcoming due date yet"
+x2.resident_app,utilities.search_hint,utilities,"Search field hint on the utilities hub",False,"Tìm dịch vụ, tiện ích, hóa đơn…","Search services, amenities, invoices…"
+x2.resident_app,utilities.no_match,utilities,"Empty search result on utilities hub",False,"Không có tiện ích nào khớp ""{query}""","No amenities match ""{query}"""
+x2.resident_app,utilities.coming_soon,utilities,"Coming-soon label / section header on utilities hub",False,"Sắp ra mắt","Coming soon"
+x2.resident_app,utilities.frequent,utilities,"""Frequently used"" section header on utilities hub",False,"Hay dùng","Frequently used"
+x2.resident_app,utilities.current_debt_caps,utilities,"Debt card overline on utilities hub (uppercase)",False,"CÔNG NỢ HIỆN TẠI","CURRENT BALANCE DUE"
+x2.resident_app,utilities.updating_debt,utilities,"Debt card due-line while loading",False,"Đang cập nhật công nợ…","Updating balance…"
+x2.resident_app,utilities.view_wallet,utilities,"Link to apartment wallet on debt card",False,"Xem ví căn hộ","View apartment wallet"
+x2.resident_app,utilities.sos_confirm_title,utilities,"SOS confirmation dialog title",False,"Gửi tín hiệu SOS?","Send SOS signal?"
+x2.resident_app,utilities.sos_confirm_message,utilities,"SOS confirmation dialog body",False,"Bộ phận an ninh sẽ được thông báo khẩn cấp về căn hộ của bạn. Chỉ sử dụng trong trường hợp thực sự cần thiết.","Security will be urgently notified about your apartment. Use this only when truly necessary."
+x2.resident_app,utilities.sos_send,utilities,"SOS confirm button",False,"Gửi SOS","Send SOS"
+x2.resident_app,utilities.sos_sent,utilities,"SOS success snackbar",False,"Đã gửi tín hiệu SOS. Bộ phận an ninh sẽ liên hệ ngay.","SOS signal sent. Security will contact you shortly."
+x2.resident_app,articles.load_failed_title,articles,"Article load error title",False,"Chưa tải được","Couldn't load"
+x2.resident_app,articles.load_failed_message,articles,"Article load error message",False,"Không tải được bài viết. Vui lòng thử lại.","Couldn't load the article. Please try again."
+x2.resident_app,articles.empty_title,articles,"Empty articles list title",False,"Chưa có bài viết","No articles yet"
+x2.resident_app,articles.empty_message,articles,"Empty articles list message",False,"Nội dung sẽ được cập nhật sớm.","Content will be updated soon."
+x2.resident_app,articles.type_policy,articles,"Article content-type label: policy",False,"Quy định",Policy
+x2.resident_app,articles.type_guide,articles,"Article content-type label: guide",False,"Cẩm nang",Handbook
+x2.resident_app,articles.type_news,articles,"Article content-type label: news",False,"Tin tức",News
+x2.resident_app,articles.scope_platform,articles,"Article scope label: platform (X2 Living)",False,"X2 Living","X2 Living"
+x2.resident_app,articles.scope_company,articles,"Article scope label: management company",False,"Công ty quản lý","Management company"
+x2.resident_app,offers.search_offers,offers,"Offers tab search coming-soon label",False,"Tìm ưu đãi","Search offers"
+x2.resident_app,offers.tab_loyalty,offers,"Offers screen tab: points & benefits",False,"Điểm & quyền lợi","Points & benefits"
+x2.resident_app,offers.tab_market,offers,"Offers screen tab: neighborhood market",False,"Chợ nội khu","Neighborhood market"
+x2.resident_app,offers.tier_benefits,offers,"Loyalty tier benefits header (no tier name)",False,"Quyền lợi hạng","Tier benefits"
+x2.resident_app,offers.tier_benefits_named,offers,"Loyalty tier benefits header with tier name",False,"Quyền lợi hạng {tier}","{tier} tier benefits"
+x2.resident_app,offers.featured_gift,offers,"Featured gift section header",False,"Quà tặng nổi bật","Featured gift"
+x2.resident_app,offers.recent_activity,offers,"Recent loyalty activity section header",False,"Hoạt động gần đây","Recent activity"
+x2.resident_app,offers.total_points_caps,offers,"Loyalty hero overline (uppercase)",False,"TỔNG ĐIỂM HIỆN CÓ","TOTAL POINTS AVAILABLE"
+x2.resident_app,offers.points_unit,offers,"Points unit suffix",False,điểm,points
+x2.resident_app,offers.member_tier,offers,"Loyalty hero tier caption",False,"Hạng thành viên","Membership tier"
+x2.resident_app,offers.to_tier,offers,"Progress-to-next-tier overline (uppercase)",False,"ĐẾN HẠNG {tier}","TO {tier} TIER"
+x2.resident_app,offers.points_to_next,offers,"Points remaining to reach next tier",False,"Còn {points} điểm để lên hạng {tier}","{points} points to reach {tier}"
+x2.resident_app,offers.current_points_label,offers,"Points bar label in market view",False,"Điểm hiện có: ","Points available: "
+x2.resident_app,offers.view_offers,offers,"Points bar link to offers",False,"Xem ưu đãi","View offers"
+x2.resident_app,offers.market_search_hint,offers,"Market search pill hint",False,"Bạn cần tìm gì hôm nay?","What are you looking for today?"
+x2.resident_app,offers.seg_classifieds,offers,"Market segment: classifieds",False,"Rao vặt",Classifieds
+x2.resident_app,offers.seg_services,offers,"Market segment: services",False,"Dịch vụ",Services
+x2.resident_app,offers.seg_partners,offers,"Market segment: partners",False,"Đối tác",Partners
+x2.resident_app,offers.seg_real_estate,offers,"Market segment: real estate consignment",False,"Ký gửi BĐS","Real estate"
+x2.resident_app,offers.real_estate_section,offers,"Neighborhood real estate section header",False,"Bất động sản nội khu","Neighborhood real estate"
+x2.resident_app,offers.no_real_estate,offers,"Empty neighborhood real estate note",False,"Chưa có tin BĐS nội khu.","No neighborhood real estate listings yet."
+x2.resident_app,offers.partners_section,offers,"Partners & brands section header",False,"Đối tác & thương hiệu","Partners & brands"
+x2.resident_app,offers.partners_updating,offers,"Partners list updating note",False,"Danh sách đối tác đang được cập nhật.","The partner list is being updated."
+x2.resident_app,offers.popular_services,offers,"Popular services section header",False,"Dịch vụ phổ biến","Popular services"
+x2.resident_app,offers.featured_classifieds,offers,"Featured classifieds section header",False,"Rao vặt nổi bật","Featured classifieds"
+x2.resident_app,offers.no_listings,offers,"Empty classifieds note",False,"Không có tin phù hợp.","No matching listings."
+x2.resident_app,offers.family_services,offers,"Family services section header",False,"Dịch vụ gia đình","Family services"
+x2.resident_app,offers.negotiable,offers,"Real estate price: negotiable",False,"Thương lượng",Negotiable
+x2.resident_app,offers.post_listing,offers,"Promo banner coming-soon label: post a listing",False,"Đăng tin","Post a listing"
+x2.resident_app,offers.post_now,offers,"Promo banner button: post now",False,"Đăng tin ngay","Post now"
+x2.resident_app,offers.book_service,offers,"Family service coming-soon label: book service",False,"Đặt dịch vụ","Book service"
+x2.resident_app,apartment.household_members_count,apartment,"Household members section header with count",False,"Thành viên hộ ({count})","Household members ({count})"
+x2.resident_app,apartment.invite_member_subtitle,apartment,"Invite member tile subtitle",False,"Thêm người thân vào hộ","Add a relative to your household"
+x2.resident_app,apartment.invite_coming_soon,apartment,"Invite member coming-soon snackbar",False,"Tính năng mời thành viên sắp ra mắt.","Member invitations are coming soon."
+x2.resident_app,apartment.primary_apartment,apartment,"Primary apartment chip",False,"Căn hộ chính","Primary apartment"
+x2.resident_app,apartment.no_members,apartment,"No other household members note",False,"Chưa có thành viên nào khác trong hộ.","No other members in this household yet."
+x2.resident_app,apartment.no_apartment_info,apartment,"No apartment info empty state",False,"Chưa có thông tin căn hộ.","No apartment information yet."
+x2.resident_app,apartment.role_head,apartment,"Household role label: head of household",False,"Chủ hộ","Head of household"
+x2.resident_app,ai_chat.assistant_title,ai_chat,"X2AI assistant title",False,"Trợ lý X2AI","X2AI Assistant"
+x2.resident_app,ai_chat.conversation_history,ai_chat,"Conversation history tooltip / sheet title",False,"Lịch sử hội thoại","Conversation history"
+x2.resident_app,ai_chat.greeting,ai_chat,"AI chat empty-state greeting",False,"Xin chào! Mình là X2AI","Hi! I'm X2AI"
+x2.resident_app,ai_chat.intro,ai_chat,"AI chat empty-state intro line",False,"Hỏi mình về phí dịch vụ, tiện ích, sự kiện và thủ tục cư dân.","Ask me about service fees, amenities, events and resident procedures."
+x2.resident_app,ai_chat.input_hint,ai_chat,"AI chat input field hint",False,"Nhắn tin cho X2AI…","Message X2AI…"
+x2.resident_app,ai_chat.suggest_fees,ai_chat,"AI chat suggested prompt: fees",False,"Phí quản lý tháng này bao nhiêu?","How much is this month's management fee?"
+x2.resident_app,ai_chat.suggest_visitor,ai_chat,"AI chat suggested prompt: visitor",False,"Cách đăng ký khách đến chơi?","How do I register a visitor?"
+x2.resident_app,ai_chat.suggest_amenity,ai_chat,"AI chat suggested prompt: amenity",False,"Đặt tiện ích hồ bơi thế nào?","How do I book the swimming pool?"
+x2.resident_app,ai_chat.suggest_feedback,ai_chat,"AI chat suggested prompt: feedback",False,"Gửi phản ánh sự cố ở đâu?","Where do I report an issue?"
+x2.resident_app,ai_chat.history_load_failed,ai_chat,"Sessions sheet load error",False,"Không tải được lịch sử hội thoại.","Couldn't load conversation history."
+x2.resident_app,ai_chat.no_sessions,ai_chat,"Sessions sheet empty state",False,"Chưa có hội thoại nào được lưu.","No saved conversations yet."
+x2.resident_app,ai_chat.message_count,ai_chat,"Session tile message count",False,"{count} tin nhắn","{count} messages"
+x2.resident_app,ai_chat.minutes_ago,ai_chat,"Relative time: minutes ago",False,"{count} phút trước","{count} minutes ago"
+x2.resident_app,ai_chat.hours_ago,ai_chat,"Relative time: hours ago",False,"{count} giờ trước","{count} hours ago"
+x2.resident_app,ai_chat.days_ago,ai_chat,"Relative time: days ago",False,"{count} ngày trước","{count} days ago"
+x2.resident_app,ai_chat.assistant_coming_soon,ai_chat,"Public shell assistant coming-soon sheet body",False,"Trợ lý ảo đang được phát triển. Bạn sẽ sớm có thể hỏi về tiện ích, phí dịch vụ và tình trạng hồ sơ cư dân ngay tại đây.","The virtual assistant is in development. You'll soon be able to ask about amenities, service fees and your resident profile status right here."
+x2.resident_app,emergency.title,emergency,"Emergency alert screen title",False,"Cảnh báo khẩn cấp","Emergency alert"
+x2.resident_app,emergency.load_failed,emergency,"Emergency alert load error fallback",False,"Không tải được cảnh báo.","Couldn't load the alert."
+x2.resident_app,emergency.timeline_section,emergency,"Emergency alert timeline section header",False,"Diễn biến",Timeline
+x2.resident_app,emergency.contacts_section,emergency,"Emergency contacts section header",False,"Liên hệ khẩn","Emergency contacts"
+x2.resident_app,emergency.no_contacts,emergency,"No emergency contacts guidance",False,"Ban quản lý chưa khai báo số liên hệ cho dự án này. Dùng nút báo an ninh bên dưới hoặc gọi trực tiếp quầy lễ tân.","Building management hasn't set up contact numbers for this project. Use the security alert button below or call the reception desk directly."
+x2.resident_app,emergency.report_security_sos,emergency,"Alert security SOS button",False,"Báo an ninh (SOS)","Alert security (SOS)"
+x2.resident_app,emergency.status_ongoing,emergency,"Emergency status chip: ongoing",False,"Đang xảy ra",Ongoing
+x2.resident_app,emergency.status_ended,emergency,"Emergency status chip: ended",False,"Đã kết thúc",Ended
+x2.resident_app,emergency.tl_start,emergency,"Timeline row: start",False,"Bắt đầu",Started
+x2.resident_app,emergency.tl_expected_end,emergency,"Timeline row: expected end",False,"Dự kiến kết thúc","Expected to end"
+x2.resident_app,emergency.tl_resolved,emergency,"Timeline row: resolved",False,"Đã xử lý xong",Resolved
+x2.resident_app,emergency.effective_immediately,emergency,"Timeline value when start time is null",False,"Ngay khi phát","Effective immediately"
+x2.resident_app,emergency.alert_code,emergency,"Alert code line",False,"Mã cảnh báo: {code}","Alert code: {code}"
+x2.resident_app,emergency.call,emergency,"Emergency contact call button",False,Gọi,Call
+x2.resident_app,emergency.send_email,emergency,"Emergency contact email button",False,"Gửi email","Send email"
+x2.resident_app,emergency.cannot_open,emergency,"Cannot open contact snackbar",False,"Không mở được {target}","Couldn't open {target}"
+x2.resident_app,emergency.severity_info,emergency,"Emergency severity label: info",False,"Thông tin",Information
+x2.resident_app,emergency.severity_warning,emergency,"Emergency severity label: warning/default",False,"Cảnh báo",Warning
+x2.resident_app,public.onboarding_start,public,"Onboarding last-slide button",False,"Bắt đầu","Get started"
+x2.resident_app,public.gate_register_event,public,"Action gate / event register CTA",False,"Đăng ký tham gia sự kiện","Register for the event"
+x2.resident_app,public.gate_follow_project,public,"Action gate title: follow project",False,"Theo dõi dự án","Follow project"
+x2.resident_app,public.gate_become_resident,public,"Action gate / banner title: become a resident",False,"Trở thành cư dân","Become a resident"
+x2.resident_app,public.gate_title,public,"Action gate app bar title",False,"Yêu cầu đăng nhập","Sign in required"
+x2.resident_app,public.gate_body,public,"Action gate body",False,"Đăng nhập hoặc tạo tài khoản để tiếp tục và mở khóa đầy đủ tiện ích cư dân.","Sign in or create an account to continue and unlock full resident features."
+x2.resident_app,public.create_account,public,"Action gate create-account button",False,"Tạo tài khoản","Create account"
+x2.resident_app,public.continue_public,public,"Action gate continue-browsing button",False,"Tiếp tục xem công khai","Continue browsing publicly"
+x2.resident_app,public.content_detail_title,public,"Content detail app bar title",False,"Chi tiết nội dung","Content detail"
+x2.resident_app,public.share_link_mock,public,"Content detail share snackbar (mock)",False,"Chia sẻ liên kết (mock).","Share link (mock)."
+x2.resident_app,public.content_body_fallback,public,"Content detail body fallback",False,"Nội dung chi tiết cho ""{title}"" sẽ được cập nhật từ hệ thống nội dung.","Detailed content for ""{title}"" will be updated from the content system."
+x2.resident_app,public.explore_projects,public,"Projects screen title / hero explore button",False,"Khám phá dự án","Explore projects"
+x2.resident_app,public.projects_subtitle,public,"Projects screen subtitle",False,"Tìm kiếm dự án phù hợp với nhu cầu của bạn","Find the project that fits your needs"
+x2.resident_app,public.projects_search_hint,public,"Projects screen search hint",False,"Tìm theo tên dự án, chủ đầu tư, địa chỉ...","Search by project name, developer, address..."
+x2.resident_app,public.no_projects_match,public,"Projects empty state message",False,"Không có dự án phù hợp.","No matching projects."
+x2.resident_app,public.no_projects_city,public,"Projects empty for selected city",False,"Chưa có dự án tại {city}","No projects in {city} yet"
+x2.resident_app,public.pick_other_area,public,"Projects empty city hint",False,"Chọn khu vực khác ở đầu màn hình để xem thêm dự án.","Pick another area at the top to see more projects."
+x2.resident_app,public.filter_area,public,"Projects filter chip: area",False,"Khu vực",Area
+x2.resident_app,public.filter_status,public,"Projects filter chip: status",False,"Trạng thái",Status
+x2.resident_app,public.filter_type,public,"Projects filter chip: type",False,"Loại hình",Type
+x2.resident_app,public.filter_sort,public,"Projects filter chip: sort",False,"Sắp xếp",Sort
+x2.resident_app,public.filter_by,public,"Filter coming-soon label",False,"Lọc theo {label}","Filter by {label}"
+x2.resident_app,public.view_all_on_map,public,"Projects map banner title",False,"Xem tất cả dự án trên bản đồ","View all projects on the map"
+x2.resident_app,public.explore_by_location,public,"Projects map banner subtitle",False,"Khám phá dự án theo vị trí của bạn","Explore projects near you"
+x2.resident_app,public.community_search_hint,public,"Community (news/events) search hint",False,"Tìm tin tức, sự kiện...","Search news, events..."
+x2.resident_app,public.no_content_match,public,"Community empty for query",False,"Không có bài nào khớp ""{query}"".","No posts match ""{query}""."
+x2.resident_app,public.no_content,public,"Community empty state",False,"Chưa có tin tức hoặc sự kiện nào.","No news or events yet."
+x2.resident_app,public.offers_search_hint,public,"Public offers search hint",False,"Tìm ưu đãi, đối tác...","Search offers, partners..."
+x2.resident_app,public.offers_load_failed,public,"Public offers load error",False,"Không tải được ưu đãi. Kéo xuống để thử lại.","Couldn't load offers. Pull down to retry."
+x2.resident_app,public.no_public_offers,public,"No public offers (all categories)",False,"Chưa có ưu đãi công khai. Vui lòng quay lại sau.","No public offers yet. Please check back later."
+x2.resident_app,public.no_offers_category,public,"No offers in category",False,"Chưa có ưu đãi ở danh mục này.","No offers in this category yet."
+x2.resident_app,public.offer_banner_title,public,"Public offers hero banner title",False,"Ưu đãi đặc biệt
+dành riêng cư dân X2-BMS","Special offers
+exclusively for X2-BMS residents"
+x2.resident_app,public.offer_banner_subtitle,public,"Public offers hero banner subtitle",False,"Hàng trăm ưu đãi độc quyền từ các
+thương hiệu uy tín","Hundreds of exclusive offers from
+trusted brands"
+x2.resident_app,public.get_resident_offers,public,"Public offers banner CTA",False,"Nhận ưu đãi cư dân","Get resident offers"
+x2.resident_app,public.no_time_limit,public,"Offer validity: no time limit",False,"Không giới hạn thời gian","No time limit"
+x2.resident_app,public.valid_until_short,public,"Offer validity short (card)",False,"HSD: {date}","Valid until: {date}"
+x2.resident_app,public.valid_until,public,"Offer validity (sheet)",False,"Hạn sử dụng: {date}","Valid until: {date}"
+x2.resident_app,public.search_field_hint,public,"Public search field hint",False,"Tên dự án, chủ đầu tư, tin tức...","Project name, developer, news..."
+x2.resident_app,public.clear_query,public,"Public search clear tooltip",False,"Xoá từ khoá","Clear search"
+x2.resident_app,public.search_hint_title,public,"Public search idle title",False,"Tìm dự án và tin tức","Search projects and news"
+x2.resident_app,public.search_hint_body,public,"Public search idle body",False,"Gõ tên dự án, chủ đầu tư, địa chỉ
+hoặc tiêu đề bài viết.","Type a project name, developer, address
+or article title."
+x2.resident_app,public.search_load_failed,public,"Public search results load error",False,"Không tải được kết quả. Kiểm tra kết nối rồi thử lại.","Couldn't load results. Check your connection and try again."
+x2.resident_app,public.no_search_results,public,"Public search no results",False,"Không tìm thấy kết quả cho ""{query}"".","No results found for ""{query}""."
+x2.resident_app,public.group_projects,public,"Search results group: projects",False,"Dự án",Projects
+x2.resident_app,public.group_news_events,public,"News & events rail / group title",False,"Tin tức & sự kiện","News & events"
+x2.resident_app,public.project_detail_title,public,"Project detail top bar title",False,"Chi tiết dự án","Project detail"
+x2.resident_app,public.unsave_project,public,"Project detail unsave semantic label",False,"Bỏ lưu dự án","Unsave project"
+x2.resident_app,public.save_project,public,"Project detail save semantic label",False,"Lưu dự án","Save project"
+x2.resident_app,public.share_coming_soon,public,"Project share coming-soon snackbar",False,"Tính năng chia sẻ đang được hoàn thiện.","Sharing is being finalized."
+x2.resident_app,public.tab_overview,public,"Project detail tab: overview",False,"Tổng quan",Overview
+x2.resident_app,public.tab_amenities,public,"Project detail tab: amenities",False,"Tiện ích",Amenities
+x2.resident_app,public.tab_floorplan,public,"Project detail tab: floor plan",False,"Mặt bằng","Floor plan"
+x2.resident_app,public.tab_news,public,"Project detail tab: news",False,"Tin tức",News
+x2.resident_app,public.project_amenities,public,"Project amenities section title",False,"Tiện ích dự án","Project amenities"
+x2.resident_app,public.floorplan_updating,public,"Floor plan tab placeholder",False,"Mặt bằng và bản vẽ đang được cập nhật.","Floor plans and drawings are being updated."
+x2.resident_app,public.related_news_updating,public,"News tab placeholder",False,"Tin tức liên quan đang được cập nhật.","Related news is being updated."
+x2.resident_app,public.project_overview,public,"Project overview section title",False,"Tổng quan dự án","Project overview"
+x2.resident_app,public.featured_amenities,public,"Featured amenities section title",False,"Tiện ích nổi bật","Featured amenities"
+x2.resident_app,public.project_gallery,public,"Project gallery section title",False,"Hình ảnh dự án","Project gallery"
+x2.resident_app,public.project_intro,public,"Project introduction section title",False,"Giới thiệu dự án","About the project"
+x2.resident_app,public.project_info,public,"Project information section title",False,"Thông tin dự án","Project information"
+x2.resident_app,public.faq,public,"FAQ section title",False,"Câu hỏi thường gặp","Frequently asked questions"
+x2.resident_app,public.following,public,"Follow button: following",False,"Đang theo dõi",Following
+x2.resident_app,public.follow,public,"Follow button: follow",False,"Theo dõi",Follow
+x2.resident_app,public.login_to_follow,public,"Follow requires login snackbar",False,"Đăng nhập để theo dõi dự án và nhận thông báo cộng đồng.","Sign in to follow projects and get community notifications."
+x2.resident_app,public.follow_failed,public,"Follow update error snackbar",False,"Không cập nhật được theo dõi. Vui lòng thử lại.","Couldn't update follow status. Please try again."
+x2.resident_app,public.register_resident_short,public,"Project detail CTA: register as resident (short)",False,"Đăng ký cư dân","Register as resident"
+x2.resident_app,public.stat_towers,public,"Project stat label: towers",False,"Tòa tháp",Towers
+x2.resident_app,public.stat_units,public,"Project stat label: units",False,"Căn hộ",Units
+x2.resident_app,public.stat_handover,public,"Project stat label: expected handover",False,"Bàn giao dự kiến","Expected handover"
+x2.resident_app,public.home_welcome_title,public,"Public home header title",False,"Chào mừng đến với X2-BMS","Welcome to X2-BMS"
+x2.resident_app,public.home_welcome_subtitle,public,"Public home header subtitle",False,"Kết nối cư dân, căn hộ và tiện ích
+trong tầm tay","Connecting residents, apartments and amenities
+at your fingertips"
+x2.resident_app,public.home_search_hint,public,"Public home search hint",False,"Tìm dự án, tiện ích, tin tức...","Search projects, amenities, news..."
+x2.resident_app,public.featured_projects,public,"Public home featured projects section",False,"Dự án nổi bật","Featured projects"
+x2.resident_app,public.hero1_title,public,"Public home hero slide 1 title",False,"Khám phá các dự án
+không gian sống thông minh","Discover projects with
+smart living spaces"
+x2.resident_app,public.hero1_subtitle,public,"Public home hero slide 1 subtitle",False,"Trải nghiệm tiện ích hiện đại,
+an toàn và tiện nghi.","Experience modern, safe and
+comfortable amenities."
+x2.resident_app,public.hero2_title,public,"Public home hero slide 2 title",False,"Quản lý căn hộ
+ngay trên điện thoại","Manage your apartment
+right on your phone"
+x2.resident_app,public.hero2_subtitle,public,"Public home hero slide 2 subtitle",False,"Thanh toán phí, đặt tiện ích,
+gửi phản ánh trong vài chạm.","Pay fees, book amenities and
+send feedback in a few taps."
+x2.resident_app,public.hero3_title,public,"Public home hero slide 3 title",False,"Cộng đồng cư dân
+gắn kết mỗi ngày","A resident community
+connected every day"
+x2.resident_app,public.hero3_subtitle,public,"Public home hero slide 3 subtitle",False,"Sự kiện, chợ nội khu và
+ưu đãi dành riêng cho cư dân.","Events, the neighborhood market and
+offers just for residents."
+x2.resident_app,public.no_projects_area,public,"Public home project grid empty",False,"Chưa có dự án tại khu vực này.","No projects in this area yet."
+x2.resident_app,public.public_utilities,public,"Public home shortcuts section title",False,"Tiện ích công khai","Public features"
+x2.resident_app,public.guide_title,public,"Guide screen title",False,"Cẩm nang cư dân","Resident handbook"
+x2.resident_app,public.all_articles,public,"Guide: all articles header",False,"Tất cả bài viết","All articles"
+x2.resident_app,public.guide_search_hint,public,"Guide search hint",False,"Tìm bài hướng dẫn...","Search guides..."
+x2.resident_app,public.recommended,public,"Guide featured card badge",False,"Nên đọc trước","Read first"
+x2.resident_app,public.no_guide_in_topic,public,"Guide empty for topic (prefix)",False,"Không có bài nào trong ""{topic}""","No articles in ""{topic}"""
+x2.resident_app,public.match_suffix,public,"Match-query suffix appended to empty messages",False," khớp ""{query}"""," matching ""{query}"""
+x2.resident_app,public.guide_updating,public,"Guide empty (no filter)",False,"Cẩm nang đang được cập nhật.","The handbook is being updated."
+x2.resident_app,public.what_help,public,"Support quick-help section title",False,"Bạn cần giúp gì?","How can we help?"
+x2.resident_app,public.support_search_hint,public,"Support search hint",False,"Tìm chủ đề cần hỗ trợ...","Search support topics..."
+x2.resident_app,public.qa_register_title,public,"Support quick action: register title",False,"Đăng ký thành viên","Register as member"
+x2.resident_app,public.qa_register_sub,public,"Support quick action: register subtitle",False,"Tạo tài khoản trong 1 phút","Create an account in 1 minute"
+x2.resident_app,public.qa_verify_title,public,"Support quick action: verify title",False,"Xác thực cư dân","Verify resident"
+x2.resident_app,public.qa_verify_sub,public,"Support quick action: verify subtitle",False,"Gắn tài khoản với căn hộ","Link your account to an apartment"
+x2.resident_app,public.qa_forgot_title,public,"Support quick action: forgot password title",False,"Quên mật khẩu","Forgot password"
+x2.resident_app,public.qa_forgot_sub,public,"Support quick action: forgot password subtitle",False,"Đặt lại bằng email","Reset via email"
+x2.resident_app,public.qa_call_title,public,"Support quick action: call title",False,"Gọi hỗ trợ","Call support"
+x2.resident_app,public.qa_call_sub,public,"Support quick action: call subtitle",False,"Trong giờ hành chính","During business hours"
+x2.resident_app,public.no_faq_match,public,"Support FAQ no match",False,"Không có câu nào khớp ""{query}"".
+Gọi hotline bên dưới để được trả lời trực tiếp.","No questions match ""{query}"".
+Call the hotline below for direct help."
+x2.resident_app,public.still_no_answer,public,"Support contact card title",False,"Vẫn chưa có câu trả lời?","Still no answer?"
+x2.resident_app,public.hotline_hours,public,"Support hotline hours",False,"Tổng đài hỗ trợ làm việc 08:00–17:30 từ thứ Hai đến thứ Sáu.","The support hotline operates 08:00–17:30, Monday to Friday."
+x2.resident_app,public.call_hotline,public,"Support call hotline button",False,"Gọi {hotline}","Call {hotline}"
+x2.resident_app,public.cannot_open_dialer,public,"Support cannot open dialer",False,"Không mở được ứng dụng gọi điện.","Couldn't open the phone app."
+x2.resident_app,public.cannot_open_email,public,"Support cannot open email app",False,"Không mở được ứng dụng email.","Couldn't open the email app."
+x2.resident_app,public.contact_fallback,public,"Support fallback snackbar with hotline & email",False,"{reason} Hotline {hotline} · {email}","{reason} Hotline {hotline} · {email}"
+x2.resident_app,public.banner_perks,public,"Become-resident banner tagline",False,"Nhận ngay nhiều đặc quyền hấp dẫn","Unlock attractive privileges right away"
+x2.resident_app,public.banner_desc,public,"Become-resident banner description",False,"Quản lý căn hộ, thanh toán, đặt tiện ích
+nhanh chóng và tiện lợi.","Manage your apartment, payments and amenity bookings
+quickly and conveniently."
+x2.resident_app,public.saved_project,public,"Save project snackbar",False,"Đã lưu ""{name}"".","Saved ""{name}""."
+x2.resident_app,public.unsaved_project,public,"Unsave project snackbar",False,"Đã bỏ lưu ""{name}"".","Removed ""{name}"" from saved."
+x2.resident_app,public.towers_count,public,"Project meta: tower count",False,"{count} tòa","{count} towers"
+x2.resident_app,public.units_count,public,"Project meta: unit count",False,"{count} căn hộ","{count} units"
+x2.resident_app,public.units_count_short,public,"Project meta: unit count (compact)",False,"{count} căn","{count} units"
+x2.resident_app,public.pick_area,public,"City picker sheet title",False,"Chọn khu vực","Select area"
+x2.resident_app,public.pick_max,public,"Project picker max-selection snackbar",False,"Chọn tối đa {count} dự án.","Select up to {count} projects."
+x2.resident_app,public.pick_projects_title,public,"Project picker sheet title",False,"Chọn dự án quan tâm","Select projects of interest"
+x2.resident_app,public.pick_projects_subtitle,public,"Project picker sheet subtitle with counts",False,"Chọn nhiều dự án · đã chọn {count}/{max}","Select multiple projects · {count}/{max} selected"
+x2.resident_app,public.done,public,"Project picker done button",False,Xong,Done
+x2.resident_app,public.picker_search_hint,public,"Project picker search hint",False,"Tên dự án, chủ đầu tư, địa chỉ...","Project name, developer, address..."
+x2.resident_app,public.all_areas,public,"Project picker area chip: all areas",False,"Tất cả khu vực","All areas"
+x2.resident_app,public.catalog_load_failed,public,"Project picker catalog load error",False,"Không tải được danh mục dự án.","Couldn't load the project catalog."
+x2.resident_app,public.no_projects_query,public,"Project picker no match (all areas)",False,"Không tìm thấy dự án nào khớp từ khoá.","No projects match your search."
+x2.resident_app,public.no_projects_in_city,public,"Project picker no match in city",False,"Không có dự án phù hợp ở {city}.
+Thử ""Tất cả khu vực"" hoặc từ khoá khác.","No matching projects in {city}.
+Try ""All areas"" or a different keyword."
+x2.resident_app,public.show_less,public,"Project description collapse toggle",False,"Thu gọn","Show less"
+x2.resident_app,public.show_more,public,"Project description expand toggle",False,"Xem thêm","Show more"
+x2.resident_app,public.address,public,"Project spec table: address label",False,"Địa chỉ",Address
