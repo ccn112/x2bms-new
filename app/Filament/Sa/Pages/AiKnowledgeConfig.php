@@ -111,6 +111,10 @@ class AiKnowledgeConfig extends Page implements HasTable
                     ->action(function (array $data): void {
                         $data['status'] = 'active';
                         $data['owner_scope'] = 'platform';
+                        // Platform-level prompt (SuperAdmin has no tenant); tenant_id is
+                        // nullable and explicitly null — the BelongsToTenant auto-fill never
+                        // fires for a platform admin, so this must be set here.
+                        $data['tenant_id'] = null;
                         $p = AiPromptTemplate::withoutGlobalScope('tenant')->create($data);
                         $this->audit('ai.prompt_create', 'Tạo prompt: '.$p->name, AiPromptTemplate::class, $p->id);
                         Notification::make()->title('Đã tạo prompt')->success()->send();

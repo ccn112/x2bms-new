@@ -110,7 +110,11 @@ class AiGovernance extends Page implements HasTable
                         ->options(['active' => 'Đang áp dụng', 'inactive' => 'Tắt'])->default('active')->required(),
                 ])
                 ->action(function (array $data): void {
-                    $p = AiPolicy::create($data);
+                    // tenant_id explicit: BelongsToTenant auto-fill does not fire when a
+                    // platform admin operates the /hq panel (currentTenantId() is null).
+                    $p = AiPolicy::create($data + [
+                        'tenant_id' => app(\App\Support\Context\CurrentContext::class)->tenantId(),
+                    ]);
                     $this->audit('ai.policy.create', 'Thêm chính sách AI: '.$p->name, AiPolicy::class, $p->id);
                     Notification::make()->title('Đã thêm chính sách')->success()->send();
                 }),

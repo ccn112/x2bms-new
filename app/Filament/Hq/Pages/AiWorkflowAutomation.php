@@ -99,6 +99,9 @@ class AiWorkflowAutomation extends Page
                 ->schema($this->workflowFormSchema())
                 ->action(function (array $data): void {
                     $wf = AiWorkflow::create($data + [
+                        // tenant_id explicit: the BelongsToTenant auto-fill does not fire when
+                        // a platform admin operates the /hq panel (currentTenantId() is null).
+                        'tenant_id' => app(CurrentContext::class)->tenantId(),
                         'project_id' => app(CurrentContext::class)->projectId(),
                         'steps' => self::DEFAULT_STEPS,
                         'created_by_id' => auth()->id(),
