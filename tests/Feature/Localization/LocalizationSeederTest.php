@@ -24,8 +24,8 @@ final class LocalizationSeederTest extends TestCase
         self::assertSame($first, $second);
         self::assertSame(6, $first['locales']);
         self::assertSame(9, $first['namespaces']);
-        self::assertSame(340, $first['keys']);
-        self::assertSame(680, $first['values']);
+        self::assertSame(1142, $first['keys']);
+        self::assertSame(2284, $first['values']);
         self::assertSame(56, $first['glossary_terms']);
         self::assertSame(21, $first['notification_templates']);
         self::assertSame(18, $first['published_releases']);
