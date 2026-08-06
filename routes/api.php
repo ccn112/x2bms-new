@@ -4,6 +4,7 @@ use App\Http\Controllers\Api\V1\Ai\ChatController;
 use App\Http\Controllers\Api\V1\AuthController;
 use App\Http\Controllers\Api\V1\BootstrapController;
 use App\Http\Controllers\Api\V1\DeviceController;
+use App\Http\Controllers\Api\V1\LocaleController;
 use App\Http\Controllers\Api\V1\ProjectFollowController;
 use App\Http\Controllers\Api\V1\OtpController;
 use App\Http\Controllers\Api\V1\ProfileController;
@@ -73,6 +74,8 @@ Route::prefix('v1')->group(function () {
         Route::get('public/projects/{slug}', [PublicProjectController::class, 'show']);
         // Ưu đãi công khai (tab "Ưu đãi") — chỉ voucher platform đã bật is_public.
         Route::get('public/offers', [PublicOfferController::class, 'index']);
+        // I18N — locale settings, supported locales and pack versions (works pre-login).
+        Route::get('localization/bootstrap', [LocaleController::class, 'bootstrap']);
     });
 
     // Auth.
@@ -91,6 +94,8 @@ Route::prefix('v1')->group(function () {
     Route::middleware(['auth:sanctum', 'throttle:api'])->group(function () {
         Route::post('auth/logout', [AuthController::class, 'logout']);
         Route::get('me/bootstrap', [BootstrapController::class, 'me']);
+        // I18N — explicit locale + auto-translate opt-in (local-first; app syncs here).
+        Route::patch('me/localization-preference', [LocaleController::class, 'updatePreference']);
         Route::patch('me/profile', [ProfileController::class, 'update']);
         Route::post('me/avatar', [ProfileController::class, 'avatar']);
         Route::delete('me/avatar', [ProfileController::class, 'removeAvatar']);

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Models\User;
+use App\Services\Localization\LocalizationBootstrap;
 use App\Support\Api\ApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -15,7 +16,7 @@ use Illuminate\Http\Request;
 class BootstrapController extends ApiController
 {
     /** GET /api/v1/public/bootstrap — no auth. Branding + enabled modules + min version. */
-    public function public(Request $request): JsonResponse
+    public function public(Request $request, LocalizationBootstrap $localization): JsonResponse
     {
         // Không auth → BelongsToTenant/BelongsToProject đều no-op → hiển thị showcase.
         $projects = \App\Models\Project::query()
@@ -72,6 +73,7 @@ class BootstrapController extends ApiController
             'featured_projects' => $featuredProjects,
             'content' => $content,
             'minimum_app_version' => config('mobile.min_app_version'),
+            'localization' => $localization->build($request),
         ]);
     }
 
@@ -80,6 +82,7 @@ class BootstrapController extends ApiController
         Request $request,
         \App\Services\Resident\ResidentNotificationService $notifications,
         \App\Services\Community\MembershipService $membership,
+        LocalizationBootstrap $localization,
     ): JsonResponse {
         /** @var User $user */
         $user = $request->user();
@@ -159,6 +162,10 @@ class BootstrapController extends ApiController
             'unread_notification_count' => empty($residentContexts)
                 ? 0
                 : $notifications->unreadCount($user, $request->header('X-Context-Id')),
+            'localization' => $localization->build(
+                $request,
+                is_numeric($user->getAuthIdentifier()) ? (int) $user->getAuthIdentifier() : null,
+            ),
         ]);
     }
 

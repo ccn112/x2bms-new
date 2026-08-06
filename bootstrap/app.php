@@ -23,6 +23,13 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         // Unauthenticated users hitting guarded pages go to the Filament panel login.
         $middleware->redirectGuestsTo(fn () => route('filament.admin.auth.login'));
+        // I18N — resolve request locale for every /api/* call (device header / Accept-Language
+        // / user preference) and set the translator locale + Content-Language. Defensive:
+        // no-op if localization tables are not migrated. Runs after Sanctum stateful/auth
+        // so a resolved user preference is available.
+        $middleware->api(append: [
+            App\Http\Middleware\SetLocaleFromRequest::class,
+        ]);
         // Batch 07 — cổng API nền tảng chỉ cho SuperAdmin/Billing admin.
         $middleware->alias([
             'platform.admin' => App\Http\Middleware\EnsurePlatformAdmin::class,
