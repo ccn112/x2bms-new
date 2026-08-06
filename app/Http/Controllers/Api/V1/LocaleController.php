@@ -6,11 +6,13 @@ namespace App\Http\Controllers\Api\V1;
 
 use App\Services\Localization\LocaleResolver;
 use App\Services\Localization\LocalizationBootstrap;
+use App\Services\Localization\TranslationPackService;
 use App\Support\Api\ApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
+use Symfony\Component\HttpFoundation\Response;
 
 /**
  * Resident/BQL locale preference + localization bootstrap (I18N-003/004).
@@ -24,6 +26,7 @@ final class LocaleController extends ApiController
     public function __construct(
         private readonly LocaleResolver $resolver,
         private readonly LocalizationBootstrap $bootstrap,
+        private readonly TranslationPackService $packs,
     ) {
     }
 
@@ -35,6 +38,36 @@ final class LocaleController extends ApiController
         return ApiResponse::success(
             $this->bootstrap->build($request, $userId, $tenantId, $projectId),
         );
+    }
+
+    /**
+     * GET /api/v1/localization/packs/{namespace}/{locale} — published translation pack.
+     *
+     * Returns {namespace, locale, version, checksum, values}. The checksum is the ETag:
+     * a client that sends a matching If-None-Match gets 304 (the app polls cheaply and
+     * only downloads when the pack actually changed). Published packs are immutable; a
+     * rollback re-points which release is "latest published" without deleting history,
+     * so the returned version/checksum follow automatically.
+     */
+    public function pack(Request $request, string $namespace, string $locale): Response
+    {
+        $validated = $request->validate([
+            'scopeType' => ['sometimes', Rule::in(['product', 'tenant', 'project'])],
+            'scopeId' => ['sometimes', 'nullable', 'string', 'max:64'],
+        ]);
+
+        $pack = $this->packs->getPublishedPack(
+            namespace: $namespace,
+            locale: $locale,
+            scopeType: (string) ($validated['scopeType'] ?? 'product'),
+            scopeId: (string) ($validated['scopeId'] ?? ''),
+        );
+
+        $response = ApiResponse::success($pack)->setEtag($pack['checksum']);
+        // Turns the response into a bodyless 304 when If-None-Match matches the checksum.
+        $response->isNotModified($request);
+
+        return $response;
     }
 
     /** PATCH /api/v1/me/localization-preference — explicit locale + auto-translate opt-in. */

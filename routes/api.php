@@ -76,6 +76,10 @@ Route::prefix('v1')->group(function () {
         Route::get('public/offers', [PublicOfferController::class, 'index']);
         // I18N — locale settings, supported locales and pack versions (works pre-login).
         Route::get('localization/bootstrap', [LocaleController::class, 'bootstrap']);
+        // I18N — published translation pack per namespace/locale (ETag/304; app auto-updates).
+        Route::get('localization/packs/{namespace}/{locale}', [LocaleController::class, 'pack'])
+            ->where('namespace', '[A-Za-z0-9._-]+')
+            ->where('locale', '[A-Za-z]{2,3}-[A-Za-z]{2,4}');
     });
 
     // Auth.
