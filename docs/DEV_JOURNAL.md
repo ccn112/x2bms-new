@@ -3221,3 +3221,33 @@ Xử lý handoff `X2_BMS_RESIDENT_INTERACTION_CENTER_HANDOFF_V1.1` — audit + n
 Xem `docs/SESSION_HANDOFF_20260805.md`: Đợt C tương tác (cư dân xong) · vòng đời xóa mềm/cascade/archive ·
 governance register + plan · chuẩn hóa menu + skill listing + breadcrumb/closure 17 trang. Còn: visual full-form
 listing (batch) + owner-driven (đối soát/ký/UAT) + nợ kỹ thuật (PII log/DSAR/AI impact).
+
+## 2026-08-06 — I18N Phase 0 + Phase 1 nền tảng (backend)
+Bắt đầu gói đa ngôn ngữ `X2_BMS_I18N_LOCALIZATION_HANDOFF_20260806` (skill `x2-i18n-localization`).
+Additive, feature-flag, rollback được, không đụng billing.
+- **I18N-000 audit**: `docs/dev/i18n/HARDCODE_REPORT.csv` + `I18N_STRING_INVENTORY.csv`.
+  Chưa có i18n app-level; ~1.900 chuỗi Filament hardcode; KHÔNG đụng tên bảng với schema i18n;
+  tái dùng `mobile_devices.locale`/`app_telemetry.locale`/`platform_content.language`.
+  Namespace THẬT (audience-based): x2.shared/api/resident_app/bql_app/bql_web/hq_web/superadmin/notifications/content.
+- **I18N-001 schema**: 3 migration (core/content/notification-localization) — 20 bảng, additive,
+  đã verify up + rollback trên sqlite. FK→users(bigint) khớp; tenant_id/project_id decouple (no FK).
+- **I18N-002 seed**: `LocalizationMasterSeeder` idempotent, production-safe (demo chặn production).
+  6 locale (vi-VN default, vi-VN+en-US bật), 9 ns, 340 key, 680 value published, 56 glossary,
+  21 template, 18 release. `config/localization.php`, `lang/{vi,en}/x2.php`.
+- **I18N-003 resolver + preference API**: `LocaleResolver` (đã vá: Accept-Language chỉ tính khi
+  client thực sự gửi + khớp supported — tránh rò locale server của getPreferredLanguage).
+  `LocaleController`: GET `/localization/bootstrap` (public) + PATCH `/me/localization-preference`
+  (authed, validate theo supported, event `localization.preference.updated`).
+  Middleware `SetLocaleFromRequest` append vào group `api` (App::setLocale vi/en + Content-Language;
+  no-op an toàn nếu chưa migrate). Decouple default/fallback khỏi APP_LOCALE (X2_*_LOCALE, mặc định vi-VN).
+- **I18N-004 bootstrap block**: `LocalizationBootstrap` service; khối `localization` trong
+  `/public/bootstrap` + `/me/bootstrap` (current/device/fallback locale, follow_device,
+  auto_translate_content, supported_locales[code/name/native_name/direction], pack_versions).
+- **Test**: 10/10 localization (resolver + preference API + seeder idempotent + checksum, 40 assertions).
+  Regression: CommunityMembershipGrants (me/bootstrap) 9/9, Batch07 billing/DebtByAsset/FeedbackRating/
+  FeeNotification 23/23. (Batch08 webhook OOM là lỗi môi trường có sẵn, không liên quan.)
+  `tests/TestCase` strip Accept-Language mặc định của Symfony để test phản ánh client thật.
+- **Rollback**: `php artisan migrate:rollback --step=3` gỡ đúng 3 migration i18n (đã verify).
+- **Còn (backlog)**: I18N-005 mobile gen_l10n (đang chạy) · I18N-006/007 migrate ~2.400 chuỗi hardcode ·
+  I18N-008 pack API · I18N-010 Translation Center Filament · I18N-011/012/013 notification đa ngôn ngữ ·
+  I18N-014→018 dịch nội dung động. Nhánh: `feat/i18n-localization` (chưa merge/push).
