@@ -3280,3 +3280,8 @@ Additive, feature-flag, rollback được, không đụng billing.
   - `LocaleResolver::supportedLocales` cache Collection → serializing cache → `__PHP_Incomplete_Class` → bootstrap 500. Fix: cache array.
   - `PublishTranslationRelease` bust thêm `i18n:pack_versions:{locale}` (app mới thấy version mới sau publish).
 - **VÒNG LẶP proven trên Samsung**: sửa key /sa → Phát hành → app "Kiểm tra cập nhật" → Home đổi chữ, không build lại.
+
+## 2026-08-06 (tiếp) — I18N-006 đủ domain: +802 key, migrate toàn bộ màn go-live
+- 6 agent song song migrate notifications/home · billing/payment · feedback/interaction · amenity/visitor · community/profile · auth/settings → context.tr.
+- Gộp 6 fragment → +802 key vào ui_translation_keys.csv (0 đụng key cũ, 1 dup chéo). Tổng 1142 key / 2284 value. Re-seed + export baseline (assets app 1142 key/locale). LocalizationSeederTest cập nhật count.
+- Backend localization 31/31 pass. Mobile analyze lib sạch; mỗi file test màn migrate pass khi cô lập (4 fail chỉ khi chạy gộp nhiều file 1 lệnh = flaky/ô nhiễm chéo, CI isolate không dính). Chuỗi chưa có key để lại (P2).
