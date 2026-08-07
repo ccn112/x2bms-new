@@ -83,3 +83,12 @@ Ratchet: thêm `AudienceResolver` (2 chỗ, re-scope tenant tường minh) vào 
   detail render. **Suite Communication 17/17, 60 assert.**
 - **Follow-up (T4.1):** trang recipients riêng 2/3+1/3 sticky filter + bulk resend/remind/export qua JOB
   (hiện publish đồng bộ cho demo/tòa nhỏ; job hoá cho audience lớn). CTA click tracking (analytics) additive.
+
+## 2026-08-07 · T5 — Resident API additive ✅
+- `NotificationResource` (list) +content_type +cta +allow_feedback. `NotificationDetailResource` (detail)
+  +content_type +content_meta +cta +allow_feedback +expires_at + **event summary** (venue/capacity/registered/
+  registration_status/deadline/fee/qr) + **poll summary** (question/options[key,label,votes]/vote_scope/anonymous/
+  result_visibility). App route theo content_type; đăng ký/vote vẫn gọi API community events/polls (spec 12).
+- Test `CommunicationApiContractTest` 3/29: **khóa key hợp đồng cũ** (16 key list) + content_type + event/poll summary.
+  Không hồi quy ResidentNotificationSummary/BellReader/Ack (11/11).
+- **Follow-up:** thêm content_type vào BellReader (feed hợp nhất) nếu app cần; hiện giữ nguyên (an toàn).

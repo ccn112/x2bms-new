@@ -24,6 +24,8 @@ class NotificationResource extends JsonResource
         return [
             'id' => (string) $this->id,
             'kind' => $this->type,
+            // BQL-NOTI: loại nội dung (announcement|news|event|poll) — additive, app route theo đây.
+            'content_type' => $this->content_type instanceof \BackedEnum ? $this->content_type->value : ($this->content_type ?? 'announcement'),
             // Trục taxonomy hộp thư hợp nhất (fallback type khi chưa backfill).
             'category' => $this->category ?? $this->type,
             'subtype' => $this->subtype,
@@ -36,6 +38,8 @@ class NotificationResource extends JsonResource
             'title' => $this->title,
             'summary' => $this->summary,
             'cover_url' => $cover,
+            'cta' => ($this->cta_label || $this->cta_target) ? ['label' => $this->cta_label, 'target' => $this->cta_target] : null,
+            'allow_feedback' => (bool) $this->allow_feedback,
             'priority' => $this->priority,
             'is_pinned' => (bool) $this->is_pinned,
             'is_read' => (bool) ($this->is_read ?? false),
