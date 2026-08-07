@@ -54,3 +54,19 @@ Ratchet: thêm `AudienceResolver` (2 chỗ, re-scope tenant tường minh) vào 
 - Service `ContentSubtypeService`: validate subtype + tạo/link Event/Poll canonical trong scope + news meta.
   Dùng chung wizard (T3) + seeder (T6). Write path đăng ký/vote vẫn ở resident API (T5).
 - Test `ContentSubtypeTest` 5 pass. Tổng Communication 13/13. CommunityPollScope không hồi quy.
+
+## 2026-08-07 · T3 — Wizard BQL-NOTI-02→06 ✅ (functional)
+- `app/Filament/Pages/CommunicationWizard.php` slug `notifications/create`, nav "Vận hành", feature-flag
+  x2.bql_wizard_enabled. Wizard 5 bước Filament (Nội dung → Đối tượng → Kênh → Hẹn giờ/duyệt → Xem lại).
+  Server draft tạo ở mount(); field động theo content_type (news/event/poll); scope theo QUYỀN người soạn
+  (mirror NotificationCenter, chốt chặn server G9 qua canManageBy).
+- Wire domain: ContentSubtypeService (subtype + link Event/Poll), AudienceResolver (resolve + dedupe +
+  snapshot recipients), CampaignCostEstimator (ước tính chi phí), NotificationApprovalService (tuyến duyệt),
+  NotificationSnapshotService (chốt snapshot khi gửi duyệt). Dual-write notification_audiences (compat dispatcher cũ).
+- Action: **Lưu nháp** + **Gửi duyệt** (send_now KHÔNG bypass duyệt — locked decision). Duyệt & phát hành ở T4 detail.
+- Placeholder live: ước tính người nhận, chi phí, tuyến duyệt, preflight.
+- Blade `communication-wizard.blade.php` (.x2-bql-page). Giữ NotificationCenter compose cũ tới khi parity.
+- Test `CommunicationWizardTest` (Livewire) 1 pass/9 assert: mount→draft, fill→submit gửi duyệt resolve 1 người nhận,
+  snapshot v1, approval requested, pending_approval.
+- **Visual follow-up (T3.1):** bố cục 2/3 form + 1/3 preview sticky theo ảnh duyệt (hiện gộp preview vào placeholder
+  từng bước — spec 05 80/20, ảnh định nghĩa hierarchy không phải pixel). Ghi backlog.
