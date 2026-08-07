@@ -23,4 +23,20 @@ return [
     */
     'timezone' => env('X2_BUSINESS_TIMEZONE', 'Asia/Ho_Chi_Minh'),
 
+    /*
+    |--------------------------------------------------------------------------
+    | Truyền thông BQL (BQL Communication)
+    |--------------------------------------------------------------------------
+    | Feature flag cho wizard truyền thông 5 bước (BQL-NOTI-02..08). Tắt =>
+    | ẩn wizard/detail mới, giữ compose cũ ở NotificationCenter (rollback an toàn).
+    | Xem docs/dev/notifications/ADR-002 + IMPLEMENTATION_PLAN.
+    */
+    'bql_wizard_enabled' => env('X2_BQL_WIZARD', true),
+
+    /*
+    | Bật CommunicationDemoSeeder (và các demo seeder khác). Chỉ chạy ngoài
+    | production; đặt X2_DEMO_SEED=true ở local/staging để seed dữ liệu demo.
+    */
+    'demo_seed_enabled' => env('X2_DEMO_SEED', false),
+
 ];
