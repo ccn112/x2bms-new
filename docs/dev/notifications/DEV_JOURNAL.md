@@ -70,3 +70,16 @@ Ratchet: thêm `AudienceResolver` (2 chỗ, re-scope tenant tường minh) vào 
   snapshot v1, approval requested, pending_approval.
 - **Visual follow-up (T3.1):** bố cục 2/3 form + 1/3 preview sticky theo ảnh duyệt (hiện gộp preview vào placeholder
   từng bước — spec 05 80/20, ảnh định nghĩa hierarchy không phải pixel). Ghi backlog.
+
+## 2026-08-07 · T4 — Detail (07) + Recipients (08) + publish flow ✅
+- `NotificationPublisher`: đóng vòng approved→queued→sending→(ghi delivery app-inbox upsert idempotent +
+  gọi push/external dispatcher sẵn có)→sent→completed. Map status=published (cư dân thấy). Snapshot đã chốt KHÔNG sửa.
+- `app/Filament/Pages/CommunicationDetail.php` slug `notifications/detail?record=` (ngoài menu). BQL-NOTI-07:
+  highlights + KPI (người nhận/đã gửi/đã đọc/lỗi) + preview nội dung + kênh + tuyến duyệt + snapshot.
+  Actions vòng đời qua service: Duyệt / Yêu cầu sửa / Từ chối (maker-checker: người tạo không tự duyệt) /
+  Phát hành / Hủy / Nhân bản. BQL-NOTI-08: bảng người nhận (PII mask email/phone, filter vai trò/trạng thái).
+- Link "Chi tiết (mới)" từ NotificationCenter (feature-flag).
+- Test: CommunicationPublishTest 2 (duyệt+phát hành tạo delivery inbox; chặn phát hành khi chưa duyệt) +
+  detail render. **Suite Communication 17/17, 60 assert.**
+- **Follow-up (T4.1):** trang recipients riêng 2/3+1/3 sticky filter + bulk resend/remind/export qua JOB
+  (hiện publish đồng bộ cho demo/tòa nhỏ; job hoá cho audience lớn). CTA click tracking (analytics) additive.

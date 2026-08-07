@@ -308,6 +308,10 @@ class NotificationCenter extends Page implements HasTable
             ])
             ->recordActions([
                 $this->viewAction(),
+                Action::make('detail')
+                    ->label('Chi tiết (mới)')->iconButton()->icon('heroicon-m-arrow-top-right-on-square')->color('gray')
+                    ->visible(fn (NotificationModel $r) => (bool) config('x2.bql_wizard_enabled', true) && $r->canManageBy(auth()->user()))
+                    ->url(fn (NotificationModel $r) => CommunicationDetail::getUrl().'?record='.$r->id),
                 Action::make('publish')
                     ->label('Phát hành')->iconButton()->icon('heroicon-m-paper-airplane')->color('success')
                     ->visible(fn (NotificationModel $r) => in_array($r->status, ['draft', 'scheduled'], true) && $r->canManageBy(auth()->user()))

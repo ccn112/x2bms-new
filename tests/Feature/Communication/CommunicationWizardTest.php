@@ -67,4 +67,25 @@ class CommunicationWizardTest extends TestCase
         $this->assertDatabaseHas('notification_snapshots', ['notification_id' => $draftId, 'version' => 1]);
         $this->assertDatabaseHas('notification_recipients', ['notification_id' => $draftId, 'resident_id' => $res->id]);
     }
+
+    public function test_trang_chi_tiet_render(): void
+    {
+        ini_set('memory_limit', '1024M');
+
+        $t = Tenant::create(['code' => 'TEN-D', 'name' => 'T']);
+        $p = Project::create(['tenant_id' => $t->id, 'code' => 'PRJ-D', 'name' => 'P']);
+        $bql = User::create(['name' => 'BQL D', 'email' => 'bqld@test.vn', 'password' => bcrypt('x'),
+            'account_type' => 'staff', 'is_platform_admin' => false, 'tenant_id' => $t->id, 'project_id' => $p->id]);
+        $bql->assignRole(Role::findOrCreate('building_manager', 'web'));
+        $n = Notification::create(['owner_level' => 'project', 'tenant_id' => $t->id, 'project_id' => $p->id,
+            'content_type' => 'announcement', 'workflow_status' => 'draft', 'status' => 'draft', 'title' => 'Chi tiết render', 'priority' => 'normal']);
+
+        $this->actingAs($bql);
+        Filament::setCurrentPanel(Filament::getPanel('admin'));
+
+        Livewire::withQueryParams(['record' => $n->id])
+            ->test(\App\Filament\Pages\CommunicationDetail::class)
+            ->assertOk()
+            ->assertSee('Chi tiết render');
+    }
 }
