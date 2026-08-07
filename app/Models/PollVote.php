@@ -19,4 +19,14 @@ class PollVote extends Model
     {
         return $this->belongsTo(PollOption::class, 'poll_option_id');
     }
+
+    public function resident(): BelongsTo
+    {
+        return $this->belongsTo(Resident::class);
+    }
+
+    public function apartment(): BelongsTo
+    {
+        return $this->belongsTo(Apartment::class);
+    }
 }

@@ -42,3 +42,15 @@ Ratchet: thêm `AudienceResolver` (2 chỗ, re-scope tenant tường minh) vào 
 
 **Còn (T1 chuyển sang phase sau):** NotificationCampaignPolicy (gắn ở T3 khi wire action), delivery status enum chi tiết
 (map notification_delivery_logs khi build T4), thin template models (T6).
+
+## 2026-08-07 · T2 — Content types ✅
+- Migration additive `...000006` events/event_registrations (registration_status/deadline, allow_guests/max_guests,
+  fee_amount, qr_checkin, waitlist_count, checked_in_count, cancel_reason, checked_in_at/waitlisted_at) — GIỮ
+  events.status chuẩn hoá.
+- Migration additive `...000007` polls (summary, anonymous, vote_scope, allow_change_vote, max_choices,
+  result_visibility, opens_at) + poll_options.option_key + poll_votes.apartment_id (+ index apartment-scope MySQL).
+- Model casts/consts: Event (REGISTRATION_STATUSES), EventRegistration (STATUSES), Poll (VOTE_SCOPES/RESULT_VISIBILITY),
+  PollVote (resident/apartment relations).
+- Service `ContentSubtypeService`: validate subtype + tạo/link Event/Poll canonical trong scope + news meta.
+  Dùng chung wizard (T3) + seeder (T6). Write path đăng ký/vote vẫn ở resident API (T5).
+- Test `ContentSubtypeTest` 5 pass. Tổng Communication 13/13. CommunityPollScope không hồi quy.

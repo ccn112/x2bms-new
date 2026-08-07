@@ -31,9 +31,19 @@ class Event extends Model
      */
     public const RESIDENT_VISIBLE_STATUSES = ['upcoming', 'ongoing'];
 
+    /** Trạng thái đăng ký (BQL-NOTI) — tách khỏi vòng đời sự kiện. */
+    public const REGISTRATION_STATUSES = ['open', 'closed', 'full'];
+
     protected $guarded = [];
 
-    protected $casts = ['starts_at' => 'datetime', 'ends_at' => 'datetime'];
+    protected $casts = [
+        'starts_at' => 'datetime',
+        'ends_at' => 'datetime',
+        'registration_deadline' => 'datetime',
+        'allow_guests' => 'boolean',
+        'qr_checkin' => 'boolean',
+        'fee_amount' => 'decimal:2',
+    ];
 
     public function project(): BelongsTo
     {
