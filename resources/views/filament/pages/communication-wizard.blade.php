@@ -9,11 +9,8 @@
     </style>
 
     <div class="x2-bql-page space-y-4">
-        {{-- Action bar (BQL-NOTI header: title + Lưu nháp + Gửi duyệt) --}}
-        <div class="flex flex-wrap items-center justify-between gap-2">
-            <p class="text-sm text-slate-500">
-                Soạn thông báo · tin tức · sự kiện · bình chọn theo 5 bước. Gửi ngay không bỏ qua duyệt.
-            </p>
+        {{-- Action bar (BQL-NOTI): Lưu nháp + Gửi duyệt + Hủy --}}
+        <div class="flex flex-wrap items-center justify-end gap-2">
             {{-- DS-03 thứ bậc nút: Phụ (Lưu nháp) → CTA gold (Gửi duyệt) → Hủy (ghost). --}}
             <div class="flex flex-wrap items-center gap-1.5">
                 <x-x2.btn variant="outline" size="sm" icon="heroicon-m-document-arrow-down" wire:click="saveDraft" wire:loading.attr="disabled">
