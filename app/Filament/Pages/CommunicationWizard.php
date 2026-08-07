@@ -36,6 +36,8 @@ use Filament\Forms\Concerns\InteractsWithForms;
 use Filament\Forms\Contracts\HasForms;
 use Filament\Notifications\Notification;
 use Filament\Pages\Page;
+use Filament\Schemas\Components\Grid;
+use Filament\Schemas\Components\Group;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Components\Wizard;
@@ -136,44 +138,57 @@ class CommunicationWizard extends Page implements HasForms
     {
         return Step::make('Nội dung')
             ->icon('heroicon-o-document-text')
+            ->columns(3)
             ->schema([
-                ToggleButtons::make('content_type')->label('Loại nội dung')
-                    ->options(collect(CT::cases())->mapWithKeys(fn (CT $c) => [$c->value => $c->label()])->all())
-                    ->icons(collect(CT::cases())->mapWithKeys(fn (CT $c) => [$c->value => $c->icon()])->all())
-                    ->inline()->live()->default(CT::Announcement->value)->required(),
+                // ---- KHUNG CHÍNH 2/3: nội dung thông báo ----
+                Section::make('Nội dung thông báo')
+                    ->columnSpan(2)
+                    ->columns(2)
+                    ->schema([
+                        ToggleButtons::make('content_type')->label('Loại nội dung')->columnSpanFull()
+                            ->options(collect(CT::cases())->mapWithKeys(fn (CT $c) => [$c->value => $c->label()])->all())
+                            ->icons(collect(CT::cases())->mapWithKeys(fn (CT $c) => [$c->value => $c->icon()])->all())
+                            ->inline()->live()->default(CT::Announcement->value)->required(),
+                        TextInput::make('title')->label('Tiêu đề')->required()->maxLength(255)->columnSpanFull(),
+                        Textarea::make('summary')->label('Tóm tắt')->rows(2)->maxLength(500)->columnSpanFull(),
+                        FileUpload::make('cover_path')->label('Ảnh bìa')->image()->directory('notifications/covers')->imageEditor()->columnSpanFull(),
+                        RichEditor::make('body')->label('Nội dung chi tiết')->columnSpanFull()
+                            ->toolbarButtons(['bold', 'italic', 'bulletList', 'orderedList', 'link', 'h2', 'h3', 'blockquote', 'undo', 'redo'])
+                            // Ô soạn HTML cao tối thiểu 500px (chốt owner). CSS scope .x2-bql-page ở blade phủ toàn bộ TipTap.
+                            ->extraInputAttributes(['style' => 'min-height: 500px']),
+                        TextInput::make('cta_label')->label('Nhãn nút CTA')->maxLength(60),
+                        TextInput::make('cta_target')->label('Liên kết CTA')->maxLength(255),
+                    ]),
 
-                TextInput::make('title')->label('Tiêu đề')->required()->maxLength(255)->columnSpanFull(),
-                Textarea::make('summary')->label('Tóm tắt')->rows(2)->maxLength(500)->columnSpanFull(),
-                Select::make('category')->label('Nhóm nghiệp vụ')->options($this->categoryOptions())->searchable(),
-                Select::make('priority')->label('Mức ưu tiên')
-                    ->options(['low' => 'Thấp', 'normal' => 'Bình thường', 'high' => 'Cao', 'urgent' => 'Khẩn cấp'])
-                    ->default('normal')->required(),
-                FileUpload::make('cover_path')->label('Ảnh bìa')->image()->directory('notifications/covers')->imageEditor()->columnSpanFull(),
-                RichEditor::make('body')->label('Nội dung chi tiết')
-                    ->toolbarButtons(['bold', 'italic', 'bulletList', 'orderedList', 'link', 'h2', 'h3', 'undo', 'redo'])
-                    ->columnSpanFull(),
-
-                // Field động theo loại (spec 04).
-                $this->newsFields(),
-                $this->eventFields(),
-                $this->pollFields(),
-
-                Section::make('Tùy chọn hiển thị')->columns(3)->schema([
-                    Toggle::make('requires_ack')->label('Yêu cầu xác nhận đã đọc'),
-                    Toggle::make('allow_feedback')->label('Cho phép phản hồi'),
-                    Toggle::make('is_pinned')->label('Ghim trên app'),
-                    TextInput::make('cta_label')->label('Nhãn nút CTA')->maxLength(60),
-                    TextInput::make('cta_target')->label('Liên kết CTA')->maxLength(255),
-                    DateTimePicker::make('expires_at')->label('Hết hạn hiển thị'),
-                ]),
-            ])->columns(2);
+                // ---- CỘT PHỤ 1/3: phân loại · tùy chọn hiển thị · thông tin loại ----
+                Group::make()
+                    ->columnSpan(1)
+                    ->schema([
+                        Section::make('Phân loại')->schema([
+                            Select::make('priority')->label('Mức ưu tiên')
+                                ->options(['low' => 'Thấp', 'normal' => 'Bình thường', 'high' => 'Cao', 'urgent' => 'Khẩn cấp'])
+                                ->default('normal')->required(),
+                            Select::make('category')->label('Nhóm nghiệp vụ')->options($this->categoryOptions())->searchable(),
+                        ]),
+                        Section::make('Tùy chọn hiển thị')->schema([
+                            Toggle::make('requires_ack')->label('Yêu cầu xác nhận đã đọc'),
+                            Toggle::make('allow_feedback')->label('Cho phép phản hồi'),
+                            Toggle::make('is_pinned')->label('Ghim trên app'),
+                            DateTimePicker::make('expires_at')->label('Hết hạn hiển thị'),
+                        ]),
+                        // Field động theo loại (spec 04) — hiện ở cột phụ 1/3.
+                        $this->newsFields(),
+                        $this->eventFields(),
+                        $this->pollFields(),
+                    ]),
+            ]);
     }
 
     private function newsFields(): Section
     {
         return Section::make('Thông tin tin tức')
             ->visible(fn (Get $get) => $get('content_type') === CT::News->value)
-            ->columns(2)
+            ->columns(1)
             ->schema([
                 TextInput::make('news_author')->label('Tác giả'),
                 Select::make('news_visibility')->label('Phạm vi hiển thị')
@@ -186,7 +201,7 @@ class CommunicationWizard extends Page implements HasForms
     {
         return Section::make('Thông tin sự kiện')
             ->visible(fn (Get $get) => $get('content_type') === CT::Event->value)
-            ->columns(2)
+            ->columns(1)
             ->schema([
                 TextInput::make('event_venue')->label('Địa điểm')->required(fn (Get $get) => $get('content_type') === CT::Event->value),
                 DateTimePicker::make('event_starts_at')->label('Bắt đầu')->required(fn (Get $get) => $get('content_type') === CT::Event->value),
@@ -203,7 +218,7 @@ class CommunicationWizard extends Page implements HasForms
     {
         return Section::make('Thông tin bình chọn')
             ->visible(fn (Get $get) => $get('content_type') === CT::Poll->value)
-            ->columns(2)
+            ->columns(1)
             ->schema([
                 TextInput::make('poll_question')->label('Câu hỏi')->columnSpanFull()
                     ->required(fn (Get $get) => $get('content_type') === CT::Poll->value),
@@ -220,7 +235,7 @@ class CommunicationWizard extends Page implements HasForms
                     ->schema([
                         TextInput::make('key')->label('Mã')->maxLength(8),
                         TextInput::make('label')->label('Nội dung lựa chọn')->required(),
-                    ])->columns(2)->minItems(2)->defaultItems(2)
+                    ])->columns(1)->minItems(2)->defaultItems(2)
                     ->required(fn (Get $get) => $get('content_type') === CT::Poll->value),
             ]);
     }
