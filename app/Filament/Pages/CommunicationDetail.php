@@ -3,6 +3,7 @@
 namespace App\Filament\Pages;
 
 use App\Enums\CommunicationWorkflowStatus as WS;
+use App\Filament\Concerns\AdminListingBreadcrumbs;
 use App\Filament\Concerns\WritesAudit;
 use App\Models\Notification as NotificationModel;
 use App\Models\NotificationRecipient;
@@ -29,6 +30,7 @@ use UnitEnum;
  */
 class CommunicationDetail extends Page implements HasTable
 {
+    use AdminListingBreadcrumbs;
     use InteractsWithTable;
     use WritesAudit;
 
@@ -55,6 +57,16 @@ class CommunicationDetail extends Page implements HasTable
     public function getTitle(): string
     {
         return 'Chi tiết truyền thông';
+    }
+
+    /** Chuẩn /admin: chỉ breadcrumb, tiêu đề đã ở header (topbar hook ẩn H1 khi có breadcrumb). */
+    public function getBreadcrumbs(): array
+    {
+        return [
+            url('/admin') => $this->crumb('heroicon-m-home', 'Tổng quan'),
+            NotificationCenter::getUrl() => $this->crumb('heroicon-m-megaphone', 'Truyền thông'),
+            $this->crumb('heroicon-m-document-text', 'Chi tiết'),
+        ];
     }
 
     private function campaign(): NotificationModel

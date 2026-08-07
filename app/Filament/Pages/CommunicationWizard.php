@@ -5,6 +5,7 @@ namespace App\Filament\Pages;
 use App\Enums\CommunicationContentType as CT;
 use App\Enums\CommunicationSendStrategy;
 use App\Enums\CommunicationWorkflowStatus as WS;
+use App\Filament\Concerns\AdminListingBreadcrumbs;
 use App\Filament\Concerns\WritesAudit;
 use App\Models\Apartment;
 use App\Models\Building;
@@ -57,6 +58,7 @@ use UnitEnum;
  */
 class CommunicationWizard extends Page implements HasForms
 {
+    use AdminListingBreadcrumbs;
     use InteractsWithForms;
     use WritesAudit;
 
@@ -84,6 +86,16 @@ class CommunicationWizard extends Page implements HasForms
     public function getTitle(): string
     {
         return 'Tạo mới truyền thông';
+    }
+
+    /** Chuẩn /admin: chỉ breadcrumb, tiêu đề đã ở header (topbar hook ẩn H1 khi có breadcrumb). */
+    public function getBreadcrumbs(): array
+    {
+        return [
+            url('/admin') => $this->crumb('heroicon-m-home', 'Tổng quan'),
+            NotificationCenter::getUrl() => $this->crumb('heroicon-m-megaphone', 'Truyền thông'),
+            $this->crumb('heroicon-m-pencil-square', 'Tạo mới'),
+        ];
     }
 
     public function mount(): void
@@ -148,6 +160,7 @@ class CommunicationWizard extends Page implements HasForms
                         ToggleButtons::make('content_type')->label('Loại nội dung')->columnSpanFull()
                             ->options(collect(CT::cases())->mapWithKeys(fn (CT $c) => [$c->value => $c->label()])->all())
                             ->icons(collect(CT::cases())->mapWithKeys(fn (CT $c) => [$c->value => $c->icon()])->all())
+                            ->colors(collect(CT::cases())->mapWithKeys(fn (CT $c) => [$c->value => 'primary'])->all())
                             ->inline()->live()->default(CT::Announcement->value)->required(),
                         TextInput::make('title')->label('Tiêu đề')->required()->maxLength(255)->columnSpanFull(),
                         Textarea::make('summary')->label('Tóm tắt')->rows(2)->maxLength(500)->columnSpanFull(),
