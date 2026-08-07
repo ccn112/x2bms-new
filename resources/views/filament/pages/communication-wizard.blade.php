@@ -14,17 +14,18 @@
             <p class="text-sm text-slate-500">
                 Soạn thông báo · tin tức · sự kiện · bình chọn theo 5 bước. Gửi ngay không bỏ qua duyệt.
             </p>
-            <div class="flex flex-wrap items-center gap-2">
-                <x-filament::button color="gray" icon="heroicon-o-document-arrow-down" wire:click="saveDraft">
+            {{-- DS-03 thứ bậc nút: Phụ (Lưu nháp) → CTA gold (Gửi duyệt) → Hủy (ghost). --}}
+            <div class="flex flex-wrap items-center gap-1.5">
+                <x-x2.btn variant="outline" size="sm" icon="heroicon-m-document-arrow-down" wire:click="saveDraft" wire:loading.attr="disabled">
                     Lưu nháp
-                </x-filament::button>
-                <x-filament::button color="success" icon="heroicon-o-paper-airplane" wire:click="submitForApproval">
+                </x-x2.btn>
+                <x-x2.btn variant="gold" size="sm" icon="heroicon-m-paper-airplane" wire:click="submitForApproval" wire:loading.attr="disabled">
                     Gửi duyệt
-                </x-filament::button>
-                <x-filament::button color="gray" tag="a" icon="heroicon-o-x-mark"
+                </x-x2.btn>
+                <x-x2.btn variant="ghost" size="sm" as="a" icon="heroicon-m-x-mark"
                     :href="\App\Filament\Pages\NotificationCenter::getUrl()">
                     Hủy
-                </x-filament::button>
+                </x-x2.btn>
             </div>
         </div>
 

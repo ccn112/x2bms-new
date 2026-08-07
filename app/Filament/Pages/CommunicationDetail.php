@@ -92,27 +92,29 @@ class CommunicationDetail extends Page implements HasTable
         $approval = $n->approvals->sortByDesc('id')->first();
         $canApprove = $approval && $approval->status->value === 'requested' && $approval->requested_by_id !== auth()->id();
 
+        // DS-03 thứ bậc trái→phải: Chính (Duyệt) → CTA gold (Phát hành) → Phụ (Yêu cầu sửa,
+        // Nhân bản) → Nguy hiểm (Từ chối, Hủy). Compact size 'sm'.
         return [
-            Action::make('approve')->label('Duyệt')->icon('heroicon-m-check')->color('success')
+            Action::make('approve')->label('Duyệt')->icon('heroicon-m-check')->color('primary')->size('sm')
                 ->visible($wf === WS::PendingApproval && $canApprove)->requiresConfirmation()
                 ->action(fn () => $this->act('approved')),
-            Action::make('request_changes')->label('Yêu cầu sửa')->icon('heroicon-m-pencil')->color('warning')
-                ->visible($wf === WS::PendingApproval && $canApprove)
-                ->schema([Textarea::make('reason')->label('Lý do')->required()])
-                ->action(fn (array $data) => $this->act('changes_requested', $data['reason'] ?? null)),
-            Action::make('reject')->label('Từ chối')->icon('heroicon-m-x-mark')->color('danger')
-                ->visible($wf === WS::PendingApproval && $canApprove)
-                ->schema([Textarea::make('reason')->label('Lý do')->required()])
-                ->action(fn (array $data) => $this->act('rejected', $data['reason'] ?? null)),
-            Action::make('publish')->label('Phát hành')->icon('heroicon-m-paper-airplane')->color('primary')
+            Action::make('publish')->label('Phát hành')->icon('heroicon-m-paper-airplane')->color('gold')->size('sm')
                 ->visible(in_array($wf, [WS::Approved, WS::Scheduled], true))->requiresConfirmation()
                 ->modalDescription('Chốt snapshot và gửi tới người nhận. Không thể sửa nội dung sau khi gửi.')
                 ->action(fn () => $this->publish()),
-            Action::make('cancel')->label('Hủy chiến dịch')->icon('heroicon-m-no-symbol')->color('gray')
+            Action::make('request_changes')->label('Yêu cầu sửa')->icon('heroicon-m-pencil')->color('gray')->size('sm')
+                ->visible($wf === WS::PendingApproval && $canApprove)
+                ->schema([Textarea::make('reason')->label('Lý do')->required()])
+                ->action(fn (array $data) => $this->act('changes_requested', $data['reason'] ?? null)),
+            Action::make('clone')->label('Nhân bản')->icon('heroicon-m-document-duplicate')->color('gray')->size('sm')
+                ->action(fn () => $this->clone()),
+            Action::make('reject')->label('Từ chối')->icon('heroicon-m-x-mark')->color('danger')->size('sm')
+                ->visible($wf === WS::PendingApproval && $canApprove)
+                ->schema([Textarea::make('reason')->label('Lý do')->required()])
+                ->action(fn (array $data) => $this->act('rejected', $data['reason'] ?? null)),
+            Action::make('cancel')->label('Hủy chiến dịch')->icon('heroicon-m-no-symbol')->color('danger')->size('sm')
                 ->visible(! $wf->isTerminal() && ! $wf->isDispatched())->requiresConfirmation()
                 ->action(fn () => $this->cancel()),
-            Action::make('clone')->label('Nhân bản')->icon('heroicon-m-document-duplicate')->color('gray')
-                ->action(fn () => $this->clone()),
         ];
     }
 
