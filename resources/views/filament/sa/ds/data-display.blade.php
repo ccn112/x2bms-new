@@ -1,10 +1,10 @@
 <div class="mb-4 flex items-start gap-2 rounded-xl border border-x2-primary/20 bg-x2-primary/5 px-4 py-3 text-sm text-slate-600">
         <span class="text-x2-primary">@svg('heroicon-o-information-circle', 'h-5 w-5')</span>
-        <p><b>Lưu ý:</b> KPI hiển thị tổng hợp theo ngữ cảnh hiện tại và <b>không bị ảnh hưởng bởi bộ lọc</b>. Bộ lọc chỉ áp dụng cho bảng dữ liệu bên dưới.</p>
+        <p><b>Lưu ý:</b> KPI tổng hợp <b>cập nhật theo bộ lọc</b> đang áp dụng — số liệu trên thẻ luôn khớp với bảng dữ liệu bên dưới (chốt owner 2026-07-17).</p>
     </div>
 
     {{-- 1. KPI aggregation --}}
-    <h3 class="font-title mb-3 text-sm font-bold text-slate-700">1. KPI tổng hợp (theo ngữ cảnh)</h3>
+    <h3 class="font-title mb-3 text-sm font-bold text-slate-700">1. KPI tổng hợp (theo bộ lọc)</h3>
     <x-x2.kpi-row :cols="6">
         <x-x2.card.kpi label="Tổng tòa nhà" value="12" sub="Tòa nhà" accent="blue" icon="heroicon-o-building-office-2" />
         <x-x2.card.kpi label="Hoạt động" value="1.248" accent="green" icon="heroicon-o-home-modern" trend="8,2%" />

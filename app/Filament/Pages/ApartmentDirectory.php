@@ -227,7 +227,7 @@ class ApartmentDirectory extends Page implements HasTable
             'advancedCount' => $this->advancedCount(),
             'columnToggle' => self::COLS,
             'kpis' => [
-                ['label' => 'Tổng căn', 'value' => number_format($total, 0, ',', '.'), 'accent' => 'blue', 'icon' => 'heroicon-o-building-office-2', 'sub' => '100% tổng danh mục'],
+                ['label' => 'Tổng căn', 'value' => number_format($total, 0, ',', '.'), 'accent' => 'blue', 'icon' => 'heroicon-o-building-office-2', 'sub' => '100% kết quả lọc'],
                 ['label' => 'Đã ở', 'value' => number_format($occupied, 0, ',', '.'), 'accent' => 'green', 'icon' => 'heroicon-o-user-group', 'sub' => $pct($occupied)],
                 ['label' => 'Trống', 'value' => number_format($vacant, 0, ',', '.'), 'accent' => 'teal', 'icon' => 'heroicon-o-home', 'sub' => $pct($vacant)],
                 ['label' => 'Đang duyệt gắn', 'value' => number_format($pendingAttach, 0, ',', '.'), 'accent' => 'amber', 'icon' => 'heroicon-o-clock', 'sub' => $pct($pendingAttach)],

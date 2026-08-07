@@ -3,7 +3,7 @@
          Breadcrumb + action trang dùng header Filament mặc định (getBreadcrumbs + getHeaderActions);
          topbar JS chỉ ẩn title, giữ breadcrumb + actions (cùng hàng). --}}
     <div class="x2-bql-page">
-        {{-- KPI — tổng theo context (5 card compact 88–96px), BẤT BIẾN theo filter. --}}
+        {{-- KPI — 5 card compact (88–96px), tính theo BỘ LỌC hiện tại (chốt owner: KPI ăn theo bộ lọc, luôn khớp bảng bên dưới). --}}
         <x-x2.kpi-row :cols="5">
             @foreach ($kpis as $kpi)
                 <x-x2.card.kpi
