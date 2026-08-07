@@ -104,3 +104,13 @@ Ratchet: thêm `AudienceResolver` (2 chỗ, re-scope tenant tường minh) vào 
 - Đăng ký trong DatabaseSeeder (non-prod, tự guard flag). Fix: notification_templates.risk enum low|medium|high|critical.
 - Test `CommunicationSeederTest` (fixture demo tối thiểu): counts 12/8/6/6, 11 nhóm, poll aggregate khớp,
   published có người nhận, **idempotent** (chạy lại không nhân đôi). **Suite Communication 21/21, 99 assert.**
+
+## 2026-08-07 · T7 — Acceptance + evidence + deploy ✅
+- **Full suite: 365 test · 361 pass · 3 skip · 1 fail · 1463 assert** (~72s). +21 test Communication đều xanh;
+  fail duy nhất = BillingRunner ratchet **pre-existing** (không phải module này). Zero regression.
+- Docs: `IMPLEMENTATION_REPORT.md` (trạng thái theo màn DONE/PARTIAL/NOT_IMPLEMENTED + deploy/rollback),
+  `ROUTE_SCHEMA_TEST_INVENTORY.md`, `UAT_EVIDENCE.md` (UAT-01→06 map test + kiểm thủ công).
+- Cập nhật `docs/PROGRESS_TRACKER.md`: 07-02/07-03 → ✅ (có test).
+- **PARTIAL/follow-up:** BQL-NOTI-04 cấu hình chi tiết per-kênh · BQL-NOTI-06 preview đa kênh đầy đủ ·
+  BQL-NOTI-08 trang riêng 2/3+1/3 + bulk job · job-hoá publish audience lớn · provider Zalo/SMS thật (chờ owner) ·
+  ảnh màn hình thật (owner/QA chạy). Chi tiết trong IMPLEMENTATION_REPORT.

@@ -143,8 +143,8 @@
 | Màn | Trạng thái | Bằng chứng | Ghi chú |
 |---|---|---|---|
 | 07-01 Dashboard truyền thông | 🟡 | `Pages/NotificationCenter.php` | dashboard KPI riêng ❓ |
-| 07-02 Trung tâm thông báo & chiến dịch | 🟢 | `NotificationCenter.php`, model `Notification`,`NotificationAudience`,`NotificationChannel`,`NotificationDeliveryLog` | đa kênh SMS/Zalo thật ❓ |
-| 07-03 Chi tiết & phê duyệt gửi | 🟢 | model `NotificationRead`,`NotificationDeliveryLog` | |
+| 07-02 Trung tâm thông báo & chiến dịch | ✅ | `NotificationCenter.php` (cũ) + **`CommunicationWizard.php`** (BQL-NOTI-02→06, wizard 5 bước /admin/notifications/create) + services `CampaignStateMachine`/`AudienceResolver`/`ContentSubtypeService`/`CampaignCostEstimator` + migration `2026_08_07_000001..000007` | **BQL-NOTI 2026-08-07** (nhánh `feat/bql-notification-communication-wizard`): 4 loại nội dung (thông báo/tin/sự kiện/poll), DSL audience whitelist + dedupe + snapshot, ước tính người nhận/chi phí. 21 test `tests/Feature/Communication/*` (99 assert). Docs `docs/dev/notifications/`. Đa kênh SMS/Zalo vẫn cổng chờ (ADR-002). Visual 2/3+1/3 = follow-up |
+| 07-03 Chi tiết & phê duyệt gửi | ✅ | **`CommunicationDetail.php`** (BQL-NOTI-07/08, /admin/notifications/detail?record=) + `NotificationApprovalService` (maker-checker) + `NotificationPublisher` + `NotificationSnapshotService` + model `NotificationApproval`/`NotificationApprovalStep`/`NotificationSnapshot`/`NotificationRecipient` | **BQL-NOTI 2026-08-07**: máy trạng thái 12 bước, duyệt maker-checker đa bước, snapshot bất biến, phát hành → delivery inbox + dispatcher sẵn có, bảng người nhận PII-mask. Test `CommunicationPublishTest`/`CommunicationWizardTest`. Trang recipients riêng 2/3+1/3 + bulk = follow-up (T4.1) |
 | 07-04 Form builder động | 🟢 | Resource `DynamicForms`,`FormFields`, model `DynamicForm`,`FormField`,`FormSection`,`FormVersion`,`FormWorkflow` | |
 | 07-05 Hộp thư yêu cầu biểu mẫu | 🟢 | Resource `FormSubmissions`, model `FormSubmission`,`FormSubmissionValue` | |
 | 07-06 Khảo sát & bình chọn | 🟢 | Resource `Polls`, model `Poll`,`PollOption`,`PollVote` | survey vs poll ❓ |
