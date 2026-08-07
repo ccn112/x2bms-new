@@ -1,0 +1,201 @@
+[
+  {
+    "seed_key": "news-landscape-upgrade",
+    "type": "news",
+    "title": "Hoàn thành nâng cấp cảnh quan vườn trung tâm",
+    "summary": "Khu vườn trung tâm được bổ sung cây bóng mát, ghế nghỉ và hệ thống chiếu sáng tiết kiệm năng lượng.",
+    "category": "project_update",
+    "status": "published",
+    "featured": true,
+    "visibility": "residents",
+    "author": "Ban quản lý dự án",
+    "publish_offset_days": -3,
+    "expires_in_days": 60,
+    "audience_group_key": "all_verified_residents",
+    "channels": [
+      "app",
+      "web",
+      "email"
+    ],
+    "cover_asset": "seed/news/landscape.jpg",
+    "cta": {
+      "label": "Xem bộ ảnh",
+      "target": "/resident/news/{content_id}"
+    },
+    "body": "Sau ba tuần thi công, khu vườn trung tâm đã hoàn thành nâng cấp. Hệ thống chiếu sáng mới sử dụng đèn tiết kiệm năng lượng; khu vui chơi và ghế nghỉ được bố trí lại để tăng không gian sinh hoạt chung."
+  },
+  {
+    "seed_key": "news-green-building",
+    "type": "news",
+    "title": "Dự án triển khai tháng hành động sống xanh",
+    "summary": "Chuỗi hoạt động đổi rác tái chế, trồng cây và tiết kiệm điện nước dành cho cư dân.",
+    "category": "community_environment",
+    "status": "published",
+    "featured": true,
+    "visibility": "public",
+    "author": "Tổ Cộng đồng Xanh",
+    "publish_offset_days": -1,
+    "expires_in_days": 45,
+    "audience_group_key": "all_verified_residents",
+    "channels": [
+      "app",
+      "web",
+      "push"
+    ],
+    "cover_asset": "seed/news/green-living.jpg",
+    "cta": {
+      "label": "Tham gia hoạt động",
+      "target": "/resident/events"
+    },
+    "body": "Tháng hành động sống xanh gồm các hoạt động đổi rác tái chế lấy cây, hướng dẫn giảm nhựa dùng một lần và cuộc thi gia đình tiết kiệm năng lượng."
+  },
+  {
+    "seed_key": "news-staff-story",
+    "type": "news",
+    "title": "Những người giữ nhịp vận hành tòa nhà mỗi ngày",
+    "summary": "Câu chuyện về đội kỹ thuật, an ninh và vệ sinh làm việc phía sau trải nghiệm cư dân.",
+    "category": "people_story",
+    "status": "published",
+    "featured": false,
+    "visibility": "residents",
+    "author": "Bộ phận Truyền thông BQL",
+    "publish_offset_days": -7,
+    "expires_in_days": 90,
+    "audience_group_key": "all_verified_residents",
+    "channels": [
+      "app",
+      "web"
+    ],
+    "cover_asset": "seed/news/operations-team.jpg",
+    "cta": {
+      "label": "Đọc câu chuyện",
+      "target": "/resident/news/{content_id}"
+    },
+    "body": "Một ca vận hành bắt đầu từ trước khi cư dân thức dậy. Đội kỹ thuật kiểm tra thiết bị, lực lượng an ninh bàn giao ca và bộ phận vệ sinh chuẩn bị các khu vực công cộng."
+  },
+  {
+    "seed_key": "news-app-update",
+    "type": "news",
+    "title": "Ứng dụng X2-BMS cập nhật Trung tâm tương tác mới",
+    "summary": "Mọi phản ánh, đăng ký khách, đặt tiện ích và xác nhận thanh toán được theo dõi tại một nơi.",
+    "category": "digital_service",
+    "status": "scheduled",
+    "featured": false,
+    "visibility": "residents",
+    "author": "X2-BMS Product Team",
+    "publish_offset_days": 2,
+    "expires_in_days": 60,
+    "audience_group_key": "all_app_users",
+    "channels": [
+      "app",
+      "push",
+      "web",
+      "email"
+    ],
+    "cover_asset": "seed/news/app-update.jpg",
+    "cta": {
+      "label": "Khám phá ngay",
+      "target": "/resident/interactions"
+    },
+    "body": "Phiên bản mới bổ sung Trung tâm tương tác, giúp cư dân xem toàn bộ phiếu đã gửi, trạng thái xử lý, SLA và lịch sử trao đổi trong một giao diện thống nhất."
+  },
+  {
+    "seed_key": "news-energy-report",
+    "type": "news",
+    "title": "Báo cáo tiết kiệm năng lượng quý II",
+    "summary": "Mức tiêu thụ điện khu vực công cộng giảm 8,6% nhờ tối ưu lịch vận hành và thay đèn LED.",
+    "category": "sustainability",
+    "status": "published",
+    "featured": false,
+    "visibility": "residents",
+    "author": "Bộ phận Kỹ thuật",
+    "publish_offset_days": -10,
+    "expires_in_days": 90,
+    "audience_group_key": "all_verified_residents",
+    "channels": [
+      "app",
+      "web"
+    ],
+    "cover_asset": "seed/news/energy-report.jpg",
+    "cta": {
+      "label": "Xem báo cáo",
+      "target": "/resident/documents/energy-q2"
+    },
+    "body": "Trong quý II, dự án giảm 8,6% điện năng khu vực công cộng so với cùng kỳ. Kết quả đến từ việc thay thế đèn LED, tối ưu thông gió hầm và điều chỉnh lịch chiếu sáng."
+  },
+  {
+    "seed_key": "news-library-opening",
+    "type": "news",
+    "title": "Không gian đọc sách cộng đồng chính thức mở cửa",
+    "summary": "Phòng đọc tại tầng 2 Nhà sinh hoạt cộng đồng phục vụ cư dân mỗi ngày.",
+    "category": "amenity",
+    "status": "published",
+    "featured": true,
+    "visibility": "residents",
+    "author": "Ban quản lý",
+    "publish_offset_days": -2,
+    "expires_in_days": 120,
+    "audience_group_key": "all_verified_residents",
+    "channels": [
+      "app",
+      "web",
+      "push"
+    ],
+    "cover_asset": "seed/news/library.jpg",
+    "cta": {
+      "label": "Xem giờ mở cửa",
+      "target": "/resident/amenities/community-library"
+    },
+    "body": "Không gian đọc sách cộng đồng có hơn 1.200 đầu sách, khu vực học tập cho trẻ em và bàn làm việc yên tĩnh. Cư dân có thể đăng ký mượn sách bằng mã căn hộ."
+  },
+  {
+    "seed_key": "news-security-upgrade",
+    "type": "news",
+    "title": "Hoàn tất nâng cấp camera tại các lối ra vào",
+    "summary": "Hệ thống mới nâng độ phân giải và tăng khả năng lưu trữ phục vụ an ninh.",
+    "category": "security_safety",
+    "status": "pending_approval",
+    "featured": false,
+    "visibility": "residents",
+    "author": "Bộ phận An ninh",
+    "publish_offset_days": 4,
+    "expires_in_days": 60,
+    "audience_group_key": "all_verified_residents",
+    "channels": [
+      "app",
+      "web",
+      "email"
+    ],
+    "cover_asset": "seed/news/security-camera.jpg",
+    "cta": {
+      "label": "Xem chính sách dữ liệu",
+      "target": "/resident/privacy/camera"
+    },
+    "body": "Hệ thống camera tại sảnh, hầm xe và lối vào đã được nâng cấp. Việc truy cập dữ liệu tuân thủ phân quyền, thời hạn lưu trữ và quy trình cung cấp hình ảnh của dự án."
+  },
+  {
+    "seed_key": "news-community-market",
+    "type": "news",
+    "title": "Chợ phiên cư dân tháng này có gì mới?",
+    "summary": "Gian hàng nông sản sạch, đồ thủ công và khu đổi đồ cũ được mở rộng.",
+    "category": "community",
+    "status": "draft",
+    "featured": false,
+    "visibility": "public",
+    "author": "Ban tổ chức Chợ phiên",
+    "publish_offset_days": 5,
+    "expires_in_days": 30,
+    "audience_group_key": "all_verified_residents",
+    "channels": [
+      "app",
+      "web",
+      "zalo"
+    ],
+    "cover_asset": "seed/news/community-market.jpg",
+    "cta": {
+      "label": "Đăng ký gian hàng",
+      "target": "/resident/events/community-market"
+    },
+    "body": "Chợ phiên tháng này bổ sung khu đổi đồ cũ, gian hàng cây xanh và khu trải nghiệm thủ công cho trẻ em. Cư dân có thể đăng ký gian hàng miễn phí trước thời hạn."
+  }
+]

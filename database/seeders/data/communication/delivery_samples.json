@@ -1,0 +1,60 @@
+[
+  {
+    "campaign_seed_key": "ann-elevator-restored",
+    "recipient_alias": "resident_demo_001",
+    "apartment_code": "S5-0801",
+    "role": "owner",
+    "channel": "app",
+    "status": "read",
+    "opened_minutes_after": 3,
+    "cta_clicked": true
+  },
+  {
+    "campaign_seed_key": "ann-elevator-restored",
+    "recipient_alias": "resident_demo_002",
+    "apartment_code": "S5-0802",
+    "role": "tenant",
+    "channel": "push",
+    "status": "delivered",
+    "opened_minutes_after": null,
+    "cta_clicked": false
+  },
+  {
+    "campaign_seed_key": "ann-visitor-system-upgrade",
+    "recipient_alias": "resident_demo_003",
+    "apartment_code": "S1-1205",
+    "role": "owner",
+    "channel": "email",
+    "status": "bounced",
+    "error_code": "invalid_recipient"
+  },
+  {
+    "campaign_seed_key": "ann-visitor-system-upgrade",
+    "recipient_alias": "resident_demo_004",
+    "apartment_code": "S2-1508",
+    "role": "household_member",
+    "channel": "app",
+    "status": "read",
+    "opened_minutes_after": 9,
+    "cta_clicked": false
+  },
+  {
+    "campaign_seed_key": "ann-fee-statement-aug",
+    "recipient_alias": "resident_demo_005",
+    "apartment_code": "S3-1802",
+    "role": "owner",
+    "channel": "email",
+    "status": "opened",
+    "opened_minutes_after": 42,
+    "cta_clicked": true
+  },
+  {
+    "campaign_seed_key": "ann-water-interruption-s3",
+    "recipient_alias": "resident_demo_006",
+    "apartment_code": "S3-0906",
+    "role": "tenant",
+    "channel": "sms",
+    "status": "failed",
+    "error_code": "invalid_phone"
+  }
+]

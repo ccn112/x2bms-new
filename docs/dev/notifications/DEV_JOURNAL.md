@@ -92,3 +92,15 @@ Ratchet: thêm `AudienceResolver` (2 chỗ, re-scope tenant tường minh) vào 
 - Test `CommunicationApiContractTest` 3/29: **khóa key hợp đồng cũ** (16 key list) + content_type + event/poll summary.
   Không hồi quy ResidentNotificationSummary/BellReader/Ack (11/11).
 - **Follow-up:** thêm content_type vào BellReader (feed hợp nhất) nếu app cần; hiện giữ nguyên (an toàn).
+
+## 2026-08-07 · T6 — Seeder demo ✅
+- `CommunicationDemoSeeder` (non-prod + X2_DEMO_SEED, provider FAKE): 12 thông báo / 8 tin / 6 sự kiện /
+  6 poll + 11 nhóm người nhận + 6 template. Idempotent theo (tenant, code=SEED:<seed_key>).
+- Map dữ liệu seed → demo THẬT: mã tòa S1/S2… → tòa demo (SG-A/SG-B); role co_owner→owner,
+  household_member→member (roles demo owner|tenant|member); resident_status verified→active.
+- Vòng đời theo status seed (draft/pending/approved/scheduled/completed/cancelled); campaign đã phát hành
+  resolve người nhận + read_count ~60%. Event/Poll qua ContentSubtypeService (poll vote_count khớp seed).
+  Delivery samples map sang cư dân demo (fake, không gửi mạng). Data JSON copy vào database/seeders/data/communication/.
+- Đăng ký trong DatabaseSeeder (non-prod, tự guard flag). Fix: notification_templates.risk enum low|medium|high|critical.
+- Test `CommunicationSeederTest` (fixture demo tối thiểu): counts 12/8/6/6, 11 nhóm, poll aggregate khớp,
+  published có người nhận, **idempotent** (chạy lại không nhân đôi). **Suite Communication 21/21, 99 assert.**

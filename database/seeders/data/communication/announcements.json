@@ -1,0 +1,334 @@
+[
+  {
+    "seed_key": "ann-maint-lift-s1-s2",
+    "type": "announcement",
+    "title": "Bảo trì định kỳ hệ thống thang máy tòa S1 và S2",
+    "summary": "Ban quản lý thực hiện bảo trì thang máy theo từng khung giờ để bảo đảm an toàn vận hành.",
+    "category": "operations_technical",
+    "priority": "high",
+    "status": "scheduled",
+    "schedule": {
+      "send_in_days": 1,
+      "time": "09:30"
+    },
+    "audience_group_key": "owners_tenants_s1_s2",
+    "channels": [
+      "app",
+      "push",
+      "email",
+      "web"
+    ],
+    "require_read_ack": true,
+    "allow_feedback": true,
+    "pin_in_app": true,
+    "expires_in_days": 10,
+    "cta": {
+      "label": "Xem lịch chi tiết",
+      "target": "/resident/notifications/{notification_id}"
+    },
+    "body": "Kính gửi Quý cư dân,\n\nBan quản lý sẽ bảo trì định kỳ hệ thống thang máy tại tòa S1 và S2. Trong thời gian thực hiện, một số thang máy có thể tạm ngưng theo từng khung giờ. Quý cư dân vui lòng theo dõi lịch chi tiết và chủ động sắp xếp di chuyển.\n\nTrân trọng cảm ơn sự phối hợp của Quý cư dân."
+  },
+  {
+    "seed_key": "ann-water-interruption-s3",
+    "type": "announcement",
+    "title": "Thông báo tạm ngừng cấp nước tòa S3",
+    "summary": "Tạm ngừng cấp nước để thay van tổng và vệ sinh bể trung gian.",
+    "category": "operations_technical",
+    "priority": "emergency",
+    "status": "approved",
+    "schedule": {
+      "send_in_hours": 2
+    },
+    "audience_group_key": "all_residents_s3",
+    "channels": [
+      "app",
+      "push",
+      "email",
+      "sms",
+      "web"
+    ],
+    "require_read_ack": true,
+    "allow_feedback": false,
+    "pin_in_app": true,
+    "expires_in_days": 3,
+    "cta": {
+      "label": "Xem hướng dẫn dự phòng",
+      "target": "/resident/notifications/{notification_id}"
+    },
+    "body": "Ban quản lý thông báo tạm ngừng cấp nước tại tòa S3 từ 22:00 đến 05:00 để thay van tổng và vệ sinh bể trung gian. Quý cư dân vui lòng chủ động tích trữ lượng nước cần thiết và khóa các thiết bị sử dụng nước trước thời gian trên."
+  },
+  {
+    "seed_key": "ann-fire-drill-reminder",
+    "type": "announcement",
+    "title": "Nhắc lịch diễn tập phòng cháy chữa cháy",
+    "summary": "Cư dân vui lòng không sử dụng thang máy và tuân thủ hướng dẫn trong thời gian diễn tập.",
+    "category": "security_safety",
+    "priority": "high",
+    "status": "completed",
+    "schedule": {
+      "sent_days_ago": 4,
+      "time": "08:00"
+    },
+    "audience_group_key": "all_verified_residents",
+    "channels": [
+      "app",
+      "push",
+      "email",
+      "web"
+    ],
+    "require_read_ack": true,
+    "allow_feedback": true,
+    "pin_in_app": false,
+    "expires_in_days": 1,
+    "cta": {
+      "label": "Xem sơ đồ thoát nạn",
+      "target": "/resident/guides/fire-safety"
+    },
+    "body": "Buổi diễn tập PCCC toàn dự án sẽ diễn ra từ 08:30 đến 10:00. Cư dân vui lòng tuân thủ hiệu lệnh của Ban chỉ huy, sử dụng thang bộ theo hướng dẫn và không sử dụng thang máy trong thời gian diễn tập."
+  },
+  {
+    "seed_key": "ann-parking-cleanup",
+    "type": "announcement",
+    "title": "Vệ sinh định kỳ khu vực hầm gửi xe B1",
+    "summary": "Một số dãy đỗ xe sẽ được phân luồng tạm thời trong đêm.",
+    "category": "parking_access",
+    "priority": "normal",
+    "status": "draft",
+    "schedule": null,
+    "audience_group_key": "vehicle_owners_b1",
+    "channels": [
+      "app",
+      "web"
+    ],
+    "require_read_ack": false,
+    "allow_feedback": true,
+    "pin_in_app": false,
+    "expires_in_days": 7,
+    "cta": {
+      "label": "Xem sơ đồ phân luồng",
+      "target": "/resident/parking/notices"
+    },
+    "body": "Ban quản lý thực hiện vệ sinh và sơn kẻ lại khu vực hầm B1. Các phương tiện tại dãy B1-A và B1-B vui lòng di chuyển theo hướng dẫn của bảo vệ trước 21:00."
+  },
+  {
+    "seed_key": "ann-fee-statement-aug",
+    "type": "announcement",
+    "title": "Bảng kê phí dịch vụ tháng 08 đã được phát hành",
+    "summary": "Cư dân có thể xem chi tiết công nợ và thanh toán trên ứng dụng.",
+    "category": "finance",
+    "priority": "normal",
+    "status": "completed",
+    "schedule": {
+      "sent_days_ago": 2,
+      "time": "10:15"
+    },
+    "audience_group_key": "residents_with_published_statement",
+    "channels": [
+      "app",
+      "push",
+      "email"
+    ],
+    "require_read_ack": false,
+    "allow_feedback": true,
+    "pin_in_app": false,
+    "expires_in_days": 30,
+    "cta": {
+      "label": "Xem bảng kê",
+      "target": "/resident/billing/statements/{statement_id}"
+    },
+    "body": "Bảng kê phí dịch vụ tháng 08 đã được phát hành. Quý cư dân vui lòng kiểm tra các khoản phí, số tiền đã thanh toán và hạn thanh toán trên ứng dụng X2-BMS."
+  },
+  {
+    "seed_key": "ann-pool-maintenance",
+    "type": "announcement",
+    "title": "Tạm đóng bể bơi để bảo trì hệ thống lọc",
+    "summary": "Bể bơi tạm đóng trong hai ngày; phòng gym vẫn hoạt động bình thường.",
+    "category": "amenity",
+    "priority": "normal",
+    "status": "pending_approval",
+    "schedule": {
+      "send_in_days": 3,
+      "time": "16:00"
+    },
+    "audience_group_key": "all_verified_residents",
+    "channels": [
+      "app",
+      "push",
+      "web"
+    ],
+    "require_read_ack": false,
+    "allow_feedback": true,
+    "pin_in_app": true,
+    "expires_in_days": 8,
+    "cta": {
+      "label": "Xem tiện ích thay thế",
+      "target": "/resident/amenities"
+    },
+    "body": "Bể bơi tạm đóng để bảo trì hệ thống lọc và kiểm tra chất lượng nước. Phòng gym, sân thể thao và phòng sinh hoạt cộng đồng vẫn hoạt động theo lịch bình thường."
+  },
+  {
+    "seed_key": "ann-elevator-restored",
+    "type": "announcement",
+    "title": "Thang máy S5-02 đã hoạt động trở lại",
+    "summary": "Công tác sửa chữa đã hoàn tất và thiết bị đã được kiểm định an toàn.",
+    "category": "operations_technical",
+    "priority": "normal",
+    "status": "completed",
+    "schedule": {
+      "sent_days_ago": 1,
+      "time": "18:20"
+    },
+    "audience_group_key": "all_residents_s5",
+    "channels": [
+      "app",
+      "push",
+      "web"
+    ],
+    "require_read_ack": false,
+    "allow_feedback": true,
+    "pin_in_app": false,
+    "expires_in_days": 5,
+    "cta": {
+      "label": "Gửi phản hồi",
+      "target": "/resident/interactions/create?type=feedback"
+    },
+    "body": "Ban quản lý thông báo thang máy S5-02 đã hoàn tất sửa chữa, chạy thử và được xác nhận an toàn. Cư dân có thể sử dụng bình thường từ 18:30 hôm nay."
+  },
+  {
+    "seed_key": "ann-card-renewal",
+    "type": "announcement",
+    "title": "Rà soát và gia hạn thẻ ra vào sắp hết hạn",
+    "summary": "Các thẻ tạm trú và thẻ khách dài hạn hết hạn trong 30 ngày cần được cập nhật.",
+    "category": "access",
+    "priority": "normal",
+    "status": "scheduled",
+    "schedule": {
+      "send_in_days": 5,
+      "time": "09:00"
+    },
+    "audience_group_key": "access_cards_expiring_30d",
+    "channels": [
+      "app",
+      "email",
+      "web"
+    ],
+    "require_read_ack": false,
+    "allow_feedback": true,
+    "pin_in_app": false,
+    "expires_in_days": 20,
+    "cta": {
+      "label": "Cập nhật thẻ",
+      "target": "/resident/access/cards"
+    },
+    "body": "Hệ thống ghi nhận một số thẻ ra vào của căn hộ sắp hết hạn. Chủ hộ hoặc người được ủy quyền vui lòng kiểm tra và gửi yêu cầu gia hạn trước ngày hết hiệu lực."
+  },
+  {
+    "seed_key": "ann-storm-warning",
+    "type": "announcement",
+    "title": "Cảnh báo mưa lớn và gió giật",
+    "summary": "Cư dân đóng cửa ban công, gia cố vật dụng và hạn chế di chuyển ngoài trời.",
+    "category": "security_safety",
+    "priority": "emergency",
+    "status": "completed",
+    "schedule": {
+      "sent_days_ago": 6,
+      "time": "15:40"
+    },
+    "audience_group_key": "all_verified_residents",
+    "channels": [
+      "app",
+      "push",
+      "sms",
+      "web"
+    ],
+    "require_read_ack": true,
+    "allow_feedback": false,
+    "pin_in_app": true,
+    "expires_in_days": 1,
+    "cta": {
+      "label": "Xem số điện thoại khẩn cấp",
+      "target": "/resident/emergency"
+    },
+    "body": "Theo cảnh báo thời tiết, khu vực dự án có khả năng mưa lớn và gió giật. Quý cư dân vui lòng đóng cửa sổ, cửa ban công, thu dọn vật dụng có nguy cơ rơi và hạn chế di chuyển ngoài trời."
+  },
+  {
+    "seed_key": "ann-waste-sorting",
+    "type": "announcement",
+    "title": "Triển khai phân loại rác tại nguồn từ tuần tới",
+    "summary": "Mỗi tầng được bổ sung thùng rác hữu cơ, tái chế và rác còn lại.",
+    "category": "community_environment",
+    "priority": "normal",
+    "status": "approved",
+    "schedule": {
+      "send_in_days": 7,
+      "time": "08:30"
+    },
+    "audience_group_key": "all_verified_residents",
+    "channels": [
+      "app",
+      "email",
+      "web"
+    ],
+    "require_read_ack": false,
+    "allow_feedback": true,
+    "pin_in_app": false,
+    "expires_in_days": 21,
+    "cta": {
+      "label": "Xem hướng dẫn phân loại",
+      "target": "/resident/guides/waste-sorting"
+    },
+    "body": "Từ tuần tới, dự án triển khai phân loại rác tại nguồn. Ban quản lý đã bố trí ba nhóm thùng tại mỗi tầng và phát hành hướng dẫn nhận biết từng loại rác."
+  },
+  {
+    "seed_key": "ann-visitor-system-upgrade",
+    "type": "announcement",
+    "title": "Nâng cấp hệ thống đăng ký khách trực tuyến",
+    "summary": "Chức năng tạo mã khách có thể gián đoạn trong khoảng 30 phút.",
+    "category": "digital_service",
+    "priority": "normal",
+    "status": "partially_sent",
+    "schedule": {
+      "sent_days_ago": 1,
+      "time": "00:15"
+    },
+    "audience_group_key": "all_verified_residents",
+    "channels": [
+      "app",
+      "push",
+      "email"
+    ],
+    "require_read_ack": false,
+    "allow_feedback": true,
+    "pin_in_app": false,
+    "expires_in_days": 4,
+    "cta": {
+      "label": "Xem trạng thái hệ thống",
+      "target": "/resident/support/status"
+    },
+    "body": "Hệ thống đăng ký khách trực tuyến được nâng cấp từ 00:15 đến 00:45. Trong thời gian này, cư dân có thể liên hệ lễ tân để hỗ trợ đăng ký khẩn."
+  },
+  {
+    "seed_key": "ann-office-hours",
+    "type": "announcement",
+    "title": "Điều chỉnh thời gian làm việc của Văn phòng Ban quản lý",
+    "summary": "Văn phòng tăng thời gian tiếp nhận cư dân vào sáng thứ Bảy.",
+    "category": "customer_service",
+    "priority": "normal",
+    "status": "draft",
+    "schedule": null,
+    "audience_group_key": "all_verified_residents",
+    "channels": [
+      "app",
+      "web"
+    ],
+    "require_read_ack": false,
+    "allow_feedback": true,
+    "pin_in_app": false,
+    "expires_in_days": 30,
+    "cta": {
+      "label": "Đặt lịch làm việc",
+      "target": "/resident/support/appointments"
+    },
+    "body": "Từ tháng tới, Văn phòng Ban quản lý làm việc từ 08:00 đến 12:00 sáng thứ Bảy để hỗ trợ thủ tục cư dân. Các ngày làm việc trong tuần giữ nguyên."
+  }
+]

@@ -1,0 +1,78 @@
+[
+  {
+    "seed_key": "tpl-app-standard",
+    "channel": "app",
+    "name": "Push + Inbox chuẩn",
+    "variables": [
+      "title",
+      "summary",
+      "deep_link",
+      "image_url"
+    ],
+    "status": "active"
+  },
+  {
+    "seed_key": "tpl-email-announcement",
+    "channel": "email",
+    "name": "Email thông báo BQL",
+    "variables": [
+      "resident_name",
+      "building_name",
+      "title",
+      "summary",
+      "body_html",
+      "cta_url"
+    ],
+    "status": "active"
+  },
+  {
+    "seed_key": "tpl-email-news",
+    "channel": "email",
+    "name": "Email bản tin",
+    "variables": [
+      "title",
+      "cover_url",
+      "summary",
+      "cta_url"
+    ],
+    "status": "active"
+  },
+  {
+    "seed_key": "tpl-zalo-maintenance",
+    "channel": "zalo",
+    "name": "ZNS bảo trì thiết bị",
+    "provider_template_code": "MAINT_01",
+    "variables": [
+      "building",
+      "date",
+      "time_start",
+      "time_end",
+      "link"
+    ],
+    "status": "stub"
+  },
+  {
+    "seed_key": "tpl-sms-alert",
+    "channel": "sms",
+    "name": "SMS cảnh báo ngắn",
+    "variables": [
+      "project",
+      "title",
+      "short_link"
+    ],
+    "max_chars": 160,
+    "status": "mock"
+  },
+  {
+    "seed_key": "tpl-web-card",
+    "channel": "web",
+    "name": "Thẻ nội dung Web cư dân",
+    "variables": [
+      "title",
+      "summary",
+      "cover",
+      "cta"
+    ],
+    "status": "active"
+  }
+]

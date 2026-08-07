@@ -1,0 +1,116 @@
+[
+  {
+    "seed_key": "all_verified_residents",
+    "name": "Toàn bộ cư dân đã xác thực",
+    "rules": {
+      "resident_status": [
+        "verified"
+      ],
+      "relationship_active": true
+    }
+  },
+  {
+    "seed_key": "all_app_users",
+    "name": "Cư dân có ứng dụng đang hoạt động",
+    "rules": {
+      "resident_status": [
+        "verified"
+      ],
+      "has_app": true,
+      "active_device": true
+    }
+  },
+  {
+    "seed_key": "owners_only",
+    "name": "Chủ sở hữu đang hiệu lực",
+    "rules": {
+      "relationship_roles": [
+        "owner",
+        "co_owner"
+      ],
+      "relationship_active": true
+    }
+  },
+  {
+    "seed_key": "owners_tenants_s1_s2",
+    "name": "Chủ sở hữu và người thuê tòa S1, S2",
+    "rules": {
+      "building_codes": [
+        "S1",
+        "S2"
+      ],
+      "relationship_roles": [
+        "owner",
+        "co_owner",
+        "tenant"
+      ],
+      "relationship_active": true
+    }
+  },
+  {
+    "seed_key": "all_residents_s3",
+    "name": "Cư dân tòa S3",
+    "rules": {
+      "building_codes": [
+        "S3"
+      ],
+      "relationship_active": true
+    }
+  },
+  {
+    "seed_key": "all_residents_s5",
+    "name": "Cư dân tòa S5",
+    "rules": {
+      "building_codes": [
+        "S5"
+      ],
+      "relationship_active": true
+    }
+  },
+  {
+    "seed_key": "vehicle_owners_b1",
+    "name": "Căn hộ có phương tiện tại hầm B1",
+    "rules": {
+      "vehicle_parking_zone": "B1",
+      "relationship_roles": [
+        "owner",
+        "co_owner",
+        "tenant"
+      ]
+    }
+  },
+  {
+    "seed_key": "residents_with_published_statement",
+    "name": "Cư dân có bảng kê đã phát hành",
+    "rules": {
+      "has_published_statement": true,
+      "relationship_active": true
+    }
+  },
+  {
+    "seed_key": "access_cards_expiring_30d",
+    "name": "Thẻ ra vào hết hạn trong 30 ngày",
+    "rules": {
+      "access_card_expires_in_days": {
+        "lte": 30,
+        "gte": 0
+      }
+    }
+  },
+  {
+    "seed_key": "households_with_children",
+    "name": "Hộ gia đình có trẻ em",
+    "rules": {
+      "household_has_child": true
+    }
+  },
+  {
+    "seed_key": "residents_age_60_plus",
+    "name": "Cư dân từ 60 tuổi",
+    "rules": {
+      "age": {
+        "gte": 60
+      }
+    }
+  }
+]

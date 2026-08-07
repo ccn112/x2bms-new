@@ -1,0 +1,19 @@
+{
+  "version": 1,
+  "date_mode": "relative_to_seed_execution",
+  "counts": {
+    "announcements": 12,
+    "news": 8,
+    "events": 6,
+    "polls": 6,
+    "audience_groups": 11,
+    "templates": 6,
+    "approval_scenarios": 4,
+    "delivery_samples": 6
+  },
+  "notes": [
+    "All records require idempotent upsert by seed_key.",
+    "Real provider sending must be disabled while seeding.",
+    "Map building codes and resident relations to existing demo data."
+  ]
+}

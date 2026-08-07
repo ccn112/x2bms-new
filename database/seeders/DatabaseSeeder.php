@@ -25,6 +25,8 @@ class DatabaseSeeder extends Seeder
         // Demo locale settings + sample content translations. Never runs in production.
         if (! app()->environment('production')) {
             $this->call(LocalizationDemoSeeder::class);
+            // Demo Truyền thông BQL (BQL-NOTI) — tự guard theo config X2_DEMO_SEED.
+            $this->call(CommunicationDemoSeeder::class);
         }
     }
 }

@@ -1,0 +1,185 @@
+[
+  {
+    "seed_key": "event-fire-drill",
+    "type": "event",
+    "title": "Diễn tập phòng cháy chữa cháy toàn dự án",
+    "summary": "Thực hành thoát nạn, sử dụng bình chữa cháy và phối hợp với lực lượng chuyên trách.",
+    "category": "security_safety",
+    "status": "open_registration",
+    "starts_in_days": 10,
+    "start_time": "08:30",
+    "duration_minutes": 120,
+    "venue": "Sân trung tâm và sảnh các tòa",
+    "capacity": 300,
+    "registered_seed": 184,
+    "waitlist_seed": 0,
+    "registration_deadline_in_days": 8,
+    "allow_guests": false,
+    "fee_amount": 0,
+    "qr_checkin": true,
+    "audience_group_key": "all_verified_residents",
+    "channels": [
+      "app",
+      "push",
+      "email",
+      "web"
+    ],
+    "cta": {
+      "label": "Đăng ký tham gia",
+      "target": "/resident/events/{content_id}"
+    }
+  },
+  {
+    "seed_key": "event-first-aid",
+    "type": "event",
+    "title": "Workshop sơ cứu cơ bản cho gia đình",
+    "summary": "Hướng dẫn xử lý ngạt, bỏng, chấn thương và tình huống khẩn cấp thường gặp.",
+    "category": "education_health",
+    "status": "open_registration",
+    "starts_in_days": 14,
+    "start_time": "09:00",
+    "duration_minutes": 150,
+    "venue": "Phòng sinh hoạt cộng đồng tầng 2",
+    "capacity": 80,
+    "registered_seed": 67,
+    "waitlist_seed": 0,
+    "registration_deadline_in_days": 12,
+    "allow_guests": true,
+    "max_guests": 1,
+    "fee_amount": 0,
+    "qr_checkin": true,
+    "audience_group_key": "all_verified_residents",
+    "channels": [
+      "app",
+      "email",
+      "web"
+    ],
+    "cta": {
+      "label": "Đăng ký chỗ",
+      "target": "/resident/events/{content_id}"
+    }
+  },
+  {
+    "seed_key": "event-family-day",
+    "type": "event",
+    "title": "Ngày hội Gia đình Xanh 2026",
+    "summary": "Trò chơi vận động, đổi rác lấy cây và khu trải nghiệm sáng tạo cho trẻ em.",
+    "category": "community",
+    "status": "full_waitlist",
+    "starts_in_days": 20,
+    "start_time": "15:00",
+    "duration_minutes": 240,
+    "venue": "Công viên trung tâm",
+    "capacity": 220,
+    "registered_seed": 220,
+    "waitlist_seed": 36,
+    "registration_deadline_in_days": 17,
+    "allow_guests": true,
+    "max_guests": 2,
+    "fee_amount": 0,
+    "qr_checkin": true,
+    "audience_group_key": "all_verified_residents",
+    "channels": [
+      "app",
+      "push",
+      "email",
+      "web",
+      "zalo"
+    ],
+    "cta": {
+      "label": "Tham gia danh sách chờ",
+      "target": "/resident/events/{content_id}"
+    }
+  },
+  {
+    "seed_key": "event-summer-swim",
+    "type": "event",
+    "title": "Lớp kỹ năng bơi an toàn cho trẻ em",
+    "summary": "Khóa học bốn buổi với huấn luyện viên, ưu tiên trẻ từ 7 đến 12 tuổi.",
+    "category": "amenity_sports",
+    "status": "open_registration",
+    "starts_in_days": 7,
+    "start_time": "17:00",
+    "duration_minutes": 90,
+    "venue": "Bể bơi dự án",
+    "capacity": 40,
+    "registered_seed": 31,
+    "waitlist_seed": 0,
+    "registration_deadline_in_days": 5,
+    "allow_guests": false,
+    "fee_amount": 300000,
+    "qr_checkin": true,
+    "audience_group_key": "households_with_children",
+    "channels": [
+      "app",
+      "email",
+      "web"
+    ],
+    "cta": {
+      "label": "Xem lịch học",
+      "target": "/resident/events/{content_id}"
+    }
+  },
+  {
+    "seed_key": "event-community-market",
+    "type": "event",
+    "title": "Chợ phiên cư dân cuối tuần",
+    "summary": "Nông sản sạch, đồ gia dụng, đồ cũ và sản phẩm thủ công của cư dân.",
+    "category": "community_market",
+    "status": "completed",
+    "starts_days_ago": 12,
+    "start_time": "07:30",
+    "duration_minutes": 300,
+    "venue": "Quảng trường nội khu",
+    "capacity": 500,
+    "registered_seed": 342,
+    "checked_in_seed": 287,
+    "waitlist_seed": 0,
+    "registration_deadline_days_ago": 15,
+    "allow_guests": true,
+    "max_guests": 3,
+    "fee_amount": 0,
+    "qr_checkin": true,
+    "audience_group_key": "all_verified_residents",
+    "channels": [
+      "app",
+      "push",
+      "web"
+    ],
+    "cta": {
+      "label": "Xem hình ảnh sự kiện",
+      "target": "/resident/events/{content_id}"
+    }
+  },
+  {
+    "seed_key": "event-health-check",
+    "type": "event",
+    "title": "Khám sức khỏe định kỳ dành cho cư dân cao tuổi",
+    "summary": "Đo huyết áp, đường huyết và tư vấn sức khỏe cơ bản miễn phí.",
+    "category": "health",
+    "status": "cancelled",
+    "starts_in_days": 4,
+    "start_time": "08:00",
+    "duration_minutes": 180,
+    "venue": "Phòng đa năng tòa S2",
+    "capacity": 100,
+    "registered_seed": 52,
+    "waitlist_seed": 0,
+    "registration_deadline_in_days": 2,
+    "allow_guests": false,
+    "fee_amount": 0,
+    "qr_checkin": false,
+    "cancel_reason": "Đơn vị y tế đề nghị đổi lịch do điều kiện thời tiết.",
+    "audience_group_key": "residents_age_60_plus",
+    "channels": [
+      "app",
+      "push",
+      "sms",
+      "web"
+    ],
+    "cta": {
+      "label": "Xem thông báo đổi lịch",
+      "target": "/resident/events/{content_id}"
+    }
+  }
+]

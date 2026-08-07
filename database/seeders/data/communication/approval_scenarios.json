@@ -1,0 +1,73 @@
+[
+  {
+    "seed_key": "approval-default",
+    "name": "Tuyến duyệt mặc định",
+    "conditions": {
+      "priority": [
+        "normal"
+      ],
+      "max_audience": 5000,
+      "paid_cost_lte": 500000
+    },
+    "steps": [
+      {
+        "role": "bql_manager",
+        "sla_hours": 2
+      }
+    ]
+  },
+  {
+    "seed_key": "approval-large-audience",
+    "name": "Tuyến duyệt chiến dịch lớn",
+    "conditions": {
+      "min_audience": 5001
+    },
+    "steps": [
+      {
+        "role": "bql_manager",
+        "sla_hours": 2
+      },
+      {
+        "role": "project_director",
+        "sla_hours": 4
+      }
+    ]
+  },
+  {
+    "seed_key": "approval-emergency",
+    "name": "Tuyến cảnh báo khẩn cấp",
+    "conditions": {
+      "priority": [
+        "emergency"
+      ]
+    },
+    "steps": [
+      {
+        "role": "bql_manager",
+        "sla_minutes": 15
+      },
+      {
+        "role": "project_director",
+        "sla_minutes": 15
+      }
+    ],
+    "allow_quiet_hours_bypass": true
+  },
+  {
+    "seed_key": "approval-paid-channel",
+    "name": "Tuyến có chi phí kênh",
+    "conditions": {
+      "paid_cost_gt": 500000
+    },
+    "steps": [
+      {
+        "role": "bql_manager",
+        "sla_hours": 2
+      },
+      {
+        "role": "project_director",
+        "sla_hours": 4
+      }
+    ]
+  }
+]

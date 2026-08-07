@@ -1,0 +1,246 @@
+[
+  {
+    "seed_key": "poll-gym-hours",
+    "type": "poll",
+    "title": "Bình chọn khung giờ mở cửa phòng gym",
+    "question": "Quý cư dân mong muốn phòng gym mở cửa theo khung giờ nào?",
+    "summary": "Kết quả được dùng để điều chỉnh lịch vận hành thử nghiệm trong tháng tới.",
+    "status": "open",
+    "opens_offset_days": -2,
+    "closes_in_days": 5,
+    "audience_group_key": "all_verified_residents",
+    "channels": [
+      "app",
+      "push",
+      "web"
+    ],
+    "anonymous": false,
+    "vote_scope": "resident",
+    "allow_multiple": false,
+    "allow_change_vote": true,
+    "result_visibility": "after_vote",
+    "options": [
+      {
+        "key": "a",
+        "label": "05:30 – 22:00",
+        "votes": 264
+      },
+      {
+        "key": "b",
+        "label": "06:00 – 23:00",
+        "votes": 388
+      },
+      {
+        "key": "c",
+        "label": "Mở 24/7 có kiểm soát",
+        "votes": 197
+      }
+    ]
+  },
+  {
+    "seed_key": "poll-shuttle-time",
+    "type": "poll",
+    "title": "Chọn khung giờ xe điện nội khu buổi tối",
+    "question": "Khung giờ nào cần tăng chuyến xe điện nội khu?",
+    "summary": "Bình chọn một phương án ưu tiên.",
+    "status": "open",
+    "opens_offset_days": -1,
+    "closes_in_days": 6,
+    "audience_group_key": "all_verified_residents",
+    "channels": [
+      "app",
+      "web"
+    ],
+    "anonymous": true,
+    "vote_scope": "apartment",
+    "allow_multiple": false,
+    "allow_change_vote": false,
+    "result_visibility": "after_close",
+    "options": [
+      {
+        "key": "a",
+        "label": "18:00 – 19:30",
+        "votes": 126
+      },
+      {
+        "key": "b",
+        "label": "19:30 – 21:00",
+        "votes": 241
+      },
+      {
+        "key": "c",
+        "label": "21:00 – 22:30",
+        "votes": 184
+      }
+    ]
+  },
+  {
+    "seed_key": "poll-tree-selection",
+    "type": "poll",
+    "title": "Lựa chọn loại cây cho khu vườn tầng mái",
+    "question": "Quý cư dân ưu tiên nhóm cây nào cho khu vườn tầng mái?",
+    "summary": "Có thể chọn tối đa hai phương án.",
+    "status": "closed",
+    "opens_offset_days": -14,
+    "closed_days_ago": 2,
+    "audience_group_key": "all_verified_residents",
+    "channels": [
+      "app",
+      "email",
+      "web"
+    ],
+    "anonymous": false,
+    "vote_scope": "resident",
+    "allow_multiple": true,
+    "max_choices": 2,
+    "allow_change_vote": true,
+    "result_visibility": "public_after_close",
+    "options": [
+      {
+        "key": "a",
+        "label": "Cây gia vị và rau thơm",
+        "votes": 356
+      },
+      {
+        "key": "b",
+        "label": "Hoa theo mùa",
+        "votes": 291
+      },
+      {
+        "key": "c",
+        "label": "Cây bóng mát nhỏ",
+        "votes": 175
+      },
+      {
+        "key": "d",
+        "label": "Cây ăn quả thấp",
+        "votes": 202
+      }
+    ]
+  },
+  {
+    "seed_key": "poll-cleaning-quality",
+    "type": "poll",
+    "title": "Đánh giá chất lượng vệ sinh khu vực công cộng",
+    "question": "Mức độ hài lòng của Quý cư dân trong hai tuần gần đây?",
+    "summary": "Bình chọn theo thang 1–5.",
+    "status": "open",
+    "opens_offset_days": -3,
+    "closes_in_days": 4,
+    "audience_group_key": "all_verified_residents",
+    "channels": [
+      "app",
+      "push"
+    ],
+    "anonymous": true,
+    "vote_scope": "resident",
+    "allow_multiple": false,
+    "allow_change_vote": true,
+    "result_visibility": "admin_only",
+    "options": [
+      {
+        "key": "1",
+        "label": "1 - Rất không hài lòng",
+        "votes": 18
+      },
+      {
+        "key": "2",
+        "label": "2 - Không hài lòng",
+        "votes": 37
+      },
+      {
+        "key": "3",
+        "label": "3 - Bình thường",
+        "votes": 169
+      },
+      {
+        "key": "4",
+        "label": "4 - Hài lòng",
+        "votes": 412
+      },
+      {
+        "key": "5",
+        "label": "5 - Rất hài lòng",
+        "votes": 238
+      }
+    ]
+  },
+  {
+    "seed_key": "poll-community-budget",
+    "type": "poll",
+    "title": "Ưu tiên hạng mục cộng đồng quý IV",
+    "question": "Quỹ hoạt động cộng đồng nên ưu tiên hạng mục nào?",
+    "summary": "Mỗi căn hộ một phiếu, kết quả công khai sau khi đóng.",
+    "status": "scheduled",
+    "opens_in_days": 2,
+    "closes_in_days": 12,
+    "audience_group_key": "owners_only",
+    "channels": [
+      "app",
+      "email",
+      "web"
+    ],
+    "anonymous": false,
+    "vote_scope": "apartment",
+    "allow_multiple": false,
+    "allow_change_vote": false,
+    "result_visibility": "public_after_close",
+    "options": [
+      {
+        "key": "a",
+        "label": "Bổ sung thiết bị sân chơi trẻ em",
+        "votes": 0
+      },
+      {
+        "key": "b",
+        "label": "Tăng cây xanh và ghế nghỉ",
+        "votes": 0
+      },
+      {
+        "key": "c",
+        "label": "Tổ chức lớp kỹ năng miễn phí",
+        "votes": 0
+      },
+      {
+        "key": "d",
+        "label": "Cải thiện phòng sinh hoạt cộng đồng",
+        "votes": 0
+      }
+    ]
+  },
+  {
+    "seed_key": "poll-pet-zone",
+    "type": "poll",
+    "title": "Thăm dò nhu cầu khu vui chơi thú cưng",
+    "question": "Gia đình có nhu cầu sử dụng khu vui chơi thú cưng riêng không?",
+    "summary": "Kết quả phục vụ đánh giá khả thi, chưa phải quyết định đầu tư.",
+    "status": "draft",
+    "audience_group_key": "all_verified_residents",
+    "channels": [
+      "app",
+      "web"
+    ],
+    "anonymous": true,
+    "vote_scope": "apartment",
+    "allow_multiple": false,
+    "allow_change_vote": true,
+    "result_visibility": "after_close",
+    "options": [
+      {
+        "key": "yes",
+        "label": "Có, sử dụng thường xuyên",
+        "votes": 0
+      },
+      {
+        "key": "maybe",
+        "label": "Có thể sử dụng",
+        "votes": 0
+      },
+      {
+        "key": "no",
+        "label": "Không có nhu cầu",
+        "votes": 0
+      }
+    ]
+  }
+]
